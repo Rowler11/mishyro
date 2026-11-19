@@ -6,6 +6,7 @@
 // On the author's phone the seed letters show as "Las que le escribiste" with their status (decision 5).
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import { compressImage } from '../core/images.js';
+import { layer as stickerLayer, decorate } from './stickers.js';
 
 const { el, icon } = util;
 const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -37,7 +38,7 @@ const fromSeed = (c, state) => ({
 });
 const fromOwn = (l) => ({
   id: l.id, kind: 'own', from: l.author, to: l.to || profile.partnerOf(l.author), label: labelOf(l.condition), condition: l.condition,
-  body: l.body, signature: l.signature, mediaId: l.mediaId || null, status: l.status, openedAt: l.openedAt || null, sealedAt: l.sealedAt || null, raw: l,
+  body: l.body, signature: l.signature, mediaId: l.mediaId || null, status: l.status, openedAt: l.openedAt || null, sealedAt: l.sealedAt || null, stickers: l.stickers || [], raw: l,
 });
 
 function seal(letter, { size = 56 } = {}) {
@@ -60,6 +61,7 @@ function envelopeFace(letter, { tag = 'span' } = {}) {
     opened ? el(tag, { class: 'futo-status', 'aria-hidden': 'true' }, icon('check', { size: 14 }), shortOpened(letter.openedAt)) : null,
     seal(letter, { size: 44 }),
     el(tag, { class: 'futo-label' }, hasPre ? el(tag, { class: 'futo-pre' }, 'Ábreme cuando') : null, hasPre ? cond : letter.label),
+    stickerLayer(letter.stickers, { tag }),
   ];
 }
 
@@ -263,6 +265,18 @@ export async function render(ctx) {
     } catch (e) { console.error(e); ui.toast('No se pudo sellar. Inténtalo de nuevo.', { tone: 'error' }); }
   };
 
+  // Stickers go on while the letter is a draft; sealing keeps them as they are.
+  const decorateLetter = async (l) => {
+    const list = await decorate({ letter: l, face: () => envelopeFace({ ...l, stickers: [], status: 'sealed' }, { tag: 'div' }) });
+    if (!list) return;
+    try {
+      await db.put('letters', { ...l.raw, stickers: list });
+      ui.toast(list.length ? 'Sobre decorado.' : 'Sobre sin estampillas.', { tone: 'success' });
+      await load(); draw();
+      [...body.querySelectorAll(`.own-letter[data-id="${CSS.escape(l.id)}"] button`)].find((n) => n.textContent.includes('Decorar'))?.focus({ preventScroll: true });
+    } catch (e) { console.error(e); ui.toast('No se pudo guardar el sobre. Inténtalo de nuevo.', { tone: 'error' }); }
+  };
+
   const removeLetter = async (l) => {
     const yes = await ui.confirmDialog({ title: '¿Borrar esta carta?', message: `“${l.label}” se borra de este teléfono. No se puede deshacer.`, confirmLabel: 'Borrar', danger: true });
     if (!yes) return;
@@ -297,7 +311,8 @@ export async function render(ctx) {
     const partner = profile.name(profile.partnerOf(me));
     const own = letters.filter((l) => l.kind === 'own' && l.from === me).sort((a, b) => (b.raw.updatedAt || '').localeCompare(a.raw.updatedAt || ''));
     const seeded = letters.filter((l) => l.kind === 'seed' && l.from === me);
-    const statusOf = (l) => (l.status === 'draft' ? 'Borrador' : l.status === 'sealed' ? 'Sellada, sin abrir' : openedText(l.openedAt));
+    const stickerNote = (l) => (l.stickers?.length ? ` · ${l.stickers.length === 1 ? '1 estampilla' : `${l.stickers.length} estampillas`}` : '');
+    const statusOf = (l) => (l.status === 'draft' ? `Borrador${stickerNote(l)}` : l.status === 'sealed' ? 'Sellada, sin abrir' : openedText(l.openedAt));
     const row = (l) => el('article', { class: `card own-letter status-${l.status}`, dataset: { id: l.id }, 'aria-labelledby': `ol-${l.id.slice(0, 12)}` },
       el('div', { class: 'own-letter-head' },
         l.status === 'draft' ? el('span', { class: 'own-letter-icon', 'aria-hidden': 'true' }, icon('notebook-pen', { size: 28 })) : seal(l, { size: 44 }),
@@ -308,6 +323,7 @@ export async function render(ctx) {
         l.status === 'draft' ? [
           ui.button({ label: 'Sellar', iconName: 'mail', variant: 'primary', small: true, onClick: () => sealLetter(l) }),
           ui.button({ label: 'Editar', iconName: 'pencil', small: true, onClick: () => openEditor(l.raw) }),
+          ui.button({ label: 'Decorar sobre', iconName: 'sticker', small: true, onClick: () => decorateLetter(l) }),
           ui.button({ label: 'Leer', iconName: 'book-open', variant: 'ghost', small: true, onClick: () => letterModal(l, { onShareable: false }) }),
         ] : ui.button({ label: 'Leer', iconName: 'book-open', variant: 'ghost', small: true, onClick: () => letterModal(l) }),
         ui.button({ label: 'Borrar', iconName: 'trash-2', variant: 'ghost', small: true, onClick: () => removeLetter(l) })) : null,
