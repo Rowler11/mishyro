@@ -202,7 +202,7 @@ function preloadSections() {
 }
 
 // ---------- global layers ----------
-// The full opening heart plays on the first open of each day (decided 2026-11-19); other opens keep the short welcome.
+// The full opening (petals into a heart, decided 2026-11-19) plays on the first open of each day; other opens keep the short welcome.
 const INTRO_KEY = () => `${CONFIG.storageKey}.intro.day`;
 function introDue(mode) {
   if (mode === 'always') return true;
@@ -219,6 +219,7 @@ function splash({ ready = Promise.resolve(), intro = null, mode = 'daily' } = {}
       el('div', { class: 'splash-heart', 'aria-hidden': 'true' }, icon('heart', { size: 64 })),
       el('p', { class: 'splash-for' }, `Para ${profile.nick(who)}`),
       ja('愛してる', 'aishiteru'),
+      el('small', { class: 'splash-romaji', 'aria-hidden': 'true' }, 'aishiteru'),
       el('button', { class: 'btn btn-ghost btn-small splash-skip', type: 'button' }, 'Saltar'));
     let t = 0;
     let stop = () => {};

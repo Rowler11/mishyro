@@ -190,8 +190,11 @@ async function completeSetup(page) {
     await page.reload();
     await page.waitForSelector('.splash');
     ok('entrada: the first open of the day draws the heart of words', (await page.locator('.splash-intro').count()) === 1 && (await page.locator('.splash-intro canvas.splash-canvas').count()) === 1);
-    await page.waitForSelector('.splash-intro.show', { timeout: 8000 });
+    await page.waitForSelector('.splash-intro.show', { timeout: 20000 }); // the petals take ~12 s before the welcome
     ok('entrada: after the heart the usual welcome shows', (await page.locator('.splash-intro.show .splash-for').isVisible()));
+    ok('entrada: the branch, clouds and light are drawn behind it and the seal sits next to the name',
+      (await page.locator('.splash-intro .intro-cloud').count()) === 5 && (await page.locator('.splash-intro .splash-for .intro-seal').count()) === 1);
+    ok('entrada: the small "aishiteru" shows under 愛してる', (await page.locator('.splash-intro .splash-romaji').textContent()) === 'aishiteru');
     await page.locator('.splash').waitFor({ state: 'detached', timeout: 8000 });
     ok('entrada: it ends in Inicio, already drawn', (await page.locator('.counter-card').count()) === 1);
     await page.reload();

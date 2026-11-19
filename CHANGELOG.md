@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.1.26 (entrada con pétalos)
+
+- Entrada nueva: entra una rama de sakura frondosa que el viento ya va meciendo y suelta pétalos. A los lados flotan nubes de tinta al estilo de los grabados japoneses, y una luz cálida se abre desde la esquina.
+- Los pétalos se juntan en un corazón y se vuelven "te amo" en muchos idiomas, todo en el color del tema. Mientras se forma el corazón, lo demás se desvanece poco a poco y solo queda él.
+- En el centro brilla 愛してる; la cámara entra hacia esa palabra, se queda un momento y se desvanece.
+- La bienvenida dura más para que se alcance a leer: "Para" con el nombre y un sello rojo, 愛してる y debajo "aishiteru".
+- Con el sonido activado suena un fūrin (campanita de viento) cuando el corazón queda completo. Se sigue saltando tocando la pantalla, y con las animaciones apagadas sale la bienvenida corta.
+
 ## 0.1.25 (más japonesa)
 
 - Entrada con corazón: la primera vez que abren la app cada día, "te amo" en muchos idiomas dibuja un corazón mientras carga; luego la cámara entra en él y sale la bienvenida de siempre. Se salta tocando la pantalla. En Ajustes > Movimiento y sonido se elige "Una vez al día" o "Siempre", y "Ver la entrada" la repite. Con las animaciones apagadas sale la bienvenida corta.
