@@ -336,6 +336,18 @@ export function installRipple() {
   }, { passive: true, capture: true });
 }
 
+/** Short burst of paper confetti for celebrations. Skipped when motion is reduced. */
+export function confetti({ count = 42 } = {}) {
+  if (prefersReducedMotion()) return;
+  const layer = el('div', { class: 'confetti', 'aria-hidden': 'true' },
+    Array.from({ length: count }, (_, i) => el('span', {
+      class: `confetti-bit c${i % 4}`,
+      style: { '--x': `${Math.round(Math.random() * 100)}vw`, '--d': `${Math.round(Math.random() * 500)}ms`, '--r': `${Math.round(Math.random() * 720 - 360)}deg`, '--s': (0.7 + Math.random() * 0.6).toFixed(2) },
+    })));
+  document.body.append(layer);
+  setTimeout(() => layer.remove(), 3200);
+}
+
 // ---------- share ----------
 /** Share with the system sheet, falling back to copying the text. */
 export async function share({ title, text, url } = {}) {

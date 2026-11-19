@@ -56,5 +56,11 @@ export const startDate = () => relationship.startDate || '';
 let petName = '';
 /** Name of the first pet, for "{mascota}" in texts. Texts that use it carry requires: 'pets'. */
 export const setPetName = (name) => { petName = name || ''; };
+/**
+ * Fill a text for who receives it: {apodo} (receiver's nickname), {mascota} (first pet) and
+ * gendered endings like "enamorad{o/a}", which follow who SENDS it (decision 6a, Fase 2):
+ * David's messages use the first form and Sofía's the second.
+ */
 export const fill = (text, receiver = partnerOf(active())) => String(text || '')
-  .replaceAll('{apodo}', nick(receiver)).replaceAll('{mascota}', petName || 'nuestra mascota');
+  .replaceAll('{apodo}', nick(receiver)).replaceAll('{mascota}', petName || 'nuestra mascota')
+  .replace(/\{([a-záéíóúñ]*)\/([a-záéíóúñ]*)\}/gi, (_, masc, fem) => (partnerOf(receiver) === 'sofia' ? fem : masc));

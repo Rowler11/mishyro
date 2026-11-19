@@ -37,4 +37,4 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 - Commits pequeños por fase, con un mensaje claro en español.
 
 ## Estado
-Actualiza esta línea al cerrar cada fase: **Fase actual: 1 (entregada, esperando aprobación).**
+Actualiza esta línea al cerrar cada fase: **Fase actual: 2 (en construcción; Fase 1 aprobada el 2026-11-19).**
