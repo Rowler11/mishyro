@@ -4,7 +4,7 @@
 // only so theme-boot.js can paint the right theme before the database opens.
 
 export const APPEARANCE_DEFAULTS = { theme: 'auto', highContrast: false, textScale: 100, legibleFont: false, japanese: true };
-export const MOTION_DEFAULTS = { animations: true, haptics: true, sound: false };
+export const MOTION_DEFAULTS = { animations: true, haptics: true, sound: false, intro: 'daily' }; // intro: 'daily' | 'always' (opening heart)
 export const DAY_START = 6; export const NIGHT_START = 18;
 const THEME_COLORS = { day: '#FBF4F3', night: '#161214' };
 

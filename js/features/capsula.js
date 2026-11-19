@@ -1,10 +1,10 @@
 // Cápsula (docs/05 Pestaña 2, "Un día como hoy", docs/09 #/capsula).
 // Vertical timeline by year and month (oldest first by default, decision 2026-11-19),
-// memories with up to 6 photos in a carousel, add/edit in a sheet (side panel on PC),
+// memories with up to 6 photos or short videos in a carousel, add/edit in a sheet (side panel on PC),
 // delete own memories with confirmation. Photos live in the `media` store, never inline.
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
-import { compressImage, isQuotaError, MAX_PHOTOS } from '../core/images.js';
+import { compressImage, isQuotaError, MAX_PHOTOS, readVideo, isVideoFile, MAX_VIDEO_SECONDS } from '../core/images.js';
 
 const { el, icon } = util;
 const WIDE = '(min-width: 1100px)';
@@ -44,42 +44,67 @@ export function onThisDay(memories, now = new Date()) {
 // ---------- object URLs (revoked when the view goes away) ----------
 function urlBag() {
   const urls = new Set();
+  const videos = new Set();
   return {
     async of(mediaId) {
       const blob = await db.getMedia(mediaId).catch(() => null);
       if (!blob) return null;
-      const u = URL.createObjectURL(blob); urls.add(u); return u;
+      const u = URL.createObjectURL(blob); urls.add(u);
+      if (blob.type.startsWith('video/')) videos.add(u);
+      return u;
     },
-    track(u) { urls.add(u); return u; },
-    revokeAll() { urls.forEach((u) => URL.revokeObjectURL(u)); urls.clear(); },
+    isVideo(u) { return videos.has(u); },
+    track(u, isVideo = false) { urls.add(u); if (isVideo) videos.add(u); return u; },
+    revokeAll() { urls.forEach((u) => URL.revokeObjectURL(u)); urls.clear(); videos.clear(); },
   };
+}
+
+/** A still of a photo or video (its first frame, with a play mark) for lists. */
+function mediaThumb(mediaId, bag, cls) {
+  const box = el('span', { class: cls, 'aria-hidden': 'true' });
+  bag.of(mediaId).then((u) => {
+    if (!u) return;
+    if (bag.isVideo(u)) box.prepend(el('video', { src: `${u}#t=0.1`, muted: true, playsinline: true, preload: 'metadata', tabindex: '-1' }), el('span', { class: 'media-play' }, icon('play', { size: 16 })));
+    else box.prepend(el('img', { src: u, alt: '', decoding: 'async' }));
+  });
+  return box;
 }
 
 // ---------- carousel ----------
 function carousel(mediaIds, bag, title) {
   if (!mediaIds?.length) return null;
-  const track = el('div', { class: 'carousel-track', tabindex: '0', 'aria-label': `Fotos de ${title}` });
+  const track = el('div', { class: 'carousel-track', tabindex: '0', 'aria-label': `Fotos y videos de ${title}` });
   const dots = el('div', { class: 'carousel-dots' });
   const n = mediaIds.length;
   const slides = mediaIds.map((id, i) => {
-    const img = el('img', { alt: `${title}, foto ${i + 1} de ${n}`, decoding: 'async', class: 'purikura-img' });
-    bag.of(id).then((u) => { if (u) img.src = u; else img.replaceWith(el('div', { class: 'photo-missing' }, icon('image-off'), 'Foto no disponible')); });
-    return el('figure', { class: 'carousel-slide purikura', role: 'group', 'aria-roledescription': 'foto', 'aria-label': `${i + 1} de ${n}` }, img);
+    const holder = el('div', { class: 'purikura-img' });
+    bag.of(id).then((u) => {
+      if (!u) { holder.replaceWith(el('div', { class: 'photo-missing' }, icon('image-off'), 'No disponible')); return; }
+      holder.replaceWith(bag.isVideo(u)
+        ? el('video', { class: 'purikura-img', src: u, controls: true, playsinline: true, preload: 'metadata', 'aria-label': `${title}, video ${i + 1} de ${n}` })
+        : el('img', { class: 'purikura-img', src: u, alt: `${title}, foto ${i + 1} de ${n}`, decoding: 'async' }));
+    });
+    return el('figure', { class: 'carousel-slide purikura', role: 'group', 'aria-roledescription': 'foto o video', 'aria-label': `${i + 1} de ${n}` }, holder);
   });
   track.append(...slides);
   const go = (i) => { const s = slides[Math.max(0, Math.min(n - 1, i))]; track.scrollTo({ left: s.offsetLeft - track.offsetLeft, behavior: util.prefersReducedMotion() ? 'auto' : 'smooth' }); };
   const current = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
-  const dotBtns = slides.map((_, i) => el('button', { class: 'carousel-dot', type: 'button', 'aria-label': `Ver foto ${i + 1}`, onClick: () => go(i) }));
+  const dotBtns = slides.map((_, i) => el('button', { class: 'carousel-dot', type: 'button', 'aria-label': `Ver ${i + 1} de ${n}`, onClick: () => go(i) }));
   dots.append(...dotBtns);
-  const paint = () => { const c = current(); dotBtns.forEach((b, i) => b.setAttribute('aria-current', i === c ? 'true' : 'false')); prev.disabled = c === 0; next.disabled = c === n - 1; };
-  const prev = el('button', { class: 'icon-btn carousel-nav carousel-prev', type: 'button', 'aria-label': 'Foto anterior', onClick: () => go(current() - 1) }, icon('chevron-left'));
-  const next = el('button', { class: 'icon-btn carousel-nav carousel-next', type: 'button', 'aria-label': 'Foto siguiente', onClick: () => go(current() + 1) }, icon('chevron-right'));
+  const paint = () => {
+    const c = current();
+    // A video that slides out of view stops playing.
+    slides.forEach((s, i) => { if (i !== c) s.querySelector('video')?.pause(); });
+    dotBtns.forEach((b, i) => b.setAttribute('aria-current', i === c ? 'true' : 'false')); prev.disabled = c === 0; next.disabled = c === n - 1;
+  };
+  const prev = el('button', { class: 'icon-btn carousel-nav carousel-prev', type: 'button', 'aria-label': 'Anterior', onClick: () => go(current() - 1) }, icon('chevron-left'));
+  const next = el('button', { class: 'icon-btn carousel-nav carousel-next', type: 'button', 'aria-label': 'Siguiente', onClick: () => go(current() + 1) }, icon('chevron-right'));
   track.addEventListener('scroll', util.debounce(paint, 60), { passive: true });
   track.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') { e.preventDefault(); go(current() + 1); }
     if (e.key === 'ArrowLeft') { e.preventDefault(); go(current() - 1); }
   });
-  const box = el('div', { class: `carousel${n === 1 ? ' carousel-single' : ''}`, role: 'region', 'aria-roledescription': 'carrusel', 'aria-label': 'Fotos del recuerdo' },
+  const box = el('div', { class: `carousel${n === 1 ? ' carousel-single' : ''}`, role: 'region', 'aria-roledescription': 'carrusel', 'aria-label': 'Fotos y videos del recuerdo' },
     track, n > 1 ? [prev, next, dots] : null);
   requestAnimationFrame(paint);
   return box;
@@ -105,7 +130,7 @@ function detailView(m, { bag, onEdit, onDelete, back }) {
 function editor(existing, { bag, onSaved }) {
   const isNew = !existing;
   const m = existing || { id: util.uuid(), mediaIds: [], visibility: 'shared' };
-  // Photo slots: kept ones { mediaId, url } and new ones { blob, width, height, url }.
+  // Slots: kept ones { mediaId, url, video } and new ones { blob, width, height, duration, url, video }.
   const photos = [];
   const removed = [];
   let visibility = m.visibility || 'shared';
@@ -123,53 +148,72 @@ function editor(existing, { bag, onSaved }) {
   title.addEventListener('input', () => { if (title.value.trim()) fTitle.setError(''); });
   date.addEventListener('change', () => { if (util.isValidDay(date.value)) fDate.setError(''); });
 
-  const fileInput = el('input', { type: 'file', accept: 'image/*', multiple: true, class: 'sr-only', id: `ph-${m.id.slice(0, 8)}` });
+  const fileInput = el('input', { type: 'file', accept: 'image/*,video/*', multiple: true, class: 'sr-only', id: `ph-${m.id.slice(0, 8)}` });
   const grid = el('div', { class: 'photo-grid' });
   const photoMsg = el('p', { class: 'field-hint photo-msg', 'aria-live': 'polite' });
   const drop = el('div', { class: 'photo-drop' },
     el('div', { class: 'photo-drop-head' },
-      el('span', { class: 'field-label' }, 'Fotos'),
-      el('span', { class: 'field-hint' }, `Hasta ${MAX_PHOTOS}. La primera es la portada.`)),
+      el('span', { class: 'field-label' }, 'Fotos y videos'),
+      el('span', { class: 'field-hint' }, `Hasta ${MAX_PHOTOS}, videos de ${MAX_VIDEO_SECONDS} s. La primera es la portada.`)),
     grid, photoMsg, fileInput);
 
   const paintPhotos = () => {
     const tiles = photos.map((p, i) => el('div', { class: 'photo-tile' },
-      el('img', { src: p.url || '', alt: `Foto ${i + 1}` }),
+      p.video
+        ? [el('video', { src: p.url ? `${p.url}#t=0.1` : '', muted: true, playsinline: true, preload: 'metadata', 'aria-label': `Video ${i + 1}` }),
+          el('span', { class: 'media-play', 'aria-hidden': 'true' }, icon('play', { size: 16 }))]
+        : el('img', { src: p.url || '', alt: `Foto ${i + 1}` }),
       i === 0 ? el('span', { class: 'photo-cover' }, 'Portada') : null,
-      el('button', { class: 'icon-btn photo-remove', type: 'button', 'aria-label': `Quitar foto ${i + 1}`, onClick: () => {
+      el('button', { class: 'icon-btn photo-remove', type: 'button', 'aria-label': `Quitar ${p.video ? 'video' : 'foto'} ${i + 1}`, onClick: () => {
         const [gone] = photos.splice(i, 1);
         if (gone.mediaId) removed.push(gone.mediaId);
-        paintPhotos(); photoMsg.textContent = `Foto ${i + 1} quitada.`;
+        paintPhotos(); photoMsg.textContent = gone.video ? `Video ${i + 1} quitado.` : `Foto ${i + 1} quitada.`;
       } }, icon('x', { size: 18 })),
-      i > 0 ? el('button', { class: 'icon-btn photo-first', type: 'button', 'aria-label': `Usar la foto ${i + 1} como portada`, onClick: () => {
+      i > 0 ? el('button', { class: 'icon-btn photo-first', type: 'button', 'aria-label': `Usar ${p.video ? 'el video' : 'la foto'} ${i + 1} como portada`, onClick: () => {
         photos.unshift(...photos.splice(i, 1)); paintPhotos(); photoMsg.textContent = 'Portada cambiada.';
       } }, icon('star', { size: 16 })) : null));
     const add = photos.length < MAX_PHOTOS
-      ? el('label', { class: 'photo-add', for: fileInput.id }, icon('image-plus', { size: 28 }), el('span', {}, photos.length ? 'Agregar' : 'Agregar fotos'))
+      ? el('label', { class: 'photo-add', for: fileInput.id }, icon('image-plus', { size: 28 }), el('span', {}, photos.length ? 'Agregar' : 'Agregar fotos o videos'))
       : null;
     grid.replaceChildren(...tiles, add || '');
   };
 
+  const VIDEO_ERR = {
+    TOO_LONG: `dura más de ${MAX_VIDEO_SECONDS} segundos; recórtalo en la galería del teléfono y vuelve a subirlo`,
+    TOO_BIG: 'pesa más de 50 MB',
+    DECODE: 'no se pudo leer',
+  };
   const addFiles = async (files) => {
-    const list = [...files].filter((f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|heic|avif)$/i.test(f.name));
+    const isImage = (f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|heic|avif)$/i.test(f.name);
+    const list = [...files].filter((f) => isImage(f) || isVideoFile(f));
     const room = MAX_PHOTOS - photos.length;
-    if (!list.length) { photoMsg.textContent = 'Eso no parece una foto.'; return; }
+    if (!list.length) { photoMsg.textContent = 'Eso no parece una foto ni un video.'; return; }
     const take = list.slice(0, room);
-    busy++; photoMsg.textContent = take.length === 1 ? 'Preparando la foto…' : `Preparando ${take.length} fotos…`;
+    busy++; photoMsg.textContent = take.length === 1 ? 'Preparando…' : `Preparando ${take.length} archivos…`;
     let failed = 0;
+    const videoErrors = [];
     for (const f of take) {
       try {
-        const out = await compressImage(f);
-        photos.push({ ...out, url: bag.track(URL.createObjectURL(out.blob)) });
+        if (isVideoFile(f) && !isImage(f)) {
+          const out = await readVideo(f);
+          photos.push({ ...out, video: true, url: bag.track(URL.createObjectURL(out.blob), true) });
+        } else {
+          const out = await compressImage(f);
+          photos.push({ ...out, url: bag.track(URL.createObjectURL(out.blob)) });
+        }
         paintPhotos();
-      } catch { failed++; }
+      } catch (e) {
+        if (VIDEO_ERR[e?.code] && isVideoFile(f)) videoErrors.push(`Ese video ${VIDEO_ERR[e.code]}.`);
+        else failed++;
+      }
     }
     busy--;
     const extra = list.length - take.length;
     photoMsg.textContent = [
-      failed ? `No pudimos leer ${failed === 1 ? 'una foto' : `${failed} fotos`}.` : '',
-      extra > 0 ? `Caben ${MAX_PHOTOS} fotos por recuerdo: ${extra === 1 ? 'una quedó' : `${extra} quedaron`} fuera.` : '',
-    ].filter(Boolean).join(' ') || (take.length === 1 ? 'Foto lista.' : 'Fotos listas.');
+      ...new Set(videoErrors),
+      failed ? `No pudimos leer ${failed === 1 ? 'un archivo' : `${failed} archivos`}.` : '',
+      extra > 0 ? `Caben ${MAX_PHOTOS} por recuerdo: ${extra === 1 ? 'uno quedó' : `${extra} quedaron`} fuera.` : '',
+    ].filter(Boolean).join(' ') || 'Listo.';
   };
   fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
   // Drag and drop on PC (docs/09).
@@ -179,7 +223,7 @@ function editor(existing, { bag, onSaved }) {
 
   // Existing photos load their object URLs.
   (async () => {
-    for (const id of m.mediaIds || []) photos.push({ mediaId: id, url: await bag.of(id) });
+    for (const id of m.mediaIds || []) { const url = await bag.of(id); photos.push({ mediaId: id, url, video: bag.isVideo(url) }); }
     paintPhotos();
   })();
   paintPhotos();
@@ -197,7 +241,7 @@ function editor(existing, { bag, onSaved }) {
 
   const save = async () => {
     formError.textContent = '';
-    if (busy) { formError.textContent = 'Espera a que terminen de prepararse las fotos.'; return false; }
+    if (busy) { formError.textContent = 'Espera a que terminen de prepararse las fotos y videos.'; return false; }
     if (!validate()) return false;
     const saved = [];
     const replaced = [];
@@ -206,9 +250,9 @@ function editor(existing, { bag, onSaved }) {
         ...m, title: title.value.trim(), date: date.value, note: note.value.trim(), draft: false,
         visibility, private: visibility === 'self', owner: visibility === 'self' ? profile.active() : (m.owner || profile.active()),
       };
-      // "Solo yo" photos are encrypted with the same key as their memory (docs/04).
+      // "Solo yo" photos and videos are encrypted with the same key as their memory (docs/04).
       const scope = security.policy('memories', rec) || undefined;
-      const opts = (p) => ({ ownerStore: 'memories', ownerId: m.id, width: p.width, height: p.height, encryptScope: scope });
+      const opts = (p) => ({ ownerStore: 'memories', ownerId: m.id, width: p.width, height: p.height, duration: p.duration, encryptScope: scope });
       const mediaIds = [];
       for (const p of photos) {
         if (p.mediaId) {
@@ -233,7 +277,7 @@ function editor(existing, { bag, onSaved }) {
     } catch (e) {
       for (const id of saved) await db.rawDelete('media', id).catch(() => {});
       formError.textContent = isQuotaError(e)
-        ? 'No queda espacio en este teléfono para guardar estas fotos. Quita alguna o libera espacio y vuelve a intentarlo. Lo que escribiste sigue aquí.'
+        ? 'No queda espacio en este teléfono para guardar estas fotos o videos. Quita alguno o libera espacio y vuelve a intentarlo. Lo que escribiste sigue aquí.'
         : 'No se pudo guardar. Inténtalo de nuevo; lo que escribiste sigue aquí.';
       if (!isQuotaError(e)) console.error(e);
       return false;
@@ -259,9 +303,10 @@ function editor(existing, { bag, onSaved }) {
   return modal;
 }
 
-// ---------- timeline (decided 2026-11-19: "Línea con sellos" with polaroids) ----------
-// The year is a hanko seal, months are marked with a sakura on the line, memories with photos
-// are polaroids held with washi tape and the rest get a colored paper with an icon by kind.
+// ---------- timeline (decided 2026-11-19: "Hilo rojo, shikishi y ema") ----------
+// The line is the red thread of fate, the year is a hanko seal and months carry a sakura.
+// Memories with photos or videos hang as shikishi boards (gold border, red seal) and the rest
+// as ema plaques from a shrine, with an icon by kind.
 const fmtMonth = new Intl.DateTimeFormat('es-CO', { month: 'long' });
 const KINDS = [
   [/\b(gat|milu|perr|mascota|michi)/, 'paw-print', 'gold'],
@@ -291,29 +336,29 @@ function timelineItem(m, bag, { selected, fresh, index = 0 } = {}) {
   const note = pending(m.note) ? '' : m.note;
   const date = isDraft(m) ? 'Sin fecha' : fmtMonthDay.format(util.parseDay(m.date));
   const attrs = { href: `#/capsula/${encodeURIComponent(m.id)}`, dataset: { id: m.id }, 'aria-current': selected ? 'true' : undefined };
+  const side = index % 2 ? ' is-right' : '';
   let link;
   if (m.mediaIds?.length) {
-    const photo = el('span', { class: 'tl-photo', 'aria-hidden': 'true' });
-    bag.of(m.mediaIds[0]).then((u) => { if (u) photo.prepend(el('img', { src: u, alt: '', decoding: 'async' })); });
+    const photo = mediaThumb(m.mediaIds[0], bag, 'tl-photo');
     if (m.mediaIds.length > 1) photo.append(el('span', { class: 'tl-more' }, `+${m.mediaIds.length - 1}`));
-    link = el('a', { class: `tl-card tl-polaroid${index % 2 ? ' is-right' : ''}`, ...attrs },
-      el('span', { class: 'tl-tape', 'aria-hidden': 'true' }),
+    link = el('a', { class: `tl-card tl-shikishi${side}`, ...attrs },
       photo,
       el('span', { class: 'tl-text' },
         el('span', { class: 'tl-title' }, titleOf(m)),
         el('span', { class: 'tl-date' }, date),
-        tags(m)));
+        tags(m)),
+      el('span', { class: 'seal-sq tl-seal', 'aria-hidden': 'true' }, icon('heart', { size: 14 })));
   } else {
     const k = kindOf(m);
-    link = el('a', { class: 'card card-link tl-card', ...attrs },
-      el('span', { class: `tl-thumb tone-${k.tone}`, 'aria-hidden': 'true' }, icon(k.icon, { size: 28 })),
-      el('span', { class: 'tl-text' },
-        el('span', { class: 'tl-date' }, date),
-        el('span', { class: 'tl-title' }, titleOf(m)),
-        note ? el('span', { class: 'tl-note' }, note) : null,
-        tags(m)));
+    link = el('a', { class: `tl-card tl-ema tone-${k.tone}${side}`, ...attrs },
+      el('span', { class: 'tl-cord', 'aria-hidden': 'true' }),
+      el('span', { class: 'tl-ema-icon', 'aria-hidden': 'true' }, icon(k.icon, { size: 24 })),
+      el('span', { class: 'tl-title' }, titleOf(m)),
+      el('span', { class: 'tl-date' }, date),
+      note ? el('span', { class: 'tl-note' }, note) : null,
+      tags(m));
   }
-  return el('li', { class: `tl-item${fresh ? ' unroll' : ''}` }, el('span', { class: 'tl-dot', 'aria-hidden': 'true' }), link);
+  return el('li', { class: `tl-item${fresh ? ' unroll' : ''}` }, el('span', { class: 'tl-knot', 'aria-hidden': 'true' }), link);
 }
 
 function timeline(list, bag, { selectedId, freshId }) {
@@ -345,9 +390,9 @@ function timeline(list, bag, { selectedId, freshId }) {
 function onThisDayCard(list, bag) {
   const [m] = list;
   if (!m) return null;
-  const thumb = el('span', { class: `otd-thumb${m.mediaIds?.length ? ' has-photo' : ''}`, 'aria-hidden': 'true' });
-  if (m.mediaIds?.length) bag.of(m.mediaIds[0]).then((u) => { if (u) thumb.append(el('img', { src: u, alt: '' })); });
-  else thumb.append(icon('sparkles', { size: 30 }));
+  const thumb = m.mediaIds?.length
+    ? mediaThumb(m.mediaIds[0], bag, 'otd-thumb has-photo')
+    : el('span', { class: 'otd-thumb seal-sq', 'aria-hidden': 'true' }, icon('heart', { size: 20 }));
   return el('a', { class: 'card card-link otd-card', href: `#/capsula/${encodeURIComponent(m.id)}` },
     thumb,
     el('span', { class: 'otd-text' },

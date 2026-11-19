@@ -8,7 +8,7 @@ const { el, icon, ja } = util;
 export function render(ctx) {
   const page = ctx.def.settingsPage || (ctx.def.id === 'legal-doc' ? 'legal-doc' : 'main');
   if (page === 'apariencia') return appearance();
-  if (page === 'movimiento') return motion();
+  if (page === 'movimiento') return motion(ctx);
   if (page === 'legal') return legal();
   if (page === 'legal-doc') return legalDoc(ctx.params.doc);
   if (page === 'acerca') return about(ctx);
@@ -110,7 +110,7 @@ export function chime() {
   } catch { /* audio not available */ }
 }
 
-function motion() {
+function motion({ app } = {}) {
   const wrap = el('div', { class: 'stack' });
   db.getSettings('motion', theme.MOTION_DEFAULTS).then((s) => {
     const save = async (patch) => { await db.setSettings('motion', patch); theme.apply(patch); };
@@ -119,7 +119,14 @@ function motion() {
       ui.toggle({ label: 'Animaciones', hint: sys ? 'Tu dispositivo pide reducir el movimiento: se usan versiones sobrias.' : 'Pétalos, sellos y transiciones. Apágalas para una versión sobria y rápida.', checked: s.animations, onChange: (v) => save({ animations: v }) }),
       ui.toggle({ label: 'Vibración suave', hint: 'Un toque leve en acciones clave.', checked: s.haptics, onChange: (v) => { save({ haptics: v }); if (v) util.haptic(15); } }),
       ui.toggle({ label: 'Sonidos suaves', hint: 'Campanilla y tonos generados en el teléfono. Apagados por defecto.', checked: s.sound, onChange: (v) => { save({ sound: v }); if (v) chime(); } }),
-      ui.button({ label: 'Escuchar la campanilla', iconName: 'bell', variant: 'ghost', onClick: chime })));
+      ui.button({ label: 'Escuchar la campanilla', iconName: 'bell', variant: 'ghost', onClick: chime })),
+    el('div', { class: 'card stack' },
+      el('h2', { class: 'card-title' }, 'Entrada con corazón'),
+      el('p', { class: 'muted small' }, '"Te amo" en muchos idiomas dibuja un corazón al abrir la app. Las demás veces sale la bienvenida corta.'),
+      ui.segmented({ label: 'Cuándo sale', value: s.intro === 'always' ? 'always' : 'daily', onChange: (v) => save({ intro: v }), options: [
+        { value: 'daily', label: 'Una vez al día' }, { value: 'always', label: 'Siempre' }] }),
+      sys || !s.animations ? el('p', { class: 'muted small' }, 'Con las animaciones apagadas sale la bienvenida corta.') : null,
+      ui.button({ label: 'Ver la entrada', iconName: 'heart', variant: 'ghost', onClick: () => app.playIntro?.() })));
   });
   return el('section', { class: 'page' }, ui.pageHeader({ title: 'Movimiento y sonido', back: '/ajustes' }), wrap);
 }

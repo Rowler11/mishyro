@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.1.25 (más japonesa)
+
+- Entrada con corazón: la primera vez que abren la app cada día, "te amo" en muchos idiomas dibuja un corazón mientras carga; luego la cámara entra en él y sale la bienvenida de siempre. Se salta tocando la pantalla. En Ajustes > Movimiento y sonido se elige "Una vez al día" o "Siempre", y "Ver la entrada" la repite. Con las animaciones apagadas sale la bienvenida corta.
+- Inicio: el contador va dentro de un ensō, el círculo de pincel japonés, que se cierra hacia el próximo aniversario, con un sello rojo. "Lo que viene" son hojas de calendario de pared (mekuri) con los días que faltan.
+- Cápsula: la línea es el hilo rojo del destino. Los recuerdos con fotos van en shikishi, el cartón con borde dorado y un sello; los demás cuelgan como tablillas ema de los templos. "Un día como hoy" va en papel washi con sello.
+- Cápsula: ahora se pueden subir videos cortos, de hasta 30 segundos y 50 MB, junto con las fotos (hasta 6 por recuerdo). Se guardan en el teléfono, entran en la copia de seguridad y se ven en el carrusel con sus controles; en la línea se ve su primer cuadro con un botón de play.
+- En el PC, el panel lateral para crear o editar ya no se sale de la pantalla cuando hay muchas fotos: se desplaza por dentro.
+
 ## 0.1.24 (lo que elegimos)
 
 - Barra de abajo nueva: la pestaña activa sube en una burbuja de color dentro de una curva, y se desliza a la que tocas.
