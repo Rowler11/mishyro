@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.1.3
+
+- Logo nuevo: flor de sakura con corazón (ícono de la app, favicon e ícono adaptable de Android).
+
 ## 0.1.2
 
 - El PIN de la app y el personal ahora son de 4 números y se envían solos al completar el cuarto dígito.
