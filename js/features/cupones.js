@@ -1,7 +1,9 @@
 // Cuponera (docs/05 Pestaña 3, docs/06, docs/09 #/cupones).
-// Kippu tickets with notches, a dotted cut and a stub for the hanko. "Para ti" are the coupons
-// the active person received; "Los que regalaste" are theirs to give (decision 4, 2026-11-19:
-// the seed ones plus coupons each person creates for the other, with dedication and optional expiry).
+// Kippu tickets with notches, a dotted cut and a stub for the hanko. Three sections (2026-11-19):
+// "Para ti" are the coupons received and still to use; "Historial" holds the ones given to the
+// other and the ones already used; "Guardados" are coupons created but not given yet (only their
+// author sees them). A new coupon has `sentAt: null` until "Regalar"; older ones have no `sentAt`
+// and count as given.
 // Redeem state lives in `couponState` keyed by coupon id (docs/08).
 import { ui, util, db, profile, seed, CONFIG } from '../core.js';
 
@@ -9,7 +11,8 @@ const { el, icon } = util;
 const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
 const fmtTime = new Intl.DateTimeFormat('es-CO', { hour: 'numeric', minute: '2-digit' });
 const KEY = `${CONFIG.storageKey}.cupones.tab`;
-const readTab = () => { try { return localStorage.getItem(KEY) === 'given' ? 'given' : 'mine'; } catch { return 'mine'; } };
+const TABS = ['mine', 'given', 'saved'];
+const readTab = () => { try { const v = localStorage.getItem(KEY); return TABS.includes(v) ? v : 'mine'; } catch { return 'mine'; } };
 const saveTab = (v) => { try { localStorage.setItem(KEY, v); } catch { /* private mode */ } };
 
 const pending = (t) => !t || seed.needsCompletion(t);
@@ -17,6 +20,8 @@ const pending = (t) => !t || seed.needsCompletion(t);
 const AUTHOR = Object.entries(CONFIG.people || {}).find(([, p]) => p.role === 'author')?.[0] || 'david';
 const fromOf = (c) => c.from || AUTHOR;
 const toOf = (c) => c.to || profile.partnerOf(fromOf(c));
+/** Created but not given yet: only its author sees it, in "Guardados". */
+export const isSaved = (c) => c.sentAt === null;
 
 export const redeemedText = (iso) => {
   const d = iso ? new Date(iso) : null;
@@ -27,7 +32,7 @@ export const isExpired = (c, today = util.localDay()) => !!c.expiresOn && c.expi
 
 // Compact train ticket (decided 2026-11-19): number, giver and title on the ticket, the tear-off
 // stub is the "Canjear" button or holds the hanko. Tapping the ticket opens its full detail.
-function ticket(c, state, { tab, number, onRedeem, onOpen }) {
+function ticket(c, state, { tab, number, onRedeem, onOpen, onGive }) {
   const redeemed = !!state?.redeemedAt;
   const expired = !redeemed && isExpired(c);
   const no = `Nº ${String(number).padStart(3, '0')}`;
@@ -40,6 +45,9 @@ function ticket(c, state, { tab, number, onRedeem, onOpen }) {
   if (tab === 'mine' && !redeemed && !expired) {
     stub = el('button', { class: 'kippu-stub kippu-redeem', type: 'button', 'aria-label': `Canjear: ${titleText}`, onClick: () => onRedeem(c) },
       icon('ticket', { size: 22 }), el('span', {}, 'Canjear'));
+  } else if (tab === 'saved' && !pending(c.title)) {
+    stub = el('button', { class: 'kippu-stub kippu-redeem', type: 'button', 'aria-label': `Regalar: ${titleText}`, onClick: () => onGive(c) },
+      icon('gift', { size: 22 }), el('span', {}, 'Regalar'));
   } else {
     stub = el('div', { class: 'kippu-stub' },
       redeemed ? ui.hanko({ text: (profile.name(state.redeemedBy || toOf(c)) || '♥').charAt(0).toUpperCase(), size: 52, label: 'Sello de cupón canjeado' })
@@ -55,30 +63,31 @@ function ticket(c, state, { tab, number, onRedeem, onOpen }) {
 }
 
 /** Full coupon with its description, dedication and the actions that do not fit on the ticket. */
-function detail(c, state, { tab, number, onRedeem, onEdit, onDelete, onShare }) {
+function detail(c, state, { tab, number, onRedeem, onEdit, onDelete, onShare, onGive }) {
   const redeemed = !!state?.redeemedAt;
   const expired = !redeemed && isExpired(c);
   const actions = [];
   if (tab === 'mine' && !redeemed && !expired) actions.push({ label: 'Canjear', variant: 'primary', value: 'redeem' });
-  if (tab === 'given') {
+  if (tab === 'given' || tab === 'saved') {
     if (c.origin === 'user') actions.push({ label: 'Borrar', variant: 'ghost', value: 'delete' });
     actions.push({ label: 'Editar', variant: 'ghost', value: 'edit' });
-    if (!pending(c.title)) actions.push({ label: 'Enviar', variant: 'primary', value: 'share' });
+    if (!pending(c.title)) actions.push(tab === 'saved' ? { label: 'Regalar', variant: 'primary', value: 'give' } : { label: 'Enviar', variant: 'primary', value: 'share' });
   }
   const m = ui.openModal({
     title: pending(c.title) ? 'Cupón sin título' : c.title, kind: 'sheet', className: 'coupon-detail', actions,
     body: el('div', { class: 'stack' },
+      tab === 'saved' ? el('p', { class: 'muted small' }, `Guardado: solo tú lo ves hasta que lo regales.`) : null,
       el('p', { class: 'kippu-kicker' }, `${tab === 'mine' ? `Vale por · de ${profile.name(fromOf(c))}` : `Vale por · para ${profile.name(toOf(c))}`} · Nº ${String(number).padStart(3, '0')}`),
       !pending(c.description) && c.description ? el('p', {}, c.description) : null,
       c.dedication ? el('p', { class: 'kippu-dedication' }, `“${c.dedication}”`) : null,
       el('p', { class: 'muted small' }, redeemed ? redeemedText(state.redeemedAt) : expired ? `Venció el ${util.formatDay(c.expiresOn)}` : c.expiresOn ? `Vale hasta el ${util.formatDay(c.expiresOn)}` : 'No vence.')),
   });
-  m.result.then((v) => ({ redeem: onRedeem, edit: onEdit, delete: onDelete, share: onShare })[v]?.(c));
+  m.result.then((v) => ({ redeem: onRedeem, edit: onEdit, delete: onDelete, share: onShare, give: onGive })[v]?.(c));
 }
 
 function editor(existing, { onSaved }) {
   const isNew = !existing;
-  const c = existing || { id: util.uuid(), kind: 'coupon', from: profile.active(), to: profile.partnerOf(profile.active()) };
+  const c = existing || { id: util.uuid(), kind: 'coupon', from: profile.active(), to: profile.partnerOf(profile.active()), sentAt: null };
   const to = toOf(c);
   const title = ui.input({ maxlength: 60, autocomplete: 'off', value: pending(c.title) ? '' : c.title || '', placeholder: 'Ej.: Una tarde de juegos de mesa' });
   const desc = ui.textarea({ maxlength: 200, rows: 3 });
@@ -90,7 +99,7 @@ function editor(existing, { onSaved }) {
   const fExp = ui.field({ label: 'Vence (opcional)', control: exp, hint: 'Si lo dejas vacío, no vence.' });
   title.addEventListener('input', () => { if (title.value.trim()) fTitle.setError(''); });
   const formError = el('p', { class: 'field-error form-error', role: 'alert' });
-  const save = async () => {
+  const save = async (give = false) => {
     formError.textContent = '';
     const t = title.value.trim();
     fTitle.setError(t ? '' : 'Escribe qué regalas con este cupón.');
@@ -101,8 +110,9 @@ function editor(existing, { onSaved }) {
     if (expErr) { exp.focus(); return false; }
     try {
       const rec = { ...c, kind: 'coupon', title: t, description: desc.value.trim(), dedication: ded.value.trim(), expiresOn: e || null, from: fromOf(c), to };
+      if (give) rec.sentAt = util.nowISO();
       await db.put('content', rec);
-      onSaved(rec, isNew);
+      onSaved(rec, isNew, give);
       return true;
     } catch (err) {
       console.error(err);
@@ -117,9 +127,13 @@ function editor(existing, { onSaved }) {
       ui.field({ label: 'Detalle (opcional)', control: desc, hint: 'Las condiciones o cómo se usa.' }),
       ui.field({ label: 'Dedicatoria (opcional)', control: ded }),
       fExp, formError),
-    actions: [
+    actions: isSaved(c) ? [
       { label: 'Cancelar', variant: 'ghost' },
-      { label: isNew ? 'Crear cupón' : 'Guardar cambios', variant: 'primary', onClick: save },
+      { label: 'Guardar', variant: 'secondary', onClick: () => save(false) },
+      { label: 'Regalar', variant: 'primary', onClick: () => save(true) },
+    ] : [
+      { label: 'Cancelar', variant: 'ghost' },
+      { label: 'Guardar cambios', variant: 'primary', onClick: () => save(false) },
     ],
   });
 }
@@ -140,13 +154,27 @@ export async function render() {
     states = new Map(st.map((s) => [s.couponId, s]));
   };
 
+  const gaveToast = (rec) => ui.toast(`Le regalaste “${rec.title}” a ${profile.name(toOf(rec))}.`, { tone: 'success', action: { label: 'Avisarle', onClick: () => share(rec) } });
   const openEditor = (c = null) => editor(c, {
-    onSaved: async (rec, isNew) => {
-      ui.toast(isNew ? `Cupón creado. Con "Enviar" se lo cuentas a ${profile.name(toOf(rec))}.` : 'Cupón guardado.', { tone: 'success' });
-      tab = 'given'; saveTab(tab);
+    onSaved: async (rec, isNew, gave) => {
+      if (gave) gaveToast(rec);
+      else ui.toast(isSaved(rec) ? 'Cupón guardado. Lo regalas cuando quieras.' : 'Cupón guardado.', { tone: 'success' });
+      if (isNew || gave) { tab = gave ? 'given' : 'saved'; saveTab(tab); }
       await load(); draw();
     },
   });
+
+  const give = async (c) => {
+    const yes = await ui.confirmDialog({ title: '¿Regalar este cupón?', message: `“${c.title}” le aparece a ${profile.name(toOf(c))} en "Para ti".`, confirmLabel: 'Regalar' });
+    if (!yes) return;
+    try {
+      const rec = { ...c, sentAt: util.nowISO() };
+      await db.put('content', rec);
+      gaveToast(rec);
+      tab = 'given'; saveTab(tab);
+      await load(); draw();
+    } catch (e) { console.error(e); ui.toast('No se pudo regalar. Inténtalo de nuevo.', { tone: 'error' }); }
+  };
 
   const redeem = async (c) => {
     const yes = await ui.confirmDialog({ title: '¿Canjear este cupón?', message: `“${c.title}”. Queda marcado con la fecha y la hora de hoy.`, confirmLabel: 'Canjear' });
@@ -182,42 +210,65 @@ export async function render() {
 
   function draw() {
     const me = profile.active();
-    const mine = coupons.filter((c) => toOf(c) === me && !pending(c.title));
-    const given = coupons.filter((c) => fromOf(c) === me);
-    const list = tab === 'mine' ? mine : given;
+    const partner = profile.name(profile.partnerOf(me));
+    const received = coupons.filter((c) => toOf(c) === me && !isSaved(c) && !pending(c.title));
+    // The ticket just redeemed stays in "Para ti" for this draw so its stamp can land.
+    const mine = received.filter((c) => !states.has(c.id) || c.id === justRedeemed);
+    const used = received.filter((c) => states.has(c.id));
+    const given = coupons.filter((c) => fromOf(c) === me && !isSaved(c));
+    const saved = coupons.filter((c) => fromOf(c) === me && isSaved(c));
     const rank = (c) => (states.has(c.id) ? 2 : isExpired(c) ? 3 : 1);
-    const sorted = [...list].sort((a, b) => rank(a) - rank(b) || (a.createdAt || '').localeCompare(b.createdAt || ''));
-    const number = new Map([...list].sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || '')).map((c, i) => [c.id, i + 1]));
+    const byDate = (a, b) => (a.createdAt || '').localeCompare(b.createdAt || '');
+    const numbering = (list) => new Map([...list].sort(byDate).map((c, i) => [c.id, i + 1]));
+    const recvNo = numbering(received); const fromNo = numbering([...given, ...saved]);
     const free = mine.filter((c) => !states.has(c.id) && !isExpired(c)).length;
+    const handlers = { onRedeem: redeem, onEdit: openEditor, onDelete: remove, onShare: share, onGive: give };
+    const grid = (list, t, nos) => el('div', { class: 'kippu-grid' }, [...list].sort((a, b) => rank(a) - rank(b) || byDate(a, b)).map((c) => ticket(c, states.get(c.id), {
+      tab: t, number: nos.get(c.id), onRedeem: redeem, onGive: give,
+      onOpen: (x) => detail(x, states.get(x.id), { tab: t, number: nos.get(x.id), ...handlers }),
+    })));
 
     const tabs = ui.segmented({
       label: 'Cupones', value: tab,
-      options: [{ value: 'mine', label: `Para ti (${mine.length})` }, { value: 'given', label: `Los que regalaste (${given.length})` }],
+      options: [{ value: 'mine', label: free ? `Para ti (${free})` : 'Para ti' }, { value: 'given', label: 'Historial' }, { value: 'saved', label: saved.length ? `Guardados (${saved.length})` : 'Guardados' }],
       onChange: (v) => { tab = v; saveTab(v); draw(); },
     });
-    const summary = el('p', { class: 'muted small cupones-summary' }, tab === 'mine'
-      ? (mine.length ? `${free === 1 ? 'Te queda 1 cupón' : `Te quedan ${free} cupones`} por canjear.` : '')
-      : `Cupones que le regalaste a ${profile.name(profile.partnerOf(me))}.${given.some((c) => states.has(c.id)) ? ' Los canjeados llevan su sello.' : ''}`);
+    tabs.classList.add('cupones-tabs');
 
     let content;
-    if (!list.length) {
-      content = tab === 'mine'
-        ? ui.emptyState({ title: 'Aún no tienes cupones', text: `Cuando ${profile.name(profile.partnerOf(me))} te regale uno, aparece aquí.`, art: 'ticket' })
-        : ui.emptyState({ title: 'Todavía no regalas cupones', text: `Crea uno para ${profile.name(profile.partnerOf(me))}: una cena, un masaje, una tarde de lo que quiera.`, art: 'ticket', action: { label: 'Crear un cupón', onClick: () => openEditor() } });
+    if (tab === 'mine') {
+      content = [
+        el('p', { class: 'muted small cupones-summary' }, mine.length ? `${free === 1 ? 'Te queda 1 cupón' : `Te quedan ${free} cupones`} por canjear.` : ''),
+        mine.length ? grid(mine, 'mine', recvNo)
+          : ui.emptyState(used.length ? { title: 'Ya usaste todos tus cupones', text: `Están en "Historial". Cuando ${partner} te regale otro, aparece aquí.`, art: 'ticket' }
+            : { title: 'Aún no tienes cupones', text: `Cuando ${partner} te regale uno, aparece aquí.`, art: 'ticket' }),
+      ];
+    } else if (tab === 'given') {
+      const resetBtn = used.length
+        ? el('div', { class: 'cupones-foot' }, el('button', { class: 'btn btn-ghost btn-small', type: 'button', onClick: reset }, icon('repeat', { size: 18 }), 'Reiniciar cupones'))
+        : null;
+      content = !given.length && !used.length
+        ? [ui.emptyState({ title: 'Todavía no hay historial', text: `Aquí quedan los cupones que le regalas a ${partner} y los que tú ya usaste.`, art: 'ticket', action: { label: 'Crear un cupón', onClick: () => openEditor() } })]
+        : [
+          el('h2', { class: 'card-kicker cartas-subtitle' }, 'Los que regalaste'),
+          given.length ? [el('p', { class: 'muted small cupones-summary' }, `Para ${partner}.${given.some((c) => states.has(c.id)) ? ' Los canjeados llevan su sello.' : ''}`), grid(given, 'given', fromNo)]
+            : el('p', { class: 'muted small cupones-summary' }, `Todavía no le regalas cupones a ${partner}.`),
+          el('h2', { class: 'card-kicker cartas-subtitle' }, 'Los que usaste'),
+          used.length ? grid(used, 'mine', recvNo) : el('p', { class: 'muted small cupones-summary' }, 'Cuando canjees un cupón, queda aquí con su sello.'),
+          resetBtn,
+        ];
     } else {
-      const handlers = { onRedeem: redeem, onEdit: openEditor, onDelete: remove, onShare: share };
-      content = el('div', { class: 'kippu-grid' }, sorted.map((c) => ticket(c, states.get(c.id), {
-        tab, number: number.get(c.id), onRedeem: redeem,
-        onOpen: (x) => detail(x, states.get(x.id), { tab, number: number.get(x.id), ...handlers }),
-      })));
+      content = saved.length
+        ? [el('p', { class: 'muted small cupones-summary' }, `Solo tú los ves. Cuando quieras, tócale "Regalar" y le aparece a ${partner}.`), grid(saved, 'saved', fromNo)]
+        : [ui.emptyState({ title: 'No tienes cupones guardados', text: `Crea un cupón y guárdalo para regalárselo a ${partner} en el momento justo.`, art: 'ticket', action: { label: 'Crear un cupón', onClick: () => openEditor() } })];
     }
-    const resetBtn = tab === 'mine' && mine.some((c) => states.has(c.id))
-      ? el('div', { class: 'cupones-foot' }, el('button', { class: 'btn btn-ghost btn-small', type: 'button', onClick: reset }, icon('repeat', { size: 18 }), 'Reiniciar cupones'))
-      : null;
-    body.replaceChildren(tabs, summary, content, resetBtn || '');
+    body.replaceChildren(tabs, ...[content].flat(2).filter(Boolean));
     if (justRedeemed) {
-      body.querySelector(`.kippu[data-id="${CSS.escape(justRedeemed)}"] .hanko`)?.classList.add('hanko-stamp');
+      const id = justRedeemed;
       justRedeemed = null;
+      body.querySelector(`.kippu[data-id="${CSS.escape(id)}"] .hanko`)?.classList.add('hanko-stamp');
+      // After the stamp, the coupon moves to "Historial".
+      setTimeout(() => { if (tab === 'mine' && body.isConnected) draw(); }, util.prefersReducedMotion?.() ? 600 : 1600);
     }
   }
 

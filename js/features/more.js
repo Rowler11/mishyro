@@ -34,16 +34,32 @@ function card(s) {
 export function render() {
   const groups = [];
   const setOpen = (id, { focus = false } = {}) => {
+    const target = groups.find((x) => x.id === id);
+    const before = target?.head.getBoundingClientRect().top;
     groups.forEach((g) => {
       const on = g.id === id;
+      // A group closing above the one being opened folds at once, so the tapped header stays put.
+      if (!on && target && g.box.classList.contains('open') && (g.box.compareDocumentPosition(target.box) & Node.DOCUMENT_POSITION_FOLLOWING)) g.box.classList.add('acc-instant');
       g.head.setAttribute('aria-expanded', String(on));
       g.box.classList.toggle('open', on);
       g.body.inert = !on;
     });
+    if (focus && target) {
+      const shift = target.head.getBoundingClientRect().top - before;
+      if (Math.abs(shift) > 1) window.scrollBy({ top: shift, behavior: 'instant' });
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => groups.forEach((g) => g.box.classList.remove('acc-instant'))));
     saveOpen(id);
-    const g = groups.find((x) => x.id === id);
-    // Keep the opened group in view without jumping when it is already visible.
-    if (g && focus) requestAnimationFrame(() => g.box.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+    if (!target || !focus) return;
+    // Once open, bring its last cards into view if they ended up under the tab bar.
+    const settle = (e) => {
+      if (e.target !== target.body) return;
+      target.body.removeEventListener('transitionend', settle);
+      const r = target.box.getBoundingClientRect();
+      const need = r.bottom - (innerHeight - 96);
+      if (need > 0) window.scrollBy({ top: Math.min(need, r.top - 72), behavior: 'smooth' });
+    };
+    target.body.addEventListener('transitionend', settle);
   };
 
   const visible = GROUPS.map((g) => ({ ...g, sections: g.sections.filter((s) => !s.moment) })).filter((g) => g.sections.length);
