@@ -21,15 +21,15 @@
   --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
   --stagger: 45ms;
 
-  /* Kioto (day) */
-  --bg: #F6F1E7; --surface: #FFFDF8; --surface-2: #F0E8DA; --border: #E4DACB; --border-strong: #CDBFA9;
-  --text: #1F1B1A; --text-2: #6B625C;
-  --accent: #C8412B; --accent-ink: #FFFFFF; --accent-soft: #F2C6D0; --accent-2: #2B3A55; --gold: #B89B5E;
+  /* Kioto (day) · Sakura palette (chosen 2026-11-19) */
+  --bg: #FBF4F3; --surface: #FFFFFF; --surface-2: #F7E6E8; --border: #EFD9DC; --border-strong: #DDBFC5;
+  --text: #2A1E22; --text-2: #7A6268;
+  --accent: #C2405F; --accent-ink: #FFFFFF; --accent-soft: #F9D3DD; --accent-2: #6B4E8C; --gold: #C9A46A;
   --success: #5E6F4F; --success-bg: #E7ECDF; --danger: #A8321F; --danger-bg: #F8E2DC;
   --glow: none; --shadow-1: 0 1px 2px rgb(31 27 26 / .06), 0 2px 8px rgb(31 27 26 / .05);
   --shadow-2: 0 8px 30px rgb(31 27 26 / .14);
   --overlay: rgb(31 27 26 / .42);
-  --focus: #2B3A55;
+  --focus: #6B4E8C;
   --pattern-opacity: .07;
   color-scheme: light;
 }
@@ -513,15 +513,15 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 /* ---------- settings ---------- */
 .theme-previews { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
 .theme-preview { position: relative; display: flex; flex-direction: column; gap: 6px; padding: var(--space-3); border-radius: var(--radius-m); border: 2px solid transparent; min-height: 108px; }
-.tp-day { background: #F6F1E7; color: #1F1B1A; border-color: #E4DACB; }
+.tp-day { background: #FBF4F3; color: #2A1E22; border-color: #EFD9DC; }
 .tp-night { background: #0E0B1A; color: #F3EEFF; border-color: #2E2650; }
 .theme-preview.tp-on { border-color: var(--accent); }
-.tp-seal { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #C8412B; color: #FFFDF8; font-family: var(--font-serif); font-size: .8rem; }
+.tp-seal { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #C2405F; color: #FFFFFF; font-family: var(--font-serif); font-size: .8rem; }
 .tp-night .tp-seal { background: #FF4FA3; color: #0E0B1A; box-shadow: 0 0 10px rgb(255 79 163 / .6); }
 .tp-title { font-family: var(--font-serif); font-weight: 700; }
 .tp-line { height: 6px; border-radius: 3px; background: currentColor; opacity: .25; }
 .tp-line.short { width: 60%; }
-.tp-btn { margin-top: auto; width: 46%; height: 14px; border-radius: 7px; background: #C8412B; }
+.tp-btn { margin-top: auto; width: 46%; height: 14px; border-radius: 7px; background: #C2405F; }
 .tp-night .tp-btn { background: #36E0FF; }
 .about-brand { display: flex; align-items: center; gap: var(--space-3); }
 .about-name { font-family: var(--font-serif); font-size: 1.5rem; font-weight: 700; }

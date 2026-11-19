@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.1.6
+
+- Tema claro nuevo, "Sakura": blanco rosado con rosa sakura y toque lila.
+- Resumen, Cápsula del tiempo y Eventos de temporada salen de "Más": aparecerán como aviso en Inicio solo cuando toque (fin de mes o de año, el día que se abre una cápsula, mientras dura una temporada).
+
 ## 0.1.5
 
 - "Más" con grupos plegables: se abre un grupo a la vez y muestra tarjetas con una línea que explica cada sección; lo que llega más adelante lleva "Pronto".
