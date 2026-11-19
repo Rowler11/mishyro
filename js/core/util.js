@@ -104,6 +104,23 @@ export function clamp(n, a, b) { return Math.min(b, Math.max(a, n)); }
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+let audioCtx = null;
+/** Soft furin-like chime generated with Web Audio (no audio files). */
+export function chime() {
+  try {
+    audioCtx = audioCtx || new AudioContext();
+    const t = audioCtx.currentTime;
+    [1318.5, 1975.5, 2637].forEach((f, i) => {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + i * 0.05);
+      g.gain.exponentialRampToValueAtTime(0.12 / (i + 1), t + i * 0.05 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.05 + 1.6);
+      o.connect(g).connect(audioCtx.destination); o.start(t + i * 0.05); o.stop(t + 1.8);
+    });
+  } catch { /* audio not available */ }
+}
+
 export function prefersReducedMotion() {
   return document.documentElement.dataset.motion === 'off'
     || matchMedia('(prefers-reduced-motion: reduce)').matches;
