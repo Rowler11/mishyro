@@ -531,6 +531,47 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 2g. Privacidad, Modo sin terceros and Legal y ayuda ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, permissions: ['clipboard-read', 'clipboard-write'] });
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await completeSetup(page);
+    await page.evaluate(() => { location.hash = '#/ajustes'; });
+    await page.locator('.list .list-row').first().waitFor();
+    ok('ajustes: every page is built (no "Pronto" left)', (await page.locator('.list .badge').count()) === 0);
+    await page.evaluate(() => { location.hash = '#/ajustes/terceros'; });
+    await page.getByRole('switch', { name: /Modo sin terceros/ }).check();
+    await page.waitForTimeout(300);
+    await page.reload();
+    await page.getByRole('button', { name: 'Saltar' }).click().catch(() => {});
+    await page.getByRole('switch', { name: /Modo sin terceros/ }).waitFor();
+    ok('terceros: the switch persists and the app reads it', (await page.getByRole('switch', { name: /Modo sin terceros/ }).isChecked())
+      && !(await page.evaluate(async () => (await import('./js/core/security.js')).thirdPartyAllowed())));
+    await page.evaluate(() => { location.hash = '#/ajustes/privacidad'; });
+    await page.locator('.status-row').first().waitFor();
+    ok('privacidad: uses the names of the data, not fixed ones', /Ana decide qué es privado y qué ve Leo/.test(await page.locator('main').textContent()));
+    await page.evaluate(() => { location.hash = '#/ajustes/legal/privacidad'; });
+    await page.locator('.legal-doc h2').first().waitFor();
+    ok('legal: the privacy policy is written, with subtitles and lists', (await page.locator('.legal-doc h2').count()) >= 4 && (await page.locator('.legal-doc li').count()) >= 3);
+    await page.getByRole('button', { name: 'Editar el texto' }).click();
+    await page.getByRole('dialog').getByLabel('Texto').fill('Texto ficticio editado.');
+    await page.getByRole('dialog').getByRole('button', { name: 'Guardar' }).click();
+    await page.locator('.legal-doc', { hasText: 'Texto ficticio editado.' }).waitFor();
+    await page.getByRole('button', { name: 'Restaurar el texto original' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Restaurar' }).click();
+    await page.waitForFunction(() => !document.querySelector('.legal-doc').textContent.includes('Texto ficticio editado.'));
+    ok('legal: a text can be edited in the app and restored', (await page.locator('.legal-doc h2').count()) >= 4);
+    await page.evaluate(() => { location.hash = '#/ajustes/legal/version'; });
+    await page.getByRole('button', { name: 'Copiar reporte técnico' }).click();
+    await page.waitForTimeout(400);
+    const rep = await page.evaluate(() => navigator.clipboard.readText());
+    ok('legal: the technical report is copied without personal data', /Versión: \d/.test(rep) && !/Ana|Leo|Ficticio|Texto de ejemplo/.test(rep), rep.split('\n')[1]);
+    ok('privacidad + legal: no horizontal scroll', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    ok('privacidad + legal: no console errors', errors.length === 0, errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---------- 3. Modal + keyboard + Atrás closes modal first ----------
   {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

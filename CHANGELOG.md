@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.1.15 (Fase 2, Privacidad, Modo sin terceros y Legal y ayuda)
+
+- Privacidad: quién ve qué ("Los dos", "Solo yo", borradores), el espacio "Solo yo" de quien usa la app con su PIN personal, qué sale del dispositivo y el aviso honesto de que sin PIN es privacidad de cortesía.
+- Modo sin terceros: un interruptor que apaga todo servicio externo opcional y la lista de solicitudes externas de la app y para qué (hoy ninguna a terceros).
+- Legal y ayuda con los textos redactados: privacidad, aviso de uso, salud, permisos, licencias y versión. Se pueden editar en la app y volver al original.
+- "Copiar reporte técnico" y "Escribir un correo" en Versión: versión, navegador, pantalla, conteos por sección y errores recientes, sin datos personales.
+- Ajustes ya no tiene nada marcado como "Pronto".
+
 ## 0.1.14 (Fase 2, Perfil y datos)
 
 - Perfil y datos en cuatro partes: Nosotros, Fechas, Hitos y Textos.
