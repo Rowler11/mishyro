@@ -12,3 +12,4 @@ tests
 tools
 node_modules
 seed-privado*.json
+.wrangler

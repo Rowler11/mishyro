@@ -1,10 +1,9 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.1.0';
+const CACHE_VERSION = 'aishiteru-v0.1.1';
 const SHELL = [
   './',
-  './index.html',
   './styles.css',
   './theme-boot.js',
   './manifest.webmanifest',
@@ -62,6 +61,12 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
+// Hosts like Cloudflare redirect /index.html to /. A redirected response can't answer a
+// navigation (Chrome shows ERR_FAILED), so cached copies are re-wrapped without the flag.
+const clean = (res) => (res && res.redirected
+  ? res.blob().then((body) => new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers }))
+  : res);
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -69,14 +74,14 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return; // external resources are never cached
   if (req.mode === 'navigate') {
     // Navigations (including share_target ?title=&text=&url=) get the cached shell.
-    event.respondWith(caches.match('./index.html').then((r) => r || fetch(req)));
+    event.respondWith(caches.match('./').then((r) => (r ? clean(r) : fetch(req))));
     return;
   }
-  event.respondWith(caches.match(req, { ignoreSearch: true }).then((hit) => hit || fetch(req).then((res) => {
+  event.respondWith(caches.match(req, { ignoreSearch: true }).then((hit) => (hit ? clean(hit) : fetch(req).then((res) => {
     if (res.ok && res.type === 'basic' && /\.(js|css|svg|png|woff2|json|webmanifest)$/.test(url.pathname)) {
       const copy = res.clone();
       caches.open(CACHE_VERSION).then((c) => c.put(req, copy));
     }
     return res;
-  })));
+  }))));
 });
