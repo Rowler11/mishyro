@@ -198,7 +198,8 @@ export async function lockScreen({ scope, neutralName = 'Aishiteru', inline = fa
           const r = await unlockBiometric(scope);
           if (r === 'key') done();
           else if (r === 'interface') {
-            if (scope === 'app') { toast('Huella verificada. Para ver lo privado, usa el PIN.'); done(); }
+            // No toast here (asked 2026-11-19): private sections ask for the PIN themselves when opened.
+            if (scope === 'app') done();
             else pad.setMessage('En este teléfono la huella no abre los datos cifrados. Usa el PIN.');
           } else pad.setMessage(r);
         } }, icon('fingerprint'), el('span', {}, 'Usar huella'));
