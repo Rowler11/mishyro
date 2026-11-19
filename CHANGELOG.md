@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.1.16 (Fase 2, Buscar)
+
+- Buscar en recuerdos, cartas y cupones desde una sola caja, sin importar tildes ni mayúsculas ("cafe" encuentra "Café"). Cada palabra debe aparecer; los resultados salen por grupo, con la palabra resaltada y un trocito de contexto.
+- Nunca busca lo privado ni lo "Solo yo". Una carta sin abrir solo se encuentra por su título "Ábreme cuando…"; su texto no se busca hasta abrirla.
+- Se abre con la lupa de la barra superior en el teléfono, con "Buscar" en la barra lateral del PC o con la tecla "/". Esc borra la búsqueda.
+- Al cambiar de pantalla, el foco llega al título (o a la caja de búsqueda) también cuando hay animación de transición; antes se quedaba en el contenedor.
+
 ## 0.1.15 (Fase 2, Privacidad, Modo sin terceros y Legal y ayuda)
 
 - Privacidad: quién ve qué ("Los dos", "Solo yo", borradores), el espacio "Solo yo" de quien usa la app con su PIN personal, qué sale del dispositivo y el aviso honesto de que sin PIN es privacidad de cortesía.

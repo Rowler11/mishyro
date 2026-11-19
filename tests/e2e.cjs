@@ -572,6 +572,53 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 2h. Buscar: accents, privacy, sealed letters, links, entry points ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await completeSetup(page);
+    await page.evaluate(async () => {
+      const db = await import('./js/core/db.js'); const profile = await import('./js/core/profile.js');
+      const me = profile.active(); const other = profile.partnerOf(me);
+      await db.put('memories', { id: 't:m1', title: 'Café en la Candelaria', note: 'Pedimos chocolate con queso.', date: '2026-06-14', visibility: 'shared', owner: me, mediaIds: [] });
+      await db.put('memories', { id: 't:m2', title: 'Cafe secreto', note: '', visibility: 'self', private: true, owner: me, mediaIds: [] });
+      await db.put('letters', { id: 't:l1', author: other, to: me, condition: 'llueva', body: 'Texto escondido', signature: 'X', status: 'sealed', visibility: 'shared', owner: 'both' });
+      await db.put('letters', { id: 't:l2', author: other, to: me, condition: 'quieras un café', body: 'Leída, con montaña', signature: 'X', status: 'opened', openedAt: '2026-07-01T10:00:00Z', visibility: 'shared', owner: 'both' });
+      await db.put('content', { id: 't:c9', kind: 'coupon', title: 'Un café con postre', from: other, to: me, origin: 'user' });
+    });
+    await page.locator('.appbar .search-btn').click();
+    await page.locator('#search-q').waitFor();
+    await page.waitForTimeout(300);
+    ok('buscar: the app bar button opens it with the cursor in the box', (await page.evaluate(() => document.activeElement?.id)) === 'search-q');
+    const query = async (q) => { await page.fill('#search-q', q); await page.waitForTimeout(400); return page.locator('.search-hit').allTextContents(); };
+    let hits = await query('CAFE');
+    ok('buscar: no accents or case needed, grouped by kind', hits.length === 3 && (await page.locator('.search-group').count()) === 3, hits.join(' | '));
+    ok('buscar: the match is highlighted', (await page.locator('.search-hit mark').count()) >= 3);
+    ok('buscar: "Solo yo" is never found', !(await query('secreto')).length);
+    ok('buscar: an unopened letter keeps its text hidden', !(await query('escondido')).length);
+    hits = await query('llueva');
+    ok('buscar: an unopened letter is found by its title, marked as sealed', hits.length === 1 && hits[0].includes('Carta sin abrir'));
+    ok('buscar: an opened letter is searchable by its text', (await query('montana')).length === 1);
+    ok('buscar: one letter asks for more', (await query('c')).length === 0 && (await page.locator('.search-status').textContent()).includes('al menos 2'));
+    await query('zzzz');
+    ok('buscar: no results shows a friendly empty state', (await page.locator('.search-results .empty-state, .search-results [class*="empty"]').count()) > 0);
+    await page.keyboard.press('Escape');
+    ok('buscar: Esc clears the box', (await page.inputValue('#search-q')) === '');
+    await query('candelaria');
+    await page.locator('.search-hit').first().click();
+    await page.waitForFunction(() => location.hash.startsWith('#/capsula/'));
+    ok('buscar: a memory result opens that memory', true);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(BASE + '#/inicio'); await page.waitForTimeout(400);
+    await page.keyboard.press('/');
+    await page.locator('#search-q').waitFor();
+    ok('buscar: "/" opens it and the rail marks Buscar only', (await page.locator('.rail [aria-current="page"]').count()) === 1 && (await page.locator('.rail [data-tab="buscar"][aria-current="page"]').count()) === 1);
+    ok('buscar: no horizontal overflow', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)));
+    ok('buscar: no console errors', errors.length === 0, errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---------- 3. Modal + keyboard + Atrás closes modal first ----------
   {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

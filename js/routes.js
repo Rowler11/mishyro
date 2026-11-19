@@ -69,7 +69,7 @@ export const GROUPS = [
 /** Hidden section: not listed in "Más"; opened with the secret gesture. Neutral name only. */
 export const HIDDEN = [
   { id: 'yoru', title: 'Rincón', jp: '夜', romaji: 'yoru', icon: 'moon', phase: '6', lock: 'vault', blurb: '' },
-  { id: 'buscar', title: 'Buscar', icon: 'search', phase: 'próxima', blurb: 'Busca en todo lo que no es privado.' },
+  { id: 'buscar', title: 'Buscar', icon: 'search', phase: '2', module: 'buscar', blurb: 'Busca en todo lo que no es privado.' },
 ];
 
 // module: which file renders the page; pages without one are not built yet ("Pronto").
