@@ -273,6 +273,12 @@ code { font-size: .8em; color: var(--text-2); }
 .shortcuts { display: grid; grid-template-columns: auto 1fr; gap: var(--space-3) var(--space-4); margin: 0; align-items: center; }
 .shortcuts dd { margin: 0; }
 .prose p + p { margin-top: var(--space-3); }
+.prose > * + * { margin-top: var(--space-3); }
+.prose-h { font-size: 1.05rem; margin-top: var(--space-5) !important; }
+.prose ul { padding-left: 1.3rem; display: grid; gap: var(--space-1); }
+.prose li::marker { color: var(--accent); }
+.legal-foot { border-top: 1px solid var(--border); padding-top: var(--space-3); margin-top: var(--space-5) !important; }
+.legal-doc { max-width: 72ch; }
 
 /* ---------- forms ---------- */
 .field { display: flex; flex-direction: column; gap: var(--space-1); }
@@ -910,6 +916,21 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 .date-editor .segmented[aria-label="Se repite"] .segmented-option { padding-inline: var(--space-2); }
 @media (min-width: 600px) { .date-editor .segmented[aria-label="Tipo de fecha"] { grid-template-columns: repeat(4, 1fr); } .date-editor .segmented[aria-label="Tipo de fecha"] .segmented-option { padding-inline: var(--space-2); } }
 .date-editor .segmented-option { justify-content: center; border-radius: calc(var(--radius-m) - 4px); }
+
+/* ---------- Privacidad y terceros ---------- */
+.stack > .badge { align-self: flex-start; }
+.privacy-points { margin: 0; padding-left: 1.2rem; display: grid; gap: var(--space-2); }
+.privacy-points li::marker { color: var(--accent); }
+.note-inline { display: flex; gap: var(--space-2); align-items: flex-start; padding: var(--space-3); border-radius: var(--radius-m); background: var(--surface-2); }
+.note-inline svg { flex: none; color: var(--accent); margin-top: 2px; }
+.external-table th, .external-table td { text-align: left; vertical-align: top; }
+@media (max-width: 599px) {
+  .external-table thead { display: none; }
+  .external-table tr { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--space-2); padding: var(--space-3); border-bottom: 1px solid var(--border); }
+  .external-table th, .external-table td { padding: 0; border: 0; }
+  .external-table td:nth-of-type(1), .external-table td:nth-of-type(2) { grid-column: 1; color: var(--text-2); font-size: .9rem; }
+  .external-table td:nth-of-type(3) { grid-column: 2; grid-row: 1; }
+}
 
 /* ---------- entrance & view transitions ---------- */
 .stagger { animation: rise var(--dur-4) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--stagger)); }

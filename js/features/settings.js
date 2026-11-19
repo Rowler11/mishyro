@@ -144,18 +144,113 @@ function legal() {
     el('p', { class: 'muted small' }, CONFIG.legalFooter));
 }
 
+/** Light text format of the legal docs: blank line = paragraph, "## " = subtitle, "- " = list item. */
+export function renderRich(text) {
+  const out = [];
+  for (const block of String(text || '').split(/\n{2,}/)) {
+    const lines = block.split('\n').filter((l) => l.trim());
+    if (!lines.length) continue;
+    let list = null; let para = [];
+    const flush = () => { if (para.length) { out.push(el('p', {}, para.join(' '))); para = []; } };
+    for (const line of lines) {
+      if (line.startsWith('## ')) { flush(); list = null; out.push(el('h2', { class: 'prose-h' }, line.slice(3).trim())); }
+      else if (/^- /.test(line)) { flush(); if (!list) { list = el('ul'); out.push(list); } list.append(el('li', {}, line.slice(2).trim())); }
+      else { list = null; para.push(line.trim()); }
+    }
+    flush();
+  }
+  return out;
+}
+
+/** Technical report with no personal data: versions, device, counts per store and recent errors. */
+async function techReport() {
+  const meta = await db.getMeta();
+  const counts = [];
+  for (const name of db.STORE_NAMES) {
+    if (['meta', 'settings', 'errors', 'vault'].includes(name)) continue;
+    const n = (await db.rawAll(name)).filter((r) => !r.deleted).length;
+    if (n) counts.push(`${name}: ${n}`);
+  }
+  const errors = (await db.rawAll('errors')).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 5)
+    .map((e) => `- ${String(e.at).slice(0, 16)} v${e.version || '?'} ${String(e.message).slice(0, 140)}`);
+  let persisted = 'n/d';
+  try { persisted = String(await navigator.storage?.persisted?.()); } catch { /* ignore */ }
+  return [
+    'Reporte técnico de Aishiteru (sin datos personales)',
+    `Versión: ${CONFIG.appVersion} · datos v${db.SCHEMA_VERSION}`,
+    `Navegador: ${navigator.userAgent}`,
+    `Pantalla: ${innerWidth}x${innerHeight} @${devicePixelRatio} · instalada: ${matchMedia('(display-mode: standalone)').matches ? 'sí' : 'no'}`,
+    `Almacenamiento persistente: ${persisted} · configurada: ${meta.setupDone ? 'sí' : 'no'}`,
+    `Elementos: ${counts.join(', ') || 'ninguno'}`,
+    'Errores recientes:', ...(errors.length ? errors : ['- ninguno']),
+  ].join('\n');
+}
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {
+    const ta = el('textarea', { class: 'visually-hidden', 'aria-hidden': 'true' }, text);
+    document.body.append(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    ta.remove(); return ok;
+  }
+}
+
 function legalDoc(slug) {
-  const body = el('article', { class: 'card prose' }, ui.skeleton(4));
-  const page = el('section', { class: 'page' }, ui.pageHeader({ title: 'Legal y ayuda', back: '/ajustes/legal' }), body);
-  db.get('content', `cfg:legal:${slug}`).then((d) => {
+  const body = el('article', { class: 'card prose legal-doc' }, ui.skeleton(4));
+  const tools = el('div', { class: 'btn-row' });
+  const extra = el('div', { class: 'stack' });
+  const page = el('section', { class: 'page' }, ui.pageHeader({ title: 'Legal y ayuda', back: '/ajustes/legal' }), extra, body, tools);
+  const id = `cfg:legal:${slug}`;
+  const draw = async () => {
+    const d = await db.get('content', id);
     if (!d) { body.replaceChildren(ui.emptyState({ title: 'Documento no encontrado', art: 'fan' })); return; }
     page.querySelector('.page-title').textContent = d.title;
-    body.replaceChildren(
-      el('p', { class: 'lead' }, d.summary),
-      ...(d.body ? d.body.split(/\n{2,}/).map((p) => el('p', {}, p)) : [el('p', { class: 'muted' }, 'La redacción completa llega en la Fase 2 y se podrá editar desde la app.')]),
-      el('p', { class: 'muted small' }, CONFIG.legalFooter));
-  });
+    body.replaceChildren(el('p', { class: 'lead' }, d.summary), ...renderRich(d.body), el('p', { class: 'muted small legal-foot' }, CONFIG.legalFooter));
+    const original = CONFIG.legalTexts.find((x) => x.id === id);
+    tools.replaceChildren(...[
+      ui.button({ label: 'Editar el texto', iconName: 'pencil', onClick: () => editLegal(d, draw) }),
+      d.userEdited && original ? ui.button({ label: 'Restaurar el texto original', iconName: 'rotate-ccw', variant: 'ghost', onClick: async () => {
+        if (!(await ui.confirmDialog({ title: '¿Restaurar el texto?', message: 'Se pierde lo que cambiaron en este documento.', confirmLabel: 'Restaurar' }))) return;
+        await db.rawPut('content', { ...(await db.rawGet('content', id)), ...original, kind: 'legal', userEdited: false, hidden: false, deleted: false, updatedAt: util.nowISO() });
+        ui.toast('Texto restaurado.'); draw();
+      } }) : null].filter(Boolean));
+  };
+  if (slug === 'version') {
+    (async () => {
+      const meta = await db.getMeta();
+      const reportBtn = ui.button({ label: 'Copiar reporte técnico', iconName: 'copy', variant: 'primary', onClick: async () => {
+        const ok = await copyText(await techReport());
+        ui.toast(ok ? 'Reporte copiado. Pégalo en un mensaje o correo.' : 'No se pudo copiar. Intenta de nuevo.', { tone: ok ? 'success' : 'error' });
+      } });
+      const mail = ui.button({ label: 'Escribir un correo', iconName: 'mail', onClick: async () => {
+        location.href = `mailto:?subject=${encodeURIComponent(`Aishiteru ${CONFIG.appVersion}: un problema`)}&body=${encodeURIComponent(`Qué pasó:\n\n\n${await techReport()}`)}`;
+      } });
+      extra.replaceChildren(el('section', { class: 'card stack' },
+        el('dl', { class: 'facts' }, el('dt', {}, 'Versión'), el('dd', {}, CONFIG.appVersion), el('dt', {}, 'Versión de datos'), el('dd', {}, String(db.SCHEMA_VERSION)),
+          el('dt', {}, 'Última actualización'), el('dd', {}, meta.updatedAt ? util.formatDay(String(meta.updatedAt).slice(0, 10)) : '—')),
+        el('div', { class: 'btn-row' }, reportBtn, mail)));
+    })();
+  }
+  draw();
   return page;
+}
+
+function editLegal(d, done) {
+  const ta = ui.textarea({ rows: 16, maxlength: '20000' });
+  ta.value = d.body || '';
+  const f = ui.field({ label: 'Texto', control: ta, hint: 'Una línea en blanco separa párrafos. "## " al inicio de una línea hace un subtítulo y "- " un punto de lista.' });
+  ui.openModal({
+    title: `Editar: ${d.title}`, kind: 'sheet', size: 'lg', className: 'legal-editor', body: el('div', { class: 'stack' }, f),
+    actions: [
+      { label: 'Cancelar', variant: 'ghost', value: false },
+      { label: 'Guardar', variant: 'primary', onClick: async () => {
+        if (!ta.value.trim()) { f.setError('El texto no puede quedar vacío. Para volver al original usa "Restaurar".'); return false; }
+        await db.put('content', { ...d, body: ta.value.trim() });
+        ui.toast('Texto guardado.', { tone: 'success' }); done(); return true;
+      } },
+    ],
+  });
 }
 
 // ---------- about ----------

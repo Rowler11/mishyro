@@ -17,6 +17,9 @@ let uiUnlocked = false; // app interface unlocked (PIN, or fingerprint without P
 let onWipe = async () => {};
 let afterUnlock = () => {};
 
+/** "Modo sin terceros": false when the couple turned off every optional external request. */
+export async function thirdPartyAllowed() { return !(await db.getSettings('thirdParty', { off: false })).off; }
+
 export async function getSettings() { return db.getSettings('security', SECURITY_DEFAULTS); }
 export async function setSettings(patch) { return db.setSettings('security', patch); }
 

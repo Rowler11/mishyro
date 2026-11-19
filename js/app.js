@@ -25,6 +25,7 @@ const load = {
   settings: () => import('./features/settings.js'),
   ajustes: () => import('./features/ajustes.js'),
   perfil: () => import('./features/perfil.js'),
+  privacidad: () => import('./features/privacidad.js'),
   styleguide: () => import('./features/styleguide.js'),
   setup: () => import('./features/setup.js'),
 };

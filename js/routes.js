@@ -76,11 +76,11 @@ export const HIDDEN = [
 export const SETTINGS_PAGES = [
   { id: 'perfil', title: 'Perfil y datos', jp: '情報', romaji: 'jōhō', icon: 'users', phase: '2', module: 'perfil' },
   { id: 'seguridad', title: 'Centro de seguridad', icon: 'shield-check', phase: '2', module: 'ajustes' },
-  { id: 'privacidad', title: 'Privacidad', icon: 'eye-off', phase: '2' },
+  { id: 'privacidad', title: 'Privacidad', icon: 'eye-off', phase: '2', module: 'privacidad' },
   { id: 'copia', title: 'Copia de seguridad', icon: 'hard-drive', phase: '2', module: 'ajustes' },
   { id: 'apariencia', title: 'Apariencia', icon: 'palette', phase: '1', module: 'settings' },
   { id: 'movimiento', title: 'Movimiento y sonido', icon: 'sparkles', phase: '1', module: 'settings' },
-  { id: 'terceros', title: 'Modo sin terceros', icon: 'shield', phase: '2' },
+  { id: 'terceros', title: 'Modo sin terceros', icon: 'shield', phase: '2', module: 'privacidad' },
   { id: 'legal', title: 'Legal y ayuda', icon: 'file-text', phase: '1', module: 'settings' },
   { id: 'acerca', title: 'Acerca de', icon: 'info', phase: '1', module: 'settings' },
 ];
