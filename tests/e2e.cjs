@@ -118,6 +118,8 @@ async function completeSetup(page) {
     ok(`inicio @${w}: the ring says how long until the next anniversary`, /^(Faltan \d+ días para|Mañana cumplen|¡Hoy cumplen)/.test(await page.locator('.counter-goal').textContent()));
     const dash = await page.evaluate(() => { const a = document.querySelector('.counter-ring-arc'); return [Number(a.getAttribute('stroke-dashoffset')), Number(a.getAttribute('stroke-dasharray'))]; });
     ok(`inicio @${w}: the ring is partly filled`, dash[0] >= 0 && dash[0] < dash[1], dash.join('/'));
+    ok(`inicio @${w}: the ring is an ensō brush stroke with a red seal`, (await page.locator('.counter-ring path[filter], .counter-ring svg filter#enso-ink').count()) >= 1 && (await page.locator('.counter-seal').count()) === 1);
+    ok(`inicio @${w}: "Lo que viene" shows calendar pages`, (await page.locator('.coming-card .mekuri').count()) >= 1 && (await page.locator('.coming-card .mekuri .mekuri-num').first().textContent()).trim().length > 0);
     ok(`inicio @${w}: no Japanese inside the cards`, !(await page.$$eval('.home-card', (c) => c.some((x) => /[぀-ヿ一-龯]/.test(x.textContent)))));
     ok(`inicio @${w}: omikuji skips texts still to complete`, (await page.locator('.omikuji-text').textContent()) === 'Texto de ejemplo.');
     ok(`inicio @${w}: no horizontal scroll`, !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
@@ -179,7 +181,40 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
-  // ---------- 2b. Cápsula: add with photos, validation, order, detail, quota, delete ----------
+  // ---------- 2a. Opening heart: first open of the day, then the short welcome; Ajustes can make it always ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await completeSetup(page);
+    await page.reload();
+    await page.waitForSelector('.splash');
+    ok('entrada: the first open of the day draws the heart of words', (await page.locator('.splash-intro').count()) === 1 && (await page.locator('.splash-intro canvas.splash-canvas').count()) === 1);
+    await page.waitForSelector('.splash-intro.show', { timeout: 8000 });
+    ok('entrada: after the heart the usual welcome shows', (await page.locator('.splash-intro.show .splash-for').isVisible()));
+    await page.locator('.splash').waitFor({ state: 'detached', timeout: 8000 });
+    ok('entrada: it ends in Inicio, already drawn', (await page.locator('.counter-card').count()) === 1);
+    await page.reload();
+    await page.waitForSelector('.splash');
+    ok('entrada: the next open the same day keeps the short welcome', (await page.locator('.splash-intro').count()) === 0);
+    await page.locator('.splash').click();
+    await page.locator('.splash').waitFor({ state: 'detached' });
+    await page.evaluate(() => { location.hash = '#/ajustes/movimiento'; });
+    await page.locator('label.segmented-option', { hasText: 'Siempre' }).click();
+    await page.waitForTimeout(300);
+    await page.reload();
+    await page.waitForSelector('.splash');
+    ok('entrada: with "Siempre" in Ajustes it plays on every open', (await page.locator('.splash-intro').count()) === 1);
+    await page.getByRole('button', { name: 'Saltar' }).click();
+    await page.locator('.splash').waitFor({ state: 'detached' });
+    await page.getByRole('button', { name: 'Ver la entrada' }).click();
+    ok('entrada: "Ver la entrada" plays it on demand', (await page.locator('.splash-intro').count()) === 1);
+    await page.locator('.splash').click();
+    ok('entrada: no console errors', errors.length === 0, errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---------- 2b. Cápsula: add with photos and a video, validation, order, detail, quota, delete ----------
   for (const [w, h] of [[390, 844], [1440, 900]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } });
     const page = await ctx.newPage();
@@ -208,6 +243,10 @@ async function completeSetup(page) {
       { name: 'rot.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(files.rot, 'base64') },
     ]);
     await page.waitForFunction(() => document.querySelectorAll('.photo-tile').length === 2, null, { timeout: 20000 });
+    // Videos (decided 2026-11-19): up to 30 s; a longer one is refused with a clear reason.
+    await page.setInputFiles('.memory-editor input[type=file]', [path.join(__dirname, 'fixtures/video-ficticio.webm'), path.join(__dirname, 'fixtures/video-largo-ficticio.webm')]);
+    await page.waitForFunction(() => document.querySelectorAll('.photo-tile').length === 3 && /30 segundos/.test(document.querySelector('.photo-msg')?.textContent || ''), null, { timeout: 20000 }).catch(() => {});
+    ok(`cápsula @${w}: a 3 s video is added and a 32 s one is refused`, (await ed.locator('.photo-tile video').count()) === 1 && /dura más de 30 segundos/.test(await ed.locator('.photo-msg').textContent()), await ed.locator('.photo-msg').textContent());
     await ed.getByLabel('Título').fill('Picnic en el parque');
     ok(`cápsula @${w}: the error goes away once the field is fixed`, (await ed.locator('.field-error:not(:empty)').count()) === 1);
     await ed.getByLabel('Fecha').fill('2025-11-19');
@@ -224,12 +263,14 @@ async function completeSetup(page) {
     await page.evaluate(() => window.__restorePut());
     await ed.getByRole('button', { name: 'Guardar recuerdo' }).click();
     await ed.waitFor({ state: 'detached' });
-    const media = await page.evaluate(async () => (await (await import('./js/core/db.js')).rawAll('media')).map((m) => ({ w: m.width, h: m.height, mime: m.mime })));
+    const media = await page.evaluate(async () => (await (await import('./js/core/db.js')).rawAll('media')).map((m) => ({ w: m.width, h: m.height, mime: m.mime, duration: m.duration })));
     ok(`cápsula @${w}: the 12 MP photo is stored at 1280 px or less as JPEG`, media.some((m) => m.w === 1280 && m.h === 960 && m.mime === 'image/jpeg'), JSON.stringify(media));
     ok(`cápsula @${w}: EXIF orientation is applied (400x200 rotated to 200x400)`, media.some((m) => m.w === 200 && m.h === 400), JSON.stringify(media));
-    ok(`cápsula @${w}: only the saved photos remain after the failed try`, media.length === 2, String(media.length));
+    ok(`cápsula @${w}: the video is stored as it came, with its length`, media.some((m) => m.mime === 'video/webm' && m.duration > 2 && m.duration < 4), JSON.stringify(media));
+    ok(`cápsula @${w}: only the saved photos and video remain after the failed try`, media.length === 3, String(media.length));
     ok(`cápsula @${w}: Un día como hoy shows the memory from a year ago`, /Picnic/.test(await page.locator('.otd-card').textContent()));
-    ok(`cápsula @${w}: a memory with photos shows as a polaroid; the year is a seal and the month is marked`, (await page.locator('.tl-polaroid', { hasText: 'Picnic' }).count()) === 1 && (await page.locator('.tl-hanko', { hasText: '2025' }).count()) === 1 && (await page.locator('.tl-month', { hasText: 'Noviembre' }).count()) === 1);
+    ok(`cápsula @${w}: a memory with photos is a shikishi with a seal; the year is a hanko and the month is marked`, (await page.locator('.tl-shikishi', { hasText: 'Picnic' }).locator('.tl-seal').count()) === 1 && (await page.locator('.tl-hanko', { hasText: '2025' }).count()) === 1 && (await page.locator('.tl-month', { hasText: 'Noviembre' }).count()) === 1);
+    ok(`cápsula @${w}: a memory without photos hangs as an ema with its cord`, (await page.locator('.timeline:not(.timeline-drafts) .tl-ema .tl-cord').count()) >= 1);
     const firstTitle = () => page.locator('.timeline:not(.timeline-drafts) .tl-title').first().textContent();
     ok(`cápsula @${w}: oldest on top by default`, (await firstTitle()) === 'Título');
     await page.getByRole('button', { name: 'Ver lo más reciente' }).click();
@@ -238,7 +279,8 @@ async function completeSetup(page) {
     await page.getByRole('button', { name: 'Ver lo más reciente' }).click();
     await page.locator('.timeline .tl-card', { hasText: 'Picnic' }).click();
     await page.waitForSelector('.memory-detail .carousel');
-    ok(`cápsula @${w}: detail shows a carousel with both photos`, (await page.locator('.memory-detail .carousel-slide').count()) === 2);
+    await page.waitForFunction(() => document.querySelectorAll('.memory-detail .carousel-slide :is(img, video)').length === 3).catch(() => {});
+    ok(`cápsula @${w}: detail shows a carousel with both photos and the video with its controls`, (await page.locator('.memory-detail .carousel-slide').count()) === 3 && (await page.locator('.memory-detail .carousel-slide video[controls]').count()) === 1);
     ok(`cápsula @${w}: ${w < 1100 ? 'detail opens as its own page' : 'detail opens in the side panel next to the list'}`, w < 1100 ? (await page.locator('.timeline').count()) === 0 : (await page.locator('.capsula-split .timeline-wrap').count()) === 1 && (await page.locator('.capsula-detail .memory-title').textContent()) === 'Picnic en el parque');
     ok(`cápsula @${w}: no horizontal scroll`, !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
     await shot(page, `capsula-detail-${w}`);
@@ -246,7 +288,7 @@ async function completeSetup(page) {
     await page.getByRole('dialog', { name: '¿Borrar este recuerdo?' }).getByRole('button', { name: 'Borrar' }).click();
     await page.waitForFunction(() => !document.querySelector('.tl-card[href*="capsula/"]') || ![...document.querySelectorAll('.tl-title')].some((t) => t.textContent === 'Picnic en el parque'));
     const left = await page.evaluate(async () => (await (await import('./js/core/db.js')).rawAll('media')).length);
-    ok(`cápsula @${w}: deleting a memory asks first and removes its photos`, left === 0, String(left));
+    ok(`cápsula @${w}: deleting a memory asks first and removes its photos and video`, left === 0, String(left));
     ok(`cápsula @${w}: memories from the initial data have no Borrar`, (await page.evaluate(async () => { location.hash = '#/capsula/seed%3Amemory%3Ainicio'; await new Promise((r) => setTimeout(r, 300)); return document.querySelectorAll('.memory-detail button').length && ![...document.querySelectorAll('.memory-detail button')].some((b) => b.textContent.includes('Borrar')); })));
     ok(`cápsula @${w}: no console errors`, errors.length === 0, errors.join(' | '));
     await ctx.close();

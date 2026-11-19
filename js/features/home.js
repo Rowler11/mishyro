@@ -38,8 +38,13 @@ async function loadData() {
 }
 
 // ---------- 1. counter, inside a ring toward the next anniversary ----------
-const RING_R = 52;
-const RING_C = 2 * Math.PI * RING_R;
+// Ensō (decided 2026-11-19, Inicio A): a brush circle painted from -60° that closes on the anniversary.
+const ENSO_FROM = -60;
+const ENSO_SWEEP = 330;
+const ensoArc = (r) => {
+  const p = (a) => [100 + r * Math.cos((a * Math.PI) / 180), 100 + r * Math.sin((a * Math.PI) / 180)].map((n) => n.toFixed(1)).join(' ');
+  return `M${p(ENSO_FROM)} A${r} ${r} 0 1 1 ${p(ENSO_FROM + ENSO_SWEEP)}`;
+};
 
 /** Where the couple is in the current year together: last and next anniversary, 0..1 between them. */
 export function anniversaryRing(start, now = new Date()) {
@@ -63,12 +68,16 @@ function counterCard(start, onNewDay) {
   const petals = el('div', { class: 'petals', 'aria-hidden': 'true' });
   const NS = 'http://www.w3.org/2000/svg';
   const svg = (tag, attrs) => { const n = document.createElementNS(NS, tag); Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v)); return n; };
-  const ring = svg('svg', { class: 'counter-ring-svg', viewBox: '0 0 120 120', 'aria-hidden': 'true' });
-  const grad = svg('linearGradient', { id: 'ring-grad', x1: '0', y1: '0', x2: '1', y2: '1' });
-  grad.append(svg('stop', { offset: '0%', 'stop-color': 'var(--accent-2)' }), svg('stop', { offset: '100%', 'stop-color': 'var(--accent)' }));
-  const defs = svg('defs', {}); defs.append(grad);
-  const arc = svg('circle', { class: 'counter-ring-arc', cx: '60', cy: '60', r: String(RING_R), 'stroke-dasharray': RING_C.toFixed(2), 'stroke-dashoffset': RING_C.toFixed(2) });
-  ring.append(defs, svg('circle', { class: 'counter-ring-track', cx: '60', cy: '60', r: String(RING_R) }), arc);
+  const ring = svg('svg', { class: 'counter-ring-svg', viewBox: '0 0 200 200', 'aria-hidden': 'true' });
+  // Rough brush edges: a little noise displaces the stroke.
+  const ink = svg('filter', { id: 'enso-ink', x: '-10%', y: '-10%', width: '120%', height: '120%' });
+  ink.append(svg('feTurbulence', { type: 'fractalNoise', baseFrequency: '.06', numOctaves: '3', seed: '4' }), svg('feDisplacementMap', { in: 'SourceGraphic', scale: '7' }));
+  const defs = svg('defs', {}); defs.append(ink);
+  const dash = { pathLength: '100', 'stroke-dasharray': '100', 'stroke-dashoffset': '100' };
+  const arc = svg('path', { class: 'counter-ring-arc', d: ensoArc(82), ...dash });
+  const echo = svg('path', { class: 'counter-ring-echo', d: ensoArc(74), ...dash });
+  ring.append(defs, svg('path', { class: 'counter-ring-track', d: ensoArc(82) }), arc, echo);
+  const arcs = [arc, echo];
   let lastTotal = null;
   const paint = () => {
     const now = new Date();
@@ -78,7 +87,8 @@ function counterCard(start, onNewDay) {
     bigLabel.textContent = e.totalDays === 1 ? 'día juntos' : 'días juntos';
     clock.textContent = [e.hours, e.minutes, e.seconds].map((n) => String(n).padStart(2, '0')).join(':');
     if (lastTotal !== e.totalDays) {
-      arc.setAttribute('stroke-dashoffset', (RING_C * (1 - (r.isToday ? 1 : r.progress))).toFixed(2));
+      const off = (100 * (1 - (r.isToday ? 1 : r.progress))).toFixed(2);
+      arc.setAttribute('stroke-dashoffset', off); echo.setAttribute('stroke-dashoffset', (100 - (100 - off) * 0.82).toFixed(2));
       goal.textContent = r.isToday ? `¡Hoy cumplen ${plural(r.years, 'año', 'años')}!`
         : r.daysLeft === 1 ? `Mañana cumplen ${plural(r.nextYears, 'año', 'años')}` : `Faltan ${r.daysLeft} días para ${r.nextYears === 1 ? 'el primer año' : `los ${r.nextYears} años`}`;
       const parts = [e.years ? plural(e.years, 'año', 'años') : '', e.months ? plural(e.months, 'mes', 'meses') : '', plural(e.days, 'día', 'días')].filter(Boolean);
@@ -92,7 +102,8 @@ function counterCard(start, onNewDay) {
   const card = el('article', { class: 'card home-card counter-card', 'aria-labelledby': 'counter-title' },
     petals,
     el('h2', { class: 'sr-only', id: 'counter-title' }, 'Nuestro tiempo'),
-    el('div', { class: 'counter-ring', 'aria-hidden': 'true' }, ring, el('p', { class: 'counter-big' }, big, bigLabel)),
+    el('div', { class: 'counter-ring', 'aria-hidden': 'true' }, ring, el('p', { class: 'counter-big' }, big, bigLabel),
+      el('span', { class: 'counter-seal' }, icon('heart', { size: 16 }))),
     el('div', { 'aria-hidden': 'true' }, goal, el('p', { class: 'counter-detail' }, detail, clock)),
     sr);
   // Ticks every second while visible; stops when the tab is hidden and recalculates on return.
@@ -102,11 +113,11 @@ function counterCard(start, onNewDay) {
   const onVis = () => (document.hidden ? stopTimer() : startTimer());
   document.addEventListener('visibilitychange', onVis);
   if (!document.hidden) startTimer();
-  // The ring fills in once, from empty, when Inicio opens.
+  // The brush paints the circle once, from empty, when Inicio opens.
   if (!util.prefersReducedMotion()) {
-    const target = arc.getAttribute('stroke-dashoffset');
-    arc.setAttribute('stroke-dashoffset', RING_C.toFixed(2));
-    requestAnimationFrame(() => requestAnimationFrame(() => { arc.classList.add('is-filling'); arc.setAttribute('stroke-dashoffset', target); }));
+    const targets = arcs.map((a) => a.getAttribute('stroke-dashoffset'));
+    arcs.forEach((a) => a.setAttribute('stroke-dashoffset', '100'));
+    requestAnimationFrame(() => requestAnimationFrame(() => arcs.forEach((a, i) => { a.classList.add('is-filling'); a.setAttribute('stroke-dashoffset', targets[i]); })));
   }
   return { card, petals, cleanup: () => { stopTimer(); document.removeEventListener('visibilitychange', onVis); } };
 }
@@ -294,13 +305,18 @@ function comingCard(data, start) {
   }
   const list = rows.sort((a, b) => a.days - b.days).slice(0, 3);
   if (!list.length) return null;
-  const left = (n) => (n === 1 ? 'Mañana' : n < 60 ? `${n} días` : n < 365 ? `${Math.round(n / 30.4)} meses` : `${plural(Math.round(n / 365), 'año', 'años')}`);
-  return el('article', { class: 'card home-card coming-card', 'aria-labelledby': 'coming-title' },
+  // A tear-off calendar page per date (Inicio A): the big number is what is left.
+  const left = (n) => (n < 60 ? [String(n), n === 1 ? 'día · mañana' : 'días'] : n < 365 ? [String(Math.round(n / 30.4)), 'meses'] : [String(Math.round(n / 365)), Math.round(n / 365) === 1 ? 'año' : 'años']);
+  return el('section', { class: 'home-card coming-card', 'aria-labelledby': 'coming-title' },
     el('h2', { class: 'card-kicker', id: 'coming-title' }, 'Lo que viene'),
-    el('ul', { class: 'coming-list' }, list.map((r) => el('li', { class: 'coming-row' },
-      el('span', { class: 'coming-icon', 'aria-hidden': 'true' }, icon(r.icon, { size: 20 })),
-      el('span', { class: 'coming-text' }, el('span', { class: 'coming-name' }, r.name), r.when ? el('span', { class: 'muted small' }, r.when) : null),
-      el('span', { class: 'coming-days' }, left(r.days))))));
+    el('ul', { class: 'mekuri-row' }, list.map((r) => {
+      const [num, unit] = left(r.days);
+      return el('li', { class: 'mekuri' },
+        el('span', { class: 'mekuri-num' }, num),
+        el('span', { class: 'mekuri-unit' }, unit),
+        el('span', { class: 'mekuri-name' }, r.name),
+        r.when ? el('span', { class: 'mekuri-when' }, r.when) : null);
+    })));
 }
 
 // ---------- 10. backup reminder ----------

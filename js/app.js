@@ -202,19 +202,40 @@ function preloadSections() {
 }
 
 // ---------- global layers ----------
-function splash() {
+// The full opening heart plays on the first open of each day (decided 2026-11-19); other opens keep the short welcome.
+const INTRO_KEY = () => `${CONFIG.storageKey}.intro.day`;
+function introDue(mode) {
+  if (mode === 'always') return true;
+  try { return localStorage.getItem(INTRO_KEY()) !== util.localDay(); } catch { return false; }
+}
+
+/** Welcome layer. `intro` forces the opening heart; otherwise it follows Ajustes > Movimiento. */
+function splash({ ready = Promise.resolve(), intro = null, mode = 'daily' } = {}) {
   return new Promise((resolve) => {
     const who = profile.active();
     const reduced = util.prefersReducedMotion();
-    const layer = el('div', { class: 'splash', role: 'status', 'aria-label': 'Aishiteru' },
+    const full = !reduced && (intro ?? introDue(mode));
+    const layer = el('div', { class: `splash${full ? ' splash-intro' : ''}`, role: 'status', 'aria-label': 'Aishiteru' },
       el('div', { class: 'splash-heart', 'aria-hidden': 'true' }, icon('heart', { size: 64 })),
       el('p', { class: 'splash-for' }, `Para ${profile.nick(who)}`),
       ja('愛してる', 'aishiteru'),
       el('button', { class: 'btn btn-ghost btn-small splash-skip', type: 'button' }, 'Saltar'));
-    const finish = () => { clearTimeout(t); layer.classList.add('leaving'); setTimeout(() => { layer.remove(); resolve(); }, reduced ? 0 : 300); };
+    let t = 0;
+    let stop = () => {};
+    let gone = false;
+    const finish = () => {
+      if (gone) return; gone = true;
+      clearTimeout(t); stop();
+      layer.classList.add('leaving');
+      setTimeout(() => { layer.remove(); resolve(); }, reduced ? 0 : 300);
+    };
     layer.addEventListener('click', finish);
     document.body.append(layer);
-    const t = setTimeout(finish, reduced ? 600 : 1500);
+    if (!full) { t = setTimeout(finish, reduced ? 600 : 1500); return; }
+    try { localStorage.setItem(INTRO_KEY(), util.localDay()); } catch { /* private mode */ }
+    import('./features/intro.js')
+      .then(({ playIntro }) => { if (!gone) stop = playIntro(layer, { ready, onWelcome: () => layer.classList.add('show'), onDone: finish }); })
+      .catch(() => { layer.classList.add('show'); t = setTimeout(finish, 1500); });
   });
 }
 
@@ -324,6 +345,8 @@ async function applySettings() {
   theme.apply({ ...appearance, ...motion });
 }
 app.applySettings = applySettings;
+/** Plays the opening heart now (Ajustes > Movimiento > Ver la entrada). */
+app.playIntro = () => splash({ intro: true });
 
 function fatal(message) {
   document.getElementById('app').replaceChildren(el('section', { class: 'page fatal' },
@@ -355,7 +378,15 @@ async function start() {
   app.setupDone = setupDone;
   if (!setupDone && !location.hash.startsWith('#/setup')) history.replaceState(null, '', `${location.pathname}#/setup`);
   if (setupDone && await security.appLockNeeded()) await security.lockScreen({ scope: 'app' });
-  if (setupDone && meta.onboardingDone && !location.hash.startsWith('#/setup')) await splash();
+  let appReady = () => {};
+  const ready = new Promise((r) => { appReady = r; });
+  let welcome = null;
+  if (setupDone && meta.onboardingDone && !location.hash.startsWith('#/setup')) {
+    // The short welcome waits as before; the opening heart plays while the app loads behind it.
+    const { intro: mode } = await db.getSettings('motion', theme.MOTION_DEFAULTS);
+    welcome = splash({ ready, mode });
+    if (!document.querySelector('.splash-intro')) { await welcome; welcome = null; }
+  }
   security.startInactivity(async () => {
     if (!(await security.getSettings()).appLock) return;
     security.markUiLocked(); cryptoBox.lockAll();
@@ -363,6 +394,7 @@ async function start() {
   });
   buildShell();
   await router.start({ render, navigate: onNavigate });
+  appReady();
   registerServiceWorker();
   document.documentElement.classList.add('ready');
 }

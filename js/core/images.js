@@ -42,3 +42,30 @@ export async function compressImage(file, { max = MAX_SIDE, quality = QUALITY } 
 
 /** True for the errors IndexedDB raises when the device storage is full. */
 export const isQuotaError = (e) => e?.name === 'QuotaExceededError' || e?.inner?.name === 'QuotaExceededError' || /quota/i.test(e?.message || '');
+
+// Short videos for Cápsula (decided 2026-11-19): up to 30 s and 50 MB, stored as they come.
+export const MAX_VIDEO_SECONDS = 30;
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+export const isVideoFile = (f) => (f?.type || '').startsWith('video/') || /\.(mp4|webm|mov|m4v|3gp|mkv)$/i.test(f?.name || '');
+
+/** File -> { blob, width, height, duration }. Throws an Error with code "TOO_BIG", "TOO_LONG" or "DECODE". */
+export async function readVideo(file) {
+  const fail = (code) => Object.assign(new Error(code), { code });
+  if (file.size > MAX_VIDEO_BYTES) throw fail('TOO_BIG');
+  const url = URL.createObjectURL(file);
+  try {
+    const meta = await new Promise((resolve, reject) => {
+      const v = document.createElement('video');
+      v.preload = 'metadata'; v.muted = true;
+      const done = (fn) => { clearTimeout(t); v.removeAttribute('src'); v.load(); fn(); };
+      const t = setTimeout(() => done(() => reject(fail('DECODE'))), 15000);
+      v.onloadedmetadata = () => { const r = { width: v.videoWidth, height: v.videoHeight, duration: v.duration }; done(() => resolve(r)); };
+      v.onerror = () => done(() => reject(fail('DECODE')));
+      v.src = url;
+    });
+    if (!Number.isFinite(meta.duration)) throw fail('DECODE');
+    if (meta.duration > MAX_VIDEO_SECONDS + 0.5) throw fail('TOO_LONG');
+    const blob = file.type ? file : new Blob([file], { type: 'video/mp4' });
+    return { blob, width: meta.width || undefined, height: meta.height || undefined, duration: Math.round(meta.duration * 10) / 10 };
+  } finally { URL.revokeObjectURL(url); }
+}
