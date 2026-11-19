@@ -23,6 +23,7 @@ const load = {
   cartas: () => import('./features/cartas.js'),
   more: () => import('./features/more.js'),
   settings: () => import('./features/settings.js'),
+  ajustes: () => import('./features/ajustes.js'),
   styleguide: () => import('./features/styleguide.js'),
   setup: () => import('./features/setup.js'),
 };
@@ -42,7 +43,7 @@ function registerRoutes() {
   router.register('/ajustes/guia-estilo', { id: 'guia-estilo', title: 'Guía de estilo', tab: 'mas', load: load.styleguide });
   router.register('/ajustes', { ...GROUPS.at(-1).sections[0], tab: 'mas', load: load.settings });
   router.register('/ajustes/legal/:doc', { id: 'legal-doc', title: 'Legal y ayuda', tab: 'mas', load: load.settings });
-  for (const p of SETTINGS_PAGES) router.register(`/ajustes/${p.id}`, { ...p, id: `ajustes/${p.id}`, settingsPage: p.id, tab: 'mas', load: p.phase === '1' ? load.settings : load.placeholder });
+  for (const p of SETTINGS_PAGES) router.register(`/ajustes/${p.id}`, { ...p, id: `ajustes/${p.id}`, settingsPage: p.id, tab: 'mas', load: load[p.module] || load.placeholder });
   for (const t of TABS.slice(0, 4)) registerSection(t.path, { ...t, tab: t.id, load: load[{ inicio: 'home', capsula: 'capsula', cupones: 'cupones', cartas: 'cartas' }[t.id]] });
   for (const g of GROUPS) for (const s of g.sections) if (!s.id.startsWith('ajustes')) registerSection(`/${s.id}`, { ...s, group: g.id, tab: 'mas' });
   for (const s of HIDDEN) registerSection(`/${s.id}`, { ...s, tab: 'mas', neutral: s.id === 'yoru' });
@@ -286,7 +287,9 @@ function registerServiceWorker() {
 
 async function wipeEverything() {
   await db.deleteDatabase();
-  try { localStorage.removeItem(`${CONFIG.storageKey}.theme`); localStorage.removeItem(`${CONFIG.storageKey}.activeProfile`); } catch { /* ignore */ }
+  // Every per-device key of the app (theme, active person, remembered tabs and orders).
+  try { Object.keys(localStorage).filter((k) => k.startsWith(`${CONFIG.storageKey}.`)).forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
+  try { sessionStorage.clear(); } catch { /* ignore */ }
   location.replace(`${location.pathname}#/setup`);
   location.reload();
 }

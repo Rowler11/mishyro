@@ -347,6 +347,124 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 2e. Ajustes: Centro de seguridad and Copia de seguridad ----------
+  {
+    const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'aishiteru-'));
+    const pinIn = async (page, label, v) => { const i = page.getByLabel(label, { exact: true }); await i.waitFor(); await i.fill(v); await page.waitForTimeout(300); };
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await completeSetup(page);
+    await page.evaluate(() => { window.showSaveFilePicker = undefined; });
+    // a private record with no PIN yet, and a memory that only exists in the backup
+    await page.evaluate(async () => {
+      const db = await import('./js/core/db.js');
+      await db.put('memories', { id: 'test:priv', date: '2026-02-02', title: 'PRIVADO-DE-PRUEBA', mediaIds: [], private: true });
+      await db.put('memories', { id: 'test:shared', date: '2026-03-03', title: 'Recuerdo de la copia', mediaIds: [] });
+    });
+    await page.evaluate(() => { location.hash = '#/ajustes/copia'; });
+    await page.getByRole('switch', { name: /Incluir lo privado/ }).check();
+    await page.getByLabel('Contraseña de la copia').fill('clave-ficticia-1');
+    await page.getByLabel('Repite la contraseña').fill('otra-cosa');
+    await page.getByRole('button', { name: 'Descargar copia' }).click();
+    ok('copia: the backup password must be typed twice the same', (await page.locator('.field-error', { hasText: 'No coinciden' }).count()) === 1);
+    await page.getByLabel('Repite la contraseña').fill('clave-ficticia-1');
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar copia' }).click()]);
+    const file = path.join(tmp, dl.suggestedFilename()); await dl.saveAs(file);
+    const json = fs.readFileSync(file, 'utf8');
+    ok('copia: the private part travels encrypted with the password', !json.includes('PRIVADO-DE-PRUEBA') && json.includes('"privateBlob":{') && json.includes('Recuerdo de la copia'));
+    await page.waitForTimeout(300);
+    ok('copia: "Última copia" shows today', /hoy/.test(await page.locator('.status-row').first().textContent()));
+    // corrupt and newer-version files are rejected without touching anything
+    const before = await page.evaluate(async () => (await (await import('./js/core/db.js')).rawAll('memories')).length);
+    fs.writeFileSync(path.join(tmp, 'roto.json'), '{"format":"aniversario-backup", "schemaVersion": 1, "stores": {"memories": [{"id": 5}]}}');
+    fs.writeFileSync(path.join(tmp, 'nueva.json'), JSON.stringify({ format: 'aniversario-backup', schemaVersion: 99, stores: {} }));
+    fs.writeFileSync(path.join(tmp, 'texto.json'), 'esto no es json');
+    const rejected = [];
+    for (const f of ['roto.json', 'nueva.json', 'texto.json']) {
+      await page.setInputFiles('#backup-file', path.join(tmp, f));
+      await page.locator('.note-error').waitFor();
+      rejected.push(await page.locator('.note-error p').first().textContent());
+    }
+    const after = await page.evaluate(async () => (await (await import('./js/core/db.js')).rawAll('memories')).length);
+    ok('copia: corrupt, newer-version and non-JSON files are rejected without changes', before === after && /identificador/.test(rejected[0]) && /más nueva/.test(rejected[1]) && /JSON/.test(rejected[2]), rejected.join(' | '));
+
+    // --- Centro de seguridad on the same phone ---
+    await page.evaluate(() => { location.hash = '#/ajustes/seguridad'; });
+    await page.getByRole('button', { name: 'Crear PIN de la app' }).click();
+    await pinIn(page, 'Nuevo PIN de 4 números', '1357');
+    await pinIn(page, 'Repite el PIN', '1357');
+    await page.getByRole('button', { name: 'Cambiar PIN', exact: true }).waitFor({ timeout: 15000 });
+    await page.waitForTimeout(300);
+    ok('seguridad: creating the app PIN turns on the lock at open', /Pide el PIN al abrir/.test(await page.locator('.status-row').first().textContent()));
+    const enc = await page.evaluate(async () => JSON.stringify(await (await import('./js/core/db.js')).rawGet('memories', 'test:priv')));
+    ok('seguridad: the private record becomes encrypted when the PIN is created', !enc.includes('PRIVADO-DE-PRUEBA') && enc.includes('"enc"'));
+    await page.getByRole('button', { name: 'Cambiar PIN', exact: true }).click();
+    await pinIn(page, 'PIN', '0000');
+    ok('seguridad: changing the PIN rejects a wrong current PIN', /incorrecto/.test(await page.locator('.pin-msg').textContent()));
+    await pinIn(page, 'PIN', '1357');
+    await pinIn(page, 'PIN nuevo de 4 números', '8642');
+    await pinIn(page, 'Repite el PIN nuevo', '8642');
+    await page.waitForFunction(() => !document.querySelector('[role="dialog"]'), null, { timeout: 15000 });
+    const pins = await page.evaluate(async () => { const s = await import('./js/core/security.js'); return [await s.unlock('app', '8642'), await s.unlock('app', '1357')]; });
+    ok('seguridad: after the change the new PIN works and the old one does not', pins[0] === null && /incorrecto/.test(pins[1] || ''), JSON.stringify(pins));
+    await page.locator('.segmented-option').filter({ hasText: /^5 min$/ }).click();
+    await page.waitForTimeout(300);
+    ok('seguridad: inactivity lock is saved', (await page.evaluate(async () => (await (await import('./js/core/security.js')).getSettings()).autoLockSeconds)) === 300);
+    await page.getByRole('switch', { name: /Borrar todo tras/ }).click();
+    await page.getByRole('dialog', { name: '¿Activar el borrado automático?' }).getByRole('button', { name: 'Cancelar' }).click();
+    await page.waitForTimeout(300);
+    ok('seguridad: auto-wipe asks first and stays off when cancelled', !(await page.getByRole('switch', { name: /Borrar todo tras/ }).isChecked())
+      && !(await page.evaluate(async () => (await (await import('./js/core/security.js')).getSettings()).wipeAfterFailures)));
+    await page.getByRole('button', { name: 'Borrar Recuerdos de la Cápsula' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Borrar' }).click();
+    await pinIn(page, 'PIN', '8642');
+    await page.locator('.wipe-row', { hasText: 'Recuerdos' }).filter({ hasText: 'Nada que borrar' }).waitFor({ timeout: 10000 });
+    ok('seguridad: delete by section (with PIN) empties the Cápsula', (await page.evaluate(async () => (await (await import('./js/core/db.js')).rawAll('memories')).length)) === 0);
+    ok('seguridad + copia: no horizontal scroll', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    await shot(page, 'seguridad-390');
+    ok('seguridad + copia: no console errors', errors.length === 0, errors.join(' | '));
+
+    // --- import on "the other phone": password, summary, combine ---
+    const ctx2 = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const p2 = await ctx2.newPage();
+    const errors2 = watch(p2);
+    await completeSetup(p2);
+    await p2.evaluate(() => { location.hash = '#/ajustes/copia'; });
+    await p2.setInputFiles('#backup-file', file);
+    await p2.getByLabel('Contraseña de esta copia').fill('equivocada');
+    await p2.getByRole('button', { name: 'Abrir lo privado' }).click();
+    await p2.locator('.field-error', { hasText: 'no abre' }).waitFor();
+    ok('import: a wrong backup password is rejected', true);
+    await p2.getByLabel('Contraseña de esta copia').fill('clave-ficticia-1');
+    await p2.getByRole('button', { name: 'Abrir lo privado' }).click();
+    await p2.locator('.summary-table').waitFor();
+    const rec = await p2.locator('.summary-table tr', { hasText: 'Recuerdos' }).textContent();
+    ok('import: the summary shows what is new before applying', /Recuerdos\s*2/.test(rec.replace(/\s+/g, ' ')), rec);
+    await p2.getByRole('button', { name: 'Combinar ahora' }).click();
+    await p2.locator('.note-card', { hasText: 'se combinó' }).waitFor();
+    const titles = await p2.evaluate(async () => (await (await import('./js/core/db.js')).query('memories')).map((m) => m.title));
+    ok('import: combine brings the shared and the private memory', titles.includes('Recuerdo de la copia') && titles.includes('PRIVADO-DE-PRUEBA'), titles.join(', '));
+    await shot(p2, 'copia-1440');
+    ok('import: no console errors', errors2.length === 0, errors2.join(' | '));
+
+    // --- Borrar todo ---
+    await p2.evaluate(() => { location.hash = '#/ajustes/seguridad'; });
+    await p2.getByRole('button', { name: 'Borrar todo', exact: true }).click();
+    await p2.getByLabel('Escribe BORRAR para confirmar').fill('borra');
+    await p2.getByRole('dialog').getByRole('button', { name: 'Borrar todo' }).click();
+    ok('borrar todo: needs the exact word', (await p2.locator('.field-error', { hasText: 'BORRAR' }).count()) === 1);
+    await p2.evaluate(() => localStorage.setItem('aishiteru.capsula.order', 'asc'));
+    await p2.getByLabel('Escribe BORRAR para confirmar').fill('BORRAR');
+    await Promise.all([p2.waitForEvent('load'), p2.getByRole('dialog').getByRole('button', { name: 'Borrar todo' }).click()]);
+    await p2.getByRole('button', { name: 'Empezar' }).waitFor({ timeout: 10000 });
+    // The theme cache is written again on start; everything else of the app must be gone.
+    const left = await p2.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('aishiteru.') && k !== 'aishiteru.theme'));
+    ok('borrar todo: back to the setup with no local keys left', (await p2.evaluate(() => location.hash)) === '#/setup' && left.length === 0, left.join(','));
+    await ctx2.close();
+    await ctx.close();
+  }
+
   // ---------- 3. Modal + keyboard + Atrás closes modal first ----------
   {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -368,9 +486,11 @@ async function completeSetup(page) {
     await page.keyboard.press('?');
     ok('shortcuts: "?" opens the list', await page.getByRole('dialog', { name: 'Atajos de teclado' }).isVisible());
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(250);
+    // closing a modal steps history back; let that finish before the next shortcut
+    await page.waitForFunction(() => !document.querySelector('[role="dialog"]'));
+    await page.waitForTimeout(600);
     await page.keyboard.press('2');
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(400);
     ok('shortcuts: "2" opens Cápsula', (await page.evaluate(() => location.hash)) === '#/capsula');
     await page.keyboard.press('Escape'); await page.keyboard.press('Escape');
     await page.waitForTimeout(200);

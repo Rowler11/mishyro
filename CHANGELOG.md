@@ -1,5 +1,17 @@
 # Cambios
 
+## 0.1.13 (Fase 2, Centro de seguridad y Copia de seguridad)
+
+- Centro de seguridad: un resumen de un vistazo (bloqueo, huella, qué está cifrado, PIN personal, última copia y almacenamiento persistente, con botón para activarlo).
+- PIN de la app: crear, cambiar (pide el actual), quitar, y elegir si se pide al abrir. Huella o rostro donde el teléfono lo permita, diciendo con honestidad si abre también lo privado o solo la pantalla.
+- PIN personal de quien usa la app: crear, cambiar y quitar.
+- Bloqueos: bloquear lo privado al salir, cortina de privacidad, bloqueo por inactividad (nunca, 1, 5 o 15 min, con efecto inmediato) y prueba del botón de pánico.
+- Borrado automático tras 10 intentos fallidos: apagado por defecto y pide confirmación.
+- Borrar por sección (recuerdos, cupones creados y canjes, cartas, Pensando en ti) y "Borrar todo" escribiendo BORRAR; con PIN de la app, también lo pide. "Borrar todo" limpia además lo recordado en el dispositivo.
+- Copia de seguridad: descargar, o enviar al otro teléfono desde el menú de compartir. Opción de incluir lo privado, cifrado con una contraseña que se escribe dos veces y no se guarda.
+- Importar: rechaza archivos dañados o de otra versión sin tocar nada, pide la contraseña si la copia trae parte privada, muestra un resumen (nuevos, actualizados, borrados) y deja elegir "Combinar" o "Reemplazar todo". Se pueden elegir los dos archivos (datos y fotos) a la vez.
+- En Ajustes, lo que aún no existe dice "Pronto".
+
 ## 0.1.12 (Fase 2, Cartas)
 
 - "Para ti": las cartas llegan en sobres japoneses con un sello con la inicial de quien escribe. Al abrir uno, el sello se rompe y la carta se lee en papel washi; se cierra con el botón o con Esc. Queda marcada "Abierta el … a las …" y pasa a "Abiertas".

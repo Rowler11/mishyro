@@ -1,5 +1,5 @@
-// Ajustes: main list, Apariencia, Movimiento y sonido, Legal y ayuda (structure) and Acerca de.
-// Seguridad, Privacidad, Copia, Perfil y datos and Modo sin terceros arrive in Fase 2.
+// Ajustes: main list, Apariencia, Movimiento y sonido, Legal y ayuda and Acerca de.
+// Centro de seguridad and Copia de seguridad live in ajustes.js.
 import { ui, util, db, theme, profile, router, CONFIG } from '../core.js';
 import { SETTINGS_PAGES } from '../routes.js';
 
@@ -33,7 +33,7 @@ function main({ app }) {
   const rows = SETTINGS_PAGES.map((p) => el('a', { class: 'list-row card-link', href: `#/ajustes/${p.id}` },
     el('span', { class: 'list-icon' }, icon(p.icon)),
     el('span', { class: 'list-text' }, el('span', { class: 'list-title' }, p.title)),
-    p.phase === '1' ? icon('chevron-right', { cls: 'list-chevron' }) : el('span', { class: 'badge' }, `Fase ${p.phase}`)));
+    p.module ? icon('chevron-right', { cls: 'list-chevron' }) : el('span', { class: 'badge' }, 'Pronto')));
 
   const install = app.deferredInstall ? ui.button({ label: 'Instalar la app', iconName: 'download', variant: 'primary', onClick: async () => {
     app.deferredInstall.prompt();
