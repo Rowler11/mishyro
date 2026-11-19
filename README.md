@@ -58,6 +58,11 @@ BASE=http://127.0.0.1:8787/ node tests/e2e.cjs
 
 Requieren Node y Playwright con Chromium. Las pruebas usan solo datos ficticios.
 
+## Decisiones de contenido
+
+- Cápsula: la línea de tiempo muestra lo más reciente arriba, porque es lo que más se abre y así lo nuevo se ve sin bajar. El botón "Ver desde el inicio" la invierte para leer la historia en orden; la elección se recuerda en cada teléfono.
+- Fotos: cada recuerdo lleva hasta 6. Se comprimen en el teléfono (lado mayor de 1280 px, JPEG al 70 %, con la orientación de la cámara corregida) y se guardan en IndexedDB. Las de "Solo yo" se cifran con la misma clave que su recuerdo.
+
 ## Estructura
 
 - `index.html`, `styles.css`, `theme-boot.js`, `manifest.webmanifest`, `sw.js`: la base de la PWA.

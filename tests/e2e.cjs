@@ -174,6 +174,77 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 2b. Cápsula: add with photos, validation, order, detail, quota, delete ----------
+  for (const [w, h] of [[390, 844], [1440, 900]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await completeSetup(page);
+    await page.evaluate(() => { location.hash = '#/capsula'; });
+    await page.waitForSelector('.timeline');
+    ok(`cápsula @${w}: seed memories in the timeline and the undated one under Por completar`, (await page.locator('.timeline:not(.timeline-drafts) .tl-card').count()) === 1 && (await page.locator('.timeline-drafts .tl-card').count()) === 1);
+    // A 12 MP photo and a small JPEG with EXIF orientation 6 (rotated 90°), made in the page.
+    const files = await page.evaluate(async () => {
+      const mk = async (cw, ch, type) => { const c = document.createElement('canvas'); c.width = cw; c.height = ch; const x = c.getContext('2d'); x.fillStyle = '#c2405f'; x.fillRect(0, 0, cw / 2, ch); x.fillStyle = '#6b4e8c'; x.fillRect(cw / 2, 0, cw / 2, ch); return new Uint8Array(await (await new Promise((r) => c.toBlob(r, type, 0.9))).arrayBuffer()); };
+      const big = await mk(4000, 3000, 'image/png');
+      const jpg = await mk(400, 200, 'image/jpeg');
+      const exif = [0xFF, 0xE1, 0x00, 0x22, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00, 0x4D, 0x4D, 0x00, 0x2A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x01, 0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+      const rot = new Uint8Array(jpg.length + exif.length); rot.set(jpg.slice(0, 2)); rot.set(exif, 2); rot.set(jpg.slice(2), 2 + exif.length);
+      const b64 = (u) => { let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
+      return { big: b64(big), rot: b64(rot) };
+    });
+    await page.locator('.fab').click();
+    const ed = page.locator('.memory-editor');
+    await ed.waitFor();
+    await ed.getByRole('button', { name: 'Guardar recuerdo' }).click();
+    ok(`cápsula @${w}: title and date are required with visible errors`, (await ed.locator('.field-error:not(:empty)').count()) === 2);
+    await page.setInputFiles('.memory-editor input[type=file]', [
+      { name: 'big.png', mimeType: 'image/png', buffer: Buffer.from(files.big, 'base64') },
+      { name: 'rot.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(files.rot, 'base64') },
+    ]);
+    await page.waitForFunction(() => document.querySelectorAll('.photo-tile').length === 2, null, { timeout: 20000 });
+    await ed.getByLabel('Título').fill('Picnic en el parque');
+    ok(`cápsula @${w}: the error goes away once the field is fixed`, (await ed.locator('.field-error:not(:empty)').count()) === 1);
+    await ed.getByLabel('Fecha').fill('2025-11-19');
+    await ed.getByLabel('Nota (opcional)').fill('Llevamos fresas.\n\nLlovió al final.');
+    // Storage full: the save fails with a clear message and keeps what was typed.
+    await page.evaluate(() => {
+      const orig = IDBObjectStore.prototype.put;
+      window.__restorePut = () => { IDBObjectStore.prototype.put = orig; };
+      IDBObjectStore.prototype.put = function put(...a) { if (this.name === 'media') throw new DOMException('full', 'QuotaExceededError'); return orig.apply(this, a); };
+    });
+    await ed.getByRole('button', { name: 'Guardar recuerdo' }).click();
+    await page.waitForTimeout(300);
+    ok(`cápsula @${w}: full storage is reported and the form stays`, /No queda espacio/.test(await ed.locator('.form-error').textContent()) && (await ed.getByLabel('Título').inputValue()) === 'Picnic en el parque');
+    await page.evaluate(() => window.__restorePut());
+    await ed.getByRole('button', { name: 'Guardar recuerdo' }).click();
+    await ed.waitFor({ state: 'detached' });
+    const media = await page.evaluate(async () => (await (await import('./js/core/db.js')).rawAll('media')).map((m) => ({ w: m.width, h: m.height, mime: m.mime })));
+    ok(`cápsula @${w}: the 12 MP photo is stored at 1280 px or less as JPEG`, media.some((m) => m.w === 1280 && m.h === 960 && m.mime === 'image/jpeg'), JSON.stringify(media));
+    ok(`cápsula @${w}: EXIF orientation is applied (400x200 rotated to 200x400)`, media.some((m) => m.w === 200 && m.h === 400), JSON.stringify(media));
+    ok(`cápsula @${w}: only the saved photos remain after the failed try`, media.length === 2, String(media.length));
+    ok(`cápsula @${w}: Un día como hoy shows the memory from a year ago`, /Picnic/.test(await page.locator('.otd-card').textContent()));
+    const firstTitle = () => page.locator('.timeline:not(.timeline-drafts) .tl-title').first().textContent();
+    ok(`cápsula @${w}: most recent on top`, (await firstTitle()) === 'Picnic en el parque');
+    await page.getByRole('button', { name: 'Ver desde el inicio' }).click();
+    ok(`cápsula @${w}: "Ver desde el inicio" puts the oldest first`, (await firstTitle()) === 'Título');
+    await page.getByRole('button', { name: 'Ver lo más reciente' }).click();
+    await page.locator('.timeline .tl-card', { hasText: 'Picnic' }).click();
+    await page.waitForSelector('.memory-detail .carousel');
+    ok(`cápsula @${w}: detail shows a carousel with both photos`, (await page.locator('.memory-detail .carousel-slide').count()) === 2);
+    ok(`cápsula @${w}: ${w < 1100 ? 'detail opens as its own page' : 'detail opens in the side panel next to the list'}`, w < 1100 ? (await page.locator('.timeline').count()) === 0 : (await page.locator('.capsula-split .timeline:not(.timeline-drafts)').count()) === 1 && (await page.locator('.capsula-detail .memory-title').textContent()) === 'Picnic en el parque');
+    ok(`cápsula @${w}: no horizontal scroll`, !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    await shot(page, `capsula-detail-${w}`);
+    await page.locator('.memory-detail').getByRole('button', { name: 'Borrar' }).click();
+    await page.getByRole('dialog', { name: '¿Borrar este recuerdo?' }).getByRole('button', { name: 'Borrar' }).click();
+    await page.waitForFunction(() => !document.querySelector('.tl-card[href*="capsula/"]') || ![...document.querySelectorAll('.tl-title')].some((t) => t.textContent === 'Picnic en el parque'));
+    const left = await page.evaluate(async () => (await (await import('./js/core/db.js')).rawAll('media')).length);
+    ok(`cápsula @${w}: deleting a memory asks first and removes its photos`, left === 0, String(left));
+    ok(`cápsula @${w}: memories from the initial data have no Borrar`, (await page.evaluate(async () => { location.hash = '#/capsula/seed%3Amemory%3Ainicio'; await new Promise((r) => setTimeout(r, 300)); return document.querySelectorAll('.memory-detail button').length && ![...document.querySelectorAll('.memory-detail button')].some((b) => b.textContent.includes('Borrar')); })));
+    ok(`cápsula @${w}: no console errors`, errors.length === 0, errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---------- 3. Modal + keyboard + Atrás closes modal first ----------
   {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
