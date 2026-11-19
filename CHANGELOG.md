@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.1.1
+
+- Arreglo: en Cloudflare la app dejaba de abrir (ERR_FAILED) después de la primera visita, porque el modo sin conexión guardaba una redirección de `index.html`.
+
 ## 0.1.0 · Fase 1: base y diseño
 
 - Esqueleto de la PWA: rutas, navegación adaptable (barra inferior en el teléfono, riel lateral en tablet y PC), atajos de teclado y pantalla de inicio.

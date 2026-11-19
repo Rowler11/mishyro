@@ -49,6 +49,13 @@ BASE=http://127.0.0.1:8765/mishyro/ node tests/e2e.cjs            # flujo comple
 BASE=http://127.0.0.1:8765/mishyro/ AXE=ruta/axe.min.js node tests/a11y.cjs   # accesibilidad con axe-core
 ```
 
+Para probar igual que en Cloudflare (que redirige `/index.html` a `/`), corre también e2e contra `npx wrangler dev`:
+
+```bash
+npx wrangler dev --port 8787
+BASE=http://127.0.0.1:8787/ node tests/e2e.cjs
+```
+
 Requieren Node y Playwright con Chromium. Las pruebas usan solo datos ficticios.
 
 ## Estructura
