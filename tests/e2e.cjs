@@ -293,6 +293,60 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 2d. Cartas: open with Esc and focus return, opened state, Escribimos draft -> sealed ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await completeSetup(page);
+    await page.evaluate(async () => {
+      const db = await import('./js/core/db.js');
+      for (const [i, l] of ['Ábreme cuando tengas un día pesado', 'Ábreme cuando necesites reír'].entries()) await db.put('content', { id: `t:l${i}`, kind: 'letter', label: l, text: 'Hola.\n\nTexto ficticio de prueba.' });
+    });
+    await page.evaluate(() => { location.hash = '#/cartas'; });
+    await page.waitForSelector('.futo');
+    ok('cartas: envelopes for Ana, the one still to complete stays hidden', (await page.locator('.futo').count()) === 2);
+    ok('cartas: ribbon counts the letters still to open', /Te quedan 2 cartas por abrir/.test(await page.locator('.ribbon').textContent()));
+    await page.locator('.futo', { hasText: 'necesites reír' }).click();
+    await page.getByRole('dialog', { name: 'Ábreme cuando necesites reír' }).waitFor();
+    ok('cartas: the letter opens on washi paper with its paragraphs', (await page.locator('.washi p').count()) >= 3);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    ok('cartas: Esc closes it and focus goes back to the envelope', await page.evaluate(() => !document.querySelector('[role="dialog"]') && document.activeElement.classList.contains('futo') && document.activeElement.textContent.includes('necesites reír')));
+    const st = await page.locator('.futo.is-opened .futo-status').textContent();
+    ok('cartas: the opened envelope shows "Abierta el {fecha} a las {hora}"', /^Abierta el \d{1,2} de [a-z]+ de \d{4} a las /.test(st), st);
+    await page.reload();
+    await page.waitForSelector('.futo');
+    ok('cartas: the opened state persists', (await page.locator('.futo.is-opened').count()) === 1 && /1 carta por abrir/.test(await page.locator('.ribbon').textContent()));
+    await page.locator('.segmented-option', { hasText: 'Escribimos' }).click();
+    await page.locator('.fab').click();
+    const ed = page.locator('.letter-editor');
+    await ed.getByRole('button', { name: 'Guardar borrador' }).click();
+    ok('cartas: condition and text are required', (await ed.locator('.field-error:not(:empty)').count()) === 2);
+    await ed.getByLabel('Ábreme cuando…').fill('veas la luna llena');
+    await ed.getByLabel('La carta').fill('Mira hacia arriba.\n\nYo también la estoy viendo.');
+    await ed.getByRole('button', { name: 'Guardar borrador' }).click();
+    await page.waitForSelector('.own-letter.status-draft');
+    const draftForLeo = await page.evaluate(async () => { const p = await import('./js/core/profile.js'); const db = await import('./js/core/db.js'); p.setActive('david'); const n = (await db.query('letters', { filter: (l) => !l.letterId })).length; p.setActive('sofia'); return n; });
+    ok('cartas: a draft is "Solo yo" (Leo does not see it)', draftForLeo === 0);
+    await page.waitForSelector('.own-letter.status-draft');
+    await page.locator('.own-letter').getByRole('button', { name: 'Sellar' }).click();
+    await page.getByRole('dialog', { name: '¿Sellar esta carta?' }).getByRole('button', { name: 'Sellar' }).click();
+    await page.waitForSelector('.own-letter.status-sealed');
+    ok('cartas: a sealed letter can no longer be edited', (await page.locator('.own-letter.status-sealed button', { hasText: 'Editar' }).count()) === 0);
+    await page.evaluate(async () => (await import('./js/core/profile.js')).setActive('david'));
+    await page.waitForTimeout(400);
+    await page.locator('.segmented-option', { hasText: 'Para ti' }).click();
+    ok('cartas: Leo receives the sealed letter in "Para ti"', (await page.locator('.futo', { hasText: 'veas la luna llena' }).count()) === 1);
+    await page.locator('.segmented-option', { hasText: 'Escribimos' }).click();
+    const sent = await page.locator('.own-letter', { hasText: 'necesites reír' }).textContent();
+    ok('cartas: on Leo\'s profile the initial letters show as "Las que le escribiste" with their status', /Las que le escribiste/.test(await page.locator('.cartas-section').textContent()) && /Abierta el/.test(sent), sent);
+    ok('cartas: no horizontal scroll', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    await shot(page, 'cartas-390');
+    ok('cartas: no console errors', errors.length === 0, errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---------- 3. Modal + keyboard + Atrás closes modal first ----------
   {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

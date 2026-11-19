@@ -48,7 +48,7 @@ const SEED = path.join(__dirname, '..', 'seed-privado.example.json');
       await page.getByRole('button', { name: 'Saltar' }).click();
       await page.waitForFunction(() => location.hash === '#/inicio');
       await page.evaluate(async (t) => { (await import('./js/core/theme.js')).apply({ theme: t }); }, theme);
-      for (const r of ['/inicio', '/capsula', '/capsula/nuevo', '/cupones', '/mas', '/ajustes', '/ajustes/apariencia', '/ajustes/movimiento', '/ajustes/legal', '/ajustes/legal/privacidad', '/ajustes/acerca', '/ajustes/guia-estilo', '/calendario']) {
+      for (const r of ['/inicio', '/capsula', '/capsula/nuevo', '/cupones', '/cartas', '/mas', '/ajustes', '/ajustes/apariencia', '/ajustes/movimiento', '/ajustes/legal', '/ajustes/legal/privacidad', '/ajustes/acerca', '/ajustes/guia-estilo', '/calendario']) {
         await page.evaluate((p) => { location.hash = `#${p}`; }, r);
         await page.waitForTimeout(700);
         await scan(r);

@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.1.12 (Fase 2, Cartas)
+
+- "Para ti": las cartas llegan en sobres japoneses con un sello con la inicial de quien escribe. Al abrir uno, el sello se rompe y la carta se lee en papel washi; se cierra con el botón o con Esc. Queda marcada "Abierta el … a las …" y pasa a "Abiertas".
+- Un listón cuenta las cartas que quedan por abrir.
+- "Escribimos": cada uno escribe sus cartas "Ábreme cuando…" con firma y una foto opcional. El borrador solo lo ve quien lo escribe; al sellarla ya no se edita (el sello es simbólico). Se puede leer, compartir el texto y borrar.
+- En el teléfono de quien escribió las cartas iniciales aparecen como "Las que le escribiste", con su estado.
+
 ## 0.1.11 (Fase 2, Cuponera)
 
 - Cuponera con boletos estilo kippu: muescas, línea punteada para cortar, número y espacio para el sello.
