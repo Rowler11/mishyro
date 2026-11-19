@@ -377,6 +377,80 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 2e. Own stickers: from a sticker without background, from a photo (frame and background removal), album, share target ----------
+  {
+    const FIX = path.join(__dirname, 'fixtures');
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await completeSetup(page);
+    await page.evaluate(() => { location.hash = '#/cartas'; });
+    await page.locator('.segmented-option', { hasText: 'Escribimos' }).click();
+    await page.locator('.page-new').click();
+    const ed = page.locator('.letter-editor');
+    await ed.getByLabel('Ábreme cuando…').fill('quieras reír');
+    await ed.getByLabel('La carta').fill('Texto ficticio.');
+    await ed.getByRole('button', { name: 'Guardar borrador' }).click();
+    await page.waitForSelector('.own-letter.status-draft');
+    await page.locator('.own-letter').getByRole('button', { name: 'Decorar sobre' }).click();
+    const deco = page.locator('.sticker-editor');
+    await deco.waitFor();
+    await deco.locator('input[type=file]').setInputFiles(path.join(FIX, 'sticker-ficticio.png'));
+    const mk = page.locator('.sticker-maker');
+    await mk.waitFor();
+    ok('own stickers: an image without background keeps its shape', /ya no tiene fondo/.test(await mk.locator('.maker-status').textContent()) && (await mk.locator('.segmented-input[value="forma"]').isChecked()));
+    await mk.getByLabel('Nombre (opcional)').fill('Carita');
+    await mk.getByRole('button', { name: 'Guardar estampilla' }).click();
+    await page.waitForFunction(() => !document.querySelector('.sticker-maker'));
+    ok('own stickers: saved in the album and placed on the envelope', (await deco.getByRole('button', { name: 'Poner: Carita' }).count()) === 1 && (await deco.locator('.sticker-board .sticker img').count()) === 1);
+    await deco.locator('input[type=file]').setInputFiles(path.join(FIX, 'foto-ficticia.jpg'));
+    await mk.waitFor();
+    ok('own stickers: a photo starts in a frame', await mk.locator('.segmented-input[value="circulo"]').isChecked());
+    await mk.locator('.segmented-option', { hasText: 'Sin fondo' }).click();
+    await page.waitForFunction(() => /Listo|No pudimos/.test(document.querySelector('.maker-status')?.textContent || ''), null, { timeout: 120000 });
+    const cut = await page.evaluate(() => {
+      const c = document.querySelector('.maker-canvas'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      let clear = 0; for (let i = 3; i < d.length; i += 4) if (d[i] < 10) clear++;
+      const mid = c.getContext('2d').getImageData(c.width / 2, c.height / 2, 1, 1).data[3];
+      return { clear: clear / (d.length / 4), mid };
+    });
+    ok('own stickers: "Sin fondo" removes the background on the device and keeps the subject', /Listo/.test(await mk.locator('.maker-status').textContent()) && cut.clear > 0.3 && cut.mid > 200, JSON.stringify(cut));
+    await mk.getByRole('button', { name: 'Guardar estampilla' }).click();
+    await page.waitForFunction(() => !document.querySelector('.sticker-maker'));
+    await deco.getByRole('button', { name: 'Guardar el sobre' }).click();
+    await page.waitForSelector('.own-letter.status-draft');
+    const st = await page.evaluate(async () => {
+      const db = await import('./js/core/db.js');
+      const l = (await db.query('letters', { filter: (x) => !x.letterId }))[0];
+      const album = await db.query('lists', { index: 'kind', range: IDBKeyRange.only('sticker') });
+      const media = await Promise.all(album.map((a) => db.getMedia(a.mediaId)));
+      return { k: (l.stickers || []).map((s) => s.k), album: album.length, types: media.map((m) => m?.type) };
+    });
+    ok('own stickers: the letter keeps them and the album holds two images', st.k.length === 2 && st.k.every((k) => k.startsWith('c:')) && st.album === 2 && st.types.every((t) => /image\/(webp|png)/.test(t)), JSON.stringify(st));
+    const models = await page.waitForFunction(async () => (await (await caches.open('modelos-v1')).keys()).length >= 3, null, { timeout: 8000 }).then(() => 3, async () => page.evaluate(async () => (await (await caches.open('modelos-v1')).keys()).length));
+    ok('own stickers: the background remover stays cached for next time', models >= 3, String(models));
+    // delete from the album
+    await page.locator('.own-letter').getByRole('button', { name: 'Decorar sobre' }).click();
+    await deco.getByRole('button', { name: 'Editar' }).click();
+    await deco.getByRole('button', { name: 'Borrar del álbum: Carita' }).click({ force: true });
+    await page.getByRole('dialog', { name: '¿Borrar esta estampilla?' }).getByRole('button', { name: 'Borrar' }).click();
+    await page.waitForTimeout(400);
+    ok('own stickers: deleting one takes it out of the album and off the envelope', (await deco.locator('[aria-label="Tus estampillas"] .sticker-pick:not(.sticker-new)').count()) === 1 && (await deco.locator('.sticker-board .sticker').count()) === 1);
+    await deco.getByRole('button', { name: 'Cancelar' }).click();
+    // "Compartir > Aishiteru" with an image
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 10000 });
+    await page.evaluate(() => {
+      const f = document.createElement('form'); f.method = 'POST'; f.action = './compartir'; f.enctype = 'multipart/form-data';
+      const i = document.createElement('input'); i.type = 'file'; i.name = 'image'; i.id = 'share-test'; f.append(i); document.body.append(f);
+    });
+    await page.setInputFiles('#share-test', path.join(FIX, 'sticker-ficticio.png'));
+    await page.evaluate(() => document.querySelector('#share-test').form.submit());
+    const shared = await page.waitForSelector('.sticker-maker', { timeout: 15000 }).then(() => true, () => false);
+    ok('own stickers: an image shared to the app opens "Nueva estampilla"', shared && /#\/cartas$/.test(page.url()), page.url());
+    ok('own stickers: no console errors', errors.length === 0, errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---------- 2e. Ajustes: Centro de seguridad and Copia de seguridad ----------
   {
     const tmp = fs.mkdtempSync(path.join(require('os').tmpdir(), 'aishiteru-'));

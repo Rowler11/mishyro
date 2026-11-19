@@ -6,7 +6,7 @@
 // On the author's phone the seed letters show as "Las que le escribiste" with their status (decision 5).
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import { compressImage } from '../core/images.js';
-import { layer as stickerLayer, decorate } from './stickers.js';
+import { layer as stickerLayer, decorate, loadAlbum } from './stickers.js';
 
 const { el, icon } = util;
 const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -213,7 +213,7 @@ export async function render(ctx) {
   let justOpened = null;
 
   const load = async () => {
-    const [content, stored] = await Promise.all([db.query('content', { index: 'kind', range: IDBKeyRange.only('letter') }), db.query('letters')]);
+    const [content, stored] = await Promise.all([db.query('content', { index: 'kind', range: IDBKeyRange.only('letter') }), db.query('letters'), loadAlbum().catch(() => [])]);
     const states = new Map(stored.filter((s) => s.letterId).map((s) => [s.letterId, s]));
     letters = [
       ...content.filter((c) => !c.deleted).map((c) => fromSeed(c, states.get(c.id))),
@@ -363,6 +363,23 @@ export async function render(ctx) {
   if (linked) {
     history.replaceState(history.state, '', '#/cartas');
     requestAnimationFrame(() => openLetter(linked, body.querySelector(`.futo[data-id="${CSS.escape(linked.id)}"]`)));
+  }
+  // An image shared from another app ("Compartir > Aishiteru") becomes a sticker for the album.
+  if (ctx.app?.sharedSticker) {
+    ctx.app.sharedSticker = false;
+    requestAnimationFrame(async () => {
+      try {
+        const cache = await caches.open('compartido');
+        const key = new URL('./__estampilla-compartida', location.href).href;
+        const res = await cache.match(key);
+        await cache.delete(key);
+        if (!res) return;
+        const blob = await res.blob();
+        const { makeSticker } = await import('./sticker-maker.js');
+        const rec = await makeSticker(new File([blob], 'compartida', { type: blob.type || 'image/png' }));
+        if (rec) { tab = 'write'; saveTab(tab); await load(); draw(); ui.toast('Úsala con "Decorar sobre" en un borrador.'); }
+      } catch (e) { console.error(e); ui.toast('No pudimos abrir la imagen compartida.', { tone: 'error' }); }
+    });
   }
   const offProfile = profile.onProfileChange(async () => { await load(); draw(); });
   return { node: page, cleanup: offProfile };

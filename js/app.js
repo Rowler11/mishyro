@@ -10,6 +10,7 @@ export const app = {
   deferredInstall: null,
   setupDone: false,
   shareTarget: null,
+  sharedSticker: false,
   swRegistration: null,
   firstRender: true,
 };
@@ -273,6 +274,7 @@ function installErrorHandler() {
 
 function readShareTarget() {
   const q = new URLSearchParams(location.search);
+  if (q.get('estampilla')) { app.sharedSticker = true; history.replaceState(null, '', `${location.pathname}#/cartas`); return; }
   if (!['title', 'text', 'url'].some((k) => q.get(k))) return;
   app.shareTarget = { title: q.get('title') || '', text: q.get('text') || '', url: q.get('url') || '' };
   history.replaceState(null, '', `${location.pathname}#/canciones/nueva`);
