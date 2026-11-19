@@ -9,7 +9,7 @@
 
 export const CONFIG = {
   // Versión visible de la app (Ajustes > Acerca de). Súbela junto con CACHE_VERSION en sw.js.
-  appVersion: '0.1.8',
+  appVersion: '0.1.9',
   // Prefijo de la base de datos y de las 2 preferencias en localStorage (tema y perfil activo).
   // Si lo cambias, también en theme-boot.js. Cambiarlo "empieza de cero" en cada dispositivo.
   storageKey: 'aishiteru',
@@ -214,10 +214,10 @@ export const CONFIG = {
     {"id": "cfg:phrase:001", "text": "Estaba haciendo cualquier cosa y de repente pensé en ti."},
     {"id": "cfg:phrase:002", "text": "Este mensaje no tiene motivo. Solo te extraño."},
     {"id": "cfg:phrase:003", "text": "Te mando un abrazo que dura hasta que te vea."},
-    {"id": "cfg:phrase:004", "text": "Hoy me acordé de tu risa y sonreí solo."},
+    {"id": "cfg:phrase:004", "text": "Hoy me acordé de tu risa y sonreí sol{o/a}."},
     {"id": "cfg:phrase:005", "text": "Pausa de dos segundos para decirte que te quiero."},
     {"id": "cfg:phrase:006", "text": "Ojalá estuvieras aquí ahora mismo."},
-    {"id": "cfg:phrase:007", "text": "Nada nuevo que contar, solo que sigo enamorado de ti."},
+    {"id": "cfg:phrase:007", "text": "Nada nuevo que contar, solo que sigo enamorad{o/a} de ti."},
     {"id": "cfg:phrase:008", "text": "Te pienso más de lo que te escribo."},
     {"id": "cfg:phrase:009", "text": "Me debes un beso. Lo cobro pronto."},
     {"id": "cfg:phrase:010", "text": "Si pudiera, te teletransportaba a mi lado."},

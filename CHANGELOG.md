@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.1.9 (Fase 2, primera parte)
+
+- Inicio de verdad: contador de días juntos con el desglose en años, meses, días, horas, minutos y segundos (meses de calendario, no de 30 días), con pétalos la primera vez del día.
+- Buenos días y buenas noches según la hora, con botón para enviarlo; en la tarde se puede ver el de la noche.
+- "Pensando en ti": manda una frase sin repetir la anterior y cuenta cuántas veces lo hiciste hoy y este mes.
+- Razón del día en forma de papel de la suerte, con "Sacar otra".
+- Próxima fecha especial (aniversario y cumpleaños incluidos), próximo hito con barra de progreso, celebración con confeti el día que toca y recordatorio de copia de seguridad.
+- En el teléfono se ven las 4 primeras tarjetas y el resto con "Ver más"; en tablet y PC van en cuadrícula.
+- Las frases con género siguen a quien las manda (sol{o/a}, enamorad{o/a}).
+
 ## 0.1.8
 
 - Modo oscuro nuevo, "Sakura suave": fondo casi negro con un toque cálido y rosa empolvado, sin brillos de neón. Gemelo del tema claro Sakura.

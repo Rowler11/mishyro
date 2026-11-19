@@ -106,6 +106,30 @@ async function completeSetup(page) {
       if (!title) broken.push(r);
     }
     ok(`routes @${w}: every route renders a heading (${routes.length})`, broken.length === 0, broken.join(','));
+    // Inicio: counter, cards, "Ver más" on phones, Pensando en ti
+    await page.evaluate(() => { location.hash = '#/inicio'; });
+    await page.waitForSelector('.counter-card');
+    const days = await page.evaluate(() => Number(document.querySelector('.counter-days').textContent.replace(/\D/g, '')));
+    ok(`inicio @${w}: counter shows the days together`, days > 300, String(days));
+    ok(`inicio @${w}: counter has a screen reader summary`, /días en total/.test(await page.locator('.counter-card .sr-only').textContent()));
+    const sec1 = await page.locator('.counter-cell').nth(5).textContent();
+    await page.waitForTimeout(1300);
+    ok(`inicio @${w}: counter ticks every second`, sec1 !== (await page.locator('.counter-cell').nth(5).textContent()));
+    ok(`inicio @${w}: no Japanese inside the cards`, !(await page.$$eval('.home-card', (c) => c.some((x) => /[぀-ヿ一-龯]/.test(x.textContent)))));
+    ok(`inicio @${w}: omikuji skips texts still to complete`, (await page.locator('.omikuji-text').textContent()) === 'Texto de ejemplo.');
+    ok(`inicio @${w}: no horizontal scroll`, !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    const hiddenMore = await page.$$eval('.home-more', (c) => c.filter((x) => getComputedStyle(x).display === 'none').length);
+    if (w < 640) {
+      ok(`inicio @${w}: extra cards fold under Ver más`, hiddenMore > 0);
+      await page.locator('.home-more-btn').click();
+      ok(`inicio @${w}: Ver más shows them`, (await page.$$eval('.home-more', (c) => c.filter((x) => getComputedStyle(x).display === 'none').length)) === 0);
+    } else ok(`inicio @${w}: all cards visible in the grid`, hiddenMore === 0);
+    await page.evaluate(() => { navigator.share = async () => {}; });
+    await page.locator('.thinking-btn').click();
+    await page.waitForFunction(() => /Hoy pensaste/.test(document.querySelector('.thinking-count').textContent));
+    const sent = await page.evaluate(async () => (await (await import('./js/core/db.js')).query('thinkingOfYou')).length);
+    ok(`inicio @${w}: Pensando en ti saves the send and counts it`, sent === 1, String(sent));
+    await shot(page, `inicio-day-${w}`);
     // Back button
     await page.evaluate(() => { location.hash = '#/mas'; });
     await page.waitForTimeout(100);
