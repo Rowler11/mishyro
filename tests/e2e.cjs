@@ -182,10 +182,10 @@ async function completeSetup(page) {
     await page.getByRole('button', { name: 'Importar' }).click();
     await page.getByRole('button', { name: 'Todo bien' }).click();
     await page.getByRole('button', { name: 'Crear PIN' }).click();
-    for (const pass of [0, 1]) {
+    ok('pin: the pad has exactly 4 digits', (await page.locator('.pin-dot').count()) === 4);
+    for (const pass of [0, 1]) { // 4 digits submit on their own
       for (const d of '2468') await page.locator('.pin-key', { hasText: d }).click();
-      await page.locator('.pin-ok').click();
-      await page.waitForTimeout(pass ? 2500 : 300);
+      await page.waitForTimeout(pass ? 2500 : 400);
     }
     await page.getByRole('button', { name: 'Terminar' }).waitFor({ timeout: 15000 });
     await page.getByRole('button', { name: 'Terminar' }).click();
@@ -203,12 +203,11 @@ async function completeSetup(page) {
     await page.locator('.lock-full').waitFor();
     ok('app lock: asks for the PIN when the app opens', true);
     await shot(page, 'lock-390');
+    ok('app lock: 4-digit pad', (await page.locator('.lock-full .pin-dot').count()) === 4);
     for (const d of '1111') await page.locator('.pin-key', { hasText: d }).click();
-    await page.locator('.pin-ok').click();
     await page.waitForTimeout(2500);
     ok('app lock: wrong PIN is rejected', (await page.locator('.pin-msg').textContent()).includes('incorrecto'));
     for (const d of '2468') await page.locator('.pin-key', { hasText: d }).click();
-    await page.locator('.pin-ok').click();
     await page.locator('.lock-full').waitFor({ state: 'detached', timeout: 10000 });
     const title = await page.evaluate(async () => (await (await import('./js/core/db.js')).get('memories', 'test:private')).title);
     ok('app lock: right PIN unlocks and decrypts', title === 'SECRETO-DE-PRUEBA');

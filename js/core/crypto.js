@@ -70,7 +70,7 @@ export async function createKey(scope, pin) {
 export async function wrapForPin(record, rawDek, pin) {
   const salt = rand(16);
   const kek = await deriveKek(pin, salt);
-  return { ...record, v: 1, salt: bufToB64(salt), iter: PBKDF2_ITERATIONS, wrappedPin: await aesEncrypt(kek, rawDek) };
+  return { ...record, v: 1, digits: String(pin).length, salt: bufToB64(salt), iter: PBKDF2_ITERATIONS, wrappedPin: await aesEncrypt(kek, rawDek) };
 }
 
 /**

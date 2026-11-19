@@ -207,7 +207,7 @@ function wizard({ app }) {
     const body = el('div', { class: 'stack center' });
     const ask = () => {
       const pad = ui.pinPad({
-        label: first ? 'Repite el PIN' : 'Nuevo PIN de 4 a 6 números', submitLabel: first ? 'Confirmar' : 'Seguir',
+        label: first ? 'Repite el PIN' : 'Nuevo PIN de 4 números', submitLabel: first ? 'Confirmar' : 'Seguir',
         onSubmit: async (value) => {
           if (!first) { first = value; ask(); return null; }
           if (value !== first) { first = null; setTimeout(ask, 900); return 'No coinciden. Empecemos otra vez.'; }

@@ -141,11 +141,15 @@ export function formatWait(ms) {
  * Full-screen lock (app) or in-page lock (section). Resolves when unlocked.
  * neutralName keeps sensitive sections discreet ("Rincón", "Calendario").
  */
-export function lockScreen({ scope, neutralName = 'Aishiteru', inline = false, mount } = {}) {
+export async function lockScreen({ scope, neutralName = 'Aishiteru', inline = false, mount } = {}) {
+  // Keys made before PIN length was stored (or of different lengths) get a 4-6 pad without auto-submit.
+  const digits = [...new Set((await keyRecords(scope)).map((r) => r.digits))];
+  const lens = digits.length === 1 && digits[0] ? { min: digits[0], max: digits[0] } : { min: 4, max: 6, autoSubmit: false };
   return new Promise((resolve) => {
     let bioBtn = null;
     const pad = pinPad({
       label: `PIN de ${neutralName}`,
+      ...lens,
       onSubmit: async (pin) => {
         const err = await unlock(scope, pin);
         if (err) { refreshWait(); return err; }
@@ -252,7 +256,7 @@ export function createPinDialog({ scope, title = 'Crear PIN', intro = '' } = {})
     const m = openModal({ title, size: 'sm', body, onClose: () => resolve(result) });
     const ask = () => {
       const pad = pinPad({
-        label: first ? 'Repite el PIN' : 'Nuevo PIN de 4 a 6 números', submitLabel: first ? 'Confirmar' : 'Seguir',
+        label: first ? 'Repite el PIN' : 'Nuevo PIN de 4 números', submitLabel: first ? 'Confirmar' : 'Seguir',
         onSubmit: async (value) => {
           if (!first) { first = value; ask(); return null; }
           if (value !== first) { first = null; setTimeout(ask, 900); return 'No coinciden. Empecemos otra vez.'; }
