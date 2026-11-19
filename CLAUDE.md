@@ -25,7 +25,7 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 ## Decisiones de diseño ya tomadas
 - Logo: flor de sakura con corazón (`icons/icon.svg`); nada de logos que sean solo una letra o un kanji.
 - Encabezado: flor suelta sin cuadro (`ui.flower`, símbolo `brand-sakura`) con el color del tema, nombre en color de acento y avatar redondo con la inicial. El logo con cuadro queda para el ícono de la app, la bienvenida, el bloqueo y Acerca de.
-- Letras japonesas solo en el título de cada pantalla; nunca en las pestañas de abajo, tarjetas, listas, grupos, botones ni modales.
+- Letras japonesas solo en el título de cada pantalla (única excepción, decidida el 2026-11-19: "愛してる · te amo" bajo el nombre en Acerca de); nunca en las pestañas de abajo, tarjetas, listas, grupos, botones ni modales.
 - "Más": grupos plegables, uno abierto a la vez, con tarjetas de 2 por fila (nombre corto y una línea de descripción); lo que no existe aún lleva "Pronto", no "Fase N".
 - PIN de la app y personal: 4 dígitos con envío automático. Rincón: 6 (docs/05 §33).
 - Tema claro: paleta "Sakura" (fondo #FBF4F3, acento #C2405F). Tema oscuro: "Sakura suave" (fondo #161214, acento #E893AE, sin brillo). Al usuario no le gustan los tintes que se sienten como un filtro encima.

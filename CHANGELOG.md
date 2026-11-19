@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.1.23 (revisión de diseño)
+
+- Cuponera con tres secciones: "Para ti" (los que te quedan por usar), "Historial" (los que regalaste y los que ya usaste) y "Guardados" (cupones que creaste y todavía no regalas; solo los ves tú). Un cupón nuevo se puede guardar o regalar de una vez; desde "Guardados" se regala con "Regalar".
+- Al canjear un cupón, se sella y luego pasa a "Historial".
+- "Más": los grupos abren y cierran más suave, y el que tocas ya no salta.
+- Cartas: se quitó el botón "Escribir carta" repetido en "Escribimos".
+- En el teléfono, los botones pequeños, el aviso, los puntos del carrusel y las opciones de los selectores tienen un área de toque más grande (44 px), sin cambiar cómo se ven.
+
 ## 0.1.22 (estampillas propias)
 
 - En "Decorar sobre", la sección "Tus estampillas" tiene el botón "Crear": eliges una foto o un sticker y se convierte en estampilla. Quedan en un álbum que comparten los dos.

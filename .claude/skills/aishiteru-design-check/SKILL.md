@@ -27,6 +27,7 @@ Usa la skill `ui-ux-pro-max` (en `.claude/skills/`) como segunda opinión. Su `r
 - Sin scroll horizontal; zonas seguras (`env(safe-area-inset-*)`) en teléfonos con muesca.
 - Imágenes en WebP, con tamaño reservado (nada que salte al cargar).
 - Animaciones con sentido (de dónde viene y a dónde va), entre 150 y 400 ms, sin animar `width`/`height`.
+Lo automático lo revisa `BASE=http://127.0.0.1:8787/ node tests/ui-audit.cjs`: scroll horizontal, áreas táctiles (44×44 en teléfono y tablet, 24×24 con mouse), controles sin nombre y letras japonesas fuera del título, en todas las pantallas y algunos modales. Meta: 0 hallazgos. Si sumas una pantalla o un modal, agrégalo a sus listas `ROUTES` u `OPENED`. Para agrandar el área táctil sin cambiar el look, usa un `::after` absoluto con `inset` negativo (no sirve si el elemento tiene `overflow: hidden`).
 Si una guía externa choca con las reglas del punto 1, ganan las del punto 1. Su buscador (`scripts/search.py`) es opcional: ejecútalo solo si el usuario lo permite.
 
 ## 3. Capturas estándar

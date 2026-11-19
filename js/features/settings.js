@@ -269,7 +269,7 @@ function about() {
   })();
   return el('section', { class: 'page' }, ui.pageHeader({ title: 'Acerca de', back: '/ajustes' }),
     el('div', { class: 'card stack about-card' },
-      el('div', { class: 'about-brand' }, ui.logo({ size: 64 }), el('div', {}, el('p', { class: 'about-name' }, 'Aishiteru'), el('p', { class: 'muted small' }, '愛してる · te amo'))),
+      el('div', { class: 'about-brand' }, ui.logo({ size: 64 }), el('div', {}, el('p', { class: 'about-name' }, 'Aishiteru'), el('p', { class: 'muted small', 'data-jp-ok': '' }, '愛してる · te amo'))),
       el('p', {}, 'Una app hecha a mano para los dos. Todo se guarda solo en este dispositivo.'), facts),
     el('nav', { class: 'list card', 'aria-label': 'Más información' },
       el('a', { class: 'list-row card-link', href: '#/ajustes/guia-estilo' }, el('span', { class: 'list-icon' }, icon('palette')), el('span', { class: 'list-text' }, el('span', { class: 'list-title' }, 'Guía de estilo')), icon('chevron-right', { cls: 'list-chevron' })),

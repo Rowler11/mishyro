@@ -42,6 +42,8 @@ export async function buildIndex() {
   }
   for (const c of content.filter((r) => r.kind === 'coupon' && isPublic(r))) {
     if (seed.needsCompletion(c.title)) continue;
+    // A coupon not given yet is only for its author.
+    if (c.sentAt === null && (c.from || AUTHOR) !== me) continue;
     items.push({ group: 'coupons', id: c.id, title: c.title, fields: [c.title, c.description, c.dedication], date: c.expiresOn || '', href: '#/cupones' });
   }
   return items.map((it) => ({ ...it, haystack: it.fields.filter(Boolean).map(String) }));
