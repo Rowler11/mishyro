@@ -242,7 +242,11 @@ function editor(existing, { bag, onSaved }) {
 
   const body = el('form', { class: 'memory-form', novalidate: true, onSubmit: (e) => { e.preventDefault(); } },
     drop, fTitle, fDate, fNote,
-    ui.visibilityPicker({ value: visibility, onChange: (v) => { visibility = v; } }),
+    ui.visibilityPicker({ value: visibility, onChange: (v) => {
+      visibility = v;
+      // First "Solo yo" of this person: offer the personal PIN (docs/04).
+      if (v === 'self') security.offerPersonalPin(profile.active(), profile.name(profile.partnerOf(profile.active())));
+    } }),
     formError);
   const modal = ui.openModal({
     title: isNew ? 'Nuevo recuerdo' : 'Editar recuerdo', kind: 'sheet', size: 'lg', className: 'memory-editor', body,

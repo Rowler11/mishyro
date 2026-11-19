@@ -74,7 +74,7 @@ export const HIDDEN = [
 
 // module: which file renders the page; pages without one are not built yet ("Pronto").
 export const SETTINGS_PAGES = [
-  { id: 'perfil', title: 'Perfil y datos', jp: '情報', romaji: 'jōhō', icon: 'users', phase: '2' },
+  { id: 'perfil', title: 'Perfil y datos', jp: '情報', romaji: 'jōhō', icon: 'users', phase: '2', module: 'perfil' },
   { id: 'seguridad', title: 'Centro de seguridad', icon: 'shield-check', phase: '2', module: 'ajustes' },
   { id: 'privacidad', title: 'Privacidad', icon: 'eye-off', phase: '2' },
   { id: 'copia', title: 'Copia de seguridad', icon: 'hard-drive', phase: '2', module: 'ajustes' },

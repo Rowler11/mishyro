@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.1.14 (Fase 2, Perfil y datos)
+
+- Perfil y datos en cuatro partes: Nosotros, Fechas, Hitos y Textos.
+- Nosotros: nombre corto, apodo, nombre completo y cumpleaños de cada uno, y la fecha en que empezaron. Al guardar se ve al instante en toda la app.
+- Fechas especiales: agregar, editar, ocultar y borrar, con tipo, de quién es el cumpleaños, "No sé el año" y si se repite cada año, cada mes o una vez.
+- Hitos de días juntos: agregar, editar y quitar, y volver a los originales.
+- Textos: razones, frases de Pensando en ti, buenos días, buenas noches, y los cupones y cartas iniciales. Se editan con vista previa de {apodo} y {o/a}, se ocultan o se borran (los agregados). Los textos de la app se pueden restablecer y una actualización ya no pisa lo editado.
+- Cápsula: al elegir "Solo yo" por primera vez, ofrece crear el PIN personal.
+
 ## 0.1.13 (Fase 2, Centro de seguridad y Copia de seguridad)
 
 - Centro de seguridad: un resumen de un vistazo (bloqueo, huella, qué está cifrado, PIN personal, última copia y almacenamiento persistente, con botón para activarlo).
