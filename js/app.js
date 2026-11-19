@@ -153,7 +153,8 @@ async function render(route) {
     await security.lockScreen({ scope, neutralName: def.title, inline: true, mount: main });
     if (router.currentRoute() !== route) return;
   }
-  main.replaceChildren(ui.skeleton(4));
+  // Keep the current view until the next one is ready; show the skeleton only if it takes a while.
+  const skeleton = setTimeout(() => { if (router.currentRoute() === route) main.replaceChildren(ui.skeleton(4)); }, 250);
   let node;
   try {
     const mod = await def.load();
@@ -168,23 +169,26 @@ async function render(route) {
     node = el('section', { class: 'page' }, ui.pageHeader({ title: 'Algo salió mal' }),
       ui.emptyState({ title: 'No pudimos abrir esta parte', text: 'No se perdió nada. Intenta de nuevo.', art: 'omamori', action: { label: 'Reintentar', onClick: () => router.refresh() } }));
   }
+  clearTimeout(skeleton);
   const swapped = swapView(main, node);
-  // Focus once the new view is really in the DOM (a view transition swaps it a frame later).
+  // Focus the new view's search box or title once it is in place.
   if (!app.firstRender) swapped.then(() => requestAnimationFrame(() => (main.querySelector('[data-autofocus]') || main.querySelector('h1') || main).focus({ preventScroll: true })));
+  if (app.firstRender) preloadSections();
   app.firstRender = false;
   window.scrollTo({ top: 0 });
 }
 
 function swapView(main, node) {
-  const motion = !util.prefersReducedMotion();
-  if (motion && document.startViewTransition && !app.firstRender) {
-    const vt = document.startViewTransition(() => main.replaceChildren(node));
-    vt.ready.catch(() => {}); // a fast second navigation skips the first transition: not an error
-    return vt.updateCallbackDone.catch(() => {});
-  }
+  // A plain CSS entrance instead of a view transition: it never blocks taps, so switching is instant.
   main.replaceChildren(node);
-  if (motion) node.classList?.add('view-enter');
+  if (!app.firstRender && !util.prefersReducedMotion()) node.classList?.add('view-enter');
   return Promise.resolve();
+}
+
+/** Warm up the main sections once the app is idle, so the first switch to them has nothing to fetch. */
+function preloadSections() {
+  const idle = window.requestIdleCallback || ((f) => setTimeout(f, 800));
+  idle(() => { for (const k of ['home', 'capsula', 'cupones', 'cartas', 'more', 'settings', 'buscar']) load[k]().catch(() => {}); });
 }
 
 // ---------- global layers ----------

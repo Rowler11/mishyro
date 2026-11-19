@@ -310,7 +310,7 @@ export function pinPad({ label = 'PIN', min = PIN_DIGITS, max = PIN_DIGITS, onSu
 // ---------- motion helpers ----------
 /** Staggered entrance for a container's children (CSS reads --i). */
 export function stagger(container) {
-  [...container.children].forEach((c, i) => { c.style.setProperty('--i', String(Math.min(i, 12))); c.classList.add('stagger'); });
+  [...container.children].forEach((c, i) => { c.style.setProperty('--i', String(Math.min(i, 6))); c.classList.add('stagger'); });
   return container;
 }
 

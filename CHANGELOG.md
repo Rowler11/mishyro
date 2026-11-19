@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.1.18 (ajustes de la revisión de la Fase 2)
+
+- Sin zoom con dos dedos ni con doble toque. El tamaño del texto se sigue cambiando en Ajustes > Apariencia.
+- Deslizar hacia abajo ya no recarga la app.
+- Cambiar de sección es instantáneo: no aparece la pantalla de carga, la entrada es más corta y se puede tocar otra pestaña sin esperar. Las secciones principales se precargan al abrir la app.
+- Ícono, pantalla de inicio de Android y barra superior en el rosa de la app (quedaba el naranja anterior).
+
 ## 0.1.17 (cierre de la Fase 2)
 
 - El aviso de copia de seguridad en Inicio sale a los 14 días de la última copia, como pide la especificación (antes salía a los 30).

@@ -21,7 +21,8 @@ const SEED = path.join(__dirname, '..', 'seed-privado.example.json');
         // Let entry animations (stagger, fades) finish so axe reads final colors.
         await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity).map((a) => a.finished.catch(() => {}))));
         await page.addScriptTag({ content: AXE });
-        const r = await page.evaluate(async () => (await window.axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'] })).violations
+        // meta-viewport off on purpose: David asked for no pinch zoom (2026-11-19); text size lives in Apariencia.
+        const r = await page.evaluate(async () => (await window.axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'], rules: { 'meta-viewport': { enabled: false }, 'meta-viewport-large': { enabled: false } } })).violations
           .map((v) => `${v.impact} ${v.id}: ${v.nodes.length} × ${v.nodes.slice(0, 2).map((n) => `${n.target.join(' ')}${n.any[0]?.data?.contrastRatio ? ` (${n.any[0].data.fgColor} on ${n.any[0].data.bgColor} = ${n.any[0].data.contrastRatio})` : ''}`).join(' | ')}`));
         total += r.length;
         console.log(`${r.length ? 'FAIL' : 'PASS'} ${theme} @${width} ${label}${r.length ? `\n   ${r.join('\n   ')}` : ''}`);
