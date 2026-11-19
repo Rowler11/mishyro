@@ -1,4 +1,4 @@
-// Render the PNG app icons from the SVGs (needs Playwright + Chromium).
+// Render the PNG app icons from icons/icon.svg and icons/maskable.svg (hand-made SVGs; needs Playwright + Chromium).
 // Usage: node tools/render-icons.cjs
 const { chromium } = require('playwright');
 const fs = require('fs');
