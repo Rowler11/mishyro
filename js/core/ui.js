@@ -167,6 +167,11 @@ export function skeleton(lines = 3) {
 }
 
 /** The app logo (sakura with a heart), same file as the installed icon. */
+/** Sakura mark without the app-icon tile: takes the theme accent (used in the app bar and rail). */
+export function flower({ size = 30 } = {}) {
+  return icon('brand-sakura', { size, cls: 'flower' });
+}
+
 export function logo({ size = 40, label = '', bloom = false } = {}) {
   return el('img', {
     class: `logo${bloom ? ' logo-bloom' : ''}`, src: './icons/icon.svg', width: String(size), height: String(size),

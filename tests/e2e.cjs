@@ -82,6 +82,7 @@ async function completeSetup(page) {
     // Names come from the store (seed), not from the repo
     const chip = await page.locator('.chip-appbar .profile-text').textContent();
     ok('profile: names come from the imported seed', chip === 'Ana', chip);
+    ok('appbar: avatar shows the initial and the flower has no tile', (await page.locator('.chip-appbar .profile-initial').textContent()) === 'A' && (await page.locator('.appbar .flower').count()) === 1 && (await page.locator('.appbar .logo').count()) === 0);
     ok('setup flow: no console errors or native dialogs', errors.length === 0, errors.join(' | '));
     await ctx.close();
   }

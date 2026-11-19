@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.1.7
+
+- Encabezado más ligero: la flor de sakura sin el cuadro rojo, con el color del tema (rosa de día, neón de noche), el nombre en rosa y un avatar redondo con la inicial de quien usa la app.
+
 ## 0.1.6
 
 - Tema claro nuevo, "Sakura": blanco rosado con rosa sakura y toque lila.
