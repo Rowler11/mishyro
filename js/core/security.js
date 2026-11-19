@@ -3,7 +3,7 @@
 import * as db from './db.js';
 import * as cryptoBox from './crypto.js';
 import { el, icon, nowISO } from './util.js';
-import { hanko, pinPad, closeAllModals, toast, openModal } from './ui.js';
+import { hanko, logo, pinPad, closeAllModals, toast, openModal } from './ui.js';
 
 export const SECURITY_DEFAULTS = {
   appLock: false, lockOnLeave: true, autoLockSeconds: 0, curtain: true,
@@ -171,7 +171,7 @@ export async function lockScreen({ scope, neutralName = 'Aishiteru', inline = fa
     };
     const box = el('section', { class: `lock ${inline ? 'lock-inline' : 'lock-full'}`, 'aria-label': `${neutralName} bloqueado` },
       el('div', { class: 'lock-card' },
-        hanko({ size: 72 }),
+        logo({ size: 72 }),
         el('h1', { class: 'lock-title', tabindex: '-1' }, neutralName),
         el('p', { class: 'lock-sub' }, 'Escribe tu PIN para entrar.'),
         pad, waitNote));

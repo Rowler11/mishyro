@@ -61,11 +61,11 @@ function buildShell() {
 
   const skip = el('a', { class: 'skip-link', href: '#main', onClick: (e) => { e.preventDefault(); document.getElementById('main').focus(); } }, 'Saltar al contenido');
   const appbar = el('header', { class: 'appbar' },
-    el('a', { class: 'brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.hanko({ size: 30 }), el('span', { class: 'brand-name' }, 'Aishiteru')),
+    el('a', { class: 'brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.logo({ size: 32 }), el('span', { class: 'brand-name' }, 'Aishiteru')),
     el('div', { class: 'appbar-actions' }, profileChip('chip-appbar'), panicBtn('panic-appbar')));
   const rail = el('nav', { class: 'rail', 'aria-label': 'Navegación principal' },
-    el('a', { class: 'brand rail-brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.hanko({ size: 40 }),
-      el('span', { class: 'brand-text' }, el('span', { class: 'brand-name' }, 'Aishiteru'), ja('愛してる', 'aishiteru'))),
+    el('a', { class: 'brand rail-brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.logo({ size: 40 }),
+      el('span', { class: 'brand-text' }, el('span', { class: 'brand-name' }, 'Aishiteru'))),
     el('div', { class: 'rail-tabs' }, TABS.map((t) => tabLink(t, 'rail-link'))),
     el('div', { class: 'rail-foot' },
       tabLink({ id: 'ajustes', path: '/ajustes', title: 'Ajustes', jp: '設定', romaji: 'settei', icon: 'settings' }, 'rail-link'),

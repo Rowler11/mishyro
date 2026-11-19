@@ -32,7 +32,7 @@ function main({ app }) {
 
   const rows = SETTINGS_PAGES.map((p) => el('a', { class: 'list-row card-link', href: `#/ajustes/${p.id}` },
     el('span', { class: 'list-icon' }, icon(p.icon)),
-    el('span', { class: 'list-text' }, el('span', { class: 'list-title' }, p.title, p.jp ? ja(p.jp, p.romaji) : null)),
+    el('span', { class: 'list-text' }, el('span', { class: 'list-title' }, p.title)),
     p.phase === '1' ? icon('chevron-right', { cls: 'list-chevron' }) : el('span', { class: 'badge' }, `Fase ${p.phase}`)));
 
   const install = app.deferredInstall ? ui.button({ label: 'Instalar la app', iconName: 'download', variant: 'primary', onClick: async () => {
@@ -174,7 +174,7 @@ function about() {
   })();
   return el('section', { class: 'page' }, ui.pageHeader({ title: 'Acerca de', back: '/ajustes' }),
     el('div', { class: 'card stack about-card' },
-      el('div', { class: 'about-brand' }, ui.hanko({ size: 64 }), el('div', {}, el('p', { class: 'about-name' }, 'Aishiteru'), ja('愛してる', 'aishiteru'))),
+      el('div', { class: 'about-brand' }, ui.logo({ size: 64 }), el('div', {}, el('p', { class: 'about-name' }, 'Aishiteru'), el('p', { class: 'muted small' }, '愛してる · te amo'))),
       el('p', {}, 'Una app hecha a mano para los dos. Todo se guarda solo en este dispositivo.'), facts),
     el('nav', { class: 'list card', 'aria-label': 'Más información' },
       el('a', { class: 'list-row card-link', href: '#/ajustes/guia-estilo' }, el('span', { class: 'list-icon' }, icon('palette')), el('span', { class: 'list-text' }, el('span', { class: 'list-title' }, 'Guía de estilo')), icon('chevron-right', { cls: 'list-chevron' })),

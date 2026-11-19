@@ -46,7 +46,7 @@ function wizard({ app }) {
   // 1. Welcome
   function welcome() {
     frame('Aishiteru', null, null, el('div', { class: 'welcome' },
-      ui.hanko({ size: 120, stamp: true, label: 'Sello 愛' }),
+      ui.logo({ size: 120, bloom: true, label: 'Logo de Aishiteru: flor de sakura con corazón' }),
       ja('愛してる', 'aishiteru'),
       el('p', { class: 'lead' }, 'Un lugar solo de los dos.'),
       el('p', { class: 'muted' }, 'Vamos a dejarla lista en unos pasos. Todo se guarda solo en este dispositivo.')),
