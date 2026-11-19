@@ -58,6 +58,11 @@ export async function createPin(scope, pin) {
   return rawDek;
 }
 
+/** Forget the fingerprint of a scope on this device (the PIN keeps working). */
+export async function removeBiometric(scope) {
+  for (const r of await keyRecords(scope)) if (r.bio) await db.rawPut('settings', { ...r, bio: null, updatedAt: nowISO() });
+}
+
 export async function enrollBiometric(scope, rawDek) {
   const bio = await cryptoBox.registerBiometric(rawDek);
   const recs = await keyRecords(scope);
@@ -80,23 +85,31 @@ export async function waitMs(scope) {
   return Math.max(0, (a.nextTryAt || 0) - Date.now());
 }
 
-/** Unlock with PIN. Returns null on success or an error text for the user. */
-export async function unlock(scope, pin) {
+/**
+ * Check a PIN with the growing delay and the optional wipe. Returns
+ * { error } with a text for the user, or { keys: [{ record, rawDek }] } on success.
+ */
+export async function verifyPin(scope, pin) {
   const { s, a } = await attempts(scope);
   const wait = (a.nextTryAt || 0) - Date.now();
-  if (wait > 0) return `Espera ${formatWait(wait)} para volver a intentar.`;
+  if (wait > 0) return { error: `Espera ${formatWait(wait)} para volver a intentar.` };
   try {
-    await cryptoBox.unlockWithPin(scope, pin, await keyRecords(scope));
+    const keys = await cryptoBox.unlockWithPin(scope, pin, await keyRecords(scope));
     await saveAttempts(s, scope, { failures: 0, nextTryAt: 0 });
     if (scope === 'app') uiUnlocked = true;
-    return null;
+    return { keys };
   } catch {
     const failures = (a.failures || 0) + 1;
     const delay = cryptoBox.nextDelayMs(failures);
     await saveAttempts(s, scope, { failures, nextTryAt: delay ? Date.now() + delay : 0 });
-    if (scope === 'app' && s.wipeAfterFailures && failures >= (s.wipeThreshold || 10)) { await onWipe(); return 'Se borraron los datos por demasiados intentos.'; }
-    return delay ? `PIN incorrecto. Espera ${formatWait(delay)} para volver a intentar.` : 'PIN incorrecto. Inténtalo de nuevo.';
+    if (scope === 'app' && s.wipeAfterFailures && failures >= (s.wipeThreshold || 10)) { await onWipe(); return { error: 'Se borraron los datos por demasiados intentos.' }; }
+    return { error: delay ? `PIN incorrecto. Espera ${formatWait(delay)} para volver a intentar.` : 'PIN incorrecto. Inténtalo de nuevo.' };
   }
+}
+
+/** Unlock with PIN. Returns null on success or an error text for the user. */
+export async function unlock(scope, pin) {
+  return (await verifyPin(scope, pin)).error || null;
 }
 
 /** Fingerprint unlock. Returns 'key' | 'interface' | error text. */
@@ -110,16 +123,17 @@ export async function unlockBiometric(scope) {
   } catch { return 'No se pudo verificar la huella. Usa el PIN.'; }
 }
 
-export async function changePin(scope, oldPin, newPin) {
-  const unlocked = await cryptoBox.unlockWithPin(scope, oldPin, await keyRecords(scope));
+/** keys: the result of verifyPin, so the old PIN is not derived twice. */
+export async function changePin(scope, oldPin, newPin, keys = null) {
+  const unlocked = keys || await cryptoBox.unlockWithPin(scope, oldPin, await keyRecords(scope));
   for (const { record, rawDek } of unlocked) {
     await db.rawPut('settings', { ...(await cryptoBox.wrapForPin(record, rawDek, newPin)), bio: record.bio, updatedAt: nowISO() });
   }
 }
 
 /** Remove a PIN: decrypt what that key protects, then drop the keys this device could open. */
-export async function removePin(scope, pin) {
-  const unlocked = await cryptoBox.unlockWithPin(scope, pin, await keyRecords(scope));
+export async function removePin(scope, pin, keys = null) {
+  const unlocked = keys || await cryptoBox.unlockWithPin(scope, pin, await keyRecords(scope));
   scopesWithKeys.delete(scope);
   await db.reseal(scope);
   for (const { record } of unlocked) await db.rawDelete('settings', record.id);
@@ -234,14 +248,23 @@ export async function panic({ goHome } = {}) {
 }
 
 let idleTimer = null;
+let idleSeconds = 0;
+let idleHandler = null;
+const resetIdle = () => {
+  clearTimeout(idleTimer);
+  if (idleSeconds > 0 && idleHandler) idleTimer = setTimeout(idleHandler, idleSeconds * 1000);
+};
 export async function startInactivity(onIdle) {
-  const s = await getSettings();
-  const reset = () => {
-    clearTimeout(idleTimer);
-    if (s.autoLockSeconds > 0) idleTimer = setTimeout(onIdle, s.autoLockSeconds * 1000);
-  };
-  ['pointerdown', 'keydown', 'scroll'].forEach((ev) => addEventListener(ev, reset, { passive: true }));
-  reset();
+  idleHandler = onIdle;
+  idleSeconds = (await getSettings()).autoLockSeconds || 0;
+  ['pointerdown', 'keydown', 'scroll'].forEach((ev) => addEventListener(ev, resetIdle, { passive: true }));
+  resetIdle();
+}
+/** Change the inactivity lock right away (0 = off). */
+export async function setAutoLock(seconds) {
+  await setSettings({ autoLockSeconds: seconds });
+  idleSeconds = seconds;
+  resetIdle();
 }
 
 export function markUiLocked() { uiUnlocked = false; }

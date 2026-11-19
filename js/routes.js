@@ -72,16 +72,17 @@ export const HIDDEN = [
   { id: 'buscar', title: 'Buscar', icon: 'search', phase: 'próxima', blurb: 'Busca en todo lo que no es privado.' },
 ];
 
+// module: which file renders the page; pages without one are not built yet ("Pronto").
 export const SETTINGS_PAGES = [
   { id: 'perfil', title: 'Perfil y datos', jp: '情報', romaji: 'jōhō', icon: 'users', phase: '2' },
-  { id: 'seguridad', title: 'Centro de seguridad', icon: 'shield-check', phase: '2' },
+  { id: 'seguridad', title: 'Centro de seguridad', icon: 'shield-check', phase: '2', module: 'ajustes' },
   { id: 'privacidad', title: 'Privacidad', icon: 'eye-off', phase: '2' },
-  { id: 'copia', title: 'Copia de seguridad', icon: 'hard-drive', phase: '2' },
-  { id: 'apariencia', title: 'Apariencia', icon: 'palette', phase: '1' },
-  { id: 'movimiento', title: 'Movimiento y sonido', icon: 'sparkles', phase: '1' },
+  { id: 'copia', title: 'Copia de seguridad', icon: 'hard-drive', phase: '2', module: 'ajustes' },
+  { id: 'apariencia', title: 'Apariencia', icon: 'palette', phase: '1', module: 'settings' },
+  { id: 'movimiento', title: 'Movimiento y sonido', icon: 'sparkles', phase: '1', module: 'settings' },
   { id: 'terceros', title: 'Modo sin terceros', icon: 'shield', phase: '2' },
-  { id: 'legal', title: 'Legal y ayuda', icon: 'file-text', phase: '1' },
-  { id: 'acerca', title: 'Acerca de', icon: 'info', phase: '1' },
+  { id: 'legal', title: 'Legal y ayuda', icon: 'file-text', phase: '1', module: 'settings' },
+  { id: 'acerca', title: 'Acerca de', icon: 'info', phase: '1', module: 'settings' },
 ];
 
 export const allSections = () => [...GROUPS.flatMap((g) => g.sections), ...HIDDEN];

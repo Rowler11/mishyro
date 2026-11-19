@@ -31,7 +31,13 @@ La primera vez se abre un asistente de 6 pasos: quién usa el dispositivo, datos
 
 **Ajustes → Copia de seguridad** exporta un `.json` (formato `aniversario-backup`). Al importar se puede **Combinar** (gana lo más reciente y respeta lo borrado) o **Reemplazar**. La parte privada va cifrada con una contraseña de la copia. Si las fotos pasan de 50 MB, se generan dos archivos: datos y fotos.
 
+Para pasar los datos al otro teléfono: en uno, **Descargar copia** o **Enviar al otro teléfono** (menú de compartir de Android); en el otro, **Elegir archivo de copia** y **Combinar**. Antes de cambiar nada se ve un resumen; un archivo dañado o de otra versión se rechaza sin tocar los datos.
+
 Recomendación: hacer una copia antes de cada actualización grande y guardarla fuera del teléfono.
+
+## Centro de seguridad
+
+**Ajustes → Centro de seguridad** muestra qué está protegido y permite crear, cambiar o quitar el PIN de la app y el PIN personal, activar la huella, la cortina, el bloqueo al salir y por inactividad, y borrar por sección o todo. Los PIN nunca se guardan: solo las llaves cifradas que abren.
 
 ## Publicar una versión nueva
 
