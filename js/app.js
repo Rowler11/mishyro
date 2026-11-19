@@ -26,6 +26,7 @@ const load = {
   ajustes: () => import('./features/ajustes.js'),
   perfil: () => import('./features/perfil.js'),
   privacidad: () => import('./features/privacidad.js'),
+  buscar: () => import('./features/buscar.js'),
   styleguide: () => import('./features/styleguide.js'),
   setup: () => import('./features/setup.js'),
 };
@@ -48,7 +49,7 @@ function registerRoutes() {
   for (const p of SETTINGS_PAGES) router.register(`/ajustes/${p.id}`, { ...p, id: `ajustes/${p.id}`, settingsPage: p.id, tab: 'mas', load: load[p.module] || load.placeholder });
   for (const t of TABS.slice(0, 4)) registerSection(t.path, { ...t, tab: t.id, load: load[{ inicio: 'home', capsula: 'capsula', cupones: 'cupones', cartas: 'cartas' }[t.id]] });
   for (const g of GROUPS) for (const s of g.sections) if (!s.id.startsWith('ajustes')) registerSection(`/${s.id}`, { ...s, group: g.id, tab: 'mas' });
-  for (const s of HIDDEN) registerSection(`/${s.id}`, { ...s, tab: 'mas', neutral: s.id === 'yoru' });
+  for (const s of HIDDEN) registerSection(`/${s.id}`, { ...s, tab: s.id === 'buscar' ? 'buscar' : 'mas', neutral: s.id === 'yoru', load: load[s.module] });
   router.register('/no-encontrado', { id: 'no-encontrado', title: 'No encontrado', notFound: true, tab: 'mas', load: load.placeholder });
 }
 
@@ -64,17 +65,19 @@ function buildShell() {
 
   const profileChip = (cls) => el('button', { class: `profile-chip ${cls}`, type: 'button', onClick: switchProfile },
     el('span', { class: 'profile-dot', 'aria-hidden': 'true' }), el('span', { class: 'profile-initial', 'aria-hidden': 'true' }), el('span', { class: 'profile-text' }));
+  const searchBtn = el('a', { class: 'icon-btn search-btn', href: '#/buscar', 'aria-label': 'Buscar', title: 'Buscar · tecla /' }, icon('search'));
   const panicBtn = (cls) => el('button', { class: `icon-btn panic-btn ${cls}`, type: 'button', 'aria-label': 'Cubrir la app (pánico)', title: 'Cubrir la app · Esc dos veces', onClick: doPanic }, icon('eye-off'));
 
   const skip = el('a', { class: 'skip-link', href: '#main', onClick: (e) => { e.preventDefault(); document.getElementById('main').focus(); } }, 'Saltar al contenido');
   const appbar = el('header', { class: 'appbar' },
     el('a', { class: 'brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.flower({ size: 30 }), el('span', { class: 'brand-name' }, 'Aishiteru')),
-    el('div', { class: 'appbar-actions' }, profileChip('chip-appbar'), panicBtn('panic-appbar')));
+    el('div', { class: 'appbar-actions' }, searchBtn, profileChip('chip-appbar'), panicBtn('panic-appbar')));
   const rail = el('nav', { class: 'rail', 'aria-label': 'Navegación principal' },
     el('a', { class: 'brand rail-brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.flower({ size: 36 }),
       el('span', { class: 'brand-text' }, el('span', { class: 'brand-name' }, 'Aishiteru'))),
     el('div', { class: 'rail-tabs' }, TABS.map((t) => tabLink(t, 'rail-link'))),
     el('div', { class: 'rail-foot' },
+      tabLink({ id: 'buscar', path: '/buscar', title: 'Buscar', icon: 'search' }, 'rail-link'),
       tabLink({ id: 'ajustes', path: '/ajustes', title: 'Ajustes', jp: '設定', romaji: 'settei', icon: 'settings' }, 'rail-link'),
       profileChip('chip-rail'), panicBtn('panic-rail')));
   const indicator = el('span', { class: 'tabbar-indicator', 'aria-hidden': 'true' });
@@ -92,8 +95,9 @@ function updateNav(route) {
     const on = a.dataset.tab === tab || (a.dataset.tab === 'ajustes' && route.path.startsWith('/ajustes'));
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
-  const idx = Math.max(0, TABS.findIndex((t) => t.id === tab));
-  shell?.indicator.style.setProperty('--tab', String(idx));
+  const idx = TABS.findIndex((t) => t.id === tab);
+  shell?.indicator.style.setProperty('--tab', String(Math.max(0, idx)));
+  if (shell) shell.indicator.hidden = idx < 0; // Buscar has no bottom tab
   document.documentElement.dataset.layer = route.def.layer ? 'full' : 'shell';
 }
 
@@ -164,8 +168,9 @@ async function render(route) {
     node = el('section', { class: 'page' }, ui.pageHeader({ title: 'Algo salió mal' }),
       ui.emptyState({ title: 'No pudimos abrir esta parte', text: 'No se perdió nada. Intenta de nuevo.', art: 'omamori', action: { label: 'Reintentar', onClick: () => router.refresh() } }));
   }
-  swapView(main, node);
-  if (!app.firstRender) requestAnimationFrame(() => (main.querySelector('h1') || main).focus({ preventScroll: true }));
+  const swapped = swapView(main, node);
+  // Focus once the new view is really in the DOM (a view transition swaps it a frame later).
+  if (!app.firstRender) swapped.then(() => requestAnimationFrame(() => (main.querySelector('[data-autofocus]') || main.querySelector('h1') || main).focus({ preventScroll: true })));
   app.firstRender = false;
   window.scrollTo({ top: 0 });
 }
@@ -175,10 +180,11 @@ function swapView(main, node) {
   if (motion && document.startViewTransition && !app.firstRender) {
     const vt = document.startViewTransition(() => main.replaceChildren(node));
     vt.ready.catch(() => {}); // a fast second navigation skips the first transition: not an error
-  } else {
-    main.replaceChildren(node);
-    if (motion) node.classList?.add('view-enter');
+    return vt.updateCallbackDone.catch(() => {});
   }
+  main.replaceChildren(node);
+  if (motion) node.classList?.add('view-enter');
+  return Promise.resolve();
 }
 
 // ---------- global layers ----------
