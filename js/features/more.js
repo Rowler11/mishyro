@@ -1,6 +1,6 @@
 // "Más" hub (docs/05 Detalles de producto): every section grouped, one coherent navigation.
 // Collapsible groups, one open at a time; the open group shows cards with a one-line description.
-// What is not built yet carries a "Pronto" pill.
+// What is not built yet carries a "Pronto" pill. "Moment" sections are left out: they appear on Inicio when due.
 import { ui, util, CONFIG } from '../core.js';
 import { GROUPS } from '../routes.js';
 
@@ -46,7 +46,8 @@ export function render() {
     if (g && focus) requestAnimationFrame(() => g.box.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
   };
 
-  const list = GROUPS.map((g) => {
+  const visible = GROUPS.map((g) => ({ ...g, sections: g.sections.filter((s) => !s.moment) })).filter((g) => g.sections.length);
+  const list = visible.map((g) => {
     const head = el('button', {
       class: 'acc-head', type: 'button', id: `g-${g.id}`, 'aria-controls': `gb-${g.id}`, 'aria-expanded': 'false',
       onClick: () => setOpen(head.getAttribute('aria-expanded') === 'true' ? null : g.id, { focus: true }),
@@ -63,7 +64,7 @@ export function render() {
   });
 
   const saved = readOpen();
-  setOpen(saved === '' ? null : (GROUPS.some((g) => g.id === saved) ? saved : GROUPS[0].id));
+  setOpen(saved === '' ? null : (visible.some((g) => g.id === saved) ? saved : visible[0].id));
 
   return el('section', { class: 'page page-wide' },
     ui.pageHeader({ title: 'Más', jp: 'もっと', romaji: 'motto' }),

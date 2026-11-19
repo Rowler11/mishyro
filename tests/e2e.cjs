@@ -126,6 +126,7 @@ async function completeSetup(page) {
     await heads.nth(1).click();
     await page.waitForTimeout(350);
     ok(`más @${w}: tapping the open group closes it`, (await openCount()) === 0);
+    ok(`más @${w}: moments (Resumen, Cápsula del tiempo, Temporadas) are not listed`, (await page.$$eval('.section-card', (c) => c.filter((x) => ['#/resumen', '#/capsula-tiempo', '#/eventos'].includes(x.getAttribute('href'))).length)) === 0);
     await heads.nth(0).click();
     ok(`nav @${w}: no Japanese under the bottom tabs`, (await page.$$eval('.tab .ja', (n) => n.length)) === 0);
     await page.waitForTimeout(300);

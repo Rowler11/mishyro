@@ -27,6 +27,8 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 - Letras japonesas solo en el título de cada pantalla; nunca en las pestañas de abajo, tarjetas, listas, grupos, botones ni modales.
 - "Más": grupos plegables, uno abierto a la vez, con tarjetas de 2 por fila (nombre corto y una línea de descripción); lo que no existe aún lleva "Pronto", no "Fase N".
 - PIN de la app y personal: 4 dígitos con envío automático. Rincón: 6 (docs/05 §33).
+- Tema claro: paleta "Sakura" (fondo #FBF4F3, acento #C2405F). El neón de noche se ajusta más adelante.
+- "Momentos": Resumen (fin de mes y de año), Cápsula del tiempo (el día que se abre) y Eventos de temporada no van en "Más"; salen como aviso en Inicio solo cuando toca (`moment: true` en routes.js). Desde el aviso se puede volver a los anteriores.
 
 ## Estilo de trabajo
 - Responde en español, con un tono cercano y directo. El código, las variables y los comentarios técnicos van en inglés; los comentarios de CONFIG van en español.

@@ -6,7 +6,7 @@
 export const APPEARANCE_DEFAULTS = { theme: 'auto', highContrast: false, textScale: 100, legibleFont: false, japanese: true };
 export const MOTION_DEFAULTS = { animations: true, haptics: true, sound: false };
 export const DAY_START = 6; export const NIGHT_START = 18;
-const THEME_COLORS = { day: '#F6F1E7', night: '#0E0B1A' };
+const THEME_COLORS = { day: '#FBF4F3', night: '#0E0B1A' };
 
 let storageKey = 'aishiteru';
 let prefs = { ...APPEARANCE_DEFAULTS, ...MOTION_DEFAULTS };

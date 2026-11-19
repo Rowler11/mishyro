@@ -16,7 +16,7 @@ export const GROUPS = [
     { id: 'fechas', title: 'Fechas especiales', jp: '記念日', romaji: 'kinenbi', icon: 'cake', phase: '3', blurb: 'Aniversario, cumpleaños y cuentas regresivas.' },
     { id: 'insignias', title: 'Racha e insignias', jp: 'バッジ', romaji: 'bajji', icon: 'award', phase: '4A', blurb: 'Lo que van logrando juntos.' },
     { id: 'animo', title: 'Medidor de ánimo', jp: '気分', romaji: 'kibun', icon: 'smile', phase: '3', blurb: 'Cómo amanece cada uno.' },
-    { id: 'resumen', title: 'Resumen del año', jp: '年間', romaji: 'nenkan', icon: 'sparkles', phase: '4A', blurb: 'Su año en historias, con modo Wrapped.' },
+    { id: 'resumen', title: 'Resumen del año', jp: '年間', romaji: 'nenkan', icon: 'sparkles', phase: '4A', moment: true, blurb: 'Su año en historias, con modo Wrapped.' },
     { id: 'recordatorios', title: 'Recordatorios', jp: 'お知らせ', romaji: 'oshirase', icon: 'bell', phase: '3', blurb: 'Avisos suaves y calendario del teléfono.' },
     { id: 'encuentro', title: 'Próximo encuentro', jp: '次回', romaji: 'jikai', icon: 'plane', phase: '4A', blurb: 'La cuenta regresiva para verse.' },
   ] },
@@ -25,7 +25,7 @@ export const GROUPS = [
     { id: 'album', title: 'Álbum "Nuestro año"', jp: 'アルバム', romaji: 'arubamu', icon: 'book-open', phase: '4A', blurb: 'Collages por mes y por año.' },
     { id: 'mapa', title: 'Mapa de lugares', jp: '地図', romaji: 'chizu', icon: 'map', phase: '4A', blurb: 'Donde han estado y adonde irán.' },
     { id: 'primeras-veces', title: 'Primeras veces', jp: '初めて', romaji: 'hajimete', icon: 'star', phase: '4A', blurb: 'El álbum de sus primeras veces.' },
-    { id: 'capsula-tiempo', title: 'Cápsula del tiempo', jp: 'タイムカプセル', romaji: 'taimu kapuseru', icon: 'lock', phase: '4A', blurb: 'Mensajes que se abren en el futuro.' },
+    { id: 'capsula-tiempo', title: 'Cápsula del tiempo', jp: 'タイムカプセル', romaji: 'taimu kapuseru', icon: 'lock', phase: '4A', moment: true, blurb: 'Mensajes que se abren en el futuro.' },
     { id: 'photobooth', title: 'Photobooth', jp: 'プリクラ', romaji: 'purikura', icon: 'camera', phase: '4A', blurb: 'Tiras de fotos con marco.' },
     { id: 'diario', title: 'Diario', jp: '日記', romaji: 'nikki', icon: 'notebook-pen', phase: '3', blurb: 'Lo que pasó hoy, en pocas líneas.' },
     { id: 'voz', title: 'Notas de voz', jp: '声', romaji: 'koe', icon: 'mic', phase: '4A', blurb: 'Su voz para los días que la necesiten.' },
@@ -45,7 +45,7 @@ export const GROUPS = [
   { id: 'jugar', title: 'Jugar', jp: '遊び', romaji: 'asobi', sections: [
     { id: 'juegos', title: 'Juegos', jp: '遊び', romaji: 'asobi', icon: 'gamepad-2', phase: '5', blurb: 'Juegos en pareja, en persona.' },
     { id: 'rasca', title: 'Rasca y gana', jp: '当たり', romaji: 'atari', icon: 'wand-sparkles', phase: '4B', blurb: 'Premios pequeños para raspar.' },
-    { id: 'eventos', title: 'Eventos de temporada', jp: '季節', romaji: 'kisetsu', icon: 'party-popper', phase: '5', blurb: 'Fechas del año con su decoración.' },
+    { id: 'eventos', title: 'Eventos de temporada', jp: '季節', romaji: 'kisetsu', icon: 'party-popper', phase: '5', moment: true, blurb: 'Fechas del año con su decoración.' },
   ] },
   { id: 'hogar', title: 'Hogar', sections: [
     { id: 'mascotas', title: 'Mascotas', jp: 'ペット', romaji: 'petto', icon: 'paw-print', phase: '4B', blurb: 'Perfil, salud y fotos de cada mascota.' },
@@ -62,6 +62,9 @@ export const GROUPS = [
     { id: 'ajustes/perfil', title: 'Perfil y datos', jp: '情報', romaji: 'jōhō', icon: 'users', phase: '2', blurb: 'Nombres, fechas y textos de la app.' },
   ] },
 ];
+
+// moment: true = not listed in Más; it shows up as a notice on Inicio only when it applies
+// (Resumen at month/year end, Cápsula del tiempo on opening day, Eventos while a season is on).
 
 /** Hidden section: not listed in "Más"; opened with the secret gesture. Neutral name only. */
 export const HIDDEN = [

@@ -10,7 +10,7 @@
   "display": "standalone",
   "display_override": ["standalone"],
   "orientation": "any",
-  "background_color": "#F6F1E7",
+  "background_color": "#FBF4F3",
   "theme_color": "#C8412B",
   "categories": ["lifestyle"],
   "icons": [
