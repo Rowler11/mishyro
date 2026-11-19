@@ -1,5 +1,6 @@
 // "Más" hub (docs/05 Detalles de producto): every section grouped, one coherent navigation.
-// Collapsible groups, one open at a time; the open group shows cards with a one-line description.
+// Group tabs on top (decided 2026-11-19, option C): pick a group and its cards show below, two per
+// row with a one-line description. Switching is instant, nothing folds or unfolds.
 // What is not built yet carries a "Pronto" pill. "Moment" sections are left out: they appear on Inicio when due.
 import { ui, util, CONFIG } from '../core.js';
 import { GROUPS } from '../routes.js';
@@ -16,7 +17,7 @@ const SHORT = {
   'Gastos compartidos': 'Gastos', 'Recetas y menú en casa': 'Recetas',
 };
 
-// Remembers the open group on this device only (a convenience; safe to lose).
+// Remembers the chosen group on this device only (a convenience; safe to lose).
 const KEY = () => `${CONFIG.storageKey || 'aishiteru'}.moreOpen`;
 const readOpen = () => { try { return localStorage.getItem(KEY()); } catch { return null; } };
 const saveOpen = (id) => { try { localStorage.setItem(KEY(), id || ''); } catch { /* private mode */ } };
@@ -32,57 +33,45 @@ function card(s) {
 }
 
 export function render() {
-  const groups = [];
-  const setOpen = (id, { focus = false } = {}) => {
-    const target = groups.find((x) => x.id === id);
-    const before = target?.head.getBoundingClientRect().top;
-    groups.forEach((g) => {
-      const on = g.id === id;
-      // A group closing above the one being opened folds at once, so the tapped header stays put.
-      if (!on && target && g.box.classList.contains('open') && (g.box.compareDocumentPosition(target.box) & Node.DOCUMENT_POSITION_FOLLOWING)) g.box.classList.add('acc-instant');
-      g.head.setAttribute('aria-expanded', String(on));
-      g.box.classList.toggle('open', on);
-      g.body.inert = !on;
-    });
-    if (focus && target) {
-      const shift = target.head.getBoundingClientRect().top - before;
-      if (Math.abs(shift) > 1) window.scrollBy({ top: shift, behavior: 'instant' });
-    }
-    requestAnimationFrame(() => requestAnimationFrame(() => groups.forEach((g) => g.box.classList.remove('acc-instant'))));
-    saveOpen(id);
-    if (!target || !focus) return;
-    // Once open, bring its last cards into view if they ended up under the tab bar.
-    const settle = (e) => {
-      if (e.target !== target.body) return;
-      target.body.removeEventListener('transitionend', settle);
-      const r = target.box.getBoundingClientRect();
-      const need = r.bottom - (innerHeight - 96);
-      if (need > 0) window.scrollBy({ top: Math.min(need, r.top - 72), behavior: 'smooth' });
-    };
-    target.body.addEventListener('transitionend', settle);
-  };
-
   const visible = GROUPS.map((g) => ({ ...g, sections: g.sections.filter((s) => !s.moment) })).filter((g) => g.sections.length);
-  const list = visible.map((g) => {
-    const head = el('button', {
-      class: 'acc-head', type: 'button', id: `g-${g.id}`, 'aria-controls': `gb-${g.id}`, 'aria-expanded': 'false',
-      onClick: () => setOpen(head.getAttribute('aria-expanded') === 'true' ? null : g.id, { focus: true }),
-    },
-      el('span', { class: 'acc-title' }, g.title),
-      el('span', { class: 'acc-count', 'aria-label': `${g.sections.length} secciones` }, String(g.sections.length)),
-      el('span', { class: 'acc-mini', 'aria-hidden': 'true' }, g.sections.slice(0, 4).map((s) => icon(s.icon))),
-      icon('chevron-right', { cls: 'acc-chevron' }));
-    const body = el('div', { class: 'acc-body', id: `gb-${g.id}`, role: 'region', 'aria-labelledby': `g-${g.id}` },
-      el('div', { class: 'acc-inner' }, el('div', { class: 'section-cards' }, g.sections.map(card))));
-    const box = el('section', { class: 'card more-acc' }, el('h2', { class: 'acc-h' }, head), body);
-    groups.push({ id: g.id, head, body, box });
-    return box;
+  const saved = readOpen();
+  let current = visible.some((g) => g.id === saved) ? saved : visible[0].id;
+
+  const panel = el('div', { class: 'more-panel', role: 'tabpanel' });
+  const tabs = visible.map((g) => el('button', {
+    class: 'more-tab', type: 'button', role: 'tab', id: `mt-${g.id}`, 'aria-controls': 'more-panel',
+    onClick: () => select(g.id, { scroll: true }),
+  }, g.title, el('span', { class: 'more-tab-count', 'aria-hidden': 'true' }, String(g.sections.length))));
+  const list = el('div', { class: 'more-tabs', role: 'tablist', 'aria-label': 'Grupos' }, tabs);
+  panel.id = 'more-panel';
+
+  // Arrow keys move between groups (tabs pattern).
+  list.addEventListener('keydown', (e) => {
+    const i = visible.findIndex((g) => g.id === current);
+    const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: visible.length - 1 }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    const g = visible[(next + visible.length) % visible.length];
+    select(g.id, { scroll: true });
+    tabs[visible.indexOf(g)].focus();
   });
 
-  const saved = readOpen();
-  setOpen(saved === '' ? null : (visible.some((g) => g.id === saved) ? saved : visible[0].id));
+  function select(id, { scroll = false } = {}) {
+    current = id;
+    saveOpen(id);
+    const g = visible.find((x) => x.id === id);
+    tabs.forEach((t, i) => {
+      const on = visible[i].id === id;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+    });
+    panel.setAttribute('aria-labelledby', `mt-${id}`);
+    panel.replaceChildren(el('div', { class: 'section-cards more-cards' }, g.sections.map(card)));
+    if (scroll) tabs[visible.indexOf(g)].scrollIntoView({ inline: 'center', block: 'nearest', behavior: util.prefersReducedMotion() ? 'auto' : 'smooth' });
+  }
+  select(current);
 
   return el('section', { class: 'page page-wide' },
     ui.pageHeader({ title: 'Más', jp: 'もっと', romaji: 'motto' }),
-    ui.stagger(el('div', { class: 'more-groups' }, list)));
+    list, panel);
 }

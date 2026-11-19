@@ -1,9 +1,9 @@
 // Cartas (docs/05 Pestaña 4, §18 "Cartas nuestras", docs/06, docs/09 #/cartas).
 // "Para ti": fūtō envelopes sealed with a hanko; opening one breaks the seal and shows the
 // letter on washi paper, then it stays marked "Abierta el {fecha} a las {hora}".
-// "Escribimos": each person writes their own "Ábreme cuando..." letters (draft -> sealed ->
-// opened). A sealed letter can no longer be edited; the seal is symbolic, not encryption.
-// On the author's phone the seed letters show as "Las que le escribiste" with their status (decision 5).
+// "Escribimos": each person writes their own "Ábreme cuando..." letters (loose sheet -> envelope
+// "En camino" -> "Leídas"). A sealed letter can no longer be edited; the seal is symbolic, not encryption.
+// On the author's phone the seed letters show with their own, by status (decision 5).
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import { compressImage } from '../core/images.js';
 import { layer as stickerLayer, decorate, loadAlbum } from './stickers.js';
@@ -118,7 +118,7 @@ async function flyOpen(node, letter) {
   };
 }
 
-async function letterModal(letter, { onShareable = true, flown = false } = {}) {
+async function letterModal(letter, { onShareable = true, flown = false, onDelete = null } = {}) {
   const paras = String(letter.body || '').split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   let photo = null; let url = null;
   if (letter.mediaId) {
@@ -132,6 +132,7 @@ async function letterModal(letter, { onShareable = true, flown = false } = {}) {
     letter.openedAt ? el('p', { class: 'washi-meta' }, openedText(letter.openedAt)) : null);
   const actions = [{ label: 'Cerrar', variant: 'ghost' }];
   if (onShareable) actions.unshift({ label: 'Compartir el texto', onClick: () => { ui.share({ title: letter.label, text: `${letter.label}\n\n${paras.join('\n\n')}\n\n${letter.signature || profile.name(letter.from)}` }); return false; } });
+  if (onDelete) actions.unshift({ label: 'Borrar', variant: 'ghost', onClick: () => { onDelete(); return true; } });
   return ui.openModal({ title: letter.label, size: 'lg', className: `washi-modal${flown ? ' is-flown' : ''}`, body, actions, onClose: () => { if (url) URL.revokeObjectURL(url); } });
 }
 
@@ -261,7 +262,7 @@ export async function render(ctx) {
       await db.put('letters', rec);
       ui.toast('Carta sellada.', { tone: 'success' });
       await load(); draw();
-      body.querySelector(`.own-letter[data-id="${CSS.escape(rec.id)}"] .hanko`)?.classList.add('hanko-stamp');
+      body.querySelector(`.futo-sent[data-id="${CSS.escape(rec.id)}"] .hanko`)?.classList.add('hanko-stamp');
     } catch (e) { console.error(e); ui.toast('No se pudo sellar. Inténtalo de nuevo.', { tone: 'error' }); }
   };
 
@@ -306,36 +307,59 @@ export async function render(ctx) {
     return wrap;
   }
 
+  // "Escribimos" (decided 2026-11-19, option C): drafts are loose sheets of lined paper "on the table";
+  // sealing puts them in an envelope that moves to "En camino" and then to "Leídas".
   function writing() {
     const me = profile.active();
     const partner = profile.name(profile.partnerOf(me));
-    const own = letters.filter((l) => l.kind === 'own' && l.from === me).sort((a, b) => (b.raw.updatedAt || '').localeCompare(a.raw.updatedAt || ''));
-    const seeded = letters.filter((l) => l.kind === 'seed' && l.from === me);
-    const stickerNote = (l) => (l.stickers?.length ? ` · ${l.stickers.length === 1 ? '1 estampilla' : `${l.stickers.length} estampillas`}` : '');
-    const statusOf = (l) => (l.status === 'draft' ? `Borrador${stickerNote(l)}` : l.status === 'sealed' ? 'Sellada, sin abrir' : openedText(l.openedAt));
-    const row = (l) => el('article', { class: `card own-letter status-${l.status}`, dataset: { id: l.id }, 'aria-labelledby': `ol-${l.id.slice(0, 12)}` },
-      el('div', { class: 'own-letter-head' },
-        l.status === 'draft' ? el('span', { class: 'own-letter-icon', 'aria-hidden': 'true' }, icon('notebook-pen', { size: 28 })) : seal(l, { size: 44 }),
-        el('div', { class: 'own-letter-text' },
-          el('h3', { class: 'own-letter-title', id: `ol-${l.id.slice(0, 12)}` }, l.label),
-          el('p', { class: 'muted small' }, statusOf(l)))),
-      l.kind === 'own' ? el('div', { class: 'card-actions' },
-        l.status === 'draft' ? [
-          ui.button({ label: 'Sellar', iconName: 'mail', variant: 'primary', small: true, onClick: () => sealLetter(l) }),
-          ui.button({ label: 'Editar', iconName: 'pencil', small: true, onClick: () => openEditor(l.raw) }),
-          ui.button({ label: 'Decorar sobre', iconName: 'sticker', small: true, onClick: () => decorateLetter(l) }),
-          ui.button({ label: 'Leer', iconName: 'book-open', variant: 'ghost', small: true, onClick: () => letterModal(l, { onShareable: false }) }),
-        ] : ui.button({ label: 'Leer', iconName: 'book-open', variant: 'ghost', small: true, onClick: () => letterModal(l) }),
-        ui.button({ label: 'Borrar', iconName: 'trash-2', variant: 'ghost', small: true, onClick: () => removeLetter(l) })) : null,
-      l.kind === 'seed' && l.incomplete ? el('span', { class: 'pending' }, 'Por completar en los datos iniciales') : null);
+    const mine = letters.filter((l) => l.from === me).sort((a, b) => ((b.raw?.sealedAt || b.raw?.updatedAt || '').localeCompare(a.raw?.sealedAt || a.raw?.updatedAt || '')));
+    const drafts = mine.filter((l) => l.status === 'draft');
+    const onTheWay = mine.filter((l) => l.status === 'sealed');
+    const read = mine.filter((l) => l.status === 'opened').sort((a, b) => (b.openedAt || '').localeCompare(a.openedAt || ''));
+    const stickerNote = (l) => (l.stickers?.length ? (l.stickers.length === 1 ? '1 estampilla en el sobre' : `${l.stickers.length} estampillas en el sobre`) : '');
+    const excerpt = (t) => { const x = String(t || '').replace(/\s+/g, ' ').trim(); return x.length > 150 ? `${x.slice(0, 150).trimEnd()}…` : x; };
+    const sheet = (l) => el('article', { class: 'draft-sheet own-letter status-draft', dataset: { id: l.id }, 'aria-labelledby': `ol-${l.id.slice(0, 12)}` },
+      el('h3', { class: 'draft-title', id: `ol-${l.id.slice(0, 12)}` }, l.label),
+      el('p', { class: 'draft-lines' }, excerpt(l.body)),
+      el('p', { class: 'draft-meta' }, el('span', {}, 'Borrador · solo tú la ves'), stickerNote(l) ? el('span', {}, stickerNote(l)) : null),
+      el('div', { class: 'card-actions' },
+        ui.button({ label: 'Meter al sobre', iconName: 'mail', variant: 'primary', small: true, onClick: () => sealLetter(l) }),
+        ui.button({ label: 'Seguir', iconName: 'pencil', small: true, onClick: () => openEditor(l.raw) }),
+        ui.button({ label: 'Decorar sobre', iconName: 'sticker', small: true, onClick: () => decorateLetter(l) }),
+        ui.button({ label: 'Borrar', iconName: 'trash-2', variant: 'ghost', small: true, onClick: () => removeLetter(l) })));
+    // A small envelope, two per row. Tapping it shows the letter as it was sent.
+    const sent = (l) => {
+      const opened = l.status === 'opened';
+      const status = l.incomplete ? 'Por completar' : opened ? shortOpened(l.openedAt) : 'Sin abrir';
+      const cond = l.label.replace(/^ábreme cuando\s+/i, '');
+      const hasPre = /^ábreme cuando\s+/i.test(l.label);
+      return el('button', {
+        class: `futo futo-sent own-letter status-${l.status}${opened ? ' is-opened' : ''}`, type: 'button', dataset: { id: l.id },
+        'aria-label': `${l.label}. Para ${partner}. ${opened ? openedText(l.openedAt) : status}.`,
+        disabled: l.incomplete || !l.body ? true : null,
+        onClick: () => letterModal(l, { onDelete: l.kind === 'own' ? () => removeLetter(l) : null }),
+      },
+      el('span', { class: 'futo-flap', 'aria-hidden': 'true' }),
+      seal(l, { size: 36 }),
+      el('span', { class: 'futo-label' }, hasPre ? el('span', { class: 'futo-pre' }, 'Ábreme cuando') : null, hasPre ? cond : l.label),
+      el('span', { class: `futo-sent-status${opened ? ' is-read' : ''}`, 'aria-hidden': 'true' }, opened ? icon('check', { size: 14 }) : null, status),
+      stickerLayer(l.stickers));
+    };
+    const empty = !mine.length;
     return el('div', { class: 'cartas-section' },
-      el('div', { class: 'card note-card' },
-        el('p', {}, `Escribe una carta "Ábreme cuando…" para ${partner}. Mientras es borrador solo tú la ves. Al sellarla ya no se puede editar.`),
-        el('p', { class: 'muted small' }, 'El sello es simbólico: guarda la sorpresa, pero la carta no queda cifrada.')),
-      own.length ? [el('h2', { class: 'card-kicker cartas-subtitle' }, 'Tus cartas'), el('div', { class: 'own-grid' }, own.map(row))] : null,
-      seeded.length ? [el('h2', { class: 'card-kicker cartas-subtitle' }, 'Las que le escribiste'),
-        el('p', { class: 'muted small' }, `Vinieron en los datos iniciales. Aquí ves si ${partner} ya las abrió en este teléfono.`),
-        el('div', { class: 'own-grid' }, seeded.map(row))] : null);
+      el('div', { class: 'cartas-group' },
+        el('h2', { class: 'card-kicker cartas-subtitle' }, 'Sobre la mesa'),
+        el('p', { class: 'muted small' }, drafts.length
+          ? 'Lo que aún escribes: hojas sueltas que solo tú ves. Al meterlas al sobre ya no se editan.'
+          : empty ? `Aquí quedan las cartas "Ábreme cuando…" que le escribas a ${partner}. Empieza con "Escribir carta".` : 'No hay hojas sueltas. Para otra carta, usa "Escribir carta".'),
+        drafts.length ? el('div', { class: 'draft-grid' }, drafts.map(sheet)) : null),
+      onTheWay.length ? el('div', { class: 'cartas-group' },
+        el('h2', { class: 'card-kicker cartas-subtitle' }, 'En camino'),
+        el('p', { class: 'muted small' }, onTheWay.length === 1 ? `Sellada, esperando a que ${partner} la abra.` : `Selladas, esperando a que ${partner} las abra.`),
+        el('div', { class: 'sent-grid' }, onTheWay.map(sent))) : null,
+      read.length ? el('div', { class: 'cartas-group' },
+        el('h2', { class: 'card-kicker cartas-subtitle' }, 'Leídas'),
+        el('div', { class: 'sent-grid' }, read.map(sent))) : null);
   }
 
   function draw() {

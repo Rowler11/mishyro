@@ -5,6 +5,9 @@
 // Layout "Carrusel del día" (decided 2026-11-19): counter on top, the day's cards (greeting,
 // Pensando en ti, reason) in a swipeable carousel, then dates, milestone and backup.
 // From 900 px the carousel turns into a row of three cards.
+// Revised the same day (option B "anillo"): the counter sits inside a ring that fills up toward the
+// next anniversary; special dates and the next milestone share one "Lo que viene" list (the
+// anniversary is not repeated there) and the backup reminder is a slim note.
 import { ui, util, db, profile, seed, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
 
@@ -34,24 +37,53 @@ async function loadData() {
   };
 }
 
-// ---------- 1. counter ----------
+// ---------- 1. counter, inside a ring toward the next anniversary ----------
+const RING_R = 52;
+const RING_C = 2 * Math.PI * RING_R;
+
+/** Where the couple is in the current year together: last and next anniversary, 0..1 between them. */
+export function anniversaryRing(start, now = new Date()) {
+  const years = time.elapsed(start, now).years;
+  const last = time.addMonths(start, years * 12);
+  const next = time.addMonths(start, (years + 1) * 12);
+  const progress = Math.min(1, Math.max(0, (now - last) / (next - last)));
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysLeft = util.daysBetween(today, new Date(next.getFullYear(), next.getMonth(), next.getDate()));
+  const isToday = years > 0 && last.getFullYear() === now.getFullYear() && last.getMonth() === now.getMonth() && last.getDate() === now.getDate();
+  return { years, nextYears: years + 1, progress, daysLeft, isToday, next };
+}
+
 function counterCard(start, onNewDay) {
-  const UNITS = [['years', 'año', 'años'], ['months', 'mes', 'meses'], ['days', 'día', 'días'], ['hours', 'hora', 'horas'], ['minutes', 'min', 'min'], ['seconds', 'seg', 'seg']];
   const big = el('span', { class: 'counter-days' });
   const bigLabel = el('span', { class: 'counter-days-label' });
-  const cells = UNITS.map(([key]) => [key, el('span', { class: 'counter-num' })]);
-  const labels = new Map(UNITS.map(([key, one, many]) => [key, el('span', { class: 'counter-unit' }, many)]));
+  const goal = el('p', { class: 'counter-goal' });
+  const detail = el('span', {});
+  const clock = el('span', { class: 'counter-clock' });
   const sr = el('p', { class: 'sr-only' });
   const petals = el('div', { class: 'petals', 'aria-hidden': 'true' });
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = (tag, attrs) => { const n = document.createElementNS(NS, tag); Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v)); return n; };
+  const ring = svg('svg', { class: 'counter-ring-svg', viewBox: '0 0 120 120', 'aria-hidden': 'true' });
+  const grad = svg('linearGradient', { id: 'ring-grad', x1: '0', y1: '0', x2: '1', y2: '1' });
+  grad.append(svg('stop', { offset: '0%', 'stop-color': 'var(--accent-2)' }), svg('stop', { offset: '100%', 'stop-color': 'var(--accent)' }));
+  const defs = svg('defs', {}); defs.append(grad);
+  const arc = svg('circle', { class: 'counter-ring-arc', cx: '60', cy: '60', r: String(RING_R), 'stroke-dasharray': RING_C.toFixed(2), 'stroke-dashoffset': RING_C.toFixed(2) });
+  ring.append(defs, svg('circle', { class: 'counter-ring-track', cx: '60', cy: '60', r: String(RING_R) }), arc);
   let lastTotal = null;
   const paint = () => {
-    const e = time.elapsed(start, new Date());
+    const now = new Date();
+    const e = time.elapsed(start, now);
+    const r = anniversaryRing(start, now);
     big.textContent = e.totalDays.toLocaleString('es-CO');
     bigLabel.textContent = e.totalDays === 1 ? 'día juntos' : 'días juntos';
-    for (const [key, node] of cells) node.textContent = String(e[key]).padStart(key === 'years' || key === 'months' || key === 'days' ? 1 : 2, '0');
-    for (const [key, one, many] of UNITS) labels.get(key).textContent = e[key] === 1 ? one : many;
+    clock.textContent = [e.hours, e.minutes, e.seconds].map((n) => String(n).padStart(2, '0')).join(':');
     if (lastTotal !== e.totalDays) {
-      sr.textContent = `Llevan ${plural(e.years, 'año', 'años')}, ${plural(e.months, 'mes', 'meses')} y ${plural(e.days, 'día', 'días')} juntos: ${plural(e.totalDays, 'día', 'días')} en total.`;
+      arc.setAttribute('stroke-dashoffset', (RING_C * (1 - (r.isToday ? 1 : r.progress))).toFixed(2));
+      goal.textContent = r.isToday ? `¡Hoy cumplen ${plural(r.years, 'año', 'años')}!`
+        : r.daysLeft === 1 ? `Mañana cumplen ${plural(r.nextYears, 'año', 'años')}` : `Faltan ${r.daysLeft} días para ${r.nextYears === 1 ? 'el primer año' : `los ${r.nextYears} años`}`;
+      const parts = [e.years ? plural(e.years, 'año', 'años') : '', e.months ? plural(e.months, 'mes', 'meses') : '', plural(e.days, 'día', 'días')].filter(Boolean);
+      detail.textContent = `${parts.length > 1 ? `${parts.slice(0, -1).join(', ')} y ${parts.at(-1)}` : parts[0]} · `;
+      sr.textContent = `Llevan ${plural(e.years, 'año', 'años')}, ${plural(e.months, 'mes', 'meses')} y ${plural(e.days, 'día', 'días')} juntos: ${plural(e.totalDays, 'día', 'días')} en total. ${goal.textContent}.`;
       if (lastTotal !== null) onNewDay(petals);
       lastTotal = e.totalDays;
     }
@@ -59,9 +91,9 @@ function counterCard(start, onNewDay) {
   paint();
   const card = el('article', { class: 'card home-card counter-card', 'aria-labelledby': 'counter-title' },
     petals,
-    el('h2', { class: 'card-kicker', id: 'counter-title' }, 'Nuestro tiempo'),
-    el('p', { class: 'counter-big', 'aria-hidden': 'true' }, big, ' ', bigLabel),
-    el('div', { class: 'counter-grid', 'aria-hidden': 'true' }, cells.map(([key, node]) => el('span', { class: 'counter-cell' }, node, labels.get(key)))),
+    el('h2', { class: 'sr-only', id: 'counter-title' }, 'Nuestro tiempo'),
+    el('div', { class: 'counter-ring', 'aria-hidden': 'true' }, ring, el('p', { class: 'counter-big' }, big, bigLabel)),
+    el('div', { 'aria-hidden': 'true' }, goal, el('p', { class: 'counter-detail' }, detail, clock)),
     sr);
   // Ticks every second while visible; stops when the tab is hidden and recalculates on return.
   let timer = null;
@@ -70,6 +102,12 @@ function counterCard(start, onNewDay) {
   const onVis = () => (document.hidden ? stopTimer() : startTimer());
   document.addEventListener('visibilitychange', onVis);
   if (!document.hidden) startTimer();
+  // The ring fills in once, from empty, when Inicio opens.
+  if (!util.prefersReducedMotion()) {
+    const target = arc.getAttribute('stroke-dashoffset');
+    arc.setAttribute('stroke-dashoffset', RING_C.toFixed(2));
+    requestAnimationFrame(() => requestAnimationFrame(() => { arc.classList.add('is-filling'); arc.setAttribute('stroke-dashoffset', target); }));
+  }
   return { card, petals, cleanup: () => { stopTimer(); document.removeEventListener('visibilitychange', onVis); } };
 }
 
@@ -242,31 +280,27 @@ function upcomingDates(data, start) {
     .sort((a, b) => a.next.days - b.next.days);
 }
 
-function nextDateCard(data, start) {
-  const [first, second] = upcomingDates(data, start);
-  if (!first) return null;
-  const what = (d) => (d.kind === 'anniversary' && d.next.years ? `${plural(d.next.years, 'año', 'años')} juntos` : d.kind === 'birthday' && d.next.years ? `Cumple ${d.next.years}` : '');
-  return el('article', { class: 'card home-card next-date-card', 'aria-labelledby': 'next-date-title' },
-    el('h2', { class: 'card-kicker', id: 'next-date-title' }, 'Próxima fecha especial'),
-    el('p', { class: 'next-name' }, first.name),
-    el('p', { class: 'next-count' }, el('span', { class: 'next-days' }, first.next.days === 1 ? 'Mañana' : `En ${first.next.days} días`)),
-    el('p', { class: 'muted small' }, [fmtLong.format(first.next.date), what(first)].filter(Boolean).join(' · ')),
-    second ? el('p', { class: 'muted small next-after' }, `Después: ${second.name}, en ${plural(second.next.days, 'día', 'días')}.`) : null);
-}
-
-// ---------- 6b. next milestone ----------
-function milestoneCard(data, start) {
-  if (!start) return null;
-  const total = time.elapsed(start).totalDays;
-  const ms = time.milestoneProgress(data.milestones, total);
-  if (!ms.next) return null;
-  const pct = Math.round(ms.progress * 100);
-  return el('article', { class: 'card home-card milestone-card', 'aria-labelledby': 'milestone-title' },
-    el('h2', { class: 'card-kicker', id: 'milestone-title' }, 'Próximo hito'),
-    el('p', { class: 'next-name' }, `${ms.next.days.toLocaleString('es-CO')} días juntos`),
-    el('p', { class: 'next-count' }, el('span', { class: 'next-days' }, ms.daysLeft === 1 ? 'Mañana' : `Faltan ${ms.daysLeft} días`)),
-    el('div', { class: 'progress', role: 'progressbar', 'aria-label': 'Camino al próximo hito', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(pct) },
-      el('span', { class: 'progress-bar', style: { transform: `scaleX(${ms.progress})` } })));
+// ---------- 6 + 6b. "Lo que viene": special dates and the next milestone in one list ----------
+function comingCard(data, start) {
+  const ring = start ? anniversaryRing(start) : null;
+  const rows = upcomingDates(data, start)
+    // The anniversary already shows in the ring; do not repeat it here.
+    .filter((d) => !(ring && d.kind === 'anniversary' && d.next.days === ring.daysLeft))
+    .map((d) => ({ icon: d.kind === 'birthday' ? 'cake' : d.kind === 'anniversary' ? 'heart' : 'calendar', name: d.name, days: d.next.days, when: fmtLong.format(d.next.date) }));
+  if (start) {
+    const total = time.elapsed(start).totalDays;
+    const ms = time.milestoneProgress(data.milestones, total);
+    if (ms.next && !(ring && ms.daysLeft === ring.daysLeft)) rows.push({ icon: 'flag', name: `${ms.next.days.toLocaleString('es-CO')} días juntos`, days: ms.daysLeft, progress: ms.progress });
+  }
+  const list = rows.sort((a, b) => a.days - b.days).slice(0, 3);
+  if (!list.length) return null;
+  const left = (n) => (n === 1 ? 'Mañana' : n < 60 ? `${n} días` : n < 365 ? `${Math.round(n / 30.4)} meses` : `${plural(Math.round(n / 365), 'año', 'años')}`);
+  return el('article', { class: 'card home-card coming-card', 'aria-labelledby': 'coming-title' },
+    el('h2', { class: 'card-kicker', id: 'coming-title' }, 'Lo que viene'),
+    el('ul', { class: 'coming-list' }, list.map((r) => el('li', { class: 'coming-row' },
+      el('span', { class: 'coming-icon', 'aria-hidden': 'true' }, icon(r.icon, { size: 20 })),
+      el('span', { class: 'coming-text' }, el('span', { class: 'coming-name' }, r.name), r.when ? el('span', { class: 'muted small' }, r.when) : null),
+      el('span', { class: 'coming-days' }, left(r.days))))));
 }
 
 // ---------- 10. backup reminder ----------
@@ -274,10 +308,10 @@ function backupCard(meta) {
   const last = meta.lastBackupAt ? time.parseStart(meta.lastBackupAt) : null;
   const days = last ? util.daysBetween(last, new Date()) : null;
   if (days !== null && days < 14) return null; // docs/03: remind after 14 days
-  return el('article', { class: 'card home-card backup-card', 'aria-labelledby': 'backup-title' },
-    el('h2', { class: 'card-kicker', id: 'backup-title' }, 'Copia de seguridad'),
-    el('p', {}, days === null ? 'Todavía no hay una copia de sus datos. Guárdenla en un lugar seguro.' : `La última copia fue hace ${days} días. Es buen momento para otra.`),
-    ui.button({ label: 'Hacer una copia', iconName: 'hard-drive', small: true, href: '#/ajustes/copia' }));
+  return el('aside', { class: 'home-card backup-card', 'aria-labelledby': 'backup-title' },
+    icon('hard-drive', { size: 20 }),
+    el('p', { class: 'backup-text', id: 'backup-title' }, days === null ? 'Hagan una copia de sus datos.' : `Su última copia fue hace ${days} días.`),
+    el('a', { class: 'backup-link', href: '#/ajustes/copia' }, 'Hacer copia'));
 }
 
 function celebrateOnce(kind) {
@@ -319,8 +353,7 @@ export async function render() {
       counter ? counter.card : noStartCard(),
       celebrationCard(events),
       slides.length ? carousel(slides, cleanups) : null,
-      nextDateCard(data, start),
-      milestoneCard(data, start),
+      comingCard(data, start),
       backupCard(data.meta),
     ].filter(Boolean));
     ui.stagger(body);
