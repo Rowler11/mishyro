@@ -24,6 +24,7 @@ const load = {
   more: () => import('./features/more.js'),
   settings: () => import('./features/settings.js'),
   ajustes: () => import('./features/ajustes.js'),
+  perfil: () => import('./features/perfil.js'),
   styleguide: () => import('./features/styleguide.js'),
   setup: () => import('./features/setup.js'),
 };

@@ -465,6 +465,72 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 2f. Perfil y datos: names reflect at once, dates, milestones, short texts, reset ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await completeSetup(page);
+    await page.evaluate(() => { location.hash = '#/ajustes/perfil'; });
+    await page.locator('.segmented-option', { hasText: 'Nosotros' }).click();
+    const first = page.locator('.perfil-people .card').first();
+    await first.getByLabel('Nombre corto').fill('');
+    await page.getByRole('button', { name: 'Guardar cambios' }).click();
+    ok('perfil: a short name is required', (await first.locator('.field-error', { hasText: 'Escribe un nombre' }).count()) === 1);
+    await first.getByLabel('Nombre corto').fill('Anita');
+    await first.getByLabel('Apodo (opcional)').fill('Sol');
+    await page.getByRole('button', { name: 'Guardar cambios' }).click();
+    await page.waitForFunction(() => document.querySelector('.profile-chip .profile-text')?.textContent === 'Anita');
+    ok('perfil: a new name shows at once in the app bar', true);
+    const fill = await page.evaluate(async () => (await import('./js/core/profile.js')).fill('Buenos días, {apodo}.', 'sofia'));
+    ok('perfil: the nickname is used in the texts', fill === 'Buenos días, Sol.', fill);
+    await page.locator('.segmented-option', { hasText: 'Fechas' }).click();
+    await page.getByRole('button', { name: 'Agregar' }).click();
+    const dlg = page.getByRole('dialog');
+    await dlg.getByLabel('Nombre', { exact: true }).fill('Día ficticio');
+    await dlg.getByLabel('Fecha', { exact: true }).fill('2025-12-24');
+    await dlg.getByRole('button', { name: 'Guardar' }).click();
+    await page.locator('.edit-row', { hasText: 'Día ficticio' }).waitFor();
+    ok('perfil: a special date is added and listed by month', /24 de diciembre de 2025/.test(await page.locator('.edit-row').last().textContent()));
+    await page.locator('.segmented-option', { hasText: 'Hitos' }).click();
+    await page.getByRole('button', { name: 'Agregar' }).click();
+    await dlg.getByLabel('Días juntos').fill('42');
+    await dlg.getByLabel('Mensaje').fill('Mensaje ficticio de 42 días.');
+    await dlg.getByRole('button', { name: 'Guardar' }).click();
+    await page.locator('.edit-row', { hasText: '42 días' }).waitFor();
+    ok('perfil: a milestone is added and the reset appears', (await page.getByRole('button', { name: 'Restablecer los hitos originales' }).count()) === 1);
+    await page.getByRole('button', { name: 'Restablecer los hitos originales' }).click();
+    await dlg.getByRole('button', { name: 'Restablecer' }).click();
+    await page.waitForFunction(() => !document.body.textContent.includes('42 días'));
+    ok('perfil: milestones go back to the originals', true);
+    await page.locator('.segmented-option', { hasText: 'Textos' }).click();
+    await page.selectOption('#perfil-list', 'goodMorning');
+    await page.locator('.edit-row').first().waitFor();
+    await page.locator('.edit-row').first().getByRole('button', { name: /^Ocultar/ }).click();
+    await page.locator('.edit-row.is-hidden').waitFor();
+    await page.locator('.edit-row').nth(1).getByRole('button', { name: /^Editar/ }).click();
+    await dlg.getByLabel('Saludo').fill('Saludo ficticio editado.');
+    await dlg.getByRole('button', { name: 'Guardar' }).click();
+    await page.locator('.edit-row', { hasText: 'Saludo ficticio editado.' }).waitFor();
+    const st = await page.evaluate(async () => {
+      const db = await import('./js/core/db.js'); const seed = await import('./js/core/seed.js'); const { CONFIG } = await import('./js/config.js');
+      const shown = (await db.query('content', { index: 'kind', range: IDBKeyRange.only('goodMorning') })).map((r) => r.id);
+      await seed.syncConfig(CONFIG); // a CONFIG update must not undo the edit
+      const edited = (await db.rawGet('content', 'cfg:goodMorning:002')).text;
+      return { hiddenOut: !shown.includes('cfg:goodMorning:001'), edited };
+    });
+    ok('perfil: hidden texts leave the app and edits survive a CONFIG update', st.hiddenOut && st.edited === 'Saludo ficticio editado.', JSON.stringify(st));
+    await page.getByRole('button', { name: 'Restablecer los textos originales' }).click();
+    await dlg.getByRole('button', { name: 'Restablecer' }).click();
+    await page.waitForFunction(() => !document.querySelector('.edit-row.is-hidden'));
+    const back = await page.evaluate(async () => (await (await import('./js/core/db.js')).rawGet('content', 'cfg:goodMorning:002')));
+    ok('perfil: "Restablecer" brings the original texts back', !back.userEdited && back.text !== 'Saludo ficticio editado.');
+    ok('perfil: no horizontal scroll', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    await shot(page, 'perfil-1440');
+    ok('perfil: no console errors', errors.length === 0, errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---------- 3. Modal + keyboard + Atrás closes modal first ----------
   {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
