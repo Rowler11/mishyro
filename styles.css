@@ -734,6 +734,47 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 .photo-msg:empty { display: none; }
 .form-error { padding: var(--space-2) var(--space-3); border-radius: var(--radius-s); background: var(--danger-bg); }
 
+/* ---------- Cuponera: kippu tickets ---------- */
+.cupones { padding-bottom: 72px; }
+.cupones-body { display: flex; flex-direction: column; gap: var(--space-4); }
+.cupones-body > .segmented { align-self: flex-start; max-width: 100%; }
+.cupones-summary { margin: 0; }
+.cupones-summary:empty { display: none; }
+.kippu-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+@media (min-width: 640px) { .kippu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .kippu-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* Two half-circle notches cut the ticket where the stub tears off. */
+.kippu {
+  --stub: 88px; --notch: 11px;
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) var(--stub); min-height: 200px;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px;
+  -webkit-mask: radial-gradient(circle var(--notch) at calc(100% - var(--stub)) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub)) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  mask: radial-gradient(circle var(--notch) at calc(100% - var(--stub)) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle var(--notch) at calc(100% - var(--stub)) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+}
+.kippu-main { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-4) var(--space-4) var(--space-3); border-top: 6px solid var(--accent); border-radius: 14px 0 0 14px; min-width: 0; }
+.kippu-kicker { margin: 0; font-size: .74rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.kippu-title { font-size: 1.25rem; line-height: 1.25; overflow-wrap: anywhere; }
+.kippu-desc { margin: 0; color: var(--text-2); }
+.kippu-dedication { margin: 0; font-family: var(--font-serif); font-style: italic; }
+.kippu-status { display: flex; align-items: center; gap: 4px; margin: var(--space-1) 0 0; font-size: .85rem; font-weight: 700; color: var(--success); }
+.kippu-status.muted { color: var(--text-2); font-weight: 500; }
+.kippu-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: auto; padding-top: var(--space-2); }
+.kippu-actions:empty { display: none; }
+.kippu-stub {
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-4) var(--space-2);
+  border-left: 2px dashed var(--border-strong); background: var(--surface-2); border-top: 6px solid var(--gold); border-radius: 0 14px 14px 0;
+}
+.kippu-no { writing-mode: vertical-rl; font-family: var(--font-serif); font-weight: 700; letter-spacing: .12em; color: var(--text-2); font-size: .85rem; }
+.kippu-seal { width: 64px; height: 64px; display: grid; place-items: center; }
+.kippu-seal-empty { width: 56px; height: 56px; border-radius: 50%; border: 2px dashed var(--border-strong); }
+.kippu-seal .hanko { transform: rotate(-8deg); }
+.kippu.is-redeemed .kippu-main > :not(.kippu-status) { opacity: .62; }
+.kippu.is-redeemed .kippu-main { border-top-color: var(--border-strong); }
+.kippu.is-expired { opacity: .6; }
+.cupones-foot { display: flex; justify-content: center; padding-top: var(--space-4); }
+
 /* ---------- entrance & view transitions ---------- */
 .stagger { animation: rise var(--dur-4) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--stagger)); }
 .view-enter { animation: shoji-in var(--dur-4) var(--ease-out); }

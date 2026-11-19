@@ -245,6 +245,54 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 2c. Cuponera: redeem with confirmation and hanko, persist, reset, create for the other ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await completeSetup(page);
+    await page.evaluate(async () => {
+      const db = await import('./js/core/db.js');
+      await db.put('content', { id: 't:c1', kind: 'coupon', title: 'Un masaje de 30 minutos', from: 'david', to: 'sofia' });
+      await db.put('content', { id: 't:c2', kind: 'coupon', title: 'Cupón vencido', from: 'david', to: 'sofia', expiresOn: '2020-01-01' });
+    });
+    await page.evaluate(() => { location.hash = '#/cupones'; });
+    await page.waitForSelector('.kippu');
+    ok('cupones: seed and own coupons for Ana are listed in "Para ti"', (await page.locator('.kippu').count()) === 3);
+    ok('cupones: an expired coupon cannot be redeemed', (await page.locator('.kippu.is-expired button', { hasText: 'Canjear' }).count()) === 0 && /Venció/.test(await page.locator('.kippu.is-expired').textContent()));
+    const masaje = page.locator('.kippu', { hasText: 'masaje' });
+    await masaje.getByRole('button', { name: 'Canjear' }).click();
+    await page.getByRole('dialog', { name: '¿Canjear este cupón?' }).getByRole('button', { name: 'Cancelar' }).click();
+    await page.waitForTimeout(250);
+    ok('cupones: cancelling the confirmation leaves it unused', (await masaje.getByRole('button', { name: 'Canjear' }).count()) === 1);
+    await masaje.getByRole('button', { name: 'Canjear' }).click();
+    await page.getByRole('dialog', { name: '¿Canjear este cupón?' }).getByRole('button', { name: 'Canjear' }).click();
+    await page.waitForSelector('.kippu.is-redeemed .hanko');
+    const status = await page.locator('.kippu.is-redeemed .kippu-status').textContent();
+    ok('cupones: redeeming stamps the hanko and saves "Canjeado el ..." in es-CO', /^Canjeado el \d{1,2} de [a-z]+ de \d{4} a las /.test(status), status);
+    await page.reload();
+    await page.waitForSelector('.kippu');
+    ok('cupones: the redeemed state persists after reload', (await page.locator('.kippu.is-redeemed').count()) === 1);
+    await page.getByRole('button', { name: 'Reiniciar cupones' }).click();
+    await page.getByRole('dialog', { name: '¿Reiniciar los cupones?' }).getByRole('button', { name: 'Reiniciar' }).click();
+    await page.waitForTimeout(400);
+    ok('cupones: reset makes them all unused again', (await page.locator('.kippu.is-redeemed').count()) === 0);
+    await page.locator('.fab').click();
+    await page.locator('.coupon-editor').getByRole('button', { name: 'Crear cupón' }).click();
+    ok('cupones: a new coupon needs what it is for', (await page.locator('.coupon-editor .field-error:not(:empty)').count()) === 1);
+    await page.locator('.coupon-editor').getByLabel('Vale por').fill('Un desayuno en la cama');
+    await page.locator('.coupon-editor').getByLabel('Dedicatoria (opcional)').fill('Porque sí.');
+    await page.locator('.coupon-editor').getByRole('button', { name: 'Crear cupón' }).click();
+    await page.waitForTimeout(400);
+    ok('cupones: a created coupon shows in "Los que regalaste" for Leo', /para Leo/i.test(await page.locator('.kippu').first().textContent()) && (await page.locator('.kippu').count()) === 1);
+    const saved = await page.evaluate(async () => (await (await import('./js/core/db.js')).query('content', { filter: (c) => c.kind === 'coupon' && c.origin === 'user' && c.title === 'Un desayuno en la cama' }))[0]);
+    ok('cupones: it is stored from Ana to Leo with the dedication', saved?.from === 'sofia' && saved?.to === 'david' && saved?.dedication === 'Porque sí.');
+    ok('cupones: no horizontal scroll', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    await shot(page, 'cupones-390');
+    ok('cupones: no console errors', errors.length === 0, errors.join(' | '));
+    await ctx.close();
+  }
+
   // ---------- 3. Modal + keyboard + Atrás closes modal first ----------
   {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

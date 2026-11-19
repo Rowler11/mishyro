@@ -190,7 +190,8 @@ export function hanko({ text = '愛', size = 64, stamp = false, label } = {}) {
   svg.append(
     mk('circle', { cx: 50, cy: 50, r: 46, class: 'hanko-ring' }),
     mk('circle', { cx: 50, cy: 50, r: 39, class: 'hanko-inner' }));
-  const t = mk('text', { x: 50, y: 52, 'text-anchor': 'middle', 'dominant-baseline': 'central', class: 'hanko-text', lang: 'ja' });
+  const t = mk('text', { x: 50, y: 52, 'text-anchor': 'middle', 'dominant-baseline': 'central', class: 'hanko-text' });
+  if (/[\u3040-\u30ff\u4e00-\u9faf]/.test(text)) t.setAttribute('lang', 'ja');
   t.textContent = text;
   svg.append(t);
   return svg;

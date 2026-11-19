@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.1.11 (Fase 2, Cuponera)
+
+- Cuponera con boletos estilo kippu: muescas, línea punteada para cortar, número y espacio para el sello.
+- "Para ti": los cupones que te regalaron. "Canjear" pide confirmación, estampa un sello con tu inicial, lanza confeti y guarda "Canjeado el … a las …".
+- "Los que regalaste": los que diste, con su estado. Puedes crear cupones nuevos para tu pareja con dedicatoria y fecha de vencimiento opcional, editarlos, borrarlos y enviarlos por WhatsApp u otra app.
+- Los vencidos ya no se pueden canjear. "Reiniciar cupones", al final, con confirmación.
+
 ## 0.1.10 (Fase 2, Cápsula)
 
 - Cápsula de verdad: línea de tiempo vertical con lo más reciente arriba y el botón "Ver desde el inicio"; separada por años.
