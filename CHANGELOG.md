@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.1.24 (lo que elegimos)
+
+- Barra de abajo nueva: la pestaña activa sube en una burbuja de color dentro de una curva, y se desliza a la que tocas.
+- Inicio: el contador va dentro de un anillo que se llena hacia el próximo aniversario ("Faltan N días para los 2 años"), con años, meses y días y el reloj debajo. "Lo que viene" junta las próximas fechas y el siguiente hito en una sola lista. El aviso de copia es ahora una línea discreta.
+- Más: los grupos son pestañas arriba (Nosotros, Recuerdos, Juntos…) con las tarjetas de 2 por fila debajo. Se cambia de grupo al instante, también con las flechas del teclado.
+- Cartas, "Escribimos": los borradores son hojas sueltas con renglones "sobre la mesa" (Meter al sobre, Seguir, Decorar sobre, Borrar). Al sellarlas pasan como sobres a "En camino" y, cuando la otra persona las abre, a "Leídas". Tocar un sobre muestra la carta.
+- Cápsula: el año es un sello hanko con cuántos recuerdos tiene, cada mes se marca con una flor en la línea, los recuerdos con fotos son polaroids con cinta washi y los demás llevan un papel de color con un ícono según de qué tratan. "Un día como hoy" dice "Hace 1 año: …".
+
 ## 0.1.23 (revisión de diseño)
 
 - Cuponera con tres secciones: "Para ti" (los que te quedan por usar), "Historial" (los que regalaste y los que ya usaste) y "Guardados" (cupones que creaste y todavía no regalas; solo los ves tú). Un cupón nuevo se puede guardar o regalar de una vez; desde "Guardados" se regala con "Regalar".

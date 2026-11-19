@@ -81,8 +81,10 @@ function buildShell() {
       tabLink({ id: 'buscar', path: '/buscar', title: 'Buscar', icon: 'search' }, 'rail-link'),
       tabLink({ id: 'ajustes', path: '/ajustes', title: 'Ajustes', jp: '設定', romaji: 'settei', icon: 'settings' }, 'rail-link'),
       profileChip('chip-rail'), panicBtn('panic-rail')));
-  const indicator = el('span', { class: 'tabbar-indicator', 'aria-hidden': 'true' });
-  const tabbar = el('nav', { class: 'tabbar', 'aria-label': 'Navegación principal' }, indicator, TABS.map((t) => tabLink(t, 'tabbar-link')));
+  // The bubble mirrors the active tab's icon; the links underneath stay the real controls.
+  const indicator = el('span', { class: 'tabbar-bubble', 'aria-hidden': 'true' });
+  const tabbar = el('nav', { class: 'tabbar', 'aria-label': 'Navegación principal' },
+    el('span', { class: 'tabbar-bg', 'aria-hidden': 'true' }), indicator, TABS.map((t) => tabLink(t, 'tabbar-link')));
   const main = el('main', { id: 'main', class: 'main', tabindex: '-1' });
   const root = document.getElementById('app');
   root.replaceChildren(skip, appbar, rail, main, tabbar);
@@ -97,8 +99,15 @@ function updateNav(route) {
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
   const idx = TABS.findIndex((t) => t.id === tab);
-  shell?.indicator.style.setProperty('--tab', String(Math.max(0, idx)));
-  if (shell) shell.indicator.hidden = idx < 0; // Buscar has no bottom tab
+  if (shell) {
+    shell.tabbar.classList.toggle('is-none', idx < 0); // Buscar and Ajustes have no bottom tab
+    if (idx >= 0 && shell.tabbar.dataset.tab !== String(idx)) {
+      shell.tabbar.dataset.tab = String(idx);
+      shell.tabbar.style.setProperty('--tabx', String(idx));
+      shell.indicator.replaceChildren(icon(TABS[idx].icon));
+      shell.indicator.classList.remove('is-pop'); void shell.indicator.offsetWidth; shell.indicator.classList.add('is-pop');
+    }
+  }
   document.documentElement.dataset.layer = route.def.layer ? 'full' : 'shell';
 }
 

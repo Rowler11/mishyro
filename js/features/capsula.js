@@ -1,5 +1,5 @@
 // Cápsula (docs/05 Pestaña 2, "Un día como hoy", docs/09 #/capsula).
-// Vertical timeline, most recent first with "Ver desde el inicio" (decision 2026-11-19),
+// Vertical timeline by year and month (oldest first by default, decision 2026-11-19),
 // memories with up to 6 photos in a carousel, add/edit in a sheet (side panel on PC),
 // delete own memories with confirmation. Photos live in the `media` store, never inline.
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
@@ -259,49 +259,101 @@ function editor(existing, { bag, onSaved }) {
   return modal;
 }
 
-// ---------- timeline ----------
-function timelineItem(m, bag, { selected, fresh } = {}) {
-  const thumb = el('span', { class: 'tl-thumb', 'aria-hidden': 'true' });
-  if (m.mediaIds?.length) {
-    bag.of(m.mediaIds[0]).then((u) => { if (u) thumb.append(el('img', { src: u, alt: '' })); });
-    if (m.mediaIds.length > 1) thumb.append(el('span', { class: 'tl-more' }, `+${m.mediaIds.length - 1}`));
-  } else thumb.append(icon('jp-tsuru', { size: 28 }));
+// ---------- timeline (decided 2026-11-19: "Línea con sellos" with polaroids) ----------
+// The year is a hanko seal, months are marked with a sakura on the line, memories with photos
+// are polaroids held with washi tape and the rest get a colored paper with an icon by kind.
+const fmtMonth = new Intl.DateTimeFormat('es-CO', { month: 'long' });
+const KINDS = [
+  [/\b(gat|milu|perr|mascota|michi)/, 'paw-print', 'gold'],
+  [/cumple|torta|pastel|velas/, 'cake', 'accent'],
+  [/viaje|vuelo|playa|paseo|excursi|mar\b|monta/, 'plane', 'violet'],
+  [/cena|comida|cocin|almuerzo|desayuno|restaurante|caf/, 'chef-hat', 'gold'],
+  [/m[uú]sica|concierto|canci|baile|bail/, 'music', 'violet'],
+  [/aniversario|empez|inicio|primer|beso|novios/, 'heart', 'accent'],
+  [/pel[ií]cula|cine|juego/, 'star', 'violet'],
+];
+const TONES = ['accent', 'violet', 'gold'];
+/** Icon and tint for a memory without photos, from words in its title and note. */
+export function kindOf(m) {
+  const text = `${pending(m.title) ? '' : m.title || ''} ${pending(m.note) ? '' : m.note || ''}`.toLowerCase();
+  for (const [re, iconName, tone] of KINDS) if (re.test(text)) return { icon: iconName, tone };
+  let h = 0; for (const ch of String(m.id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return { icon: h % 2 ? 'jp-sakura' : 'jp-tsuru', tone: TONES[h % TONES.length] };
+}
+
+function tags(m) {
+  return el('span', { class: 'tl-tags' },
+    m.visibility === 'self' ? el('span', { class: 'badge' }, 'Solo yo') : null,
+    (pending(m.title) || pending(m.note) || isDraft(m)) ? el('span', { class: 'pending' }, 'Por completar') : null);
+}
+
+function timelineItem(m, bag, { selected, fresh, index = 0 } = {}) {
   const note = pending(m.note) ? '' : m.note;
-  const link = el('a', { class: 'card card-link tl-card', href: `#/capsula/${encodeURIComponent(m.id)}`, dataset: { id: m.id }, 'aria-current': selected ? 'true' : undefined },
-    thumb,
-    el('span', { class: 'tl-text' },
-      el('span', { class: 'tl-date' }, isDraft(m) ? 'Sin fecha' : fmtFull.format(util.parseDay(m.date))),
-      el('span', { class: 'tl-title' }, titleOf(m)),
-      note ? el('span', { class: 'tl-note' }, note) : null,
-      el('span', { class: 'tl-tags' },
-        m.visibility === 'self' ? el('span', { class: 'badge' }, 'Solo yo') : null,
-        (pending(m.title) || pending(m.note) || isDraft(m)) ? el('span', { class: 'pending' }, 'Por completar') : null)));
+  const date = isDraft(m) ? 'Sin fecha' : fmtMonthDay.format(util.parseDay(m.date));
+  const attrs = { href: `#/capsula/${encodeURIComponent(m.id)}`, dataset: { id: m.id }, 'aria-current': selected ? 'true' : undefined };
+  let link;
+  if (m.mediaIds?.length) {
+    const photo = el('span', { class: 'tl-photo', 'aria-hidden': 'true' });
+    bag.of(m.mediaIds[0]).then((u) => { if (u) photo.prepend(el('img', { src: u, alt: '', decoding: 'async' })); });
+    if (m.mediaIds.length > 1) photo.append(el('span', { class: 'tl-more' }, `+${m.mediaIds.length - 1}`));
+    link = el('a', { class: `tl-card tl-polaroid${index % 2 ? ' is-right' : ''}`, ...attrs },
+      el('span', { class: 'tl-tape', 'aria-hidden': 'true' }),
+      photo,
+      el('span', { class: 'tl-text' },
+        el('span', { class: 'tl-title' }, titleOf(m)),
+        el('span', { class: 'tl-date' }, date),
+        tags(m)));
+  } else {
+    const k = kindOf(m);
+    link = el('a', { class: 'card card-link tl-card', ...attrs },
+      el('span', { class: `tl-thumb tone-${k.tone}`, 'aria-hidden': 'true' }, icon(k.icon, { size: 28 })),
+      el('span', { class: 'tl-text' },
+        el('span', { class: 'tl-date' }, date),
+        el('span', { class: 'tl-title' }, titleOf(m)),
+        note ? el('span', { class: 'tl-note' }, note) : null,
+        tags(m)));
+  }
   return el('li', { class: `tl-item${fresh ? ' unroll' : ''}` }, el('span', { class: 'tl-dot', 'aria-hidden': 'true' }), link);
 }
 
 function timeline(list, bag, { selectedId, freshId }) {
-  const ol = el('ol', { class: 'timeline', 'aria-label': 'Línea de tiempo de recuerdos' });
-  let year = null;
+  const wrap = el('div', { class: 'timeline-wrap' });
+  const perYear = new Map();
+  for (const m of list) perYear.set(m.date.slice(0, 4), (perYear.get(m.date.slice(0, 4)) || 0) + 1);
+  let ol = null; let year = null; let month = null; let i = 0;
   for (const m of list) {
     const y = m.date.slice(0, 4);
-    if (y !== year) { year = y; ol.append(el('li', { class: 'tl-year', 'aria-hidden': 'true' }, y)); }
-    ol.append(timelineItem(m, bag, { selected: m.id === selectedId, fresh: m.id === freshId }));
+    if (y !== year) {
+      year = y; month = null;
+      wrap.append(el('div', { class: 'tl-year', 'aria-hidden': 'true' },
+        el('span', { class: 'tl-hanko' }, y),
+        el('span', { class: 'muted small' }, perYear.get(y) === 1 ? '1 recuerdo este año' : `${perYear.get(y)} recuerdos este año`)));
+      ol = el('ol', { class: 'timeline', 'aria-label': `Recuerdos de ${y}` });
+      wrap.append(ol);
+    }
+    const mo = m.date.slice(5, 7);
+    if (mo !== month) {
+      month = mo;
+      const name = fmtMonth.format(util.parseDay(m.date));
+      ol.append(el('li', { class: 'tl-month', 'aria-hidden': 'true' }, icon('jp-sakura', { size: 18, cls: 'tl-sakura' }), name.charAt(0).toUpperCase() + name.slice(1)));
+    }
+    ol.append(timelineItem(m, bag, { selected: m.id === selectedId, fresh: m.id === freshId, index: i++ }));
   }
-  return ol;
+  return wrap;
 }
 
 function onThisDayCard(list, bag) {
   const [m] = list;
   if (!m) return null;
-  const thumb = el('span', { class: 'otd-thumb', 'aria-hidden': 'true' });
+  const thumb = el('span', { class: `otd-thumb${m.mediaIds?.length ? ' has-photo' : ''}`, 'aria-hidden': 'true' });
   if (m.mediaIds?.length) bag.of(m.mediaIds[0]).then((u) => { if (u) thumb.append(el('img', { src: u, alt: '' })); });
-  else thumb.append(icon('jp-sakura', { size: 36 }));
+  else thumb.append(icon('sparkles', { size: 30 }));
   return el('a', { class: 'card card-link otd-card', href: `#/capsula/${encodeURIComponent(m.id)}` },
     thumb,
     el('span', { class: 'otd-text' },
       el('span', { class: 'card-kicker' }, 'Un día como hoy'),
-      el('span', { class: 'otd-title' }, titleOf(m)),
-      el('span', { class: 'muted small' }, `${agoText(m.date)} · ${fmtFull.format(util.parseDay(m.date))}`),
+      el('span', { class: 'otd-title' }, `${agoText(m.date)}: ${titleOf(m)}`),
+      el('span', { class: 'muted small' }, fmtFull.format(util.parseDay(m.date))),
       list.length > 1 ? el('span', { class: 'muted small' }, `Y ${plural(list.length - 1, 'recuerdo más', 'recuerdos más')} de un día como hoy.`) : null));
 }
 
