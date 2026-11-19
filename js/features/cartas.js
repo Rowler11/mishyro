@@ -21,6 +21,8 @@ export const openedText = (iso) => {
   const d = iso ? new Date(iso) : null;
   return d && !Number.isNaN(d.getTime()) ? `Abierta el ${fmtDate.format(d)} a las ${fmtTime.format(d)}` : 'Abierta';
 };
+const fmtShort = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' });
+const shortOpened = (iso) => { const d = iso ? new Date(iso) : null; return d && !Number.isNaN(d.getTime()) ? `Abierta el ${fmtShort.format(d)}` : 'Abierta'; };
 /** "me extrañes" -> "Ábreme cuando me extrañes"; a full label stays as it is. */
 export const labelOf = (condition) => {
   const c = String(condition || '').trim();
@@ -46,6 +48,21 @@ function seal(letter, { size = 56 } = {}) {
   return box;
 }
 
+// Classic envelope, one per row (decided 2026-11-19): V flap with the sender's hanko at its tip,
+// "Ábreme cuando…" written on the front. Kept low so several fit on a phone screen.
+function envelopeFace(letter, { tag = 'span' } = {}) {
+  const opened = letter.status === 'opened';
+  const cond = letter.label.replace(/^ábreme cuando\s+/i, '');
+  const hasPre = /^ábreme cuando\s+/i.test(letter.label);
+  return [
+    el(tag, { class: 'futo-flap', 'aria-hidden': 'true' }),
+    el(tag, { class: 'futo-from', 'aria-hidden': 'true' }, `De ${profile.name(letter.from)}`),
+    opened ? el(tag, { class: 'futo-status', 'aria-hidden': 'true' }, icon('check', { size: 14 }), shortOpened(letter.openedAt)) : null,
+    seal(letter, { size: 44 }),
+    el(tag, { class: 'futo-label' }, hasPre ? el(tag, { class: 'futo-pre' }, 'Ábreme cuando') : null, hasPre ? cond : letter.label),
+  ];
+}
+
 function envelope(letter, onOpen) {
   const opened = letter.status === 'opened';
   const status = opened ? openedText(letter.openedAt) : 'Sin abrir';
@@ -53,18 +70,53 @@ function envelope(letter, onOpen) {
     class: `futo${opened ? ' is-opened' : ''}`, type: 'button', dataset: { id: letter.id },
     'aria-label': `${letter.label}. De ${profile.name(letter.from)}. ${status}.`,
     onClick: (e) => onOpen(letter, e.currentTarget),
-  },
-  el('span', { class: 'futo-flap', 'aria-hidden': 'true' }),
-  // "Ábreme cuando" goes small on top so the condition itself reads big.
-  /^ábreme cuando\s+/i.test(letter.label)
-    ? el('span', { class: 'futo-label' }, el('span', { class: 'futo-pre' }, 'Ábreme cuando'), letter.label.replace(/^ábreme cuando\s+/i, ''))
-    : el('span', { class: 'futo-label' }, letter.label),
-  el('span', { class: 'futo-from' }, `De ${profile.name(letter.from)}`),
-  seal(letter),
-  el('span', { class: 'futo-status' }, opened ? icon('check', { size: 14 }) : null, status));
+  }, envelopeFace(letter));
 }
 
-async function letterModal(letter, { onShareable = true } = {}) {
+/**
+ * The opening the couple asked for: the envelope rises to the center, the seal breaks, the flap
+ * opens, the letter slides out and grows to fill the screen. Resolves when the paper covers the
+ * screen; call the returned function once the letter is showing to clear the stage.
+ */
+async function flyOpen(node, letter) {
+  if (!node || !node.animate || util.prefersReducedMotion()) return null;
+  const r = node.getBoundingClientRect();
+  const paper = el('div', { class: 'fly-paper' }, el('span'), el('span'), el('span'));
+  const env = el('div', { class: `futo fly-env${letter.status === 'opened' ? ' is-opened' : ''}` },
+    el('div', { class: 'fly-back' }), paper, el('div', { class: 'fly-pocket' }), envelopeFace(letter, { tag: 'div' }));
+  const stage = el('div', { class: 'letter-fly', 'aria-hidden': 'true' }, el('div', { class: 'letter-fly-dim' }), env);
+  Object.assign(env.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+  document.body.append(stage);
+  node.style.visibility = 'hidden';
+  const scale = Math.min(innerWidth - 32, 440) / r.width;
+  const dx = innerWidth / 2 - (r.left + r.width / 2);
+  const dy = innerHeight * 0.55 - (r.top + r.height / 2);
+  const ease = 'cubic-bezier(.2,.8,.2,1)';
+  await env.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${scale})` }], { duration: 420, easing: ease, fill: 'forwards' }).finished;
+  env.classList.add('is-breaking'); util.haptic(12);
+  await util.sleep(320);
+  env.classList.add('is-flap-open');
+  await util.sleep(300);
+  env.classList.add('is-paper-out');
+  await util.sleep(380);
+  const pr = paper.getBoundingClientRect();
+  const sheet = el('div', { class: 'fly-sheet' });
+  stage.append(sheet);
+  const from = { left: `${pr.left}px`, top: `${pr.top}px`, width: `${pr.width}px`, height: `${pr.height}px`, borderRadius: '6px' };
+  Object.assign(sheet.style, from);
+  // Phones: the letter takes the whole screen. Larger screens: it lands where the letter dialog sits.
+  const phone = innerWidth < 768;
+  const w = phone ? innerWidth : Math.min(820, innerWidth - 32);
+  const h = phone ? innerHeight : Math.min(innerHeight * 0.88, 900);
+  const to = { left: `${(innerWidth - w) / 2}px`, top: `${(innerHeight - h) / 2}px`, width: `${w}px`, height: `${h}px`, borderRadius: phone ? '0px' : '16px' };
+  await sheet.animate([from, to], { duration: 340, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }).finished;
+  return () => {
+    node.style.visibility = '';
+    stage.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' }).finished.then(() => stage.remove(), () => stage.remove());
+  };
+}
+
+async function letterModal(letter, { onShareable = true, flown = false } = {}) {
   const paras = String(letter.body || '').split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   let photo = null; let url = null;
   if (letter.mediaId) {
@@ -78,7 +130,7 @@ async function letterModal(letter, { onShareable = true } = {}) {
     letter.openedAt ? el('p', { class: 'washi-meta' }, openedText(letter.openedAt)) : null);
   const actions = [{ label: 'Cerrar', variant: 'ghost' }];
   if (onShareable) actions.unshift({ label: 'Compartir el texto', onClick: () => { ui.share({ title: letter.label, text: `${letter.label}\n\n${paras.join('\n\n')}\n\n${letter.signature || profile.name(letter.from)}` }); return false; } });
-  return ui.openModal({ title: letter.label, size: 'lg', className: 'washi-modal', body, actions, onClose: () => { if (url) URL.revokeObjectURL(url); } });
+  return ui.openModal({ title: letter.label, size: 'lg', className: `washi-modal${flown ? ' is-flown' : ''}`, body, actions, onClose: () => { if (url) URL.revokeObjectURL(url); } });
 }
 
 function editor(existing, { onSaved }) {
@@ -151,10 +203,9 @@ function editor(existing, { onSaved }) {
 
 export async function render(ctx) {
   const page = el('section', { class: 'page page-wide cartas' });
-  const header = ui.pageHeader({ title: 'Cartas', jp: '手紙', romaji: 'tegami' });
+  const header = ui.pageHeader({ title: 'Cartas', jp: '手紙', romaji: 'tegami', actions: [ui.newButton('Escribir carta', () => openEditor(), 'pencil')] });
   const body = el('div', { class: 'cartas-body' }, ui.skeleton(3));
-  const fab = el('button', { class: 'fab', type: 'button', 'aria-label': 'Escribir una carta', title: 'Escribir una carta', onClick: () => openEditor() }, icon('pencil', { size: 26 }));
-  page.append(header, body, fab);
+  page.append(header, body);
   let tab = readTab();
   let letters = [];
   let justOpened = null;
@@ -173,20 +224,20 @@ export async function render(ctx) {
   });
 
   const openLetter = async (letter, node) => {
+    let openedAt = letter.openedAt;
     if (letter.status !== 'opened') {
       const at = util.nowISO();
+      openedAt = at;
       try {
         if (letter.kind === 'seed') await db.put('letters', { id: `open:${letter.id}`, letterId: letter.id, openedAt: at, openedBy: profile.active(), status: 'opened' });
         else await db.put('letters', { ...letter.raw, status: 'opened', openedAt: at, openedBy: profile.active() });
       } catch (e) { console.error(e); }
-      letter = { ...letter, status: 'opened', openedAt: at };
       justOpened = letter.id;
-      // The seal breaks before the paper unfolds.
-      node?.classList.add('opening');
-      util.haptic(12);
-      if (!util.prefersReducedMotion()) await util.sleep(520);
     }
-    const m = await letterModal(letter);
+    const clear = await flyOpen(node, letter).catch(() => { document.querySelector('.letter-fly')?.remove(); if (node) node.style.visibility = ''; return null; });
+    letter = { ...letter, status: 'opened', openedAt: openedAt || util.nowISO() };
+    const m = await letterModal(letter, { flown: !!clear });
+    clear?.();
     m.result.then(async () => { await load(); draw(); body.querySelector(`.futo[data-id="${CSS.escape(letter.id)}"]`)?.focus({ preventScroll: true }); });
   };
 

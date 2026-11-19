@@ -2,12 +2,13 @@
 // Cards in this order, skipping the ones that do not apply:
 // 1 counter · 2 good morning / night · 3 today's celebration · 4 Pensando en ti · 5 omikuji ·
 // 6 next special date · 6b next milestone · 10 backup reminder.
-// On phones the first 4 show and the rest fold under "Ver más"; on desktop they share a grid.
+// Layout "Carrusel del día" (decided 2026-11-19): counter on top, the day's cards (greeting,
+// Pensando en ti, reason) in a swipeable carousel, then dates, milestone and backup.
+// From 900 px the carousel turns into a row of three cards.
 import { ui, util, db, profile, seed, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
 
 const { el, icon } = util;
-const VISIBLE_ON_PHONE = 4;
 const fmtLong = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
@@ -200,6 +201,30 @@ function omikujiCard(data) {
     data.reasons.length > 1 ? ui.button({ label: 'Sacar otra', iconName: 'repeat', variant: 'ghost', small: true, onClick: () => draw(true) }) : null);
 }
 
+// ---------- the day's carousel ----------
+function carousel(slides, cleanups) {
+  const track = el('div', { class: 'home-carousel-track', tabindex: '0', 'aria-label': 'Tarjetas del día. Desliza de lado para ver las demás.' });
+  slides.forEach((s, i) => { s.classList.add('home-slide'); s.setAttribute('aria-roledescription', 'tarjeta'); s.dataset.index = String(i); track.append(s); });
+  const dots = slides.map((s, i) => el('button', {
+    class: 'home-dot', type: 'button',
+    'aria-label': `Tarjeta ${i + 1} de ${slides.length}: ${s.querySelector('.card-kicker')?.textContent || ''}`,
+    onClick: () => track.scrollTo({ left: s.offsetLeft - track.firstElementChild.offsetLeft, behavior: util.prefersReducedMotion() ? 'auto' : 'smooth' }),
+  }));
+  const mark = () => {
+    const x = track.scrollLeft;
+    let best = 0;
+    slides.forEach((s, i) => { if (Math.abs(s.offsetLeft - track.firstElementChild.offsetLeft - x) < Math.abs(slides[best].offsetLeft - track.firstElementChild.offsetLeft - x)) best = i; });
+    dots.forEach((d, i) => (i === best ? d.setAttribute('aria-current', 'true') : d.removeAttribute('aria-current')));
+  };
+  let frame = 0;
+  const onScroll = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(mark); };
+  track.addEventListener('scroll', onScroll, { passive: true });
+  cleanups.push(() => cancelAnimationFrame(frame));
+  mark();
+  return el('section', { class: 'home-carousel', 'aria-roledescription': 'carrusel', 'aria-label': 'Lo de hoy' },
+    track, slides.length > 1 ? el('div', { class: 'home-dots' }, dots) : null);
+}
+
 // ---------- 6. next special date ----------
 function upcomingDates(data, start) {
   const today = new Date();
@@ -289,27 +314,15 @@ export async function render() {
     const counter = start ? counterCard(start, playPetals) : null;
     if (counter) cleanups.push(counter.cleanup);
     const events = todayEvents(data, start, recv);
-    const cards = [
+    const slides = [greetingCard(data, recv), thinkingCard(data, recv), omikujiCard(data)].filter(Boolean);
+    body.replaceChildren(...[
       counter ? counter.card : noStartCard(),
-      greetingCard(data, recv),
       celebrationCard(events),
-      thinkingCard(data, recv),
-      omikujiCard(data),
+      slides.length ? carousel(slides, cleanups) : null,
       nextDateCard(data, start),
       milestoneCard(data, start),
       backupCard(data.meta),
-    ].filter(Boolean);
-
-    const more = cards.slice(VISIBLE_ON_PHONE);
-    more.forEach((c) => c.classList.add('home-more'));
-    const toggle = more.length ? el('button', { class: 'btn btn-secondary home-more-btn', type: 'button', 'aria-expanded': 'false' }, `Ver más (${more.length})`) : null;
-    toggle?.addEventListener('click', () => {
-      const open = toggle.getAttribute('aria-expanded') !== 'true';
-      toggle.setAttribute('aria-expanded', String(open));
-      body.classList.toggle('show-more', open);
-      toggle.textContent = open ? 'Ver menos' : `Ver más (${more.length})`;
-    });
-    body.replaceChildren(...cards, toggle || '');
+    ].filter(Boolean));
     ui.stagger(body);
 
     // First visit of a new day: petals over the counter; on a milestone day, confetti once.
