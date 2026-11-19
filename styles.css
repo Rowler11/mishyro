@@ -104,14 +104,15 @@ code { font-size: .8em; color: var(--text-2); }
 .appbar {
   position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between;
   gap: var(--space-3); padding: calc(env(safe-area-inset-top) + var(--space-2)) var(--space-4) var(--space-2);
-  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(10px);
 }
 .logo { display: block; border-radius: 24%; flex: none; }
 .logo-bloom { animation: bloom var(--dur-5) var(--ease-spring) both; }
 @keyframes bloom { 0% { transform: scale(.4) rotate(-40deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
 .brand { display: inline-flex; align-items: center; gap: var(--space-2); text-decoration: none; min-height: var(--tap); }
-.brand-name { font-family: var(--font-serif); font-weight: 700; font-size: 1.15rem; letter-spacing: .03em; }
+.brand-name { font-family: var(--font-serif); font-weight: 700; font-size: 1.15rem; letter-spacing: .03em; color: var(--accent); }
+.flower { fill: var(--accent); stroke: none; }
+:root[data-theme="night"] .flower { filter: drop-shadow(var(--glow)); }
 .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
 .appbar-actions { display: flex; align-items: center; gap: var(--space-2); }
 
@@ -227,6 +228,12 @@ code { font-size: .8em; color: var(--text-2); }
 }
 .chip-rail { justify-content: center; min-height: var(--tap); }
 .profile-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.profile-initial { display: none; }
+/* App bar: round avatar with the initial; the full name stays in the aria-label. */
+.chip-appbar { width: 40px; height: 40px; min-height: 40px; padding: 0; justify-content: center; border-radius: 50%; border: 0; background: var(--accent-soft); color: var(--text); font-family: var(--font-serif); font-size: 1rem; }
+.chip-appbar .profile-dot, .chip-appbar .profile-text { display: none; }
+.chip-appbar .profile-initial { display: inline; font-weight: 700; }
+:root[data-profile="david"] .chip-appbar { background: color-mix(in srgb, var(--accent-2) 22%, var(--surface)); }
 :root[data-profile="david"] .profile-dot { background: var(--accent-2); }
 
 /* ---------- cards & lists ---------- */

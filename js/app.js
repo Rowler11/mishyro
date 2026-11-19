@@ -56,15 +56,15 @@ function buildShell() {
   }, el('span', { class: 'tab-icon' }, icon(t.icon)), el('span', { class: 'tab-name' }, t.title));
 
   const profileChip = (cls) => el('button', { class: `profile-chip ${cls}`, type: 'button', onClick: switchProfile },
-    el('span', { class: 'profile-dot', 'aria-hidden': 'true' }), el('span', { class: 'profile-text' }));
+    el('span', { class: 'profile-dot', 'aria-hidden': 'true' }), el('span', { class: 'profile-initial', 'aria-hidden': 'true' }), el('span', { class: 'profile-text' }));
   const panicBtn = (cls) => el('button', { class: `icon-btn panic-btn ${cls}`, type: 'button', 'aria-label': 'Cubrir la app (pánico)', title: 'Cubrir la app · Esc dos veces', onClick: doPanic }, icon('eye-off'));
 
   const skip = el('a', { class: 'skip-link', href: '#main', onClick: (e) => { e.preventDefault(); document.getElementById('main').focus(); } }, 'Saltar al contenido');
   const appbar = el('header', { class: 'appbar' },
-    el('a', { class: 'brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.logo({ size: 32 }), el('span', { class: 'brand-name' }, 'Aishiteru')),
+    el('a', { class: 'brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.flower({ size: 30 }), el('span', { class: 'brand-name' }, 'Aishiteru')),
     el('div', { class: 'appbar-actions' }, profileChip('chip-appbar'), panicBtn('panic-appbar')));
   const rail = el('nav', { class: 'rail', 'aria-label': 'Navegación principal' },
-    el('a', { class: 'brand rail-brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.logo({ size: 40 }),
+    el('a', { class: 'brand rail-brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.flower({ size: 36 }),
       el('span', { class: 'brand-text' }, el('span', { class: 'brand-name' }, 'Aishiteru'))),
     el('div', { class: 'rail-tabs' }, TABS.map((t) => tabLink(t, 'rail-link'))),
     el('div', { class: 'rail-foot' },
@@ -95,6 +95,7 @@ function updateProfileChips() {
   document.documentElement.dataset.profile = who;
   document.querySelectorAll('.profile-chip').forEach((b) => {
     b.querySelector('.profile-text').textContent = profile.name(who);
+    b.querySelector('.profile-initial').textContent = [...profile.name(who)][0] || '?';
     b.setAttribute('aria-label', `Usa la app: ${profile.name(who)}. Tocar para cambiar a ${profile.name(profile.partnerOf(who))}`);
   });
 }
