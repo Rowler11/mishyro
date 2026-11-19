@@ -236,7 +236,7 @@ function installShortcuts() {
     if (tab) { e.preventDefault(); router.go(tab.path); return; }
     if (e.key === '/') { e.preventDefault(); router.go('/buscar'); return; }
     if (e.key === '?') { e.preventDefault(); showShortcuts(); return; }
-    if (e.key === 'n') { document.dispatchEvent(new CustomEvent('app:new')); }
+    if (e.key === 'n') { document.querySelector('main .page-new:not([hidden])')?.click(); }
   });
 }
 

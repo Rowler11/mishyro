@@ -12,7 +12,7 @@ const fmtFull = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long'
 const fmtMonthDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long' });
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const KEY = `${CONFIG.storageKey}.capsula.order`;
-const readOrder = () => { try { return localStorage.getItem(KEY) === 'oldest' ? 'oldest' : 'newest'; } catch { return 'newest'; } };
+const readOrder = () => { try { return localStorage.getItem(KEY) === 'newest' ? 'newest' : 'oldest'; } catch { return 'oldest'; } }; // oldest first by default (decided 2026-11-19)
 const saveOrder = (v) => { try { localStorage.setItem(KEY, v); } catch { /* private mode */ } };
 
 const pending = (t) => !t || seed.needsCompletion(t);
@@ -309,10 +309,10 @@ function onThisDayCard(list, bag) {
 export async function render(ctx) {
   const bag = urlBag();
   const page = el('section', { class: 'page page-wide capsula' });
-  const header = ui.pageHeader({ title: 'Cápsula', jp: '思い出', romaji: 'omoide' });
+  const fab = ui.newButton('Nuevo recuerdo', () => openEditor());
+  const header = ui.pageHeader({ title: 'Cápsula', jp: '思い出', romaji: 'omoide', actions: [fab] });
   const body = el('div', { class: 'capsula-body' }, ui.skeleton(4));
-  const fab = el('button', { class: 'fab', type: 'button', 'aria-label': 'Agregar recuerdo', title: 'Agregar recuerdo', onClick: () => openEditor() }, icon('plus', { size: 28 }));
-  page.append(header, body, fab);
+  page.append(header, body);
   const wide = window.matchMedia(WIDE);
   let order = readOrder();
   let memories = [];
@@ -374,7 +374,7 @@ export async function render(ctx) {
       body.replaceChildren(ui.emptyState({ title: 'Aún no hay recuerdos', text: 'Guarden aquí los momentos que no quieren olvidar, con fotos y una nota.', art: 'crane', action: { label: 'Agregar el primero', onClick: () => openEditor() } }));
       return;
     }
-    const toggle = el('button', { class: 'btn btn-ghost btn-small', type: 'button', 'aria-pressed': String(order === 'oldest') },
+    const toggle = el('button', { class: 'btn btn-ghost btn-small', type: 'button' },
       icon(order === 'newest' ? 'arrow-down' : 'arrow-up', { size: 18 }), order === 'newest' ? 'Ver desde el inicio' : 'Ver lo más reciente');
     toggle.addEventListener('click', () => { order = order === 'newest' ? 'oldest' : 'newest'; saveOrder(order); draw(); });
     const bar = el('div', { class: 'capsula-bar' },

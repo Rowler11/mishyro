@@ -198,6 +198,13 @@ export function hanko({ text = '愛', size = 64, stamp = false, label } = {}) {
 }
 
 // ---------- form controls ----------
+/** The section's "add" button, next to the page title (decided 2026-11-19, no floating button). The "n" key presses it. */
+export function newButton(label, onClick, iconName = 'plus') {
+  const b = button({ label, iconName, variant: 'primary', small: true, onClick });
+  b.classList.add('page-new');
+  return b;
+}
+
 export function button({ label, iconName, variant = 'secondary', onClick, type = 'button', ariaLabel, small = false, href } = {}) {
   const cls = `btn btn-${variant}${small ? ' btn-small' : ''}`;
   const kids = [iconName ? icon(iconName, { size: 20 }) : null, label ? el('span', {}, label) : null];

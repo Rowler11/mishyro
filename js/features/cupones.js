@@ -1,5 +1,5 @@
 // Cuponera (docs/05 Pestaña 3, docs/06, docs/09 #/cupones).
-// Kippu tickets with notches, a dotted cut and room for the hanko. "Para ti" are the coupons
+// Kippu tickets with notches, a dotted cut and a stub for the hanko. "Para ti" are the coupons
 // the active person received; "Los que regalaste" are theirs to give (decision 4, 2026-11-19:
 // the seed ones plus coupons each person creates for the other, with dedication and optional expiry).
 // Redeem state lives in `couponState` keyed by coupon id (docs/08).
@@ -25,35 +25,55 @@ export const redeemedText = (iso) => {
 /** Expired when the expiry day is before today (it can be used all of that day). */
 export const isExpired = (c, today = util.localDay()) => !!c.expiresOn && c.expiresOn < today;
 
-function ticket(c, state, { tab, number, onRedeem, onEdit, onDelete, onShare }) {
+// Compact train ticket (decided 2026-11-19): number, giver and title on the ticket, the tear-off
+// stub is the "Canjear" button or holds the hanko. Tapping the ticket opens its full detail.
+function ticket(c, state, { tab, number, onRedeem, onOpen }) {
   const redeemed = !!state?.redeemedAt;
   const expired = !redeemed && isExpired(c);
-  const giver = profile.name(fromOf(c));
-  const seal = el('div', { class: 'kippu-seal' });
-  if (redeemed) seal.append(ui.hanko({ text: (profile.name(state.redeemedBy || toOf(c)) || '♥').charAt(0).toUpperCase(), size: 64, label: 'Sello de cupón canjeado' }));
-  else seal.append(el('span', { class: 'kippu-seal-empty', 'aria-hidden': 'true' }));
-  const status = redeemed ? el('p', { class: 'kippu-status' }, icon('check', { size: 16 }), redeemedText(state.redeemedAt))
-    : expired ? el('p', { class: 'kippu-status muted' }, `Venció el ${util.formatDay(c.expiresOn)}`)
-      : c.expiresOn ? el('p', { class: 'kippu-status muted' }, `Vale hasta el ${util.formatDay(c.expiresOn)}`) : null;
-  const actions = el('div', { class: 'kippu-actions' });
-  if (tab === 'mine' && !redeemed && !expired) actions.append(ui.button({ label: 'Canjear', iconName: 'ticket', variant: 'primary', small: true, onClick: () => onRedeem(c) }));
-  if (tab === 'given') {
-    if (!pending(c.title)) actions.append(ui.button({ label: 'Enviar', iconName: 'share-2', small: true, onClick: () => onShare(c) }));
-    actions.append(ui.button({ label: 'Editar', iconName: 'pencil', variant: 'ghost', small: true, onClick: () => onEdit(c) }));
-    if (c.origin === 'user') actions.append(ui.button({ label: 'Borrar', iconName: 'trash-2', variant: 'ghost', small: true, onClick: () => onDelete(c) }));
-  }
+  const no = `Nº ${String(number).padStart(3, '0')}`;
+  const who = tab === 'mine' ? `De ${profile.name(fromOf(c))}` : `Para ${profile.name(toOf(c))}`;
+  const meta = redeemed ? redeemedText(state.redeemedAt) : expired ? `Venció el ${util.formatDay(c.expiresOn)}`
+    : c.expiresOn ? `Vale hasta el ${util.formatDay(c.expiresOn)}` : 'Sin vencimiento';
+  const titleText = pending(c.title) ? 'Cupón sin título' : c.title;
   const titleId = `kp-${c.id.replace(/[^a-z0-9]/gi, '')}`;
+  let stub;
+  if (tab === 'mine' && !redeemed && !expired) {
+    stub = el('button', { class: 'kippu-stub kippu-redeem', type: 'button', 'aria-label': `Canjear: ${titleText}`, onClick: () => onRedeem(c) },
+      icon('ticket', { size: 22 }), el('span', {}, 'Canjear'));
+  } else {
+    stub = el('div', { class: 'kippu-stub' },
+      redeemed ? ui.hanko({ text: (profile.name(state.redeemedBy || toOf(c)) || '♥').charAt(0).toUpperCase(), size: 52, label: 'Sello de cupón canjeado' })
+        : el('span', { class: expired ? 'kippu-stub-note' : 'kippu-seal-empty', 'aria-hidden': expired ? null : 'true' }, expired ? 'Vencido' : ''));
+  }
   return el('article', { class: `kippu${redeemed ? ' is-redeemed' : ''}${expired ? ' is-expired' : ''}`, 'aria-labelledby': titleId, dataset: { id: c.id } },
-    el('div', { class: 'kippu-main' },
-      el('p', { class: 'kippu-kicker' }, tab === 'mine' ? `Vale por · de ${giver}` : `Vale por · para ${profile.name(toOf(c))}`),
-      el('h2', { class: 'kippu-title', id: titleId }, pending(c.title) ? 'Cupón sin título' : c.title),
-      !pending(c.description) ? el('p', { class: 'kippu-desc' }, c.description) : null,
+    el('button', { class: 'kippu-main', type: 'button', 'aria-describedby': `${titleId}-m`, onClick: () => onOpen(c) },
+      el('span', { class: 'kippu-row' }, el('span', { class: 'kippu-kicker' }, who), el('span', { class: 'kippu-no' }, no)),
+      el('span', { class: 'kippu-title', id: titleId }, titleText),
+      el('span', { class: `kippu-meta${redeemed ? ' is-ok' : ''}`, id: `${titleId}-m` }, redeemed ? icon('check', { size: 14 }) : null, meta, el('span', { class: 'kippu-admit', 'aria-hidden': 'true' }, 'Admite 1')),
+      pending(c.title) || (c.description && pending(c.description)) ? el('span', { class: 'pending' }, 'Por completar') : null),
+    stub);
+}
+
+/** Full coupon with its description, dedication and the actions that do not fit on the ticket. */
+function detail(c, state, { tab, number, onRedeem, onEdit, onDelete, onShare }) {
+  const redeemed = !!state?.redeemedAt;
+  const expired = !redeemed && isExpired(c);
+  const actions = [];
+  if (tab === 'mine' && !redeemed && !expired) actions.push({ label: 'Canjear', variant: 'primary', value: 'redeem' });
+  if (tab === 'given') {
+    if (c.origin === 'user') actions.push({ label: 'Borrar', variant: 'ghost', value: 'delete' });
+    actions.push({ label: 'Editar', variant: 'ghost', value: 'edit' });
+    if (!pending(c.title)) actions.push({ label: 'Enviar', variant: 'primary', value: 'share' });
+  }
+  const m = ui.openModal({
+    title: pending(c.title) ? 'Cupón sin título' : c.title, kind: 'sheet', className: 'coupon-detail', actions,
+    body: el('div', { class: 'stack' },
+      el('p', { class: 'kippu-kicker' }, `${tab === 'mine' ? `Vale por · de ${profile.name(fromOf(c))}` : `Vale por · para ${profile.name(toOf(c))}`} · Nº ${String(number).padStart(3, '0')}`),
+      !pending(c.description) && c.description ? el('p', {}, c.description) : null,
       c.dedication ? el('p', { class: 'kippu-dedication' }, `“${c.dedication}”`) : null,
-      pending(c.title) || (c.description && pending(c.description)) ? el('span', { class: 'pending' }, 'Por completar') : null,
-      status, actions),
-    el('div', { class: 'kippu-stub' },
-      el('span', { class: 'kippu-no', 'aria-label': `Cupón número ${number}` }, String(number).padStart(3, '0')),
-      seal));
+      el('p', { class: 'muted small' }, redeemed ? redeemedText(state.redeemedAt) : expired ? `Venció el ${util.formatDay(c.expiresOn)}` : c.expiresOn ? `Vale hasta el ${util.formatDay(c.expiresOn)}` : 'No vence.')),
+  });
+  m.result.then((v) => ({ redeem: onRedeem, edit: onEdit, delete: onDelete, share: onShare })[v]?.(c));
 }
 
 function editor(existing, { onSaved }) {
@@ -106,10 +126,9 @@ function editor(existing, { onSaved }) {
 
 export async function render() {
   const page = el('section', { class: 'page page-wide cupones' });
-  const header = ui.pageHeader({ title: 'Cuponera', jp: '券', romaji: 'ken' });
+  const header = ui.pageHeader({ title: 'Cuponera', jp: '券', romaji: 'ken', actions: [ui.newButton('Nuevo cupón', () => openEditor())] });
   const body = el('div', { class: 'cupones-body' }, ui.skeleton(3));
-  const fab = el('button', { class: 'fab', type: 'button', 'aria-label': 'Crear un cupón', title: 'Crear un cupón', onClick: () => openEditor() }, icon('plus', { size: 28 }));
-  page.append(header, body, fab);
+  page.append(header, body);
   let tab = readTab();
   let coupons = [];
   let states = new Map();
@@ -186,7 +205,11 @@ export async function render() {
         ? ui.emptyState({ title: 'Aún no tienes cupones', text: `Cuando ${profile.name(profile.partnerOf(me))} te regale uno, aparece aquí.`, art: 'ticket' })
         : ui.emptyState({ title: 'Todavía no regalas cupones', text: `Crea uno para ${profile.name(profile.partnerOf(me))}: una cena, un masaje, una tarde de lo que quiera.`, art: 'ticket', action: { label: 'Crear un cupón', onClick: () => openEditor() } });
     } else {
-      content = el('div', { class: 'kippu-grid' }, sorted.map((c) => ticket(c, states.get(c.id), { tab, number: number.get(c.id), onRedeem: redeem, onEdit: openEditor, onDelete: remove, onShare: share })));
+      const handlers = { onRedeem: redeem, onEdit: openEditor, onDelete: remove, onShare: share };
+      content = el('div', { class: 'kippu-grid' }, sorted.map((c) => ticket(c, states.get(c.id), {
+        tab, number: number.get(c.id), onRedeem: redeem,
+        onOpen: (x) => detail(x, states.get(x.id), { tab, number: number.get(x.id), ...handlers }),
+      })));
     }
     const resetBtn = tab === 'mine' && mine.some((c) => states.has(c.id))
       ? el('div', { class: 'cupones-foot' }, el('button', { class: 'btn btn-ghost btn-small', type: 'button', onClick: reset }, icon('repeat', { size: 18 }), 'Reiniciar cupones'))

@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.1.19 (diseños elegidos en la revisión de la Fase 2)
+
+- Inicio: el contador queda arriba y el saludo, "Pensando en ti" y la omikuji pasan a un carrusel del día que se desliza con el dedo (en el PC se ven los tres en fila). Sin "Ver más".
+- Adiós al botón redondo flotante: "Nuevo recuerdo", "Nuevo cupón" y "Escribir carta" van junto al título de cada sección. La tecla "n" sigue funcionando.
+- Cuponera: boletos de tren más compactos, uno por fila, con número, "Admite 1", talón perforado y sello. Tocar el boleto abre su detalle; "Canjear" queda en el talón.
+- Cartas: sobre clásico horizontal con solapa en V y el sello de quien la manda, uno por fila (dos o tres en pantallas grandes). Las abiertas muestran la fecha corta y el sello roto.
+- Al abrir una carta, el sobre sube al centro, se rompe el sello, se abre la solapa, sale la carta y llena la pantalla. Con "Reducir movimiento" se abre directo.
+- Cápsula: por defecto se lee desde el recuerdo más antiguo hacia el más reciente.
+- Mejor contraste del botón "Canjear".
+
 ## 0.1.18 (ajustes de la revisión de la Fase 2)
 
 - Sin zoom con dos dedos ni con doble toque. El tamaño del texto se sigue cambiando en Ajustes > Apariencia.

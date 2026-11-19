@@ -106,7 +106,7 @@ async function completeSetup(page) {
       if (!title) broken.push(r);
     }
     ok(`routes @${w}: every route renders a heading (${routes.length})`, broken.length === 0, broken.join(','));
-    // Inicio: counter, cards, "Ver más" on phones, Pensando en ti
+    // Inicio: counter, carousel of the day, Pensando en ti
     await page.evaluate(() => { location.hash = '#/inicio'; });
     await page.waitForSelector('.counter-card');
     const days = await page.evaluate(() => Number(document.querySelector('.counter-days').textContent.replace(/\D/g, '')));
@@ -118,12 +118,13 @@ async function completeSetup(page) {
     ok(`inicio @${w}: no Japanese inside the cards`, !(await page.$$eval('.home-card', (c) => c.some((x) => /[぀-ヿ一-龯]/.test(x.textContent)))));
     ok(`inicio @${w}: omikuji skips texts still to complete`, (await page.locator('.omikuji-text').textContent()) === 'Texto de ejemplo.');
     ok(`inicio @${w}: no horizontal scroll`, !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
-    const hiddenMore = await page.$$eval('.home-more', (c) => c.filter((x) => getComputedStyle(x).display === 'none').length);
-    if (w < 640) {
-      ok(`inicio @${w}: extra cards fold under Ver más`, hiddenMore > 0);
-      await page.locator('.home-more-btn').click();
-      ok(`inicio @${w}: Ver más shows them`, (await page.$$eval('.home-more', (c) => c.filter((x) => getComputedStyle(x).display === 'none').length)) === 0);
-    } else ok(`inicio @${w}: all cards visible in the grid`, hiddenMore === 0);
+    ok(`inicio @${w}: the day's cards sit in the carousel`, (await page.locator('.home-carousel .home-slide').count()) === 3);
+    if (w < 900) {
+      await page.locator('.home-dot').nth(1).click();
+      await page.waitForTimeout(700);
+      ok(`inicio @${w}: a dot slides to its card and is marked`, (await page.locator('.home-dot').nth(1).getAttribute('aria-current')) === 'true'
+        && (await page.evaluate(() => { const t = document.querySelector('.home-carousel-track'); const c = document.querySelector('.thinking-card'); return Math.abs(c.getBoundingClientRect().left - t.getBoundingClientRect().left) < 40; })));
+    } else ok(`inicio @${w}: on wide screens the three cards share one row`, await page.evaluate(() => new Set([...document.querySelectorAll('.home-slide')].map((x) => Math.round(x.getBoundingClientRect().top))).size === 1));
     await page.evaluate(() => { navigator.share = async () => {}; });
     await page.locator('.thinking-btn').click();
     await page.waitForFunction(() => /Hoy pensaste/.test(document.querySelector('.thinking-count').textContent));
@@ -193,7 +194,7 @@ async function completeSetup(page) {
       const b64 = (u) => { let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
       return { big: b64(big), rot: b64(rot) };
     });
-    await page.locator('.fab').click();
+    await page.locator('.page-new').click();
     const ed = page.locator('.memory-editor');
     await ed.waitFor();
     await ed.getByRole('button', { name: 'Guardar recuerdo' }).click();
@@ -225,9 +226,10 @@ async function completeSetup(page) {
     ok(`cápsula @${w}: only the saved photos remain after the failed try`, media.length === 2, String(media.length));
     ok(`cápsula @${w}: Un día como hoy shows the memory from a year ago`, /Picnic/.test(await page.locator('.otd-card').textContent()));
     const firstTitle = () => page.locator('.timeline:not(.timeline-drafts) .tl-title').first().textContent();
-    ok(`cápsula @${w}: most recent on top`, (await firstTitle()) === 'Picnic en el parque');
+    ok(`cápsula @${w}: oldest on top by default`, (await firstTitle()) === 'Título');
+    await page.getByRole('button', { name: 'Ver lo más reciente' }).click();
+    ok(`cápsula @${w}: "Ver lo más reciente" puts the newest first`, (await firstTitle()) === 'Picnic en el parque');
     await page.getByRole('button', { name: 'Ver desde el inicio' }).click();
-    ok(`cápsula @${w}: "Ver desde el inicio" puts the oldest first`, (await firstTitle()) === 'Título');
     await page.getByRole('button', { name: 'Ver lo más reciente' }).click();
     await page.locator('.timeline .tl-card', { hasText: 'Picnic' }).click();
     await page.waitForSelector('.memory-detail .carousel');
@@ -268,8 +270,8 @@ async function completeSetup(page) {
     await masaje.getByRole('button', { name: 'Canjear' }).click();
     await page.getByRole('dialog', { name: '¿Canjear este cupón?' }).getByRole('button', { name: 'Canjear' }).click();
     await page.waitForSelector('.kippu.is-redeemed .hanko');
-    const status = await page.locator('.kippu.is-redeemed .kippu-status').textContent();
-    ok('cupones: redeeming stamps the hanko and saves "Canjeado el ..." in es-CO', /^Canjeado el \d{1,2} de [a-z]+ de \d{4} a las /.test(status), status);
+    const status = await page.locator('.kippu.is-redeemed .kippu-meta').textContent();
+    ok('cupones: redeeming stamps the hanko and saves "Canjeado el ..." in es-CO', /^Canjeado el \d{1,2} de [a-z]+ de \d{4} a las /.test(status.trim()), status);
     await page.reload();
     await page.waitForSelector('.kippu');
     ok('cupones: the redeemed state persists after reload', (await page.locator('.kippu.is-redeemed').count()) === 1);
@@ -277,7 +279,7 @@ async function completeSetup(page) {
     await page.getByRole('dialog', { name: '¿Reiniciar los cupones?' }).getByRole('button', { name: 'Reiniciar' }).click();
     await page.waitForTimeout(400);
     ok('cupones: reset makes them all unused again', (await page.locator('.kippu.is-redeemed').count()) === 0);
-    await page.locator('.fab').click();
+    await page.locator('.page-new').click();
     await page.locator('.coupon-editor').getByRole('button', { name: 'Crear cupón' }).click();
     ok('cupones: a new coupon needs what it is for', (await page.locator('.coupon-editor .field-error:not(:empty)').count()) === 1);
     await page.locator('.coupon-editor').getByLabel('Vale por').fill('Un desayuno en la cama');
@@ -287,6 +289,12 @@ async function completeSetup(page) {
     ok('cupones: a created coupon shows in "Los que regalaste" for Leo', /para Leo/i.test(await page.locator('.kippu').first().textContent()) && (await page.locator('.kippu').count()) === 1);
     const saved = await page.evaluate(async () => (await (await import('./js/core/db.js')).query('content', { filter: (c) => c.kind === 'coupon' && c.origin === 'user' && c.title === 'Un desayuno en la cama' }))[0]);
     ok('cupones: it is stored from Ana to Leo with the dedication', saved?.from === 'sofia' && saved?.to === 'david' && saved?.dedication === 'Porque sí.');
+    await page.locator('.kippu-main').first().click();
+    const sheet = page.locator('.coupon-detail');
+    await sheet.waitFor();
+    ok('cupones: tapping a ticket opens its detail with the dedication and actions', /Porque sí/.test(await sheet.textContent()) && (await sheet.getByRole('button', { name: 'Editar' }).count()) === 1);
+    await page.keyboard.press('Escape');
+    await sheet.waitFor({ state: 'detached' });
     ok('cupones: no horizontal scroll', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
     await shot(page, 'cupones-390');
     ok('cupones: no console errors', errors.length === 0, errors.join(' | '));
@@ -313,13 +321,14 @@ async function completeSetup(page) {
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
     ok('cartas: Esc closes it and focus goes back to the envelope', await page.evaluate(() => !document.querySelector('[role="dialog"]') && document.activeElement.classList.contains('futo') && document.activeElement.textContent.includes('necesites reír')));
-    const st = await page.locator('.futo.is-opened .futo-status').textContent();
-    ok('cartas: the opened envelope shows "Abierta el {fecha} a las {hora}"', /^Abierta el \d{1,2} de [a-z]+ de \d{4} a las /.test(st), st);
+    const st = await page.locator('.futo.is-opened').getAttribute('aria-label');
+    const short = (await page.locator('.futo.is-opened .futo-status').textContent()).trim();
+    ok('cartas: the opened envelope says "Abierta el {fecha} a las {hora}" and shows the short date', /Abierta el \d{1,2} de [a-z]+ de \d{4} a las /.test(st) && /^Abierta el \d{1,2} [a-z]+\.?$/.test(short), `${st} | ${short}`);
     await page.reload();
     await page.waitForSelector('.futo');
     ok('cartas: the opened state persists', (await page.locator('.futo.is-opened').count()) === 1 && /1 carta por abrir/.test(await page.locator('.ribbon').textContent()));
     await page.locator('.segmented-option', { hasText: 'Escribimos' }).click();
-    await page.locator('.fab').click();
+    await page.locator('.page-new').click();
     const ed = page.locator('.letter-editor');
     await ed.getByRole('button', { name: 'Guardar borrador' }).click();
     ok('cartas: condition and text are required', (await ed.locator('.field-error:not(:empty)').count()) === 2);
