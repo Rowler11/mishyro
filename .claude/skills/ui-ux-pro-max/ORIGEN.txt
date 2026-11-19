@@ -1,0 +1,2 @@
+Origen: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill (commit 2de1134), licencia MIT.
+Copiada sin scripts/tests. Los comandos de SKILL.md se ejecutan desde la raiz del repo.
