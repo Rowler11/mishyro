@@ -1,0 +1,28 @@
+# --- Especificación y datos privados: solo en local, NUNCA en GitHub ---
+docs/
+privado/
+seed-privado.json
+*.private.*
+*-privado.*
+!seed-privado.example.json
+
+# Contenido de la sección privada sin cifrar (solo se sube el .enc.json cifrado)
+vault-content.json
+vault-content.txt
+vault-content.csv
+contenido-propio/
+
+# Copias de seguridad exportadas desde la app
+aishiteru-backup*.json
+*.backup.json
+
+# Sistema y herramientas
+.DS_Store
+Thumbs.db
+node_modules/
+.env
+.env.*
+*.log
+test-results/
+playwright-report/
+.claude/settings.local.json
