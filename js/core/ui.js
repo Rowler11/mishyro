@@ -310,19 +310,25 @@ export function stagger(container) {
 
 /** Water-ripple feedback on buttons and cards. Installed once. */
 export function installRipple() {
-  document.addEventListener('pointerdown', (e) => {
+  // Fires on click, not pointerdown: a finger that starts a scroll never clicks, so nothing flashes while scrolling.
+  document.addEventListener('click', (e) => {
     const host = e.target.closest('.btn, .card-link, .tab, .pin-key, .ripple');
     if (!host || prefersReducedMotion() || host.disabled) return;
     const r = host.getBoundingClientRect();
     const s = Math.max(r.width, r.height) * 2;
+    // Keyboard clicks carry no coordinates: start from the center.
+    const fromPointer = e.detail > 0 && (e.clientX || e.clientY);
+    const x = fromPointer ? e.clientX - r.left : r.width / 2;
+    const y = fromPointer ? e.clientY - r.top : r.height / 2;
     const dot = document.createElement('span');
     dot.className = 'ripple-dot';
+    dot.setAttribute('aria-hidden', 'true');
     dot.style.width = dot.style.height = `${s}px`;
-    dot.style.left = `${e.clientX - r.left - s / 2}px`;
-    dot.style.top = `${e.clientY - r.top - s / 2}px`;
+    dot.style.left = `${x - s / 2}px`;
+    dot.style.top = `${y - s / 2}px`;
     host.append(dot);
     setTimeout(() => dot.remove(), 650);
-  }, { passive: true });
+  }, { passive: true, capture: true });
 }
 
 // ---------- share ----------

@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.1.5
+
+- "Más" con grupos plegables: se abre un grupo a la vez y muestra tarjetas con una línea que explica cada sección; lo que llega más adelante lleva "Pronto".
+- Sin letras japonesas bajo los botones de abajo ni en el menú lateral; quedan solo en el título de cada pantalla.
+- Arreglo en Ajustes y listas: la burbuja al tocar salía siempre en el mismo sitio, la lista parpadeaba al deslizar y la página podía saltar. La burbuja ahora sale donde tocas y solo con un toque real, no al deslizar.
+
 ## 0.1.4
 
 - "Más" en cuadrícula compacta (3 por fila en el teléfono) con nombres cortos; lo que llega más adelante se marca con un punto.

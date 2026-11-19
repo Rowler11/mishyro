@@ -115,6 +115,19 @@ async function completeSetup(page) {
     ok(`back @${w}: Atrás returns to the previous view`, (await page.evaluate(() => location.hash)) === '#/mas');
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
     ok(`layout @${w}: no horizontal scroll on Más`, !overflow);
+    // Más: collapsible groups, only one open at a time
+    const openCount = () => page.$$eval('.acc-head[aria-expanded="true"]', (h) => h.length);
+    const heads = page.locator('.acc-head');
+    ok(`más @${w}: one group open on arrival`, (await openCount()) === 1);
+    await heads.nth(1).click();
+    await page.waitForTimeout(350);
+    ok(`más @${w}: opening another group closes the first`, (await openCount()) === 1 && (await heads.nth(1).getAttribute('aria-expanded')) === 'true');
+    ok(`más @${w}: open group shows cards with description`, await page.locator('#gb-recuerdos .section-card-blurb').first().isVisible());
+    await heads.nth(1).click();
+    await page.waitForTimeout(350);
+    ok(`más @${w}: tapping the open group closes it`, (await openCount()) === 0);
+    await heads.nth(0).click();
+    ok(`nav @${w}: no Japanese under the bottom tabs`, (await page.$$eval('.tab .ja', (n) => n.length)) === 0);
     await page.waitForTimeout(300);
     await shot(page, `mas-${w}`);
     // nav type per size

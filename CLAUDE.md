@@ -24,8 +24,8 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 
 ## Decisiones de diseño ya tomadas
 - Logo: flor de sakura con corazón (`icons/icon.svg`); nada de logos que sean solo una letra o un kanji.
-- Letras japonesas solo en las pestañas de abajo y en el título de cada pantalla; nunca en tarjetas, listas, grupos, botones ni modales.
-- "Más": cuadrícula compacta (3 por fila en el teléfono) con nombre corto; lo que no existe aún lleva un punto, no "Fase N".
+- Letras japonesas solo en el título de cada pantalla; nunca en las pestañas de abajo, tarjetas, listas, grupos, botones ni modales.
+- "Más": grupos plegables, uno abierto a la vez, con tarjetas de 2 por fila (nombre corto y una línea de descripción); lo que no existe aún lleva "Pronto", no "Fase N".
 - PIN de la app y personal: 4 dígitos con envío automático. Rincón: 6 (docs/05 §33).
 
 ## Estilo de trabajo

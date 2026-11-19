@@ -53,7 +53,7 @@ function buildShell() {
   const tabLink = (t, cls) => el('a', {
     class: `${cls} tab`, href: `#${t.path}`, dataset: { tab: t.id },
     'aria-label': `${t.title}${cls === 'rail-link' ? '' : ''}`,
-  }, el('span', { class: 'tab-icon' }, icon(t.icon)), el('span', { class: 'tab-name' }, t.title), ja(t.jp, t.romaji));
+  }, el('span', { class: 'tab-icon' }, icon(t.icon)), el('span', { class: 'tab-name' }, t.title));
 
   const profileChip = (cls) => el('button', { class: `profile-chip ${cls}`, type: 'button', onClick: switchProfile },
     el('span', { class: 'profile-dot', 'aria-hidden': 'true' }), el('span', { class: 'profile-text' }));
