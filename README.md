@@ -1,2 +1,65 @@
-# mishyro
-app mini Aishiteru PWA
+# Aishiteru (愛してる)
+
+PWA de pareja con estética japonesa: Kioto de día y Tokio neón de noche. Funciona sin conexión, guarda todo en el propio dispositivo (IndexedDB) y no usa servidores ni cuentas.
+
+> Este repositorio es **privado** y no contiene datos personales. Los datos reales se cargan dentro de la app desde un archivo que nunca se sube.
+
+## Publicación (Cloudflare, gratis)
+
+La app es estática: no tiene paso de build. Cloudflare la publica desde la rama `main` con `wrangler.jsonc`.
+
+1. En Cloudflare: **Workers & Pages → Create → Import a repository** y elige `mishyro`.
+2. Deja el comando de build vacío. El comando de deploy es `npx wrangler deploy` (viene por defecto).
+3. Cada merge a `main` publica una versión nueva. La URL es la que muestra Cloudflare en el proyecto (termina en `.workers.dev`).
+
+`.assetsignore` define lo que nunca se publica: `docs/`, `tests/`, `tools/`, CLAUDE.md, README, etc.
+
+## Instalar la app
+
+- **Android (Chrome):** abre la URL, toca el menú ⋮ → **Instalar app** (o el aviso "Agregar a la pantalla principal").
+- **PC (Chrome o Edge):** abre la URL y usa el ícono de instalar en la barra de direcciones, o **Ajustes → Instalar la app**.
+
+La primera vez se abre un asistente de 6 pasos: quién usa el dispositivo, datos iniciales, revisión, PIN opcional y la primera copia.
+
+## Datos iniciales (seed privado)
+
+- El formato está en `seed-privado.example.json`, que solo trae datos **ficticios**.
+- El archivo real vive fuera del repo, en `../privado/seed-privado.json`, y se carga desde el paso 3 del asistente.
+- `syncConfig` corre al abrir la app: agrega o actualiza los textos de `js/config.js`, pero nunca pisa lo que ustedes editaron, ocultaron o borraron.
+
+## Copias de seguridad
+
+**Ajustes → Copia de seguridad** exporta un `.json` (formato `aniversario-backup`). Al importar se puede **Combinar** (gana lo más reciente y respeta lo borrado) o **Reemplazar**. La parte privada va cifrada con una contraseña de la copia. Si las fotos pasan de 50 MB, se generan dos archivos: datos y fotos.
+
+Recomendación: hacer una copia antes de cada actualización grande y guardarla fuera del teléfono.
+
+## Publicar una versión nueva
+
+1. Sube `CACHE_VERSION` en `sw.js` y `appVersion` en `js/config.js`.
+2. Anota los cambios en `CHANGELOG.md`.
+3. Merge a `main`. La app avisa "Hay una versión nueva" y se actualiza con un toque.
+
+## Desarrollo y pruebas
+
+```bash
+# servidor local con el subpath /mishyro/ (desde una carpeta que contenga el repo como "mishyro")
+python3 -m http.server 8765
+BASE=http://127.0.0.1:8765/mishyro/ node tests/unit.cjs           # unitarias (fechas, cifrado, copias, seed)
+BASE=http://127.0.0.1:8765/mishyro/ node tests/e2e.cjs            # flujo completo a 390, 820 y 1440 px
+BASE=http://127.0.0.1:8765/mishyro/ AXE=ruta/axe.min.js node tests/a11y.cjs   # accesibilidad con axe-core
+```
+
+Requieren Node y Playwright con Chromium. Las pruebas usan solo datos ficticios.
+
+## Estructura
+
+- `index.html`, `styles.css`, `theme-boot.js`, `manifest.webmanifest`, `sw.js`: la base de la PWA.
+- `js/core/`: base de datos, cifrado, copias, seed, rutas, tema, componentes y seguridad.
+- `js/features/`: cada pantalla. `js/config.js`: textos y ajustes base (comentarios en español).
+- `fonts/`, `icons/`, `vendor/`: todo alojado aquí; no se carga nada de otros dominios.
+- `tools/`: scripts para regenerar íconos, sprite y fuentes.
+
+## Ideas para más adelante (no se construyen)
+
+- **Fase futura A:** widgets nativos de Android.
+- **Fase futura B:** ubicación en vivo opcional.

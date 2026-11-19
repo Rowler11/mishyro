@@ -1,0 +1,14 @@
+# Never published to Cloudflare (repo-only files)
+.git
+.gitignore
+.assetsignore
+wrangler.jsonc
+CLAUDE.md
+README.md
+CHANGELOG.md
+docs
+privado
+tests
+tools
+node_modules
+seed-privado*.json

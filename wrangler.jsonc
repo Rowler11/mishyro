@@ -1,0 +1,9 @@
+// Cloudflare Workers (static assets only): publishes the PWA from the repo root.
+// Files listed in .assetsignore are never uploaded.
+{
+  "name": "mishyro",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "."
+  }
+}
