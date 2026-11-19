@@ -11,7 +11,7 @@
   "display_override": ["standalone"],
   "orientation": "any",
   "background_color": "#FBF4F3",
-  "theme_color": "#C8412B",
+  "theme_color": "#FBF4F3",
   "categories": ["lifestyle"],
   "icons": [
     { "src": "./icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
