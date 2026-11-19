@@ -248,7 +248,7 @@ function milestoneCard(data, start) {
 function backupCard(meta) {
   const last = meta.lastBackupAt ? time.parseStart(meta.lastBackupAt) : null;
   const days = last ? util.daysBetween(last, new Date()) : null;
-  if (days !== null && days < 30) return null;
+  if (days !== null && days < 14) return null; // docs/03: remind after 14 days
   return el('article', { class: 'card home-card backup-card', 'aria-labelledby': 'backup-title' },
     el('h2', { class: 'card-kicker', id: 'backup-title' }, 'Copia de seguridad'),
     el('p', {}, days === null ? 'Todavía no hay una copia de sus datos. Guárdenla en un lugar seguro.' : `La última copia fue hace ${days} días. Es buen momento para otra.`),

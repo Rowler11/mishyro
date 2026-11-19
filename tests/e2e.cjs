@@ -482,6 +482,17 @@ async function completeSetup(page) {
     await page.getByRole('button', { name: 'Guardar cambios' }).click();
     await page.waitForFunction(() => document.querySelector('.profile-chip .profile-text')?.textContent === 'Anita');
     ok('perfil: a new name shows at once in the app bar', true);
+    await page.locator('.perfil-people .card').nth(1).getByLabel('Nombre corto').fill('Leito');
+    await page.getByRole('button', { name: 'Guardar cambios' }).click();
+    await page.waitForTimeout(500);
+    const nameOn = async (hash, name) => { await page.evaluate((h) => { location.hash = h; }, hash); await page.waitForTimeout(700); return (await page.locator('main').innerText()).includes(name); };
+    const seen = { inicio: await nameOn('#/inicio', 'Leito'), cartas: await nameOn('#/cartas', 'Leito') };
+    ok('perfil: new names show in Inicio and Cartas without reloading', Object.values(seen).every(Boolean), JSON.stringify(seen));
+    await page.reload();
+    const welcome = await page.locator('.splash-for').textContent({ timeout: 5000 }).catch(() => '');
+    ok('perfil: the welcome screen uses the new nickname', welcome.includes('Sol'), welcome);
+    await page.locator('.splash').waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
+    await page.evaluate(() => { location.hash = '#/ajustes/perfil'; }); await page.locator('.perfil-people').waitFor().catch(() => {});
     const fill = await page.evaluate(async () => (await import('./js/core/profile.js')).fill('Buenos días, {apodo}.', 'sofia'));
     ok('perfil: the nickname is used in the texts', fill === 'Buenos días, Sol.', fill);
     await page.locator('.segmented-option', { hasText: 'Fechas' }).click();
@@ -616,6 +627,40 @@ async function completeSetup(page) {
     ok('buscar: "/" opens it and the rail marks Buscar only', (await page.locator('.rail [aria-current="page"]').count()) === 1 && (await page.locator('.rail [data-tab="buscar"][aria-current="page"]').count()) === 1);
     ok('buscar: no horizontal overflow', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)));
     ok('buscar: no console errors', errors.length === 0, errors.join(' | '));
+    await ctx.close();
+  }
+
+  // ---------- 2i. Leaving the app locks what is private and covers the screen; backup reminder at 14 days ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errors = watch(page);
+    await completeSetup(page);
+    const r = await page.evaluate(async () => {
+      const security = await import('./js/core/security.js'); const profile = await import('./js/core/profile.js');
+      const scope = `person:${profile.active()}`;
+      await security.createPin(scope, '2580');
+      await security.unlock(scope, '2580').catch(() => {});
+      const before = security.isUnlocked(scope);
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+      document.dispatchEvent(new Event('visibilitychange'));
+      await new Promise((ok) => setTimeout(ok, 300));
+      return { before, after: security.isUnlocked(scope), curtain: !!document.querySelector('.curtain') };
+    });
+    ok('leave lock: going to another app locks the personal PIN space and shows the curtain', r.before && !r.after && r.curtain, JSON.stringify(r));
+    const card = async (days) => {
+      await page.evaluate(async (d) => {
+        delete document.visibilityState;
+        const db = await import('./js/core/db.js');
+        await db.setMeta({ lastBackupAt: new Date(Date.now() - d * 86400000).toISOString() });
+      }, days);
+      await page.reload();
+      await page.locator('.home-card').first().waitFor();
+      return page.locator('.backup-card').count();
+    };
+    ok('backup reminder: hidden 13 days after the last copy', (await card(13)) === 0);
+    ok('backup reminder: shown 15 days after the last copy', (await card(15)) === 1);
+    ok('leave lock and reminder: no console errors', errors.length === 0, errors.join(' | '));
     await ctx.close();
   }
 

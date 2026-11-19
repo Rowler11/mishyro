@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.1.17 (cierre de la Fase 2)
+
+- El aviso de copia de seguridad en Inicio sale a los 14 días de la última copia, como pide la especificación (antes salía a los 30).
+- Pruebas nuevas: bloqueo de lo privado y cortina al salir de la app, aviso de copia a los 13 y 15 días, y nombres nuevos en Inicio, Cartas y la bienvenida sin recargar.
+
 ## 0.1.16 (Fase 2, Buscar)
 
 - Buscar en recuerdos, cartas y cupones desde una sola caja, sin importar tildes ni mayúsculas ("cafe" encuentra "Café"). Cada palabra debe aparecer; los resultados salen por grupo, con la palabra resaltada y un trocito de contexto.
