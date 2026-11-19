@@ -2,7 +2,9 @@
 // que quien escribe pone donde quiera en su borrador; se mueven, giran y cambian de tamaño.
 // Each sticker on a letter is stored as { k, x, y, r, s }: kind, center as a fraction of the
 // envelope (0..1), rotation in degrees and scale. Plain data, so it syncs and backs up with the letter.
-import { ui, util } from '../core.js';
+// Own stickers (opción B, 2026-11-19) live in the shared album ("lists" records of kind "sticker",
+// each with its image in "media") and are referenced as k = "c:<record id>".
+import { ui, util, db } from '../core.js';
 
 const { el, icon } = util;
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -31,15 +33,36 @@ const SLOTS = [[0.88, 0.34], [0.12, 0.7], [0.88, 0.72], [0.72, 0.26], [0.28, 0.7
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const round = (v, d = 3) => Math.round(v * 10 ** d) / 10 ** d;
 
+const CUSTOM = /^c:[0-9a-f-]{8,40}$/;
+const isCustom = (k) => CUSTOM.test(k);
+
+// Own stickers: record id -> { id, name, url }. Object URLs stay alive while the app runs (few, small).
+const album = new Map();
+const urls = new Map(); // mediaId -> object URL
+/** Loads the shared album (newest last). Call before drawing envelopes that may use own stickers. */
+export async function loadAlbum() {
+  const recs = (await db.query('lists', { index: 'kind', range: IDBKeyRange.only('sticker') })).filter((r) => !r.deleted && r.mediaId)
+    .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+  album.clear();
+  for (const r of recs) {
+    let url = urls.get(r.mediaId);
+    if (!url) { const blob = await db.getMedia(r.mediaId).catch(() => null); if (!blob) continue; url = URL.createObjectURL(blob); urls.set(r.mediaId, url); }
+    album.set(`c:${r.id}`, { id: r.id, k: `c:${r.id}`, name: r.name || 'Estampilla propia', url });
+  }
+  return [...album.values()];
+}
+const known = (k) => byKind.has(k) || album.has(k);
+
 /** Keep only well-formed stickers of known kinds (data may come from a backup or another phone). */
 export function clean(list) {
   if (!Array.isArray(list)) return [];
-  return list.filter((s) => s && byKind.has(s.k)).slice(0, MAX_STICKERS).map((s) => ({
+  return list.filter((s) => s && (byKind.has(s.k) || isCustom(s.k))).slice(0, MAX_STICKERS).map((s) => ({
     k: s.k, x: round(clamp(+s.x || 0.5, 0, 1)), y: round(clamp(+s.y || 0.5, 0, 1)), r: Math.round(clamp(+s.r || 0, -180, 180)), s: round(clamp(+s.s || 1, MIN_S, MAX_S), 2),
   }));
 }
 
 export function art(kind, size = 46) {
+  if (isCustom(kind)) return el('img', { src: album.get(kind)?.url || '', alt: '', width: size, height: size, draggable: 'false', decoding: 'async' });
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('viewBox', '0 0 64 64');
   svg.setAttribute('width', size);
@@ -62,7 +85,7 @@ export function layer(list, { tag = 'span' } = {}) {
   const items = clean(list);
   if (!items.length) return null;
   const wrap = el(tag, { class: 'futo-stickers', 'aria-hidden': 'true' });
-  for (const s of items) { const n = el(tag, { class: 'sticker' }, art(s.k)); place(n, s); wrap.append(n); }
+  for (const s of items) { if (!known(s.k)) continue; const n = el(tag, { class: 'sticker' }, art(s.k)); place(n, s); wrap.append(n); }
   return wrap;
 }
 
@@ -80,7 +103,10 @@ export async function decorate({ letter, face }) {
   const count = el('p', { class: 'muted small sticker-count' });
   const tools = el('div', { class: 'sticker-tools', role: 'toolbar', 'aria-label': 'Estampilla elegida' });
 
-  const nameOf = (s) => byKind.get(s.k)?.name || 'Estampilla';
+  const nameOf = (s) => byKind.get(s.k)?.name || album.get(s.k)?.name || 'Estampilla';
+  await loadAlbum().catch((e) => console.error(e));
+  list = list.filter((s) => known(s.k));
+  sel = list.length - 1;
   const update = (fn, msg) => { if (sel < 0) return; fn(list[sel]); list[sel] = clean([list[sel]])[0]; paint(); if (msg) live.textContent = msg; };
   const toolBtn = (label, iconName, fn) => el('button', { class: 'icon-btn sticker-tool', type: 'button', 'aria-label': label, title: label, onClick: fn }, icon(iconName, { size: 20 }));
   tools.append(
@@ -134,17 +160,72 @@ export async function decorate({ letter, face }) {
     n.addEventListener('pointercancel', end);
   }
 
-  const tray = el('div', { class: 'sticker-tray', role: 'group', 'aria-label': 'Estampillas' }, SET.map((s) => el('button', {
-    class: 'sticker-pick', type: 'button', 'aria-label': `Poner: ${s.name}`, title: s.name,
-    onClick: () => {
-      if (list.length >= MAX_STICKERS) { ui.toast(`Caben hasta ${MAX_STICKERS} estampillas por sobre.`); return; }
-      // New stickers land around the edges, away from the seal and the label; then they move freely.
-      const n = list.length;
-      const [x, y] = SLOTS[n % SLOTS.length];
-      list.push({ k: s.k, x, y, r: ((n * 37) % 30) - 15, s: 1 });
-      sel = list.length - 1; paint(); live.textContent = `${s.name} puesta en el sobre.`;
-    },
-  }, art(s.k, 40))));
+  const put = (k, name) => {
+    if (list.length >= MAX_STICKERS) { ui.toast(`Caben hasta ${MAX_STICKERS} estampillas por sobre.`); return; }
+    // New stickers land around the edges, away from the seal and the label; then they move freely.
+    const n = list.length;
+    const [x, y] = SLOTS[n % SLOTS.length];
+    list.push({ k, x, y, r: ((n * 37) % 30) - 15, s: 1 });
+    sel = list.length - 1; paint(); live.textContent = `${name} puesta en el sobre.`;
+  };
+  const pick = (s) => el('button', { class: 'sticker-pick', type: 'button', 'aria-label': `Poner: ${s.name}`, title: s.name, onClick: () => put(s.k, s.name) }, art(s.k, 40));
+
+  // ---- Own stickers: create from a photo or a sticker, paste, delete ----
+  let removing = false;
+  const fileInput = el('input', { type: 'file', accept: 'image/*', class: 'sr-only', id: `sk-${util.uuid().slice(0, 8)}` });
+  const create = async (file) => {
+    if (!file || !/^image\//.test(file.type || 'image/')) return;
+    const { makeSticker } = await import('./sticker-maker.js');
+    const rec = await makeSticker(file);
+    if (!rec) return;
+    await loadAlbum(); drawOwn();
+    put(`c:${rec.id}`, rec.name);
+  };
+  fileInput.addEventListener('change', () => { const f = fileInput.files[0]; fileInput.value = ''; create(f); });
+  const removeOwn = async (s) => {
+    const yes = await ui.confirmDialog({ title: '¿Borrar esta estampilla?', message: `“${s.name}” sale del álbum de los dos y de los sobres donde esté puesta. No se puede deshacer.`, confirmLabel: 'Borrar', danger: true });
+    if (!yes) return;
+    await db.purge('lists', s.id);
+    list = list.filter((x) => x.k !== s.k); sel = list.length - 1;
+    await loadAlbum(); drawOwn(); paint();
+    ui.toast('Estampilla borrada.');
+  };
+  const ownGrid = el('div', { class: 'sticker-tray', role: 'group', 'aria-label': 'Tus estampillas' });
+  const editBtn = el('button', { class: 'btn btn-ghost btn-small sticker-edit', type: 'button', 'aria-pressed': 'false', onClick: () => { removing = !removing; drawOwn(); } }, 'Editar');
+  function drawOwn() {
+    const own = [...album.values()];
+    if (!own.length) removing = false;
+    editBtn.hidden = !own.length;
+    editBtn.textContent = removing ? 'Listo' : 'Editar';
+    editBtn.setAttribute('aria-pressed', String(removing));
+    ownGrid.replaceChildren(...[
+      removing ? null : el('label', { class: 'sticker-pick sticker-new', for: fileInput.id, title: 'Crear una estampilla' }, icon('image-plus', { size: 24 }), el('span', {}, 'Crear')),
+      ...own.map((s) => (removing
+        ? el('button', { class: 'sticker-pick is-removing', type: 'button', 'aria-label': `Borrar del álbum: ${s.name}`, onClick: () => removeOwn(s) }, art(s.k, 40), el('span', { class: 'sticker-x', 'aria-hidden': 'true' }, icon('x', { size: 14 })))
+        : pick(s))),
+      fileInput].filter(Boolean));
+  }
+  drawOwn();
+  // Paste an image (PC) or insert a sticker from the phone keyboard into this box.
+  const pasteBox = el('div', {
+    class: 'sticker-paste', contenteditable: 'true', role: 'textbox', 'aria-label': 'Pega aquí una imagen o un sticker del teclado', 'data-placeholder': 'Pega aquí una imagen o un sticker del teclado',
+  });
+  const fromTransfer = (dt) => [...(dt?.files || [])].find((f) => /^image\//.test(f.type)) || [...(dt?.items || [])].find((i) => i.kind === 'file' && /^image\//.test(i.type))?.getAsFile();
+  const onPaste = (e) => { if (document.querySelector('.sticker-maker')) return; const f = fromTransfer(e.clipboardData); if (f) { e.preventDefault(); pasteBox.textContent = ''; create(f); } };
+  pasteBox.addEventListener('beforeinput', (e) => { const f = fromTransfer(e.dataTransfer); if (f) { e.preventDefault(); create(f); } else if (e.inputType !== 'insertFromPaste') e.preventDefault(); });
+  pasteBox.addEventListener('input', async () => {
+    // Some keyboards insert the sticker as an <img>; take its picture and empty the box.
+    const img = pasteBox.querySelector('img'); pasteBox.textContent = '';
+    if (img?.src) { try { const b = await (await fetch(img.src)).blob(); create(new File([b], 'sticker', { type: b.type || 'image/png' })); } catch { ui.toast('No pudimos leer ese sticker. Guárdalo como imagen y elígelo con "Crear".'); } }
+  });
+  document.addEventListener('paste', onPaste);
+
+  const tray = el('div', { class: 'sticker-trays' },
+    el('div', { class: 'sticker-tray-head' }, el('h3', { class: 'card-kicker' }, 'Tus estampillas'), editBtn),
+    ownGrid,
+    pasteBox,
+    el('h3', { class: 'card-kicker' }, 'Del set'),
+    el('div', { class: 'sticker-tray', role: 'group', 'aria-label': 'Estampillas del set' }, SET.map(pick)));
 
   paint();
   const m = ui.openModal({
@@ -155,5 +236,6 @@ export async function decorate({ letter, face }) {
     actions: [{ label: 'Cancelar', variant: 'ghost', value: null }, { label: 'Guardar el sobre', variant: 'primary', value: 'save' }],
   });
   const v = await m.result;
+  document.removeEventListener('paste', onPaste);
   return v === 'save' ? clean(list) : null;
 }

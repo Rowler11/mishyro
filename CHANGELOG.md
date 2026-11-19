@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.1.22 (estampillas propias)
+
+- En "Decorar sobre", la sección "Tus estampillas" tiene el botón "Crear": eliges una foto o un sticker y se convierte en estampilla. Quedan en un álbum que comparten los dos.
+- Si la imagen ya no tiene fondo (un sticker de Samsung o un recorte de la Galería), conserva su forma, con borde blanco opcional.
+- Una foto normal va con marco (círculo, corazón, estampilla dentada o redondeada) y se acomoda arrastrándola y con el zoom. También se puede elegir "Sin fondo": el fondo se quita dentro del teléfono, sin enviar la foto a ningún lado. La primera vez descarga el recortador (unos 8 MB) y después queda guardado.
+- Desde la Galería u otra app: "Compartir > Aishiteru" abre "Nueva estampilla" con esa imagen (con la app instalada). En el PC se puede pegar una imagen.
+- Hay un cuadro para pegar o insertar un sticker desde el teclado; depende del teclado si funciona.
+- "Editar" en "Tus estampillas" permite borrarlas del álbum (también salen de los sobres donde estaban).
+- Licencias: ONNX Runtime Web (MIT) y el modelo U²-Net (Apache 2.0) en Ajustes > Legal > Licencias y créditos.
+
 ## 0.1.21
 
 - Al abrir la app con la huella ya no sale el aviso "Huella verificada…". Lo privado sigue pidiendo el PIN al entrar, como antes.

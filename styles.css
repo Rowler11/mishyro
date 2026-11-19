@@ -876,6 +876,35 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 .sticker-pick svg { width: 100%; height: auto; max-width: 44px; }
 .sticker-pick:hover { background: var(--accent-soft); }
 .sticker-pick:active { transform: scale(.94); }
+.sticker-trays { display: flex; flex-direction: column; gap: var(--space-2); }
+.sticker-trays > .card-kicker { margin: var(--space-2) 0 0; }
+.sticker-tray-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.sticker-tray-head .card-kicker { margin: 0; }
+.sticker-pick { position: relative; }
+.sticker-pick img { width: 100%; height: auto; max-width: 44px; object-fit: contain; }
+.sticker-new { flex-direction: column; gap: 2px; font-size: .7rem; font-weight: 700; color: var(--accent); background: var(--surface); border-style: dashed; border-color: var(--accent); }
+.sticker-new { display: flex; align-items: center; justify-content: center; }
+.sticker-pick.is-removing { animation: wiggle 1.2s ease-in-out infinite; }
+.sticker-x { position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--danger, #B3261E); color: #fff; }
+@keyframes wiggle { 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+@media (prefers-reduced-motion: reduce) { .sticker-pick.is-removing { animation: none; } }
+.sticker-paste { min-height: 44px; padding: var(--space-2) var(--space-3); border: 1px dashed var(--border-strong); border-radius: var(--radius-m); color: var(--text-2); font-size: .85rem; overflow: hidden; white-space: nowrap; }
+.sticker-paste:empty::before { content: attr(data-placeholder); color: var(--text-2); }
+.sticker-paste:focus { outline: 2px solid var(--focus, var(--accent)); outline-offset: 2px; }
+.sticker img { width: 100%; height: 100%; object-fit: contain; display: block; }
+/* Nueva estampilla */
+.maker-body { display: flex; flex-direction: column; gap: var(--space-3); }
+.maker-stage { display: grid; place-items: center; padding: var(--space-3); border-radius: var(--radius-m);
+  background-color: color-mix(in srgb, var(--accent) 4%, var(--surface)); background-image: linear-gradient(45deg, color-mix(in srgb, var(--text) 5%, transparent) 25%, transparent 25%, transparent 75%, color-mix(in srgb, var(--text) 5%, transparent) 75%), linear-gradient(45deg, color-mix(in srgb, var(--text) 5%, transparent) 25%, transparent 25%, transparent 75%, color-mix(in srgb, var(--text) 5%, transparent) 75%);
+  background-size: 20px 20px; background-position: 0 0, 10px 10px; }
+.maker-canvas { width: min(220px, 60vw); height: auto; aspect-ratio: 1; filter: drop-shadow(0 2px 4px rgb(0 0 0 / .25)); touch-action: none; }
+.maker-canvas.is-pannable { cursor: grab; }
+.maker-status { margin: 0; }
+.maker-progress { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.maker-progress > span { display: block; height: 100%; width: 8%; background: var(--accent); border-radius: 3px; transition: width 200ms; }
+.maker-zoom-row { display: flex; align-items: center; gap: var(--space-2); color: var(--text-2); }
+.maker-zoom { flex: 1; accent-color: var(--accent); }
+.sticker-maker .segmented { max-width: 100%; overflow-x: auto; }
 .fly-sheet { position: absolute; background: color-mix(in srgb, var(--gold) 6%, var(--surface)); box-shadow: var(--shadow-2); }
 .own-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
 @media (min-width: 900px) { .own-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
