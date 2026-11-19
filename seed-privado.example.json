@@ -1,0 +1,97 @@
+{
+  "_leeme": "Ejemplo con datos FICTICIOS. Copia este archivo como ../privado/seed-privado.json (fuera del repositorio) y llénalo con sus datos reales. Nunca subas el real.",
+  "_formato": "Formato de docs/13: los campos con \"_\" se ignoran; \"POR COMPLETAR\" se guarda vacío.",
+  "schemaVersion": 1,
+  "partnerName": "Nombre Completo Ficticio",
+  "partnerShortName": "Ana",
+  "partnerNickname": "POR COMPLETAR",
+  "authorName": "Otro Nombre Ficticio",
+  "authorShortName": "Leo",
+  "authorNickname": "POR COMPLETAR",
+  "startDate": "2025-01-15T00:00:00-05:00",
+  "specialDates": [
+    {
+      "id": "seed:date:aniversario",
+      "title": "Nuestro aniversario",
+      "date": "2025-01-15",
+      "recurring": "yearly",
+      "kind": "anniversary"
+    },
+    {
+      "id": "seed:date:cumple-a",
+      "title": "Cumpleaños de Ana",
+      "date": "2000-03-10",
+      "recurring": "yearly",
+      "kind": "birthday"
+    },
+    {
+      "id": "seed:date:mascota",
+      "title": "Cumpleaños de la mascota",
+      "date": "2024-06-01",
+      "recurring": "yearly",
+      "kind": "pet"
+    }
+  ],
+  "reasons": [
+    {
+      "id": "seed:reason:01",
+      "text": "Texto de ejemplo."
+    },
+    {
+      "id": "seed:reason:02",
+      "text": "Porque [completa: detalle]."
+    }
+  ],
+  "memories": [
+    {
+      "id": "seed:memory:inicio",
+      "date": "2025-01-15",
+      "title": "Título",
+      "note": "Historia breve o [POR COMPLETAR: ...]",
+      "mediaIds": []
+    },
+    {
+      "id": "seed:memory:03",
+      "date": "POR COMPLETAR",
+      "title": "POR COMPLETAR",
+      "note": "[POR COMPLETAR: ...]",
+      "mediaIds": []
+    }
+  ],
+  "coupons": [
+    {
+      "id": "seed:coupon:pelicula",
+      "title": "Título",
+      "description": "Descripción."
+    }
+  ],
+  "letters": [
+    {
+      "id": "seed:letter:extranas",
+      "label": "Ábreme cuando me extrañes",
+      "text": "Párrafo 1.\n\nPárrafo 2 con [completa: detalle].\n\nFirma"
+    }
+  ],
+  "pets": [
+    {
+      "id": "seed:pet:mascota",
+      "name": "Nombre",
+      "species": "gato",
+      "breed": "raza",
+      "birthDate": "2024-06-01",
+      "arrivalDate": "2024-08-01",
+      "sex": "POR COMPLETAR",
+      "color": "POR COMPLETAR",
+      "microchip": "",
+      "notes": "",
+      "photo": null
+    }
+  ],
+  "favoriteSong": {
+    "title": "POR COMPLETAR",
+    "artist": "POR COMPLETAR",
+    "spotifyUrl": ""
+  },
+  "secretMessage": "Texto del huevo de pascua.",
+  "nicknamesNote": "texto libre, se ignora al importar"
+}
