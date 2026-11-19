@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.1.21
+
+- Al abrir la app con la huella ya no sale el aviso "Huella verificada…". Lo privado sigue pidiendo el PIN al entrar, como antes.
+
 ## 0.1.20 (estampillas en los sobres)
 
 - "Decorar sobre" en cada borrador de carta: un set propio de 12 estampillas dibujadas (flor de sakura, corazón, gatito siamés, estampilla del monte Fuji, té matcha, onigiri, daruma, luna y estrellas, torii, pez koi, grulla de papel y matasellos con corazón).
