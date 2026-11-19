@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.1.4
+
+- "Más" en cuadrícula compacta (3 por fila en el teléfono) con nombres cortos; lo que llega más adelante se marca con un punto.
+- Las letras japonesas quedan solo en las pestañas y en el título de cada pantalla.
+- El logo de sakura reemplaza al sello en el encabezado, el menú lateral, la bienvenida, el bloqueo y Acerca de.
+
 ## 0.1.3
 
 - Logo nuevo: flor de sakura con corazón (ícono de la app, favicon e ícono adaptable de Android).

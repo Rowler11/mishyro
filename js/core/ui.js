@@ -74,8 +74,7 @@ export function openModal({ title, jp, romaji, body, actions = [], size = 'md', 
   const result = new Promise((r) => { resolveResult = r; });
   const head = el('header', { class: 'modal-head' },
     el('div', { class: 'modal-titles' },
-      el('h2', { class: 'modal-title', id: titleId, tabindex: '-1' }, title || ''),
-      jp ? ja(jp, romaji) : null),
+      el('h2', { class: 'modal-title', id: titleId, tabindex: '-1' }, title || '')),
     dismissible ? el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Cerrar', onClick: () => api.close() }, icon('x')) : null);
   const bodyBox = el('div', { class: 'modal-body' }, body || null);
   const foot = actions.length ? el('footer', { class: 'modal-foot' }, actions.map((a) => el('button', {
@@ -165,6 +164,14 @@ export function emptyState({ title, text, art = 'sakura', action } = {}) {
 export function skeleton(lines = 3) {
   return el('div', { class: 'skeleton', role: 'status', 'aria-busy': 'true', 'aria-label': 'Cargando' },
     Array.from({ length: lines }, (_, i) => el('span', { class: 'skeleton-line', dataset: { i: String(i) } })));
+}
+
+/** The app logo (sakura with a heart), same file as the installed icon. */
+export function logo({ size = 40, label = '', bloom = false } = {}) {
+  return el('img', {
+    class: `logo${bloom ? ' logo-bloom' : ''}`, src: './icons/icon.svg', width: String(size), height: String(size),
+    alt: label, 'aria-hidden': label ? undefined : 'true', decoding: 'async',
+  });
 }
 
 /** Round vermilion hanko seal with a kanji (default 愛). */
