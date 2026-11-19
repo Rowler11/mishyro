@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.1.10 (Fase 2, Cápsula)
+
+- Cápsula de verdad: línea de tiempo vertical con lo más reciente arriba y el botón "Ver desde el inicio"; separada por años.
+- Botón "+" para agregar un recuerdo con hasta 6 fotos (de la galería o arrastrándolas en el PC), título, fecha, nota y "Los dos / Solo yo". Las fotos se achican a 1280 px y se corrige la orientación de la cámara.
+- Cada recuerdo abre su página con las fotos en carrusel; en el PC se ve al lado de la lista.
+- "Un día como hoy" arriba cuando hay un recuerdo de esta fecha en años o meses anteriores.
+- Editar cualquier recuerdo; borrar los que agregaron ustedes, con confirmación. Los que llegaron sin fecha o sin título quedan en "Por completar".
+- Si el teléfono se queda sin espacio, avisa y no pierde lo escrito.
+
 ## 0.1.9 (Fase 2, primera parte)
 
 - Inicio de verdad: contador de días juntos con el desglose en años, meses, días, horas, minutos y segundos (meses de calendario, no de 30 días), con pétalos la primera vez del día.

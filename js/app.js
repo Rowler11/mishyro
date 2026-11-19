@@ -18,6 +18,7 @@ export const app = {
 const load = {
   placeholder: () => import('./features/placeholder.js'),
   home: () => import('./features/home.js'),
+  capsula: () => import('./features/capsula.js'),
   more: () => import('./features/more.js'),
   settings: () => import('./features/settings.js'),
   styleguide: () => import('./features/styleguide.js'),
@@ -40,7 +41,7 @@ function registerRoutes() {
   router.register('/ajustes', { ...GROUPS.at(-1).sections[0], tab: 'mas', load: load.settings });
   router.register('/ajustes/legal/:doc', { id: 'legal-doc', title: 'Legal y ayuda', tab: 'mas', load: load.settings });
   for (const p of SETTINGS_PAGES) router.register(`/ajustes/${p.id}`, { ...p, id: `ajustes/${p.id}`, settingsPage: p.id, tab: 'mas', load: p.phase === '1' ? load.settings : load.placeholder });
-  for (const t of TABS.slice(0, 4)) registerSection(t.path, { ...t, tab: t.id, load: t.id === 'inicio' ? load.home : undefined });
+  for (const t of TABS.slice(0, 4)) registerSection(t.path, { ...t, tab: t.id, load: load[{ inicio: 'home', capsula: 'capsula' }[t.id]] });
   for (const g of GROUPS) for (const s of g.sections) if (!s.id.startsWith('ajustes')) registerSection(`/${s.id}`, { ...s, group: g.id, tab: 'mas' });
   for (const s of HIDDEN) registerSection(`/${s.id}`, { ...s, tab: 'mas', neutral: s.id === 'yoru' });
   router.register('/no-encontrado', { id: 'no-encontrado', title: 'No encontrado', notFound: true, tab: 'mas', load: load.placeholder });
