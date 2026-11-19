@@ -250,7 +250,9 @@ export function visibilityPicker({ value = 'shared', onChange } = {}) {
  * and a physical keyboard; the on-screen keys write into it.
  * onSubmit(pin) -> Promise<string|void>: return an error text to show it.
  */
-export function pinPad({ label = 'PIN', min = 4, max = 6, onSubmit, submitLabel = 'Entrar', autoSubmit = false } = {}) {
+export const PIN_DIGITS = 4; // app and personal PINs (the private corner uses its own length)
+
+export function pinPad({ label = 'PIN', min = PIN_DIGITS, max = PIN_DIGITS, onSubmit, submitLabel = 'Entrar', autoSubmit = min === max } = {}) {
   const coarse = matchMedia('(pointer: coarse)').matches;
   const id = `pin-${uuid().slice(0, 8)}`;
   const inp = el('input', {
@@ -277,7 +279,7 @@ export function pinPad({ label = 'PIN', min = 4, max = 6, onSubmit, submitLabel 
     sync();
   };
   const press = (d) => { if (inp.value.length < max) { inp.value += d; haptic(6); sync(); if (autoSubmit && inp.value.length === max) submit(); } };
-  inp.addEventListener('input', sync);
+  inp.addEventListener('input', () => { sync(); if (autoSubmit && inp.value.length === max) submit(); });
   inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
   const key = (d) => el('button', { type: 'button', class: 'pin-key', onClick: () => press(d) }, d);
   const ok = el('button', { type: 'button', class: 'pin-key pin-ok', onClick: submit, 'aria-label': submitLabel, disabled: true }, icon('check'));

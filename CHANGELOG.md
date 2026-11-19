@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.1.2
+
+- El PIN de la app y el personal ahora son de 4 números y se envían solos al completar el cuarto dígito.
+
 ## 0.1.1
 
 - Arreglo: en Cloudflare la app dejaba de abrir (ERR_FAILED) después de la primera visita, porque el modo sin conexión guardaba una redirección de `index.html`.
