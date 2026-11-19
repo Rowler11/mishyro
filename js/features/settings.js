@@ -69,14 +69,14 @@ function appearance() {
     const preview = () => {
       const now = theme.resolveTheme(theme.current().theme);
       previews.replaceChildren(...['day', 'night'].map((t) => el('div', { class: `theme-preview tp-${t}${now === t ? ' tp-on' : ''}` },
-        el('span', { class: 'tp-seal' }, '愛'), el('span', { class: 'tp-title' }, t === 'day' ? 'Kioto' : 'Tokio neón'),
+        el('span', { class: 'tp-seal' }, '愛'), el('span', { class: 'tp-title' }, t === 'day' ? 'Sakura de día' : 'Sakura de noche'),
         el('span', { class: 'tp-line' }), el('span', { class: 'tp-line short' }), el('span', { class: 'tp-btn' }))));
     };
     preview();
     wrap.append(
       el('div', { class: 'card stack' },
         el('h2', { class: 'card-title' }, 'Tema'),
-        el('p', { class: 'muted' }, `Automático: Kioto de día (de ${theme.DAY_START}:00 a ${theme.NIGHT_START}:00) y Tokio neón de noche.`),
+        el('p', { class: 'muted' }, `Automático: tema claro de día (de ${theme.DAY_START}:00 a ${theme.NIGHT_START}:00) y oscuro de noche.`),
         ui.segmented({ label: 'Tema', value: s.theme, onChange: (v) => save({ theme: v }), options: [
           { value: 'auto', label: 'Automático', icon: 'sun-moon' }, { value: 'day', label: 'Día', icon: 'sun' }, { value: 'night', label: 'Noche', icon: 'moon' }] }),
         previews),

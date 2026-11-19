@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.1.8
+
+- Modo oscuro nuevo, "Sakura suave": fondo casi negro con un toque cálido y rosa empolvado, sin brillos de neón. Gemelo del tema claro Sakura.
+
 ## 0.1.7
 
 - Encabezado más ligero: la flor de sakura sin el cuadro rojo, con el color del tema (rosa de día, neón de noche), el nombre en rosa y un avatar redondo con la inicial de quien usa la app.
