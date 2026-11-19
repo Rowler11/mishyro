@@ -855,6 +855,27 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 .fly-env.is-flap-open .futo-flap { transform: scaleY(-1); z-index: 0; }
 .fly-env.is-flap-open .futo-seal { opacity: 0; }
 .fly-env.is-paper-out .fly-paper { transform: translateY(-64%); }
+.fly-env .futo-stickers { transition: opacity 200ms; }
+.fly-env.is-flap-open .futo-stickers { opacity: 0; }
+/* Estampillas */
+.futo-stickers { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.sticker { position: absolute; display: block; width: 46px; height: 46px; margin: -23px 0 0 -23px; padding: 0; border: 0; background: none;
+  transform: rotate(var(--r, 0deg)) scale(var(--s, 1)); filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / .25)); }
+.sticker svg { display: block; width: 100%; height: 100%; }
+.futo-stickers.is-editing .sticker { pointer-events: auto; cursor: grab; touch-action: none; border-radius: 8px; }
+.futo-stickers.is-editing .sticker:active { cursor: grabbing; }
+.sticker.is-selected { outline: 2px dashed var(--accent); outline-offset: 2px; }
+.sticker-body { display: flex; flex-direction: column; gap: var(--space-3); }
+.sticker-body > p { margin: 0; }
+.futo.sticker-board { cursor: default; flex: none; }
+@media (hover: hover) { .futo.sticker-board:hover { transform: none; box-shadow: var(--shadow-1); } }
+.sticker-tools { display: flex; justify-content: center; gap: var(--space-2); }
+.sticker-tool { border: 1px solid var(--border); background: var(--surface); }
+.sticker-tray { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-2); }
+.sticker-pick { display: grid; place-items: center; aspect-ratio: 1; padding: 4px; border: 1px solid var(--border); border-radius: var(--radius-m, 12px); background: var(--surface-2); cursor: pointer; transition: background var(--dur-2), transform var(--dur-1, 100ms); }
+.sticker-pick svg { width: 100%; height: auto; max-width: 44px; }
+.sticker-pick:hover { background: var(--accent-soft); }
+.sticker-pick:active { transform: scale(.94); }
 .fly-sheet { position: absolute; background: color-mix(in srgb, var(--gold) 6%, var(--surface)); box-shadow: var(--shadow-2); }
 .own-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
 @media (min-width: 900px) { .own-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -338,6 +338,26 @@ async function completeSetup(page) {
     await page.waitForSelector('.own-letter.status-draft');
     const draftForLeo = await page.evaluate(async () => { const p = await import('./js/core/profile.js'); const db = await import('./js/core/db.js'); p.setActive('david'); const n = (await db.query('letters', { filter: (l) => !l.letterId })).length; p.setActive('sofia'); return n; });
     ok('cartas: a draft is "Solo yo" (Leo does not see it)', draftForLeo === 0);
+    // Estampillas on the envelope (decided 2026-11-19, option A)
+    await page.locator('.own-letter').getByRole('button', { name: 'Decorar sobre' }).click();
+    const deco = page.locator('.sticker-editor');
+    await deco.getByRole('button', { name: 'Poner: Flor de sakura' }).click();
+    await deco.getByRole('button', { name: 'Poner: Gatito siamés' }).click();
+    ok('stickers: tapping the tray puts stickers on the envelope', (await deco.locator('.sticker-board .sticker').count()) === 2);
+    const sb = await deco.locator('.sticker-board .sticker').last().boundingBox();
+    await page.mouse.move(sb.x + sb.width / 2, sb.y + sb.height / 2); await page.mouse.down();
+    await page.mouse.move(sb.x + sb.width / 2 + 70, sb.y + sb.height / 2 + 10, { steps: 6 }); await page.mouse.up();
+    const sa = await deco.locator('.sticker-board .sticker').last().boundingBox();
+    ok('stickers: a sticker can be dragged anywhere on the envelope', sa.x - sb.x > 50, `${sb.x} -> ${sa.x}`);
+    await deco.getByRole('button', { name: 'Girar a la derecha' }).click();
+    await deco.getByRole('button', { name: 'Más grande' }).click();
+    await deco.locator('.sticker-board .sticker').first().focus();
+    await page.keyboard.press('ArrowDown');
+    await deco.getByRole('button', { name: 'Guardar el sobre' }).click();
+    await page.waitForSelector('.own-letter.status-draft');
+    const saved = await page.evaluate(async () => (await (await import('./js/core/db.js')).query('letters', { filter: (l) => !l.letterId }))[0]?.stickers || []);
+    ok('stickers: saved with the draft (kind, place, turn and size; arrows move it)', saved.length === 2 && saved[1].k === 'milu' && saved[1].r === 7 && saved[1].s === 1.15 && saved[0].y > 0.3, JSON.stringify(saved));
+    ok('stickers: the draft says how many it has', /2 estampillas/.test(await page.locator('.own-letter').textContent()));
     await page.waitForSelector('.own-letter.status-draft');
     await page.locator('.own-letter').getByRole('button', { name: 'Sellar' }).click();
     await page.getByRole('dialog', { name: '¿Sellar esta carta?' }).getByRole('button', { name: 'Sellar' }).click();
@@ -347,6 +367,7 @@ async function completeSetup(page) {
     await page.waitForTimeout(400);
     await page.locator('.segmented-option', { hasText: 'Para ti' }).click();
     ok('cartas: Leo receives the sealed letter in "Para ti"', (await page.locator('.futo', { hasText: 'veas la luna llena' }).count()) === 1);
+    ok('stickers: the sealed envelope arrives with its stickers', (await page.locator('.futo', { hasText: 'veas la luna llena' }).locator('.futo-stickers .sticker').count()) === 2);
     await page.locator('.segmented-option', { hasText: 'Escribimos' }).click();
     const sent = await page.locator('.own-letter', { hasText: 'necesites reír' }).textContent();
     ok('cartas: on Leo\'s profile the initial letters show as "Las que le escribiste" with their status', /Las que le escribiste/.test(await page.locator('.cartas-section').textContent()) && /Abierta el/.test(sent), sent);

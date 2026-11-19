@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.1.20 (estampillas en los sobres)
+
+- "Decorar sobre" en cada borrador de carta: un set propio de 12 estampillas dibujadas (flor de sakura, corazón, gatito siamés, estampilla del monte Fuji, té matcha, onigiri, daruma, luna y estrellas, torii, pez koi, grulla de papel y matasellos con corazón).
+- Se ponen donde quieras arrastrándolas; se giran, se agrandan, se achican y se quitan con los botones de abajo. Con teclado, las flechas las mueven y Suprimir las quita. Hasta 8 por sobre.
+- Las estampillas se guardan con el borrador y, al sellar, el sobre le llega a la otra persona tal cual. Al abrir la carta se apartan junto con la solapa.
+- El borrador muestra cuántas estampillas tiene.
+
 ## 0.1.19 (diseños elegidos en la revisión de la Fase 2)
 
 - Inicio: el contador queda arriba y el saludo, "Pensando en ti" y la omikuji pasan a un carrusel del día que se desliza con el dedo (en el PC se ven los tres en fila). Sin "Ver más".
