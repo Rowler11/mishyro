@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.2.0';
+const CACHE_VERSION = 'aishiteru-v0.3.0';
 const SHELL = [
   './',
   './styles.css',
@@ -27,6 +27,7 @@ const SHELL = [
   './js/features/sync.js',
   './js/features/capsula.js',
   './js/features/intro.js',
+  './js/features/preguntas.js', './js/features/canciones.js', './js/features/diario.js', './js/features/animo.js', './js/features/jibun.js', './js/features/retos.js',
   './js/features/cartas.js', './js/features/stickers.js', './js/features/sticker-maker.js', './js/features/bg-remove.js',
   './js/features/ajustes.js',
   './js/features/perfil.js',
@@ -141,6 +142,8 @@ const NOTICES = {
   coupon: ['Te regalaron un cupón', 'Míralo en la Cuponera', '#/cupones'],
   memory: ['Un recuerdo nuevo', 'Hay algo nuevo en la Cápsula 🌸', '#/capsula'],
   capsule: ['Una cápsula del tiempo', 'Hay una cápsula nueva para ustedes', '#/inicio'],
+  song: ['Te dedicaron una canción', 'Escúchala en Canciones 🎵', '#/canciones'],
+  question: ['Una pregunta para ti', 'Te espera en Preguntas', '#/preguntas'],
 };
 function readNotifyKey() {
   return new Promise((resolve) => {

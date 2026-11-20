@@ -68,6 +68,8 @@ Requieren Node y Playwright con Chromium. Las pruebas usan solo datos ficticios.
 
 - Cápsula: la línea de tiempo muestra lo más reciente arriba, porque es lo que más se abre y así lo nuevo se ve sin bajar. El botón "Ver desde el inicio" la invierte para leer la historia en orden; la elección se recuerda en cada teléfono.
 - Fotos: cada recuerdo lleva hasta 6. Se comprimen en el teléfono (lado mayor de 1280 px, JPEG al 70 %, con la orientación de la cámara corregida) y se guardan en IndexedDB. Las de "Solo yo" se cifran con la misma clave que su recuerdo.
+- Preguntas y retos: salen en un orden barajado con una semilla compartida, así los dos teléfonos ven lo mismo sin servidor. No se repiten hasta terminar la lista, y al empezar otra vuelta se dejan fuera los últimos que salieron.
+- Canciones: solo enlaces de Spotify. El título se pide a Spotify y el reproductor carga solo al tocarlo, y ambos se apagan con el Modo sin terceros.
 
 ## Estructura
 

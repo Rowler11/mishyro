@@ -31,6 +31,12 @@ const load = {
   styleguide: () => import('./features/styleguide.js'),
   setup: () => import('./features/setup.js'),
   sync: () => import('./features/sync.js'),
+  preguntas: () => import('./features/preguntas.js'),
+  canciones: () => import('./features/canciones.js'),
+  diario: () => import('./features/diario.js'),
+  animo: () => import('./features/animo.js'),
+  jibun: () => import('./features/jibun.js'),
+  retos: () => import('./features/retos.js'),
 };
 
 function registerSection(base, def) {
@@ -52,7 +58,7 @@ function registerRoutes() {
   router.register('/ajustes/legal/:doc', { id: 'legal-doc', title: 'Legal y ayuda', tab: 'mas', load: load.settings });
   for (const p of SETTINGS_PAGES) router.register(`/ajustes/${p.id}`, { ...p, id: `ajustes/${p.id}`, settingsPage: p.id, tab: 'mas', load: load[p.module] || load.placeholder });
   for (const t of TABS.slice(0, 4)) registerSection(t.path, { ...t, tab: t.id, load: load[{ inicio: 'home', capsula: 'capsula', cupones: 'cupones', cartas: 'cartas' }[t.id]] });
-  for (const g of GROUPS) for (const s of g.sections) if (!s.id.startsWith('ajustes')) registerSection(`/${s.id}`, { ...s, group: g.id, tab: 'mas' });
+  for (const g of GROUPS) for (const s of g.sections) if (!s.id.startsWith('ajustes')) registerSection(`/${s.id}`, { ...s, group: g.id, tab: 'mas', load: load[s.module] });
   for (const s of HIDDEN) registerSection(`/${s.id}`, { ...s, tab: s.id === 'buscar' ? 'buscar' : 'mas', neutral: s.id === 'yoru', load: load[s.module] });
   router.register('/no-encontrado', { id: 'no-encontrado', title: 'No encontrado', notFound: true, tab: 'mas', load: load.placeholder });
 }

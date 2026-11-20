@@ -9,7 +9,7 @@
 
 export const CONFIG = {
   // Versión visible de la app (Ajustes > Acerca de). Súbela junto con CACHE_VERSION en sw.js.
-  appVersion: '0.2.0',
+  appVersion: '0.3.0',
   // Prefijo de la base de datos y de las 2 preferencias en localStorage (tema y perfil activo).
   // Si lo cambias, también en theme-boot.js. Cambiarlo "empieza de cero" en cada dispositivo.
   storageKey: 'aishiteru',
@@ -187,15 +187,61 @@ export const CONFIG = {
     { id: 'cfg:legal:uso', title: 'Aviso de uso', summary: 'App privada de pareja para uso personal. El Rincón privado es solo para adultos que consienten. Las grabaciones no se comparten sin permiso.', body: "Aishiteru es una app privada de pareja, para el uso personal de dos personas. No es un servicio público ni comercial.\n\n## Uso esperado\n- Es para conectar en persona, no para controlar al otro. Nada en la app sirve para vigilar, rastrear ni revisar el teléfono de la otra persona.\n- Cada uno decide qué comparte. \"Solo yo\" se respeta.\n\n## Contenido\n- Lo que escriben, las fotos y las grabaciones son de quienes las crean. No se comparten fuera de la pareja sin el permiso de los dos.\n- El Rincón privado es solo para adultos que consienten, y cada uno puede decir que no en cualquier momento.\n\n## Responsabilidad\n- La app se entrega tal cual, como un regalo hecho a mano. Hagan copias de seguridad con frecuencia: si se borran los datos del navegador sin copia, se pierden.\n- Si algo falla, no se pierde lo guardado salvo que se borre el dispositivo." },
     { id: 'cfg:legal:salud', title: 'Avisos de salud', summary: 'El ciclo y sus predicciones son estimaciones, no consejo médico ni anticonceptivo. Los datos de salud de la mascota no reemplazan al veterinario.', body: "## Ciclo\nEl calendario del ciclo, sus predicciones y la ventana fértil son estimaciones hechas con los datos que se ingresan. No son consejo médico ni un método anticonceptivo. Ante cualquier duda de salud, consulten a un profesional.\n\n## Mascotas\nLas vacunas, citas y notas de salud de la mascota son un apoyo para recordar. No reemplazan la opinión del veterinario.\n\n## Ánimo\nEl medidor de ánimo es para acompañarse. Si alguno está pasando por un momento difícil, busquen apoyo de personas de confianza o de un profesional." },
     { id: 'cfg:legal:permisos', title: 'Permisos', summary: 'Para qué se usan la cámara, el micrófono, la ubicación, las notificaciones y el almacenamiento, y cómo quitarlos desde Chrome.', body: "La app pide cada permiso solo cuando se usa la función que lo necesita, explica antes para qué es y sigue funcionando si se niega.\n\n- Fotos y cámara: para agregar fotos a los recuerdos y cartas. Las fotos se achican y se quedan en el dispositivo.\n- Micrófono: para las notas de voz, solo después de tocar \"Grabar\".\n- Ubicación: para compartir dónde están en un momento puntual, con la precisión que elijan. No hay seguimiento continuo.\n- Notificaciones: para los recordatorios suaves.\n- Almacenamiento persistente: para que el navegador no borre los datos por su cuenta.\n\n## Cómo quitarlos en Chrome\nEn Android: mantener presionado el ícono de la app, \"Información\", \"Permisos\". En el PC: el candado junto a la dirección, \"Configuración del sitio\". Desde ahí también se puede borrar todo lo guardado." },
-    { id: 'cfg:legal:licencias', title: 'Licencias y créditos', summary: 'Lucide (ISC), Leaflet (BSD-2), OpenStreetMap (atribución), fuentes Shippori Mincho, Zen Maru Gothic y Atkinson Hyperlegible (OFL), ONNX Runtime Web (MIT), el modelo U²-Net (Apache 2.0), qrcode-generator (MIT), jsQR (Apache 2.0) y los términos de Spotify.', body: "La app usa piezas de terceros con licencias libres. Gracias a sus autores.\n\n- Íconos Lucide, licencia ISC.\n- Fuentes Shippori Mincho, Zen Maru Gothic y Atkinson Hyperlegible, licencia SIL Open Font License 1.1. Se sirven desde la propia app.\n- Mapas (cuando lleguen): Leaflet, licencia BSD-2, con datos de OpenStreetMap y su atribución obligatoria en el mapa.\n- Quitar el fondo de las estampillas: ONNX Runtime Web de Microsoft, licencia MIT, con el modelo U²-Net pequeño de Xuebin Qin y colaboradores, licencia Apache 2.0. Funciona dentro del teléfono; la foto no sale de él.\n- Códigos QR para unir equipos: qrcode-generator de Kazuhiko Arase, licencia MIT, y jsQR de Cosmo Wolfe, licencia Apache 2.0, para leer el código con la cámara. Todo pasa dentro del equipo.\n- Spotify (cuando llegue): los reproductores embebidos siguen los términos de Spotify.\n\nLas ilustraciones japonesas, el logo de sakura y el resto del diseño son propios de esta app." },
+    { id: 'cfg:legal:licencias', title: 'Licencias y créditos', summary: 'Lucide (ISC), Leaflet (BSD-2), OpenStreetMap (atribución), fuentes Shippori Mincho, Zen Maru Gothic y Atkinson Hyperlegible (OFL), ONNX Runtime Web (MIT), el modelo U²-Net (Apache 2.0), qrcode-generator (MIT), jsQR (Apache 2.0) y los términos de Spotify.', body: "La app usa piezas de terceros con licencias libres. Gracias a sus autores.\n\n- Íconos Lucide, licencia ISC.\n- Fuentes Shippori Mincho, Zen Maru Gothic y Atkinson Hyperlegible, licencia SIL Open Font License 1.1. Se sirven desde la propia app.\n- Mapas (cuando lleguen): Leaflet, licencia BSD-2, con datos de OpenStreetMap y su atribución obligatoria en el mapa.\n- Quitar el fondo de las estampillas: ONNX Runtime Web de Microsoft, licencia MIT, con el modelo U²-Net pequeño de Xuebin Qin y colaboradores, licencia Apache 2.0. Funciona dentro del teléfono; la foto no sale de él.\n- Códigos QR para unir equipos: qrcode-generator de Kazuhiko Arase, licencia MIT, y jsQR de Cosmo Wolfe, licencia Apache 2.0, para leer el código con la cámara. Todo pasa dentro del equipo.\n- Spotify: en Canciones se usa solo su reproductor oficial y su servicio público de nombres (oEmbed), según los términos de Spotify. La app no busca en Spotify ni guarda audio.\n\nLas ilustraciones japonesas, el logo de sakura y el resto del diseño son propios de esta app." },
     { id: 'cfg:legal:version', title: 'Versión y novedades', summary: 'Versión instalada, historial de cambios y cómo reportar un problema sin datos personales.', body: "Aquí está la versión instalada y cómo contar un problema sin compartir datos personales.\n\n## Reportar un problema\n\"Copiar reporte técnico\" copia la versión, el navegador, el tamaño de pantalla, cuántos elementos hay por sección (solo números) y los últimos errores técnicos. No incluye nombres, textos, fotos ni fechas de ustedes. Pueden pegarlo en un mensaje o en un correo." },
   ],
   legalFooter: 'Estos textos no constituyen asesoría legal. David debe revisarlos y adaptarlos.',
 
   // Bancos que se completan en la fase donde se usan (docs/11 §5).
-  quiz: [], // Fase 3
+  // Plantillas del quiz "¿Cuánto me conoces?": cada uno elige una, escribe 4 opciones sobre sí y marca la correcta.
+  quiz: [
+    {"id": "cfg:quiz:comida", "text": "¿Cuál es mi comida favorita?"},
+    {"id": "cfg:quiz:dia-libre", "text": "¿Qué haría en un día libre perfecto?"},
+    {"id": "cfg:quiz:miedo", "text": "¿Qué me da más miedo?"},
+    {"id": "cfg:quiz:cancion", "text": "¿Cuál es mi canción del momento?"},
+    {"id": "cfg:quiz:japon", "text": "¿Qué lugar de Japón quiero conocer primero?"},
+    {"id": "cfg:quiz:detalle", "text": "¿Qué detalle tuyo me enamora más?"},
+    {"id": "cfg:quiz:antojo", "text": "¿Qué antojo no puedo resistir?"},
+    {"id": "cfg:quiz:loteria", "text": "¿Qué haría si me ganara la lotería?"},
+  ],
   bucketList: [], // Fase 4A
-  weeklyChallenges: [], // Fase 3
+  // Retos semanales (uno por semana, sin repetirse hasta terminar la lista).
+  weeklyChallenges: [
+    {"id": "cfg:challenge:01", "title": "Nota escondida", "text": "Escóndele una nota a mano donde la encuentre durante la semana.", "category": "detalle"},
+    {"id": "cfg:challenge:02", "title": "Desayuno sorpresa", "text": "Prepárale el desayuno un día que no lo espere.", "category": "detalle"},
+    {"id": "cfg:challenge:03", "title": "Tres cosas que admiro", "text": "Díganse en persona tres cosas que admiran del otro.", "category": "reflexión"},
+    {"id": "cfg:challenge:04", "title": "Caminata sin rumbo", "text": "Salgan a caminar 30 minutos sin plan y sin mirar el teléfono.", "category": "salida"},
+    {"id": "cfg:challenge:05", "title": "Noche de juegos de mesa", "text": "Una partida de lo que tengan en casa; quien pierde lava la loza.", "category": "juego"},
+    {"id": "cfg:challenge:06", "title": "Barrio nuevo", "text": "Conozcan juntos un barrio o parque de Bogotá donde nunca han estado.", "category": "aventura"},
+    {"id": "cfg:challenge:07", "title": "Playlist de la semana", "text": "Cada uno elige 3 canciones que le recuerden al otro y las escuchan juntos.", "category": "detalle"},
+    {"id": "cfg:challenge:08", "title": "Recuerdo favorito", "text": "Cuéntense su recuerdo favorito de la relación hasta hoy.", "category": "reflexión"},
+    {"id": "cfg:challenge:09", "title": "Cocinar algo nuevo", "text": "Preparen juntos una receta que ninguno haya hecho.", "category": "aventura"},
+    {"id": "cfg:challenge:10", "title": "Foto recreada", "text": "Recreen una foto vieja de ustedes y agréguenla a la Cápsula.", "category": "juego"},
+    {"id": "cfg:challenge:11", "title": "Carta corta", "text": "Escríbanse una carta de pocas líneas y léanla en voz alta.", "category": "detalle"},
+    {"id": "cfg:challenge:12", "title": "Día del sí", "text": "Una tarde, cada uno dice que sí a un plan sencillo que proponga el otro.", "category": "juego"},
+    {"id": "cfg:challenge:13", "title": "Picnic", "text": "Un picnic en un parque o en la sala, con lo que haya en la nevera.", "category": "salida"},
+    {"id": "cfg:challenge:14", "title": "Lo que necesito", "text": "Cada uno cuenta una cosa pequeña que le haría sentir más querido.", "category": "reflexión"},
+    {"id": "cfg:challenge:15", "title": "Atardecer", "text": "Busquen un lugar alto o abierto para ver el atardecer juntos.", "category": "salida"},
+    {"id": "cfg:challenge:16", "title": "Masaje de 10 minutos", "text": "Turnos de 10 minutos de masaje de espalda o de manos.", "category": "detalle"},
+    {"id": "cfg:challenge:17", "title": "Primera cita, versión 2", "text": "Vuelvan al lugar de una de sus primeras citas o recréenla en casa.", "category": "aventura"},
+    {"id": "cfg:challenge:18", "title": "Preguntas rápidas", "text": "20 preguntas de \"esto o aquello\" en voz alta, sin pensarlo mucho.", "category": "juego"},
+    {"id": "cfg:challenge:19", "title": "Sueño pequeño", "text": "Elijan un sueño o plan y den juntos el primer paso esta semana.", "category": "reflexión"},
+    {"id": "cfg:challenge:20", "title": "Origami", "text": "Aprendan a doblar una grulla y regálensela con un deseo escrito.", "category": "juego"},
+    {"id": "cfg:challenge:21", "title": "Mercado juntos", "text": "Hagan el mercado juntos y elijan un antojo nuevo para probar.", "category": "salida"},
+    {"id": "cfg:challenge:22", "title": "Cumplido diario", "text": "Cada día de la semana, un cumplido distinto en persona.", "category": "detalle"},
+    {"id": "cfg:challenge:23", "title": "Plan de lluvia", "text": "El primer día que llueva: cobija, chocolate y una película.", "category": "detalle"},
+    {"id": "cfg:challenge:24", "title": "Algo japonés", "text": "Prueben juntos algo de Japón: comida, una palabra nueva o un anime corto.", "category": "aventura"},
+    {"id": "cfg:challenge:25", "title": "Gracias por…", "text": "Díganse cinco cosas que agradecen del otro de este mes.", "category": "reflexión"},
+    {"id": "cfg:challenge:26", "title": "Bailar en casa", "text": "Pongan una canción suya y bailen en la sala, aunque sea mal.", "category": "juego"},
+  ],
+  // Pasos del reto que se marcan durante la semana.
+  challengeSteps: ['Elegimos el día', 'Lo hicimos', 'Nos contamos qué tal'],
+  // Mensajes al terminar el quiz, según cuántas acertó (de mayor a menor).
+  quizMessages: [
+    { min: 1, text: 'Me conoces de memoria.' },
+    { min: 0.6, text: 'Vas muy bien.' },
+    { min: 0, text: 'Hay mucho por descubrir, y eso es lo bonito.' },
+  ],
   firsts: [], // Fase 4A
   gratitudePrompts: [], // Fase 4A
   weeklyReviewQuestions: [], // Fase 4A

@@ -27,7 +27,7 @@ const count = (n) => `${n} ${n === 1 ? 'sección' : 'secciones'}`;
 const visibleGroups = () => GROUPS.map((g) => ({ ...g, sections: g.sections.filter((s) => !s.moment) })).filter((g) => g.sections.length);
 
 function card(s, i) {
-  const soon = !READY.has(String(s.phase));
+  const soon = !s.module && !READY.has(String(s.phase));
   const a = el('a', { class: 'card card-link section-card door-card', href: `#/${s.id}`, title: soon ? `${s.title}: llega pronto` : s.title },
     el('span', { class: 'section-card-top' },
       el('span', { class: 'section-icon' }, icon(s.icon)),

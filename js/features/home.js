@@ -1,7 +1,7 @@
 // Inicio (docs/05 Pestaña 1, Mejoras en Inicio, §13, §24 and "Orden de las tarjetas de Inicio").
 // Cards in this order, skipping the ones that do not apply:
 // 1 counter · 2 good morning / night · 3 today's celebration · 4 Pensando en ti · 5 omikuji ·
-// 6 next special date · 6b next milestone · 10 backup reminder.
+// 6 next special date · 6b next milestone · 7 + 8 "Para hoy" (question, challenge, mood) · 10 backup reminder.
 // Layout "Carrusel del día" (decided 2026-11-19): counter on top, the day's cards (greeting,
 // Pensando en ti, reason) in a swipeable carousel, then dates, milestone and backup.
 // From 900 px the carousel turns into a row of three cards.
@@ -325,6 +325,28 @@ function comingCard(data, start) {
     })));
 }
 
+// ---------- 7 + 8. "Para hoy": the question of the day, the week's challenge and the mood (Fase 3) ----------
+// A kind hint first when the other one marked a low mood and allowed it (docs/05 Detalles: Ánimo).
+async function todayCard() {
+  const [qa, retos, animo] = await Promise.all([import('./preguntas.js'), import('./retos.js'), import('./animo.js')]);
+  const me = profile.active();
+  const [pending, week, hint, mine] = await Promise.all([
+    qa.pendingToday().catch(() => null), retos.ensureWeek().catch(() => null), animo.partnerLowHint().catch(() => null), animo.getMood(util.localDay(), me).catch(() => null)]);
+  const rows = [];
+  if (hint) rows.push({ href: '#/animo', icon: 'heart', title: `Hoy a ${hint.name} podría venirle bien un abrazo`, sub: 'Un detalle pequeño hace la diferencia.' });
+  if (pending?.count) rows.push({ href: '#/preguntas', icon: 'message-circle-question', title: pending.partnerDone ? 'Ya te respondieron: te toca' : 'La pregunta del día', sub: pending.first });
+  if (week?.rec && !week.rec.doneAt && week.challenge) rows.push({ href: '#/retos', icon: 'flag', title: `Reto de la semana: ${week.challenge.title}`, sub: week.challenge.text });
+  if (!mine) rows.push({ href: '#/animo', icon: 'smile', title: '¿Cómo amaneces?', sub: 'Marca tu ánimo en un toque.' });
+  if (!rows.length) return null;
+  return el('section', { class: 'home-card today-card', 'aria-labelledby': 'today-title' },
+    el('h2', { class: 'card-kicker', id: 'today-title' }, 'Para hoy'),
+    el('ul', { class: 'today-list' }, rows.map((r) => el('li', {},
+      el('a', { class: 'today-row', href: r.href },
+        el('span', { class: 'section-icon' }, icon(r.icon, { size: 20 })),
+        el('span', { class: 'today-text' }, el('span', { class: 'today-title' }, r.title), r.sub ? el('span', { class: 'muted small clamp-2' }, r.sub) : null),
+        icon('chevron-right', { size: 18, cls: 'list-chevron' }))))));
+}
+
 // ---------- 10. backup reminder ----------
 function backupCard(meta) {
   const last = meta.lastBackupAt ? time.parseStart(meta.lastBackupAt) : null;
@@ -371,11 +393,13 @@ export async function render() {
     if (counter) cleanups.push(counter.cleanup);
     const events = todayEvents(data, start, recv);
     const slides = [greetingCard(data, recv), thinkingCard(data, recv), omikujiCard(data)].filter(Boolean);
+    const today = await todayCard().catch((e) => { console.error(e); return null; });
     body.replaceChildren(...[
       counter ? counter.card : noStartCard(),
       celebrationCard(events),
       slides.length ? daySwitcher(slides) : null,
       comingCard(data, start),
+      today,
       backupCard(data.meta),
     ].filter(Boolean));
     ui.stagger(body);

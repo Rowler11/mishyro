@@ -1,5 +1,17 @@
 # Cambios
 
+## 0.3.0 (Fase 3, parte 1: el día a día)
+
+- Preguntas: una pregunta del día para los dos, sin repetirse hasta terminar la lista. La respuesta del otro queda boca abajo hasta que respondes; cuando los dos responden se voltean, sale un sello y "Coincidencia" si usaron la misma palabra. Sofía puede escribir su propia pregunta. Historial con búsqueda, favoritas y racha.
+- Quiz de pareja: cada uno arma el suyo desde 8 plantillas (respuesta correcta incluida) y el otro lo juega. Se guarda el puntaje.
+- Canciones: dedicar una canción de Spotify con una dedicatoria que se escribe letra por letra. "Nuestra canción", "De la semana", favoritas y una playlist con modo aleatorio para el camino. El reproductor de Spotify solo carga cuando lo tocas.
+- Diario: una página por día con ánimo y una foto opcional. Pestaña de fotos por mes y "Hace un año".
+- Ánimo: marcar cómo amaneces con un toque. Gráfica de la semana o el mes de los dos. Si quieres, el otro ve una pista suave cuando tienes un día bajo ("podría venirle bien un abrazo"); viene apagado.
+- Mi espacio: un rincón solo tuyo (notas, borradores, ideas de regalo, fotos, una nota al futuro que se abre en su fecha), con tu PIN personal y tu color.
+- Reto semanal: un reto de pareja cada lunes, con pasos, nota, sello al cumplirlo, historial y semanas seguidas.
+- Inicio tiene "Para hoy": la pregunta pendiente, el reto de la semana y "¿Cómo amaneces?", solo cuando falta algo.
+- Avisos cariñosos nuevos (si están prendidos): cuando te dedican una canción o te hacen una pregunta.
+
 ## 0.2.0 (Fase A: sincronización en vivo)
 
 - Nuevo en Ajustes > Sincronización: unan sus celulares y sus PC para tener lo mismo en todos, al instante mientras la app está abierta. Lo que se guarda sin internet se envía al volver.
