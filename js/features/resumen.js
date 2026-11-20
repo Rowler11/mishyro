@@ -113,6 +113,11 @@ export async function stats(p, today = util.localDay()) {
   s.firsts = (await rows('firsts')).filter((r) => !r.skipped && inP(r.date)).length;
   s.saved = (await rows('savingsEntries')).filter((r) => inP(r.date)).reduce((t, r) => t + (r.type === 'withdraw' ? -1 : 1) * (Number(r.amount) || 0), 0);
   s.goals = (await rows('savingsGoals')).filter((r) => r.status === 'done' && inP(r.doneAt || r.updatedAt)).length;
+  // Fase 4B: Hogar (never the cycle nor its private layer).
+  s.cooked = (await rows('recipes')).flatMap((r) => r.cooked || []).filter((c) => inP(c.date)).length;
+  s.homeMenus = menus;
+  s.petMoments = (await rows('petRecords')).filter((r) => r.type === 'moment' && inP(r.date)).length;
+  s.prizes = (await rows('scratchCards')).filter((r) => r.scratchedAt && inP(r.scratchedAt)).length;
   const reasons = (await rows('content')).filter((r) => r.kind === 'reason' && r.text);
   s.reason = reasons.length ? reasons[Math.floor(Math.random() * reasons.length)].text : '';
   return s;
@@ -139,6 +144,9 @@ export function cards(p, s) {
   add(s.gratitude, { key: 'gratitude', kicker: 'Gratitud', value: fmtNum.format(s.gratitude), label: s.gratitude === 1 ? 'nota de gracias' : 'notas de gracias', sub: 'en el frasco' });
   add(s.plans || s.dreams, { key: 'dreams', kicker: 'Planes y sueños', value: fmtNum.format(s.plans + s.dreams), label: 'cumplidos', sub: [s.plans ? plural(s.plans, 'plan', 'planes') : '', s.dreams ? plural(s.dreams, 'sueño', 'sueños') : ''].filter(Boolean).join(' y ') });
   add(s.saved || s.goals, { key: 'saved', kicker: 'Alcancía', value: s.saved ? util.formatCOP(s.saved) : fmtNum.format(s.goals), label: s.saved ? 'ahorrados juntos' : 'metas cumplidas', sub: s.saved && s.goals ? plural(s.goals, 'meta cumplida', 'metas cumplidas') : '', small: true });
+  add(s.cooked, { key: 'cooked', kicker: 'En la cocina', value: fmtNum.format(s.cooked), label: s.cooked === 1 ? 'plato cocinado juntos' : 'platos cocinados juntos', sub: s.homeMenus ? plural(s.homeMenus, 'cena en casa', 'cenas en casa') : '' });
+  add(s.petMoments, { key: 'pets', kicker: 'Familia peluda', value: fmtNum.format(s.petMoments), label: s.petMoments === 1 ? 'momento con su mascota' : 'momentos con su mascota', sub: '' });
+  add(full && s.prizes, { key: 'prizes', kicker: 'Rasca y gana', value: fmtNum.format(s.prizes), label: s.prizes === 1 ? 'premio raspado' : 'premios raspados', sub: '' });
   add(full && s.voice, { key: 'voice', kicker: 'Notas de voz', value: fmtNum.format(s.voice), label: s.voice === 1 ? 'nota de voz' : 'notas de voz', sub: '' });
   add(s.badges, { key: 'badges', kicker: 'Insignias', value: fmtNum.format(s.badges), label: s.badges === 1 ? 'sello nuevo' : 'sellos nuevos', sub: 'en la vitrina' });
   out.push({ key: 'end', kicker: full && s.reason ? 'Una razón, entre muchas' : '', value: '', label: p.kind === 'month' ? 'Por otro mes juntos' : 'Por otro año juntos', quote: full ? s.reason : '', end: true });

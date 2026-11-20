@@ -281,7 +281,7 @@ export async function render() {
 
   const load = async () => {
     for (const u of urls) URL.revokeObjectURL(u); urls.clear();
-    const [pets, records, contacts] = await Promise.all([db.query('pets'), db.query('petRecords'), db.query('petContacts')]);
+    const [pets, records, contacts, homePrefs] = await Promise.all([db.query('pets'), db.query('petRecords'), db.query('petContacts'), db.getSettings('home', { petHidden: false })]);
     const list = pets.filter((p) => !p.deleted).sort((a, b) => (!!a.memorial - !!b.memorial) || (a.createdAt || '').localeCompare(b.createdAt || ''));
     if (!list.length) { body.replaceChildren(ui.emptyState({ title: 'Su primera mascota', text: 'Perfil, salud, peso y fotos de cada hijo peludo.', art: 'omamori', action: { label: 'Agregar mascota', onClick: add } })); return; }
     const pet = list.find((p) => p.id === selected) || list[0];
@@ -329,7 +329,7 @@ export async function render() {
     // ---- tabs ----
     const TABS = [['perfil', 'Perfil'], ['salud', 'Salud'], ['peso', 'Peso'], ['vet', 'Veterinario'], ['cuidados', 'Cuidados'], ['gastos', 'Gastos'], ['momentos', 'Momentos']];
     const tabRow = el('div', { class: 'chip-row', role: 'tablist', 'aria-label': `Secciones de ${pet.name}` },
-      TABS.map(([id, label]) => el('button', { class: 'chip', type: 'button', role: 'tab', 'aria-selected': String(tab === id), 'aria-pressed': String(tab === id), onClick: () => { tab = id; load(); } }, label)));
+      TABS.map(([id, label]) => el('button', { class: 'chip', type: 'button', role: 'tab', 'aria-selected': String(tab === id), onClick: () => { tab = id; load(); } }, label)));
 
     const views = {
       perfil: () => {
@@ -341,7 +341,8 @@ export async function render() {
           row('Color y señas', pet.color), row('Microchip', pet.microchip),
           pet.traits?.length ? el('div', {}, el('dt', {}, 'Personalidad'), el('dd', { class: 'tag-row' }, pet.traits.map((t) => el('span', { class: 'tag' }, t)))) : null,
           row('Favoritos', pet.favorites), row('Notas', pet.notes)) : empty('Completen su perfil: personalidad, cosas favoritas y señas.')],
-        ui.button({ label: 'Editar perfil', iconName: 'pencil', small: true, variant: 'ghost', onClick: () => petEditor(pet, { onSaved: reload, onDeleted: reload }) }))];
+        ui.button({ label: 'Editar perfil', iconName: 'pencil', small: true, variant: 'ghost', onClick: () => petEditor(pet, { onSaved: reload, onDeleted: reload }) })),
+        ui.toggle({ label: 'Tarjeta en Inicio', checked: !homePrefs.petHidden, hint: 'Foto, días en casa y la próxima dosis.', onChange: (v) => db.setSettings('home', { petHidden: !v }) })];
       },
       salud: () => {
         const health = [...byType('vaccine'), ...byType('deworm')];
@@ -492,6 +493,34 @@ export async function render() {
 }
 
 /** Original maneki-neko (raised paw), a small decorative line drawing. */
+/**
+ * Inicio card (Fase 4B): photo, days at home or the next birthday/arrival, and a dose that is due.
+ * One pet (the first that is not in memory); hidden with "Ocultar" (per device, Ajustes de Inicio).
+ */
+export async function homeCard({ onChange } = {}) {
+  const prefs = await db.getSettings('home', { petHidden: false });
+  if (prefs.petHidden) return null;
+  const pets = (await db.query('pets')).filter((p) => !p.deleted && !p.memorial && p.name);
+  if (!pets.length) return null;
+  const pet = pets.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))[0];
+  const recs = (await db.query('petRecords')).filter((r) => !r.deleted && r.petId === pet.id && (r.type === 'vaccine' || r.type === 'deworm'));
+  const due = latestByProduct(recs).map((r) => ({ r, st: doseStatus(r.data?.next) })).filter((x) => x.st === 'overdue' || x.st === 'soon').sort((a, b) => a.r.data.next.localeCompare(b.r.data.next))[0];
+  const home = daysHome(pet.arrival);
+  const next = [time.nextOccurrence(pet.birth, {}) && { label: 'Cumpleaños', ...time.nextOccurrence(pet.birth, {}) }, time.nextOccurrence(pet.arrival, {}) && { label: 'Aniversario en casa', ...time.nextOccurrence(pet.arrival, {}) }].filter(Boolean).sort((a, b) => a.days - b.days)[0];
+  const urls = new Set();
+  const line = next && next.days <= 30 ? (next.days === 0 ? `${next.label}: ¡hoy!` : `${next.label} en ${next.days} ${next.days === 1 ? 'día' : 'días'}`)
+    : home !== null ? `${home.toLocaleString('es-CO')} días en casa` : ageText(pet.birth) || '';
+  const hide = async () => { await db.setSettings('home', { petHidden: true }); ui.toast(`Listo. Vuelve a mostrar a ${pet.name} desde Mascotas.`); onChange?.(); };
+  return el('section', { class: 'home-card pet-home-card', 'aria-labelledby': 'pet-home-title' },
+    el('a', { class: 'pet-home-link', href: '#/mascotas' },
+      el('span', { class: 'pet-home-photo' }, pet.mediaId ? mediaImg(pet.mediaId, { alt: '', urls }) : petArt(pet.species, { size: 56 })),
+      el('span', { class: 'pet-home-text' },
+        el('span', { class: 'pet-home-name', id: 'pet-home-title' }, pet.name),
+        line ? el('span', {}, line) : null,
+        due ? el('span', { class: `badge ${due.st === 'overdue' ? 'badge-danger' : 'badge-warn'}` }, `${due.r.data.product}: ${due.st === 'overdue' ? 'vencida' : `el ${fmtDM.format(util.parseDay(due.r.data.next))}`}`) : null)),
+    el('button', { class: 'icon-btn', type: 'button', 'aria-label': `Ocultar la tarjeta de ${pet.name} en Inicio`, onClick: hide }, icon('eye-off', { size: 18 })));
+}
+
 export function maneki({ size = 56 } = {}) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 64 64'); svg.setAttribute('width', size); svg.setAttribute('height', size);

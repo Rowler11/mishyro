@@ -16,6 +16,9 @@ export const SOURCES = [
   { id: 'diario', label: 'Diario', store: 'diary', ids: (r) => (r.mediaId ? [r.mediaId] : []), title: (r) => r.text?.split('\n')[0]?.slice(0, 60), href: () => '#/diario', hrefLabel: 'Ir al diario' },
   { id: 'mapa', label: 'Mapa', store: 'places', ids: (r) => r.mediaIds || [], title: (r) => r.name, href: (r) => `#/mapa/${r.id}`, hrefLabel: 'Ver el lugar' },
   { id: 'primeras', label: 'Primeras veces', store: 'firsts', ids: (r) => (r.mediaId ? [r.mediaId] : []), title: (r) => r.title, href: () => '#/primeras-veces', hrefLabel: 'Ver en el álbum' },
+  { id: 'mascotas', label: 'Mascotas', store: 'petRecords', where: (r) => r.type === 'moment', ids: (r) => r.mediaIds || [], title: (r) => r.data?.title || 'Momento', href: () => '#/mascotas', hrefLabel: 'Ir a Mascotas' },
+  { id: 'mascotas', label: 'Mascotas', store: 'pets', ids: (r) => (r.mediaId ? [r.mediaId] : []), title: (r) => r.name, href: () => '#/mascotas', hrefLabel: 'Ir a Mascotas' },
+  { id: 'recetas', label: 'Recetas', store: 'recipes', ids: (r) => (r.mediaId ? [r.mediaId] : []), title: (r) => r.name, href: () => '#/recetas', hrefLabel: 'Ir a Recetas' },
   { id: 'photobooth', label: 'Photobooth', store: 'content', where: (r) => r.kind === 'purikura', ids: (r) => (r.mediaId ? [r.mediaId] : []), title: () => 'Photobooth', href: () => '#/photobooth', hrefLabel: 'Abrir Photobooth' },
 ];
 
@@ -70,11 +73,11 @@ export async function render() {
 
   const draw = () => {
     urls.forEach((u) => URL.revokeObjectURL(u)); urls.clear();
-    const present = SOURCES.filter((s) => all.some((p) => p.source === s.id));
+    const present = SOURCES.filter((s, i) => SOURCES.findIndex((x) => x.id === s.id) === i && all.some((p) => p.source === s.id));
     if (filter !== 'todas' && !present.some((s) => s.id === filter)) filter = 'todas';
     const list = filter === 'todas' ? all : all.filter((p) => p.source === filter);
     if (!all.length) {
-      body.replaceChildren(ui.emptyState({ title: 'Todavía no hay fotos', text: 'Las fotos de la Cápsula, el Diario, el Mapa, las Primeras veces y el Photobooth aparecen aquí solas.', art: 'crane', action: { label: 'Guardar un recuerdo', onClick: () => { location.hash = '#/capsula/nuevo'; } } }));
+      body.replaceChildren(ui.emptyState({ title: 'Todavía no hay fotos', text: 'Las fotos de la Cápsula, el Diario, el Mapa, las Primeras veces, el Photobooth, Mascotas y Recetas aparecen aquí solas.', art: 'crane', action: { label: 'Guardar un recuerdo', onClick: () => { location.hash = '#/capsula/nuevo'; } } }));
       return;
     }
     const chips = el('div', { class: 'chip-row', role: 'group', 'aria-label': 'Filtrar por origen' },

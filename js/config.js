@@ -9,7 +9,7 @@
 
 export const CONFIG = {
   // Versión visible de la app (Ajustes > Acerca de). Súbela junto con CACHE_VERSION en sw.js.
-  appVersion: '0.4.2',
+  appVersion: '0.5.0',
   // Prefijo de la base de datos y de las 2 preferencias en localStorage (tema y perfil activo).
   // Si lo cambias, también en theme-boot.js. Cambiarlo "empieza de cero" en cada dispositivo.
   storageKey: 'aishiteru',
@@ -167,6 +167,12 @@ export const CONFIG = {
     { id: 'cfg:badge:primer-sueno', name: 'Sueño cumplido', description: 'Cumplieron su primer sueño.', icon: 'plane', condition: { type: 'count', store: 'dreams', where: { status: 'done' }, min: 1 } },
     { id: 'cfg:badge:primera-voz', name: 'Primera nota de voz', description: 'Grabaron su primera nota de voz para el otro.', icon: 'mic', condition: { type: 'count', store: 'voiceNotes', min: 1 } },
     { id: 'cfg:badge:revision-4', name: 'Un mes de revisiones', description: 'Hicieron 4 revisiones semanales.', icon: 'notebook-pen', condition: { type: 'count', store: 'weeklyReviews', min: 4 } },
+    { id: 'cfg:badge:primer-plato', name: 'Primer plato juntos', description: 'Cocinaron juntos su primera receta.', icon: 'chef-hat', condition: { type: 'cooked', min: 1 } },
+    { id: 'cfg:badge:10-platos', name: 'Cocina de casa', description: 'Cocinaron juntos 10 veces.', icon: 'chef-hat', condition: { type: 'cooked', min: 10 } },
+    { id: 'cfg:badge:primer-menu', name: 'Cena en casa', description: 'Armaron su primer menú de cita en casa.', icon: 'utensils', condition: { type: 'count', store: 'dateMenus', min: 1 } },
+    { id: 'cfg:badge:primer-momento-mascota', name: 'Familia peluda', description: 'Guardaron el primer momento con su mascota.', icon: 'paw-print', condition: { type: 'count', store: 'petRecords', where: { type: 'moment' }, min: 1 } },
+    { id: 'cfg:badge:cuentas-claras', name: 'Cuentas claras', description: 'Quedaron parejos por primera vez en Gastos.', icon: 'wallet', condition: { type: 'count', store: 'expenses', where: { category: 'saldo' }, min: 1 } },
+    { id: 'cfg:badge:primer-rasca', name: 'Primer premio', description: 'Rasparon su primera tarjeta.', icon: 'wand-sparkles', condition: { type: 'count', store: 'scratchCards', has: ['scratchedAt'], min: 1 } },
     { id: 'cfg:badge:100-dias', name: '100 días juntos', description: 'Cumplieron 100 días.', icon: 'heart', condition: { type: 'daysTogether', min: 100 } },
     { id: 'cfg:badge:365-dias', name: 'Un año juntos', description: 'Cumplieron 365 días.', icon: 'heart', condition: { type: 'daysTogether', min: 365 } },
   ],

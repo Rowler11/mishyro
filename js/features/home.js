@@ -400,6 +400,7 @@ export async function render() {
     const today = await todayCard().catch((e) => { console.error(e); return null; });
     const meeting = await import('./encuentro.js').then((m) => m.homeCard()).catch(() => null);
     const weekend = await import('./citas.js').then((m) => m.weekendCard()).catch(() => null);
+    const pet = await import('./mascotas.js').then((m) => m.homeCard({ onChange: build })).catch(() => null);
     body.replaceChildren(...[
       counter ? counter.card : noStartCard(),
       celebrationCard(events),
@@ -408,6 +409,7 @@ export async function render() {
       comingCard(data, start),
       today,
       weekend,
+      pet,
       backupCard(data.meta),
     ].filter(Boolean));
     ui.stagger(body);

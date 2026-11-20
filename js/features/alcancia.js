@@ -175,7 +175,7 @@ export async function render() {
     return el('li', { class: `card paper-card goal${done ? ' is-done' : ''}` },
       el('div', { class: 'goal-art' }, fuji(pct ?? 0, { size: 84, label: pct != null ? `${pct} % ahorrado` : 'Sin monto objetivo' }), el('span', { class: 'goal-icon' }, icon(g.icon || 'piggy-bank', { size: 18 }))),
       el('div', { class: 'goal-main' },
-        el('h3', { class: 'goal-name' }, g.name),
+        el('h2', { class: 'goal-name' }, g.name),
         el('p', { class: 'goal-amount' }, el('strong', {}, util.formatCOP(saved)), g.targetCOP > 0 ? el('span', { class: 'muted' }, ` de ${util.formatCOP(g.targetCOP)}`) : el('span', { class: 'muted' }, ' · sin monto objetivo')),
         done ? el('p', { class: 'muted small' }, g.status === 'done' ? `Cumplida el ${util.formatDay(g.doneAt)}` : 'Archivada')
           : el('p', { class: 'muted small' }, g.targetCOP > 0 ? (saved >= g.targetCOP ? '¡Ya está completa!' : `Faltan ${util.formatCOP(g.targetCOP - saved)}`) : 'Ponle un monto para ver cuánto falta.',
