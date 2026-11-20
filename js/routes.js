@@ -53,7 +53,7 @@ export const GROUPS = [
     { id: 'alcancia', title: 'Alcancía', jp: '貯金', romaji: 'chokin', icon: 'piggy-bank', phase: '4B', blurb: 'Metas de ahorro para sus planes.' },
     { id: 'gastos', title: 'Gastos compartidos', jp: '家計', romaji: 'kakei', icon: 'wallet', phase: '4B', blurb: 'Cuentas claras y sin culpa.' },
     { id: 'listas', title: 'Listas', jp: 'リスト', romaji: 'risuto', icon: 'list-todo', phase: '4B', module: 'listas', blurb: 'Mercado y pendientes de la casa.' },
-    { id: 'recetas', title: 'Recetas y menú en casa', jp: 'レシピ', romaji: 'reshipi', icon: 'chef-hat', phase: '4B', blurb: 'Recetas y citas para cocinar juntos.' },
+    { id: 'recetas', title: 'Recetas y menú en casa', jp: 'レシピ', romaji: 'reshipi', icon: 'chef-hat', phase: '4B', module: 'recetas', blurb: 'Recetas y citas para cocinar juntos.' },
   ] },
   { id: 'personal', title: 'Mi espacio', jp: '自分', romaji: 'jibun', sections: [
     { id: 'jibun', title: 'Mi espacio', jp: '自分', romaji: 'jibun', icon: 'user-round', phase: '3', module: 'jibun', lock: 'person', blurb: 'Lo tuyo, solo para ti.' },

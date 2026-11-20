@@ -20,6 +20,7 @@ const load = {
   placeholder: () => import('./features/placeholder.js'),
   listas: () => import('./features/listas.js'),
   mascotas: () => import('./features/mascotas.js'),
+  recetas: () => import('./features/recetas.js'),
   home: () => import('./features/home.js'),
   capsula: () => import('./features/capsula.js'),
   cupones: () => import('./features/cupones.js'),
