@@ -10,6 +10,7 @@
 // anniversary is not repeated there) and the backup reminder is a slim note.
 import { ui, util, db, profile, seed, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
+import * as dates from '../core/dates.js';
 
 const { el, icon } = util;
 const fmtLong = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -282,19 +283,7 @@ function daySwitcher(slides) {
 
 // ---------- 6. next special date ----------
 function upcomingDates(data, start) {
-  const today = new Date();
-  const list = [];
-  const hasAnniversary = data.specialDates.some((d) => d.kind === 'anniversary');
-  if (start && !hasAnniversary) list.push({ id: 'start', name: 'Nuestro aniversario', kind: 'anniversary', date: util.localDay(start), recurring: 'yearly' });
-  for (const who of profile.PEOPLE) {
-    const birth = profile.person(who).birth;
-    const listed = data.specialDates.some((d) => d.kind === 'birthday' && d.personOrPetId === who);
-    if (birth && !listed) list.push({ id: `birth:${who}`, name: `Cumpleaños de ${profile.name(who)}`, kind: 'birthday', date: birth, recurring: 'yearly' });
-  }
-  list.push(...data.specialDates);
-  return list.map((d) => ({ ...d, next: time.nextOccurrence(d.date, { recurring: d.recurring || 'yearly', today }) }))
-    .filter((d) => d.next && d.next.days > 0)
-    .sort((a, b) => a.next.days - b.next.days);
+  return dates.upcoming(dates.withProfile(data.specialDates, start)).filter((d) => d.next.days > 0);
 }
 
 // ---------- 6 + 6b. "Lo que viene": special dates and the next milestone in one list ----------
@@ -328,11 +317,14 @@ function comingCard(data, start) {
 // ---------- 7 + 8. "Para hoy": the question of the day, the week's challenge and the mood (Fase 3) ----------
 // A kind hint first when the other one marked a low mood and allowed it (docs/05 Detalles: Ánimo).
 async function todayCard() {
-  const [qa, retos, animo] = await Promise.all([import('./preguntas.js'), import('./retos.js'), import('./animo.js')]);
+  const [qa, retos, animo, rem] = await Promise.all([import('./preguntas.js'), import('./retos.js'), import('./animo.js'), import('./recordatorios.js')]);
   const me = profile.active();
-  const [pending, week, hint, mine] = await Promise.all([
-    qa.pendingToday().catch(() => null), retos.ensureWeek().catch(() => null), animo.partnerLowHint().catch(() => null), animo.getMood(util.localDay(), me).catch(() => null)]);
+  const [pending, week, hint, mine, soon] = await Promise.all([
+    qa.pendingToday().catch(() => null), retos.ensureWeek().catch(() => null), animo.partnerLowHint().catch(() => null), animo.getMood(util.localDay(), me).catch(() => null),
+    rem.dueSoon().catch(() => [])]);
   const rows = [];
+  // Recordatorios suaves (§41): mesiversario, the weekly date and their own, when they are close.
+  for (const r of soon.slice(0, 2)) rows.push(r);
   if (hint) rows.push({ href: '#/animo', icon: 'heart', title: `Hoy a ${hint.name} podría venirle bien un abrazo`, sub: 'Un detalle pequeño hace la diferencia.' });
   if (pending?.count) rows.push({ href: '#/preguntas', icon: 'message-circle-question', title: pending.partnerDone ? 'Ya te respondieron: te toca' : 'La pregunta del día', sub: pending.first });
   if (week?.rec && !week.rec.doneAt && week.challenge) rows.push({ href: '#/retos', icon: 'flag', title: `Reto de la semana: ${week.challenge.title}`, sub: week.challenge.text });

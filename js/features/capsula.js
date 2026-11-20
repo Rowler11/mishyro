@@ -127,9 +127,9 @@ function detailView(m, { bag, onEdit, onDelete, back }) {
 }
 
 // ---------- editor ----------
-function editor(existing, { bag, onSaved }) {
+function editor(existing, { bag, onSaved, prefill = {} }) {
   const isNew = !existing;
-  const m = existing || { id: util.uuid(), mediaIds: [], visibility: 'shared' };
+  const m = existing || { id: util.uuid(), mediaIds: [], visibility: 'shared', ...prefill };
   // Slots: kept ones { mediaId, url, video } and new ones { blob, width, height, duration, url, video }.
   const photos = [];
   const removed = [];
@@ -422,8 +422,8 @@ export async function render(ctx) {
 
   const findMemory = (id) => memories.find((x) => x.id === id);
 
-  const openEditor = (m = null) => editor(m, {
-    bag,
+  const openEditor = (m = null, prefill = {}) => editor(m, {
+    bag, prefill,
     onSaved: async (rec, isNew) => {
       ui.toast(isNew ? 'Recuerdo guardado.' : 'Cambios guardados.', { tone: 'success' });
       freshId = isNew ? rec.id : null;
@@ -519,8 +519,11 @@ export async function render(ctx) {
   }
   draw();
   if (ctx.params?.a === 'nuevo') {
+    // From a past date in the Calendario: title, day and a note come prefilled.
+    const q = ctx.query || {};
+    const prefill = { ...(q.titulo ? { title: String(q.titulo).slice(0, 80) } : {}), ...(util.isValidDay(q.fecha) ? { date: q.fecha } : {}), ...(q.nota ? { note: String(q.nota).slice(0, 2000) } : {}) };
     history.replaceState(history.state, '', '#/capsula');
-    requestAnimationFrame(() => openEditor());
+    requestAnimationFrame(() => openEditor(null, prefill));
   }
   const onWide = () => draw();
   wide.addEventListener('change', onWide);

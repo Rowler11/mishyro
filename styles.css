@@ -1487,3 +1487,97 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .today-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .today-title { font-weight: 700; overflow-wrap: anywhere; }
 .today-row .list-chevron { flex: none; color: var(--text-2); }
+
+/* ===================== Fase 3, parte 2: Calendario, Fechas especiales y Recordatorios ===================== */
+.cal-list, .fecha-list, .rem-list, .rem-how-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+
+/* Calendario: month grid with one dot per layer */
+.cal-card { gap: var(--space-3); }
+.cal-nav { display: flex; align-items: center; gap: var(--space-1); }
+.cal-month { flex: 1; margin: 0; text-align: center; font-family: var(--font-serif); font-size: 1.2rem; }
+.cal-today { margin-left: var(--space-1); }
+.cal-layers .chip { display: inline-flex; align-items: center; gap: 6px; }
+.cal-layers .chip[aria-pressed="false"] .cal-dot { opacity: .35; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-inline: -8px; }
+.cal-wd { text-align: center; font-size: .75rem; font-weight: 600; color: var(--text-2); text-decoration: none; padding-bottom: 2px; }
+.cal-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 46px; padding: 4px 0; border: 1px solid transparent; border-radius: 10px;
+  background: transparent; color: var(--text); font: 500 .95rem var(--font-ui); cursor: pointer; font-variant-numeric: tabular-nums; transition: background-color var(--dur-2), border-color var(--dur-2); }
+.cal-cell.is-empty { cursor: default; }
+.cal-cell:not(.is-empty):hover { background: var(--surface-2); }
+.cal-cell.has-date .cal-num { font-weight: 700; }
+.cal-cell.is-today { border-color: var(--accent); }
+.cal-cell.is-selected { background: var(--accent); color: var(--accent-ink); }
+.cal-cell.is-selected .cal-dot { box-shadow: 0 0 0 1.5px var(--accent-ink); }
+.cal-cell:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.cal-dots { display: flex; gap: 3px; min-height: 6px; }
+.cal-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.dot-cita { background: var(--accent); }
+.dot-fecha { background: var(--gold); }
+.dot-animo { background: var(--accent-2); }
+@media (min-width: 768px) { .cal-cell { min-height: 58px; } }
+.cal-day-title:focus { outline: none; }
+.cal-event, .cal-fecha { display: flex; align-items: flex-start; gap: var(--space-3); }
+.cal-event-mark { flex: none; width: 4px; align-self: stretch; border-radius: 2px; background: var(--accent); }
+.cal-fecha-icon { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--surface-2); color: var(--gold); }
+.cal-event-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.cal-event-title { font-weight: 700; overflow-wrap: anywhere; }
+.cal-event-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); margin-top: var(--space-1); }
+.cal-moods { gap: var(--space-1); }
+.cal-mood { display: flex; align-items: center; gap: var(--space-2); color: var(--text-2); }
+.cal-history > summary { min-height: var(--tap); display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.cal-history[open] > summary { margin-bottom: var(--space-2); }
+.cal-form-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-3); }
+
+/* Fechas especiales */
+.fecha-card { gap: var(--space-3); }
+.fecha-card.is-next { border-color: var(--accent); }
+.fecha-head { display: flex; align-items: flex-start; gap: var(--space-3); }
+.fecha-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 12px; background: var(--surface-2); color: var(--tone, var(--accent)); }
+.fecha-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fecha-name { margin: 0; font-family: var(--font-serif); font-size: 1.15rem; overflow-wrap: anywhere; }
+.fecha-age { align-self: flex-start; margin-top: var(--space-1); }
+.fecha-count { display: flex; align-items: baseline; gap: var(--space-2); margin: 0; }
+.fecha-days { font-family: var(--font-serif); font-size: 2rem; font-weight: 700; color: var(--tone, var(--accent)); line-height: 1; font-variant-numeric: tabular-nums; }
+.fecha-today { display: flex; align-items: center; gap: var(--space-2); margin: 0; font-weight: 700; color: var(--tone, var(--accent)); }
+.fecha-card.tone-sakura { --tone: var(--own-sakura); }
+.fecha-card.tone-fuji { --tone: var(--own-fuji); }
+.fecha-card.tone-matcha { --tone: var(--own-matcha); }
+.fecha-card.tone-kohaku { --tone: var(--own-kohaku); }
+.fecha-card[class*="tone-"] { border-top: 4px solid var(--tone); }
+/* flip clock in the last 7 days */
+.flip-clock { display: flex; gap: var(--space-2); }
+.flip-unit { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.flip-num { display: grid; place-items: center; min-width: 52px; height: 56px; padding: 0 6px; border-radius: 10px; background: var(--tone, var(--accent)); color: var(--accent-ink);
+  font-family: var(--font-serif); font-size: 1.7rem; font-weight: 700; font-variant-numeric: tabular-nums; position: relative; overflow: hidden;
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--text) 18%, transparent); }
+.flip-num::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: color-mix(in srgb, var(--accent-ink) 35%, transparent); }
+.flip-num.flip { animation: flip-in var(--dur-3) var(--ease-out); }
+@keyframes flip-in { from { transform: rotateX(70deg); opacity: .4; } to { transform: none; opacity: 1; } }
+.flip-label { font-size: .75rem; color: var(--text-2); }
+@media (prefers-reduced-motion: reduce) { .flip-num.flip { animation: none; } }
+
+/* Recordatorios */
+.rem-how-list li { display: flex; align-items: flex-start; gap: var(--space-2); }
+.rem-how-list .icon { flex: none; margin-top: 2px; color: var(--accent); }
+.rem-card { gap: var(--space-3); }
+.rem-card.is-off .rem-title { color: var(--text-2); }
+.rem-head { display: flex; align-items: center; gap: var(--space-3); }
+.rem-head .switch-row { flex: 1; min-width: 0; }
+.rem-head .switch-label > span:first-child { font-weight: 700; }
+.rem-card.is-off .switch-label > span:first-child { color: var(--text-2); }
+.rem-icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--surface-2); color: var(--accent); }
+.rem-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.rem-title { font-weight: 700; overflow-wrap: anywhere; }
+.rem-body { display: grid; gap: var(--space-2); }
+.rem-row { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.rem-inline { display: flex; align-items: center; gap: var(--space-2); }
+.rem-inline .input { width: auto; min-width: 120px; }
+.cal-layers .chip[aria-pressed="true"] { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
+.cal-layers .chip[aria-pressed="false"] { color: var(--text-2); text-decoration: line-through; }
+.cal-cell.is-empty:hover { background: transparent; }
+/* PC: the month on the left, the day and the lists beside it */
+@media (min-width: 1100px) {
+  .calendario .stack:has(> .cal-card) { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); column-gap: var(--space-6, 32px); align-items: start; }
+  .calendario .cal-card { grid-row: span 6; }
+  .calendario .stack:has(> .cal-card) > :not(.cal-card) { grid-column: 2; }
+}

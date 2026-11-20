@@ -44,4 +44,4 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 - Commits pequeños por fase, con un mensaje claro en español.
 
 ## Estado
-Actualiza esta línea al cerrar cada fase: **Fase actual: 3, parte 1 (Preguntas, Canciones, Diario, Ánimo, Mi espacio y Retos; v0.3.0, esperando aprobación). Fase A aprobada el 2026-11-20; Fase 2 sin aprobar formalmente; Fase 1 aprobada el 2026-11-19. Siguiente: Fase 3, parte 2 (Calendario de citas, Fechas especiales y Recordatorios con .ics).**
+Actualiza esta línea al cerrar cada fase: **Fase actual: 3 completa (parte 1 v0.3.0 aprobada el 2026-11-20; parte 2 v0.3.1 con Calendario, Fechas especiales y Recordatorios, esperando aprobación). Fase A aprobada el 2026-11-20; Fase 2 sin aprobar formalmente; Fase 1 aprobada el 2026-11-19. Siguiente: Fase 4A.**

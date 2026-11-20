@@ -13,12 +13,12 @@ export const TABS = [
 
 export const GROUPS = [
   { id: 'nosotros', title: 'Nosotros', jp: '二人', romaji: 'futari', sections: [
-    { id: 'calendario', title: 'Calendario', jp: 'カレンダー', romaji: 'karendā', icon: 'calendar', phase: '3', blurb: 'Citas, fechas y capas en un solo calendario.' },
-    { id: 'fechas', title: 'Fechas especiales', jp: '記念日', romaji: 'kinenbi', icon: 'cake', phase: '3', blurb: 'Aniversario, cumpleaños y cuentas regresivas.' },
+    { id: 'calendario', title: 'Calendario', jp: 'カレンダー', romaji: 'karendā', icon: 'calendar', phase: '3', module: 'calendario', blurb: 'Citas, fechas y capas en un solo calendario.' },
+    { id: 'fechas', title: 'Fechas especiales', jp: '記念日', romaji: 'kinenbi', icon: 'cake', phase: '3', module: 'fechas', blurb: 'Aniversario, cumpleaños y cuentas regresivas.' },
     { id: 'insignias', title: 'Racha e insignias', jp: 'バッジ', romaji: 'bajji', icon: 'award', phase: '4A', blurb: 'Lo que van logrando juntos.' },
     { id: 'animo', title: 'Medidor de ánimo', jp: '気分', romaji: 'kibun', icon: 'smile', phase: '3', module: 'animo', blurb: 'Cómo amanece cada uno.' },
     { id: 'resumen', title: 'Resumen del año', jp: '年間', romaji: 'nenkan', icon: 'sparkles', phase: '4A', moment: true, blurb: 'Su año en historias, con modo Wrapped.' },
-    { id: 'recordatorios', title: 'Recordatorios', jp: 'お知らせ', romaji: 'oshirase', icon: 'bell', phase: '3', blurb: 'Avisos suaves y calendario del teléfono.' },
+    { id: 'recordatorios', title: 'Recordatorios', jp: 'お知らせ', romaji: 'oshirase', icon: 'bell', phase: '3', module: 'recordatorios', blurb: 'Avisos suaves y calendario del teléfono.' },
     { id: 'encuentro', title: 'Próximo encuentro', jp: '次回', romaji: 'jikai', icon: 'plane', phase: '4A', blurb: 'La cuenta regresiva para verse.' },
   ] },
   { id: 'recuerdos', title: 'Recuerdos', jp: '思い出', romaji: 'omoide', sections: [

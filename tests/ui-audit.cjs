@@ -10,10 +10,10 @@ const SEED = path.join(__dirname, '..', 'seed-privado.example.json');
 const ROUTES = ['/inicio', '/capsula', '/capsula/nuevo', '/cupones', '/cartas', '/mas', '/ajustes', '/ajustes/perfil',
   '/ajustes/seguridad', '/ajustes/privacidad', '/ajustes/terceros', '/ajustes/copia', '/ajustes/apariencia',
   '/ajustes/movimiento', '/ajustes/legal', '/ajustes/legal/privacidad', '/ajustes/legal/version', '/buscar',
-  '/ajustes/acerca', '/calendario', '/preguntas', '/canciones', '/diario', '/animo', '/jibun', '/retos'];
+  '/ajustes/acerca', '/calendario', '/preguntas', '/canciones', '/diario', '/animo', '/jibun', '/retos', '/fechas', '/recordatorios'];
 
 // Screens behind a tap: [route, button to press].
-const OPENED = [['/cupones', 'Nuevo cupón'], ['/cartas', 'Escribir carta'], ['/inicio', /^Usa la app/], ['/ajustes/guia-estilo', 'Modal'], ['/canciones', 'Dedicar'], ['/diario', 'Escribir'], ['/jibun', 'Agregar'], ['/preguntas', 'Escribir mi pregunta']];
+const OPENED = [['/cupones', 'Nuevo cupón'], ['/cartas', 'Escribir carta'], ['/inicio', /^Usa la app/], ['/ajustes/guia-estilo', 'Modal'], ['/canciones', 'Dedicar'], ['/diario', 'Escribir'], ['/jibun', 'Agregar'], ['/preguntas', 'Escribir mi pregunta'], ['/calendario', 'Nueva cita'], ['/recordatorios', /^Agregar$/]];
 
 async function setup(page) {
   await page.goto(BASE);

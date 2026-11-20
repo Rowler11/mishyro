@@ -35,6 +35,9 @@ const load = {
   canciones: () => import('./features/canciones.js'),
   diario: () => import('./features/diario.js'),
   animo: () => import('./features/animo.js'),
+  calendario: () => import('./features/calendario.js'),
+  fechas: () => import('./features/fechas.js'),
+  recordatorios: () => import('./features/recordatorios.js'),
   jibun: () => import('./features/jibun.js'),
   retos: () => import('./features/retos.js'),
 };
