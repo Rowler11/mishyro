@@ -18,7 +18,8 @@ Cloudflare publica `main` solo (Workers con archivos estáticos). Todo lo que ll
 - Licencias de terceros nuevas: `config.js` > licencias, y `LICENSE` + `README.txt` dentro de `vendor/<lib>/`.
 
 ## 3. Pruebas (servidor local, solo datos ficticios)
-- Servidor: `npx wrangler dev --port 8787 --ip 127.0.0.1` (en segundo plano), o `python3 -m http.server 8765` desde la carpeta padre para el subpath `/mishyro/`.
+- Las pruebas largas (e2e completas, a11y, capturas) van una sola vez al final, cuando todas las partes están construidas. Mientras tanto, solo revisiones rápidas.
+- Servidor: `npx wrangler dev --port 8787 --ip 127.0.0.1` (en segundo plano), o `python3 -m http.server 8765` desde la carpeta padre para el subpath `/mishyro/`. Si el repo no tiene carpeta padre propia, crea en el scratchpad una carpeta `www/` con un enlace `mishyro -> <repo>` y sirve desde ahí. wrangler y axe se instalan con npm en el scratchpad, nunca en el repo.
 - e2e: `BASE=http://127.0.0.1:8787/ node tests/e2e.cjs`. Toda función nueva suma sus pruebas aquí.
 - a11y: `AXE=<ruta a axe.min.js> BASE=http://127.0.0.1:8787/ node tests/a11y.cjs` (axe-core se instala con npm en una carpeta temporal, nunca en el repo). Meta: 0 violaciones de día y de noche.
 - Unitarias: `BASE=http://127.0.0.1:8765/mishyro/ node tests/unit.cjs`.
@@ -35,6 +36,7 @@ Cloudflare publica `main` solo (Workers con archivos estáticos). Todo lo que ll
 - Push y PR a `main` con resumen en español y la lista de pruebas con sus números (ej. "e2e 214/214, a11y 0, unitarias 18/18").
 - Unir con squash solo cuando el usuario ya pidió el cambio (su pedido es la aprobación); `git checkout main && git pull`.
 - Revisar los check-runs del commit de `main` hasta ver "Workers Builds: mishyro" con `success`. Si falla, leer el log y arreglar en una rama nueva.
+- En las ramas (no en `main`), "Workers Builds" falla por las migraciones de Durable Objects: es normal y no bloquea. No lo investigues; solo cuenta el check de `main`.
 - La URL publicada no se puede abrir desde el sandbox; la prueba real es en el teléfono del usuario.
 
 ## 6. Cierre
