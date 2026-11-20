@@ -336,12 +336,11 @@ function timelineItem(m, bag, { selected, fresh, index = 0 } = {}) {
   const note = pending(m.note) ? '' : m.note;
   const date = isDraft(m) ? 'Sin fecha' : fmtMonthDay.format(util.parseDay(m.date));
   const attrs = { href: `#/capsula/${encodeURIComponent(m.id)}`, dataset: { id: m.id }, 'aria-current': selected ? 'true' : undefined };
-  const side = index % 2 ? ' is-right' : '';
   let link;
   if (m.mediaIds?.length) {
     const photo = mediaThumb(m.mediaIds[0], bag, 'tl-photo');
     if (m.mediaIds.length > 1) photo.append(el('span', { class: 'tl-more' }, `+${m.mediaIds.length - 1}`));
-    link = el('a', { class: `tl-card tl-shikishi${side}`, ...attrs },
+    link = el('a', { class: 'tl-card tl-shikishi', ...attrs },
       photo,
       el('span', { class: 'tl-text' },
         el('span', { class: 'tl-title' }, titleOf(m)),
@@ -350,8 +349,7 @@ function timelineItem(m, bag, { selected, fresh, index = 0 } = {}) {
       el('span', { class: 'seal-sq tl-seal', 'aria-hidden': 'true' }, icon('heart', { size: 14 })));
   } else {
     const k = kindOf(m);
-    link = el('a', { class: `tl-card tl-ema tone-${k.tone}${side}`, ...attrs },
-      el('span', { class: 'tl-cord', 'aria-hidden': 'true' }),
+    link = el('a', { class: `tl-card tl-ema tone-${k.tone}`, ...attrs },
       el('span', { class: 'tl-ema-icon', 'aria-hidden': 'true' }, icon(k.icon, { size: 24 })),
       el('span', { class: 'tl-title' }, titleOf(m)),
       el('span', { class: 'tl-date' }, date),

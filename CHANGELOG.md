@@ -11,6 +11,14 @@
 - Avisos cariñosos (opcionales, por equipo): cuando te llega un Pensando en ti, una carta, un cupón o un recuerdo nuevo. El aviso nunca muestra el contenido. Se apagan solos con el Modo sin terceros.
 - Las copias de seguridad nunca llevan las llaves de la sincronización.
 
+## 0.1.28 (un solo estilo: washi y sello)
+
+- Toda la app usa ahora la misma tarjeta de papel suave. Lo japonés queda en detalles finos: la celosía de las puertas, el sello rojo y el trazo de pincel.
+- Más: las puertas ya no tienen el marco grueso de madera ni la barra roja; son de papel con una celosía suave y se siguen abriendo igual.
+- Inicio: "Buenos días", "Pensando en ti" y "Razón" se eligen con las mismas pestañas redondas de Cartas y Cuponera.
+- Cápsula más compacta: cada recuerdo es una fila con su miniatura (foto o ícono), junto a un hilo rojo recto. Se ven muchos más recuerdos a la vez y la línea de tiempo se lee de un vistazo. "Un día como hoy" también es más pequeño.
+- Cartas tiene tres secciones: Para ti, Escribimos y Estampillas. En Estampillas está el álbum de los dos: crear estampillas nuevas (foto, sticker o pegar), borrarlas y ver el set. "Decorar un sobre" lleva directo al borrador más reciente.
+
 ## 0.1.27 (Más con puertas, Inicio compacto)
 
 - Más: los 7 grupos son puertas shoji, dos por fila, con su nombre, cuántas secciones tienen y algunos íconos. Al tocar una, las hojas de papel se corren y aparecen sus tarjetas. "Volver" o el botón Atrás del teléfono regresan a las puertas, y la que abriste se cierra sola.

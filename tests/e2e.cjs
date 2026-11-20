@@ -291,7 +291,8 @@ async function completeSetup(page) {
     ok(`cápsula @${w}: only the saved photos and video remain after the failed try`, media.length === 3, String(media.length));
     ok(`cápsula @${w}: Un día como hoy shows the memory from a year ago`, /Picnic/.test(await page.locator('.otd-card').textContent()));
     ok(`cápsula @${w}: a memory with photos is a shikishi with a seal; the year is a hanko and the month is marked`, (await page.locator('.tl-shikishi', { hasText: 'Picnic' }).locator('.tl-seal').count()) === 1 && (await page.locator('.tl-hanko', { hasText: String(new Date().getFullYear() - 1) }).count()) === 1 && (await page.locator('.tl-month', { hasText: 'Noviembre' }).count()) === 1);
-    ok(`cápsula @${w}: a memory without photos hangs as an ema with its cord`, (await page.locator('.timeline:not(.timeline-drafts) .tl-ema .tl-cord').count()) >= 1);
+    ok(`cápsula @${w}: a memory without photos is a compact row with its icon`, (await page.locator('.timeline:not(.timeline-drafts) .tl-ema .tl-ema-icon').count()) >= 1);
+    ok(`cápsula @${w}: memory rows stay compact (110 px or less)`, (await page.locator('.timeline .tl-card').evaluateAll((els) => Math.max(...els.map((e) => e.getBoundingClientRect().height)))) <= 110);
     const firstTitle = () => page.locator('.timeline:not(.timeline-drafts) .tl-title').first().textContent();
     ok(`cápsula @${w}: oldest on top by default`, (await firstTitle()) === 'Título');
     await page.getByRole('button', { name: 'Ver lo más reciente' }).click();
@@ -528,6 +529,17 @@ async function completeSetup(page) {
     await page.waitForTimeout(400);
     ok('own stickers: deleting one takes it out of the album and off the envelope', (await deco.locator('[aria-label="Tus estampillas"] .sticker-pick:not(.sticker-new)').count()) === 1 && (await deco.locator('.sticker-board .sticker').count()) === 1);
     await deco.getByRole('button', { name: 'Cancelar' }).click();
+    // Cartas > Estampillas: the album always in view
+    await page.locator('.segmented-option', { hasText: 'Estampillas' }).click();
+    const alb = page.locator('.sticker-album');
+    await alb.waitFor();
+    ok('estampillas tab: shows the album (1 own + Crear) and the 12 of the set', (await alb.locator('[aria-label="Sus estampillas"] .sticker-pick:not(.sticker-new)').count()) === 1
+      && (await alb.locator('[aria-label="Sus estampillas"] .sticker-new').count()) === 1 && (await alb.locator('[aria-label="Estampillas del set"] .sticker-pick').count()) === 12);
+    await alb.getByRole('button', { name: 'Decorar un sobre' }).click();
+    await page.locator('.sticker-editor').waitFor();
+    ok('estampillas tab: "Decorar un sobre" opens the newest draft in Escribimos', (await page.locator('.segmented-input[value="write"]').isChecked()));
+    await page.locator('.sticker-editor').getByRole('button', { name: 'Cancelar' }).click();
+    await page.locator('.segmented-option', { hasText: 'Escribimos' }).click();
     // "Compartir > Aishiteru" with an image
     await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 10000 });
     await page.evaluate(() => {
