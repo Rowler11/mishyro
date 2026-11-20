@@ -70,7 +70,7 @@ const EXTERNAL = [
   { what: 'Sincronización entre sus equipos', who: 'El mismo sitio de la app (Cloudflare), todo cifrado de extremo a extremo', when: 'Solo si unen sus equipos en Ajustes > Sincronización', status: 'own' },
   { what: 'Avisos cariñosos', who: 'El servicio de avisos del navegador (Google en Android y Chrome), sin contenido', when: 'Solo si los activan en Sincronización', status: 'opt' },
   { what: 'Mapa de lugares y Sueños', who: 'OpenStreetMap (imágenes del mapa)', when: 'Al abrir el mapa', status: 'soon' },
-  { what: 'Canciones', who: 'Spotify (reproductor)', when: 'Al reproducir una canción', status: 'soon' },
+  { what: 'Canciones', who: 'Spotify (reproductor y nombre de la canción)', when: 'Solo al tocar "Escuchar" o al pegar un enlace', status: 'opt' },
   { what: 'Ideas de citas', who: 'Google Maps (enlace)', when: 'Solo si tocan "Buscar en Google Maps"', status: 'soon' },
 ];
 const STATUS = { local: 'Sin red', own: 'Propio', soon: 'Pronto', opt: 'Opcional' };

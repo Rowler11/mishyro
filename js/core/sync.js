@@ -234,6 +234,8 @@ function notifyKind(store, r, prev) {
   if (store === 'content' && r.kind === 'coupon' && r.sentAt && prev?.n !== 'sent' && (r.from || 'david') === me) return 'coupon';
   if (store === 'memories' && !prev) return 'memory';
   if (store === 'timeCapsules' && !prev) return 'capsule';
+  if (store === 'songs' && !prev && r.by === me) return 'song';
+  if (store === 'questionsDaily' && r.kind === 'asker' && !prev && r.askedBy === me) return 'question';
   return null;
 }
 const marker = (store, r) => (store === 'letters' ? r.status : store === 'content' && r.kind === 'coupon' ? (r.sentAt ? 'sent' : '') : undefined);

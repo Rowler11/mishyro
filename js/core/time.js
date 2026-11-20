@@ -132,3 +132,51 @@ export function dayPart(now = new Date()) {
 }
 
 export { localDay };
+
+/** ISO 8601 week of a local date, as "YYYY-Www" (weeks start on Monday; week 1 holds the first Thursday). */
+export function isoWeek(d = new Date()) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = t.getUTCFullYear();
+  const week = Math.ceil(((t - Date.UTC(y, 0, 1)) / 86400000 + 1) / 7);
+  return `${y}-W${String(week).padStart(2, '0')}`;
+}
+
+/** Monday of an ISO week ("YYYY-Www") as a local Date. */
+export function isoWeekStart(key) {
+  const m = /^(\d{4})-W(\d{2})$/.exec(key || '');
+  if (!m) return null;
+  const jan4 = new Date(+m[1], 0, 4);
+  const monday = new Date(jan4.getFullYear(), 0, 4 - ((jan4.getDay() || 7) - 1));
+  return new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + (+m[2] - 1) * 7);
+}
+
+/** The week before an ISO week key. */
+export function prevIsoWeek(key) {
+  const s = isoWeekStart(key);
+  return s ? isoWeek(new Date(s.getFullYear(), s.getMonth(), s.getDate() - 7)) : null;
+}
+
+/** Same order on every device for the same seed: used so both phones pick the same question or challenge. */
+export function seededOrder(ids, seed) {
+  return [...ids].sort().map((id) => ({ id, k: rng(hash(`${seed}|${id}`))() })).sort((a, b) => a.k - b.k).map((x) => x.id);
+}
+
+/**
+ * Next item of a bank that never repeats until it runs out (docs/05 §3a, §20).
+ * used: ids already shown in the current round, in order; lastShown: ids shown recently (newest last).
+ * Returns { id, round, restarted }. A new round leaves out the last `keepOut` items shown.
+ */
+export function nextFromBank(ids, { seed, round = 0, used = [], lastShown = [], keepOut = 30 } = {}) {
+  if (!ids.length) return null;
+  const usedSet = new Set(used);
+  let order = seededOrder(ids, `${seed}|${round}`);
+  let pick = order.find((id) => !usedSet.has(id));
+  if (pick) return { id: pick, round, restarted: false };
+  const next = round + 1;
+  const recent = new Set(lastShown.slice(-Math.min(keepOut, Math.max(0, ids.length - 1))));
+  order = seededOrder(ids, `${seed}|${next}`);
+  pick = order.find((id) => !recent.has(id)) || order[0];
+  return { id: pick, round: next, restarted: true };
+}
