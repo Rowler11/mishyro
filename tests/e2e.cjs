@@ -106,7 +106,7 @@ async function completeSetup(page) {
       if (!title) broken.push(r);
     }
     ok(`routes @${w}: every route renders a heading (${routes.length})`, broken.length === 0, broken.join(','));
-    // Inicio: counter, carousel of the day, Pensando en ti
+    // Inicio: counter beside the ensō, the day's cards with buttons, Pensando en ti
     await page.evaluate(() => { location.hash = '#/inicio'; });
     await page.waitForSelector('.counter-card');
     const days = await page.evaluate(() => Number(document.querySelector('.counter-days').textContent.replace(/\D/g, '')));
@@ -123,13 +123,17 @@ async function completeSetup(page) {
     ok(`inicio @${w}: no Japanese inside the cards`, !(await page.$$eval('.home-card', (c) => c.some((x) => /[぀-ヿ一-龯]/.test(x.textContent)))));
     ok(`inicio @${w}: omikuji skips texts still to complete`, (await page.locator('.omikuji-text').textContent()) === 'Texto de ejemplo.');
     ok(`inicio @${w}: no horizontal scroll`, !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
-    ok(`inicio @${w}: the day's cards sit in the carousel`, (await page.locator('.home-carousel .home-slide').count()) === 3);
+    ok(`inicio @${w}: the counter sits beside a small ensō`, await page.evaluate(() => { const r = document.querySelector('.counter-ring').getBoundingClientRect(); const g = document.querySelector('.counter-goal').getBoundingClientRect(); return r.width <= 160 && g.left > r.right - 4; }));
+    ok(`inicio @${w}: "Lo que viene" rows show their date`, (await page.locator('.coming-card .mekuri-when').count()) >= 1);
+    ok(`inicio @${w}: no sideways scroll for the day's cards`, (await page.locator('.home-carousel, .home-dot').count()) === 0 && (await page.locator('.home-day .home-slide').count()) === 3);
     if (w < 900) {
-      await page.locator('.home-dot').nth(1).click();
-      await page.waitForTimeout(700);
-      ok(`inicio @${w}: a dot slides to its card and is marked`, (await page.locator('.home-dot').nth(1).getAttribute('aria-current')) === 'true'
-        && (await page.evaluate(() => { const t = document.querySelector('.home-carousel-track'); const c = document.querySelector('.thinking-card'); return Math.abs(c.getBoundingClientRect().left - t.getBoundingClientRect().left) < 40; })));
-    } else ok(`inicio @${w}: on wide screens the three cards share one row`, await page.evaluate(() => new Set([...document.querySelectorAll('.home-slide')].map((x) => Math.round(x.getBoundingClientRect().top))).size === 1));
+      const shown = () => page.$$eval('.home-slide', (s) => s.filter((x) => getComputedStyle(x).display !== 'none').map((x) => x.className));
+      ok(`inicio @${w}: one card at a time, "Pensando en ti" first`, (await shown()).length === 1 && /thinking-card/.test((await shown())[0]) && (await page.locator('.day-pick[aria-pressed="true"]').textContent()) === 'Pensando en ti');
+      await page.locator('.day-pick').filter({ hasText: 'Razón' }).click();
+      await page.waitForTimeout(150);
+      ok(`inicio @${w}: a button switches the card`, (await shown()).length === 1 && /omikuji-card/.test((await shown())[0]));
+      await page.locator('.day-pick').filter({ hasText: 'Pensando en ti' }).click();
+    } else ok(`inicio @${w}: on wide screens the three cards share one row`, await page.evaluate(() => new Set([...document.querySelectorAll('.home-slide')].map((x) => Math.round(x.getBoundingClientRect().top))).size === 1) && !(await page.locator('.day-picks').isVisible()));
     await page.evaluate(() => { navigator.share = async () => {}; });
     await page.locator('.thinking-btn').click();
     await page.waitForFunction(() => /Hoy pensaste/.test(document.querySelector('.thinking-count').textContent));
@@ -146,20 +150,33 @@ async function completeSetup(page) {
     ok(`back @${w}: Atrás returns to the previous view`, (await page.evaluate(() => location.hash)) === '#/mas');
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
     ok(`layout @${w}: no horizontal scroll on Más`, !overflow);
-    // Más: group tabs on top, the chosen group's cards below
-    const selected = () => page.$$eval('.more-tab[aria-selected="true"]', (t) => t.map((x) => x.id));
-    const mtabs = page.locator('.more-tab');
-    ok(`más @${w}: one group chosen on arrival`, (await selected()).length === 1);
-    await mtabs.nth(1).click();
+    // Más: shoji doors, one per group; a door opens into its cards (#/mas/<group>)
+    const doors = page.locator('.door');
+    ok(`más @${w}: one door per group`, (await doors.count()) === 7 && (await doors.nth(1).getAttribute('aria-label')).startsWith('Recuerdos,'));
+    await doors.nth(1).click();
+    await page.waitForFunction(() => location.hash === '#/mas/recuerdos', null, { timeout: 3000 });
+    await page.waitForTimeout(250);
+    ok(`más @${w}: a door opens its group's cards`, (await page.textContent('.more-group-title')) === 'Recuerdos' && (await page.locator('.more-cards .section-card').count()) > 0);
+    ok(`más @${w}: cards come with a description`, await page.locator('.more-cards .section-card-blurb').first().isVisible());
+    await page.getByRole('button', { name: 'Volver' }).click();
+    await page.waitForFunction(() => location.hash === '#/mas', null, { timeout: 3000 });
+    await page.waitForTimeout(250);
+    ok(`más @${w}: Volver goes back to the doors and keeps the focus on the one opened`, (await doors.count()) === 7 && (await page.evaluate(() => document.activeElement?.dataset?.group)) === 'recuerdos');
+    await page.evaluate(() => { location.hash = '#/mas/juntos'; });
     await page.waitForTimeout(150);
-    ok(`más @${w}: choosing another group switches its cards`, (await selected()).join() === 'mt-recuerdos' && (await page.getAttribute('#more-panel', 'aria-labelledby')) === 'mt-recuerdos');
-    ok(`más @${w}: cards come with a description`, await page.locator('#more-panel .section-card-blurb').first().isVisible());
-    await mtabs.nth(1).focus();
-    await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(100);
-    ok(`más @${w}: arrow keys move between groups`, (await selected()).join() === (await mtabs.nth(2).getAttribute('id')));
-    ok(`más @${w}: moments (Resumen, Cápsula del tiempo, Temporadas) are not listed`, (await page.$$eval('.more-tab', async (ts) => ts.length)) > 0 && !(await (async () => { for (let i = 0; i < await mtabs.count(); i++) { await mtabs.nth(i).click(); if (await page.$$eval('.section-card', (c) => c.some((x) => ['#/resumen', '#/capsula-tiempo', '#/eventos'].includes(x.getAttribute('href'))))) return true; } return false; })()));
-    await mtabs.nth(0).click();
+    await page.goBack();
+    await page.waitForTimeout(250);
+    ok(`más @${w}: Atrás closes the open group`, (await page.evaluate(() => location.hash)) === '#/mas' && (await doors.count()) === 7);
+    const groupIds = await page.$$eval('.door', (d) => d.map((x) => x.dataset.group));
+    let momentListed = false;
+    for (const id of groupIds) {
+      await page.evaluate((g) => { location.hash = `#/mas/${g}`; }, id);
+      await page.waitForTimeout(120);
+      if (await page.$$eval('.section-card', (c) => c.some((x) => ['#/resumen', '#/capsula-tiempo', '#/eventos'].includes(x.getAttribute('href'))))) momentListed = true;
+    }
+    ok(`más @${w}: moments (Resumen, Cápsula del tiempo, Temporadas) are not listed`, groupIds.length === 7 && !momentListed);
+    await page.evaluate(() => { location.hash = '#/mas'; });
+    await page.waitForTimeout(150);
     ok(`nav @${w}: no Japanese under the bottom tabs`, (await page.$$eval('.tab .ja', (n) => n.length)) === 0);
     await page.waitForTimeout(300);
     await shot(page, `mas-${w}`);
@@ -252,7 +269,8 @@ async function completeSetup(page) {
     ok(`cápsula @${w}: a 3 s video is added and a 32 s one is refused`, (await ed.locator('.photo-tile video').count()) === 1 && /dura más de 30 segundos/.test(await ed.locator('.photo-msg').textContent()), await ed.locator('.photo-msg').textContent());
     await ed.getByLabel('Título').fill('Picnic en el parque');
     ok(`cápsula @${w}: the error goes away once the field is fixed`, (await ed.locator('.field-error:not(:empty)').count()) === 1);
-    await ed.getByLabel('Fecha').fill('2025-11-19');
+    // A year ago today, so "Un día como hoy" finds it whatever day the suite runs.
+    await ed.getByLabel('Fecha').fill(await page.evaluate(() => { const d = new Date(); return `${d.getFullYear() - 1}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }));
     await ed.getByLabel('Nota (opcional)').fill('Llevamos fresas.\n\nLlovió al final.');
     // Storage full: the save fails with a clear message and keeps what was typed.
     await page.evaluate(() => {
@@ -272,7 +290,7 @@ async function completeSetup(page) {
     ok(`cápsula @${w}: the video is stored as it came, with its length`, media.some((m) => m.mime === 'video/webm' && m.duration > 2 && m.duration < 4), JSON.stringify(media));
     ok(`cápsula @${w}: only the saved photos and video remain after the failed try`, media.length === 3, String(media.length));
     ok(`cápsula @${w}: Un día como hoy shows the memory from a year ago`, /Picnic/.test(await page.locator('.otd-card').textContent()));
-    ok(`cápsula @${w}: a memory with photos is a shikishi with a seal; the year is a hanko and the month is marked`, (await page.locator('.tl-shikishi', { hasText: 'Picnic' }).locator('.tl-seal').count()) === 1 && (await page.locator('.tl-hanko', { hasText: '2025' }).count()) === 1 && (await page.locator('.tl-month', { hasText: 'Noviembre' }).count()) === 1);
+    ok(`cápsula @${w}: a memory with photos is a shikishi with a seal; the year is a hanko and the month is marked`, (await page.locator('.tl-shikishi', { hasText: 'Picnic' }).locator('.tl-seal').count()) === 1 && (await page.locator('.tl-hanko', { hasText: String(new Date().getFullYear() - 1) }).count()) === 1 && (await page.locator('.tl-month', { hasText: 'Noviembre' }).count()) === 1);
     ok(`cápsula @${w}: a memory without photos hangs as an ema with its cord`, (await page.locator('.timeline:not(.timeline-drafts) .tl-ema .tl-cord').count()) >= 1);
     const firstTitle = () => page.locator('.timeline:not(.timeline-drafts) .tl-title').first().textContent();
     ok(`cápsula @${w}: oldest on top by default`, (await firstTitle()) === 'Título');

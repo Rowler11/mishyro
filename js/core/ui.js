@@ -54,6 +54,13 @@ addEventListener('popstate', () => {
   else if (top) history.pushState({ modal: top.id }, '', location.href); // not dismissible: stay
 });
 
+// Esc closes the top window even when focus has not moved into it yet (a key pressed right after it opens).
+addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const top = stack[stack.length - 1];
+  if (top && top.dismissible && !top.el.contains(e.target)) { e.stopImmediatePropagation(); top.close(); }
+});
+
 function setInert(on) {
   const app = document.getElementById('app');
   if (app) app.inert = on;

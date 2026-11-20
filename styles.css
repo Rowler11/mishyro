@@ -47,7 +47,7 @@
   --shadow-1: 0 1px 2px rgb(0 0 0 / .4); --shadow-2: 0 10px 40px rgb(0 0 0 / .55);
   --overlay: rgb(10 7 9 / .7);
   --focus: #E8C4D2;
-  --pattern-opacity: .05;
+  --pattern-opacity: .07;
   --paper: #221C1F;
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .9 0 0 0 0 .92 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23f)'/%3E%3C/svg%3E");
   color-scheme: dark;
@@ -76,7 +76,10 @@ body::before { /* subtle seigaiha pattern */
   content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background: url('./icons/patterns/seigaiha.svg') repeat; background-size: 64px 32px; opacity: var(--pattern-opacity);
 }
-:root[data-theme="night"] body::before { background-image: url('./icons/patterns/asanoha.svg'); background-size: 56px 97px; }
+/* Night: the same seigaiha waves, drawn in the soft rose of the theme so they show on the dark background. */
+:root[data-theme="night"] body::before {
+  background: var(--accent-2); -webkit-mask: url('./icons/patterns/seigaiha.svg') repeat 0 0 / 64px 32px; mask: url('./icons/patterns/seigaiha.svg') repeat 0 0 / 64px 32px;
+}
 h1, h2, h3 { font-family: var(--font-serif); font-weight: 700; line-height: 1.25; margin: 0; letter-spacing: .01em; }
 p { margin: 0; }
 a { color: inherit; }
@@ -559,24 +562,51 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 
 .fatal { padding: var(--space-6) var(--space-4); max-width: 560px; margin: 0 auto; }
 
-/* ---------- Más hub: group tabs on top, the chosen group's cards below ---------- */
-.more-tabs {
-  display: flex; gap: var(--space-2); overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--space-4)) var(--space-3);
-  padding: 2px var(--space-4) var(--space-1); scroll-padding-inline: var(--space-4);
+/* ---------- Más hub: shoji doors, one per group; a door slides open into its cards ---------- */
+.doors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+@media (min-width: 768px) { .doors { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
+.door {
+  --door-frame: color-mix(in srgb, var(--gold) 50%, var(--text-2)); --door-lattice: color-mix(in srgb, var(--door-frame) 26%, transparent);
+  position: relative; min-height: 148px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text);
+  font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-.more-tabs::-webkit-scrollbar { display: none; }
-.more-tab {
-  flex: none; display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--tap); padding: 0 var(--space-4);
-  border-radius: var(--radius-pill); border: 1px solid var(--border); background: var(--surface); color: var(--text);
-  font: inherit; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background-color var(--dur-2), color var(--dur-2), border-color var(--dur-2);
+.door:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+:root[data-theme="night"] .door { --door-frame: color-mix(in srgb, var(--gold) 40%, var(--border-strong)); }
+.door-frame { position: absolute; inset: 0; overflow: hidden; border: 3px solid var(--door-frame); border-top-width: 6px; border-top-color: var(--accent); border-radius: 6px; background: var(--surface-2); }
+.door-inside { position: absolute; inset: 0; display: grid; place-items: center; color: var(--accent); }
+.door-panel {
+  position: absolute; top: 0; bottom: 0; width: 50%; background-color: var(--paper);
+  background-image: linear-gradient(var(--door-lattice) 1.5px, transparent 1.5px), linear-gradient(90deg, var(--door-lattice) 1.5px, transparent 1.5px);
+  background-size: 100% 28px, 33.4% 100%; background-position: 0 6px, 6px 0;
+  transition: transform var(--dur-door, .52s) var(--ease-in-out);
 }
-.more-tab:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-.more-tab-count { min-width: 1.5em; padding: 0 .45em; border-radius: var(--radius-pill); background: var(--surface-2); color: var(--text-2); font-size: .75rem; text-align: center; }
-.more-tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
-.more-tab[aria-selected="true"] .more-tab-count { background: color-mix(in srgb, var(--accent-ink) 22%, transparent); color: var(--accent-ink); }
-.more-cards { padding: 0; animation: more-in var(--dur-3) var(--ease-out); }
-@keyframes more-in { from { opacity: 0; transform: translateY(6px); } }
-@media (min-width: 768px) { .more-tabs { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; } }
+.door-panel-l { left: 0; border-right: 2px solid var(--door-frame); }
+.door-panel-r { right: 0; border-left: 1px solid var(--door-frame); }
+.door.is-open .door-panel-l { transform: translateX(-97%); }
+.door.is-open .door-panel-r { transform: translateX(97%); }
+@media (hover: hover) {
+  .door:hover .door-panel-l { transform: translateX(-6%); }
+  .door:hover .door-panel-r { transform: translateX(6%); }
+  .door.is-open:hover .door-panel-l { transform: translateX(-97%); }
+  .door.is-open:hover .door-panel-r { transform: translateX(97%); }
+}
+.door-icon { position: absolute; top: 14px; right: 12px; z-index: 1; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: color-mix(in srgb, var(--paper) 90%, transparent); color: var(--accent); transition: opacity var(--dur-2); }
+.door-label { position: absolute; left: 9px; right: 9px; bottom: 9px; z-index: 1; display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: 6px; background: color-mix(in srgb, var(--paper) 92%, transparent); transition: opacity var(--dur-2); }
+.door-name { font-family: var(--font-serif); font-weight: 700; font-size: 1.12rem; line-height: 1.2; }
+.door-count { color: var(--text-2); font-size: .78rem; }
+.door-peek { display: flex; gap: 6px; margin-top: 3px; color: var(--text-2); }
+.door.is-open .door-icon, .door.is-open .door-label { opacity: 0; }
+
+.more-group-head { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-3); }
+.more-back { flex: none; margin-left: calc(var(--space-2) * -1); }
+.more-group-title { margin: 0; font-family: var(--font-serif); font-size: 1.4rem; }
+.more-cards { padding: 0; }
+.door-card { animation: door-card-in .42s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes door-card-in { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+@media (prefers-reduced-motion: reduce) {
+  .door-panel, .door-icon, .door-label { transition: none; }
+  .door-card { animation: none; }
+}
 .section-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
 .section-card { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3); min-height: 132px; box-shadow: none; }
 .section-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-1); }
@@ -633,43 +663,51 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 .home-card .btn { align-self: flex-start; }
 @media (min-width: 640px) {
   .home-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .counter-card, .celebrate-card, .home-carousel, .coming-card, .backup-card { grid-column: 1 / -1; }
+  .counter-card, .celebrate-card, .home-day, .coming-card, .backup-card { grid-column: 1 / -1; }
 }
 
 /* counter: the days inside an ensō, a brush circle that closes on the anniversary (Inicio A) */
-.counter-card { position: relative; align-items: center; text-align: center; gap: var(--space-3); padding-block: var(--space-5); border-radius: 8px; background: var(--paper) var(--grain); }
-.counter-ring { position: relative; width: min(236px, 66vw); aspect-ratio: 1; max-width: 100%; display: grid; place-items: center; }
+/* Ensō to the side (decided 2026-11-19, Inicio B): a small circle on the left, the countdown beside it. */
+.counter-card { position: relative; display: grid; grid-template-columns: 116px minmax(0, 1fr); align-items: center; gap: var(--space-4); padding: var(--space-4); border-radius: 8px; background: var(--paper) var(--grain); }
+/* seigaiha waves along the bottom of the counter */
+.counter-card { padding-bottom: calc(var(--space-4) + 14px); }
+.counter-card::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 26px; pointer-events: none; background: var(--accent); opacity: .22;
+  -webkit-mask: url('./icons/patterns/seigaiha.svg') repeat-x 0 0 / 52px 26px; mask: url('./icons/patterns/seigaiha.svg') repeat-x 0 0 / 52px 26px; }
+@media (min-width: 768px) { .counter-card { grid-template-columns: 148px minmax(0, 1fr); padding: var(--space-5) var(--space-5) calc(var(--space-5) + 14px); } .counter-goal { font-size: 1.35rem; } .counter-detail { font-size: .9rem; } }
+.counter-ring { position: relative; width: 100%; aspect-ratio: 1; display: grid; place-items: center; }
 .counter-ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .counter-ring-track, .counter-ring-arc, .counter-ring-echo { fill: none; stroke-linecap: round; filter: url(#enso-ink); }
 .counter-ring-track { stroke: var(--text); stroke-opacity: .07; stroke-width: 12; }
 .counter-ring-arc { stroke: var(--accent); stroke-width: 15; }
 .counter-ring-echo { stroke: var(--accent); stroke-opacity: .35; stroke-width: 3.5; }
 .counter-ring-arc.is-filling, .counter-ring-echo.is-filling { transition: stroke-dashoffset 1.6s cubic-bezier(.45, .05, .2, 1); }
-.counter-seal { position: absolute; right: 6%; bottom: 9%; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 4px; background: var(--accent); color: var(--accent-ink); transform: rotate(-6deg); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-ink) 25%, transparent); }
+.counter-seal { position: absolute; right: 0; bottom: 4%; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; background: var(--accent); color: var(--accent-ink); transform: rotate(-6deg); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-ink) 25%, transparent); }
 .counter-seal .icon { fill: currentColor; stroke: none; }
 .counter-big { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0; margin: 0; }
-.counter-days { font-family: var(--font-serif); font-size: clamp(3rem, 2.3rem + 3.6vw, 4.2rem); font-weight: 700; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
-.counter-days-label { font-family: var(--font-serif); font-size: 1.05rem; color: var(--text-2); }
-.counter-goal { margin: 0; font-family: var(--font-serif); font-weight: 700; font-size: 1.15rem; }
-.counter-detail { margin: var(--space-1) 0 0; color: var(--text-2); font-size: .92rem; }
+.counter-days { font-family: var(--font-serif); font-size: clamp(1.9rem, 1.6rem + 1.2vw, 2.4rem); font-weight: 700; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
+.counter-days-label { font-family: var(--font-serif); font-size: .74rem; color: var(--text-2); }
+.counter-goal { margin: 0; font-family: var(--font-serif); font-weight: 700; font-size: 1.05rem; line-height: 1.3; }
+.counter-detail { margin: var(--space-1) 0 0; color: var(--text-2); font-size: .8rem; }
 .counter-clock { font-variant-numeric: tabular-nums; }
 /* the day's cards are washi paper too */
 .home-slide { border-radius: 8px; background: var(--paper) var(--grain); }
 
-/* the day's carousel: swipe on phones, a row of three from 900 px */
-.home-carousel { margin-inline: calc(var(--space-4) * -1); min-width: 0; }
-.home-carousel-track { position: relative; display: flex; gap: var(--space-3); overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--space-4); padding: 2px var(--space-4) var(--space-2); scrollbar-width: none; overscroll-behavior-x: contain; outline-offset: -2px; }
-.home-carousel-track::-webkit-scrollbar { display: none; }
-.home-slide { flex: 0 0 86%; scroll-snap-align: start; min-height: 190px; }
-.home-dots { display: flex; justify-content: center; gap: 2px; }
-.home-dot { width: 24px; height: 24px; display: grid; place-items: center; border: 0; padding: 0; background: none; cursor: pointer; }
-.home-dot::before { content: ''; width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--border-strong); transition: width var(--dur-2) var(--ease-out), background var(--dur-2); }
-.home-dot[aria-current="true"]::before { width: 20px; background: var(--accent); }
+/* the day's cards: one at a time with buttons on top (no swipe); a row of three from 900 px */
+/* noren (Inicio A "Noren y sellos", 2026-11-19): cloth curtains hanging from a wooden rod */
+.day-picks { display: flex; gap: 4px; margin-bottom: var(--space-2); border-top: 4px solid color-mix(in srgb, var(--gold) 55%, var(--text-2)); }
+.day-pick { position: relative; flex: 1; min-width: 0; min-height: 46px; padding: 0 var(--space-2) 6px; border: 0; border-radius: 0 0 10px 10px; background: var(--surface-2); color: var(--text-2);
+  font: 600 .82rem var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: background-color var(--dur-2), color var(--dur-2); -webkit-tap-highlight-color: transparent; }
+.day-pick::before { content: ''; position: absolute; left: 50%; bottom: 7px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: currentColor; opacity: .5; }
+.day-pick[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.day-pick:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.home-day-cards { display: grid; }
+.home-slide:not(.is-active) { display: none; }
+.home-slide.day-in { animation: day-in var(--dur-3) var(--ease-out); }
+@keyframes day-in { from { opacity: 0; transform: translateY(6px); } }
 @media (min-width: 900px) {
-  .home-carousel { margin-inline: 0; }
-  .home-carousel-track { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); overflow: visible; padding: 0; }
-  .home-slide { min-height: 0; }
-  .home-dots { display: none; }
+  .day-picks { display: none; }
+  .home-day-cards { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--space-3); }
+  .home-slide:not(.is-active) { display: flex; }
 }
 
 /* falling petals (first visit of the day, new day while open) */
@@ -710,17 +748,19 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 /* "Lo que viene": tear-off calendar pages (mekuri), one per date */
 .coming-card { gap: var(--space-3); }
 .coming-card > .card-kicker { margin: 0; }
-.mekuri-row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: var(--space-2); }
-@media (min-width: 640px) { .mekuri-row { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 560px; } }
-.mekuri { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 26px var(--space-2) var(--space-3); min-width: 0;
-  border: 1px solid var(--border); border-radius: 4px 4px 10px 10px; background: var(--paper) var(--grain); box-shadow: 0 2px 0 var(--surface-2); }
-/* the red binding with two rings */
-.mekuri::before { content: ''; position: absolute; inset: -1px -1px auto; height: 16px; border-radius: 4px 4px 0 0; background: var(--accent); }
-.mekuri::after { content: ''; position: absolute; top: 5px; left: calc(50% - 20px); width: 6px; height: 6px; border-radius: 50%; background: var(--paper); box-shadow: 34px 0 0 var(--paper); }
-.mekuri-num { font-family: var(--font-serif); font-weight: 700; font-size: 2rem; line-height: 1.05; font-variant-numeric: tabular-nums; }
-.mekuri-unit { font-size: .78rem; color: var(--text-2); }
-.mekuri-name { margin-top: var(--space-1); font-size: .82rem; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
-.mekuri-when { font-size: .74rem; color: var(--text-2); }
+.mekuri-row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+@media (min-width: 768px) { .mekuri-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* one row per date; the number is a red hanko seal (Inicio A "Noren y sellos") */
+.mekuri { position: relative; display: grid; grid-template-columns: 38px auto minmax(0, 1fr); grid-template-areas: "num unit name" "num unit when"; column-gap: var(--space-2); align-items: center; min-width: 0;
+  padding: 6px var(--space-3) 6px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--paper) var(--grain); box-shadow: 0 2px 0 var(--surface-2); }
+.mekuri-num { grid-area: num; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 5px; background: var(--accent); color: var(--accent-ink); transform: rotate(-4deg);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-ink) 25%, transparent); font-family: var(--font-serif); font-weight: 700; font-size: 1.15rem; line-height: 1; font-variant-numeric: tabular-nums; }
+/* a brush stroke under the titles of Inicio */
+.coming-card > .card-kicker::after, .home-slide .card-kicker::after { content: ''; display: block; width: 72px; height: 6px; margin-top: 3px; background: var(--accent); opacity: .55;
+  -webkit-mask: url('./icons/patterns/brush.svg') no-repeat 0 0 / 100% 100%; mask: url('./icons/patterns/brush.svg') no-repeat 0 0 / 100% 100%; }
+.mekuri-unit { grid-area: unit; font-size: .72rem; color: var(--text-2); }
+.mekuri-name { grid-area: name; font-size: .84rem; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.mekuri-when { grid-area: when; font-size: .74rem; color: var(--text-2); }
 
 /* backup reminder: one quiet line, not a whole card */
 .backup-card { flex-direction: row; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); border: 1px dashed var(--border-strong); border-radius: var(--radius-m); color: var(--text-2); }
@@ -1229,8 +1269,6 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .segmented-option::after { content: ''; position: absolute; inset: -4px -2px; border-radius: inherit; }
 .chip-appbar::after { content: ''; position: absolute; inset: -2px; border-radius: 50%; }
 .range { height: var(--tap); }
-.home-dots { gap: 0; }
-.home-dot { width: var(--tap); height: var(--tap); margin-block: -10px; }
 @media (pointer: coarse) {
   .btn-small { min-height: var(--tap); }
   .icon-btn-small { width: var(--tap); height: var(--tap); }

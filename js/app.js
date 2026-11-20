@@ -44,6 +44,7 @@ function registerRoutes() {
   router.register('/setup', { id: 'setup', title: 'Configuración inicial', layer: true, load: load.setup });
   router.register('/setup/historia', { id: 'historia', title: 'Bienvenida', layer: true, load: load.setup });
   router.register('/mas', { ...TABS[4], load: load.more, tab: 'mas' });
+  router.register('/mas/:a', { ...TABS[4], load: load.more, tab: 'mas' });
   router.register('/ajustes/guia-estilo', { id: 'guia-estilo', title: 'Guía de estilo', tab: 'mas', load: load.styleguide });
   router.register('/ajustes', { ...GROUPS.at(-1).sections[0], tab: 'mas', load: load.settings });
   router.register('/ajustes/legal/:doc', { id: 'legal-doc', title: 'Legal y ayuda', tab: 'mas', load: load.settings });
