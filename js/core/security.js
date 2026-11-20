@@ -10,7 +10,7 @@ export const SECURITY_DEFAULTS = {
   wipeAfterFailures: false, wipeThreshold: 10, attempts: {},
 };
 export const SENSITIVE = ['cycle', 'vault', 'person:sofia', 'person:david'];
-const NEVER_ENCRYPT = ['meta', 'settings', 'errors', 'profile', 'content'];
+const NEVER_ENCRYPT = ['meta', 'settings', 'errors', 'profile', 'content', 'syncState', 'syncInbox'];
 
 let scopesWithKeys = new Set();
 let uiUnlocked = false; // app interface unlocked (PIN, or fingerprint without PRF)

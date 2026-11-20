@@ -68,7 +68,7 @@ async function completeSetup(page) {
     const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar primera copia' }).click()]);
     const file = await download.path();
     const backup = JSON.parse(fs.readFileSync(file, 'utf8'));
-    ok('setup: first backup downloads with the backup format', backup.format === 'aniversario-backup' && backup.schemaVersion === 1);
+    ok('setup: first backup downloads with the backup format', backup.format === 'aniversario-backup' && backup.schemaVersion === 2);
     ok('backup: excludes vault and errors', !('vault' in backup.stores) && !('errors' in backup.stores));
     await page.getByRole('button', { name: 'Terminar' }).click();
     await page.getByText('Un lugar solo de los dos').waitFor();

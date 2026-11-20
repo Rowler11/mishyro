@@ -1,9 +1,23 @@
-// Cloudflare Workers (static assets only): publishes the PWA from the repo root.
-// Files listed in .assetsignore are never uploaded.
+// Cloudflare Workers (free plan): publishes the PWA from the repo root and, since Fase A,
+// runs the encrypted sync server (worker/) for /api/* only. Files in .assetsignore are never uploaded.
 {
   "name": "mishyro",
+  "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
   "assets": {
-    "directory": "."
-  }
+    "directory": ".",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  // SQLite-backed Durable Objects are included in the free plan.
+  "durable_objects": {
+    "bindings": [
+      { "name": "SPACE", "class_name": "Space" },
+      { "name": "MAILBOX", "class_name": "Mailbox" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Space", "Mailbox"] }
+  ],
+  "observability": { "enabled": false }
 }

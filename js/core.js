@@ -10,4 +10,5 @@ export * as theme from './core/theme.js';
 export * as ui from './core/ui.js';
 export * as security from './core/security.js';
 export * as profile from './core/profile.js';
+export * as sync from './core/sync.js';
 export { CONFIG } from './config.js';

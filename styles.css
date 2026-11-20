@@ -1278,3 +1278,16 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .cupones-body > .cupones-tabs { align-self: stretch; display: flex; flex-wrap: nowrap; }
 .cupones-tabs .segmented-option { flex: 1; justify-content: center; padding-inline: var(--space-2); white-space: nowrap; }
 @media (min-width: 640px) { .cupones-body > .cupones-tabs { align-self: flex-start; } .cupones-tabs .segmented-option { padding-inline: var(--space-4); } }
+
+/* ---------- Sincronización (Fase A) ---------- */
+.bullets { margin: 0; padding-left: 1.2em; display: grid; gap: var(--space-2); }
+.device-list { list-style: none; margin: 0; padding: 0; }
+.device-row { display: flex; align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-2) 0; }
+.device-row + .device-row { border-top: 1px solid var(--border); }
+.device-row .list-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.device-row .list-title { overflow-wrap: anywhere; }
+.qr-box { width: min(100%, 300px); margin-inline: auto; padding: var(--space-2); background: #fff; border-radius: 12px; border: 1px solid var(--border); }
+.qr-svg { display: block; width: 100%; height: auto; }
+.qr-frame { position: relative; width: min(100%, 320px); aspect-ratio: 1; margin-inline: auto; overflow: hidden; border-radius: 16px; background: #000; }
+.qr-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.qr-aim { position: absolute; inset: 18%; border: 3px solid #fff; border-radius: 14px; box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.35); pointer-events: none; }

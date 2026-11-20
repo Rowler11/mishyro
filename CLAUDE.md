@@ -29,6 +29,7 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 - "Más": grupos plegables, uno abierto a la vez, con tarjetas de 2 por fila (nombre corto y una línea de descripción); lo que no existe aún lleva "Pronto", no "Fase N".
 - PIN de la app y personal: 4 dígitos con envío automático. Rincón: 6 (docs/05 §33).
 - Tema claro: paleta "Sakura" (fondo #FBF4F3, acento #C2405F). Tema oscuro: "Sakura suave" (fondo #161214, acento #E893AE, sin brillo). Al usuario no le gustan los tintes que se sienten como un filtro encima.
+- Sincronización (Fase A, decidida 2026-11-20): todo, con fotos y videos; "Solo yo" solo entre los equipos de su dueño; Rincón a todos con su PIN; al instante con la app abierta; avisos solo cariñosos y sin contenido; ubicación como instantánea que llega por la app (sin seguimiento). Servidor en `worker/` (Durable Objects, plan gratis); el cliente en `js/core/sync.js`.
 - "Momentos": Resumen (fin de mes y de año), Cápsula del tiempo (el día que se abre) y Eventos de temporada no van en "Más"; salen como aviso en Inicio solo cuando toca (`moment: true` en routes.js). Desde el aviso se puede volver a los anteriores.
 
 ## Skills del proyecto (`.claude/skills/`)
@@ -43,4 +44,4 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 - Commits pequeños por fase, con un mensaje claro en español.
 
 ## Estado
-Actualiza esta línea al cerrar cada fase: **Fase actual: 2 (terminada, esperando aprobación; Fase 1 aprobada el 2026-11-19). Siguiente: Fase A (sincronización en vivo).**
+Actualiza esta línea al cerrar cada fase: **Fase actual: A (sincronización en vivo, v0.2.0, esperando aprobación; Fase 2 terminada, sin aprobar aún; Fase 1 aprobada el 2026-11-19). Siguiente: Fase 3.**

@@ -160,7 +160,7 @@ async function techReport() {
   const meta = await db.getMeta();
   const counts = [];
   for (const name of db.STORE_NAMES) {
-    if (['meta', 'settings', 'errors', 'vault'].includes(name)) continue;
+    if (['meta', 'settings', 'errors', 'vault', 'syncState', 'syncInbox'].includes(name)) continue;
     const n = (await db.rawAll(name)).filter((r) => !r.deleted).length;
     if (n) counts.push(`${name}: ${n}`);
   }
