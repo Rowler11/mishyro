@@ -239,3 +239,66 @@ export async function decorate({ letter, face }) {
   document.removeEventListener('paste', onPaste);
   return v === 'save' ? clean(list) : null;
 }
+
+/**
+ * "Estampillas" tab of Cartas (decided 2026-11-20): the shared album always in view.
+ * Create own stickers (photo, sticker or paste), delete them, and see the drawn set.
+ * `onUse` takes the person to "Escribimos" to decorate an envelope.
+ */
+export async function albumView({ onUse } = {}) {
+  await loadAlbum().catch((e) => console.error(e));
+  let removing = false;
+  const fileInput = el('input', { type: 'file', accept: 'image/*', class: 'sr-only', id: `ska-${util.uuid().slice(0, 8)}` });
+  const ownGrid = el('div', { class: 'sticker-tray', role: 'group', 'aria-label': 'Sus estampillas' });
+  const editBtn = el('button', { class: 'btn btn-ghost btn-small sticker-edit', type: 'button', 'aria-pressed': 'false', onClick: () => { removing = !removing; drawOwn(); } }, 'Editar');
+  const shown = (s) => el('span', { class: 'sticker-pick is-static', role: 'img', 'aria-label': s.name, title: s.name }, art(s.k, 40));
+  const create = async (file) => {
+    if (!file || !/^image\//.test(file.type || 'image/')) return;
+    const { makeSticker } = await import('./sticker-maker.js');
+    const rec = await makeSticker(file);
+    if (rec) { await loadAlbum(); drawOwn(); }
+  };
+  fileInput.addEventListener('change', () => { const f = fileInput.files[0]; fileInput.value = ''; create(f); });
+  const removeOwn = async (s) => {
+    const yes = await ui.confirmDialog({ title: '¿Borrar esta estampilla?', message: `“${s.name}” sale del álbum de los dos y de los sobres donde esté puesta. No se puede deshacer.`, confirmLabel: 'Borrar', danger: true });
+    if (!yes) return;
+    await db.purge('lists', s.id);
+    await loadAlbum(); drawOwn();
+    ui.toast('Estampilla borrada.');
+  };
+  function drawOwn() {
+    const own = [...album.values()];
+    if (!own.length) removing = false;
+    editBtn.hidden = !own.length;
+    editBtn.textContent = removing ? 'Listo' : 'Editar';
+    editBtn.setAttribute('aria-pressed', String(removing));
+    ownGrid.replaceChildren(...[
+      removing ? null : el('label', { class: 'sticker-pick sticker-new', for: fileInput.id, title: 'Crear una estampilla' }, icon('image-plus', { size: 24 }), el('span', {}, 'Crear')),
+      ...own.map((s) => (removing
+        ? el('button', { class: 'sticker-pick is-removing', type: 'button', 'aria-label': `Borrar del álbum: ${s.name}`, onClick: () => removeOwn(s) }, art(s.k, 40), el('span', { class: 'sticker-x', 'aria-hidden': 'true' }, icon('x', { size: 14 })))
+        : shown(s))),
+      fileInput].filter(Boolean));
+  }
+  drawOwn();
+  // Paste an image (PC) or a sticker from the phone keyboard.
+  const pasteBox = el('div', {
+    class: 'sticker-paste', contenteditable: 'true', role: 'textbox', 'aria-label': 'Pega aquí una imagen o un sticker del teclado', 'data-placeholder': 'Pega aquí una imagen o un sticker del teclado',
+  });
+  const fromTransfer = (dt) => [...(dt?.files || [])].find((f) => /^image\//.test(f.type)) || [...(dt?.items || [])].find((i) => i.kind === 'file' && /^image\//.test(i.type))?.getAsFile();
+  pasteBox.addEventListener('paste', (e) => { const f = fromTransfer(e.clipboardData); if (f) { e.preventDefault(); pasteBox.textContent = ''; create(f); } });
+  pasteBox.addEventListener('beforeinput', (e) => { const f = fromTransfer(e.dataTransfer); if (f) { e.preventDefault(); create(f); } else if (e.inputType !== 'insertFromPaste') e.preventDefault(); });
+  pasteBox.addEventListener('input', async () => {
+    const img = pasteBox.querySelector('img'); pasteBox.textContent = '';
+    if (img?.src) { try { const b = await (await fetch(img.src)).blob(); create(new File([b], 'sticker', { type: b.type || 'image/png' })); } catch { ui.toast('No pudimos leer ese sticker. Guárdalo como imagen y elígelo con "Crear".'); } }
+  });
+  return el('div', { class: 'cartas-section sticker-album' },
+    el('div', { class: 'card sticker-howto' },
+      el('p', { class: 'sticker-howto-text' }, 'Decoren el sobre de sus cartas. Las que crean aquí quedan en el álbum de los dos.'),
+      onUse ? ui.button({ label: 'Decorar un sobre', iconName: 'sticker', small: true, onClick: onUse }) : null),
+    el('div', { class: 'card sticker-trays' },
+      el('div', { class: 'sticker-tray-head' }, el('h2', { class: 'card-kicker' }, 'Sus estampillas'), editBtn),
+      ownGrid, pasteBox),
+    el('div', { class: 'card sticker-trays' },
+      el('h2', { class: 'card-kicker' }, 'Del set'),
+      el('div', { class: 'sticker-tray', role: 'group', 'aria-label': 'Estampillas del set' }, SET.map(shown))));
+}

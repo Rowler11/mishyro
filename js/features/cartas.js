@@ -6,13 +6,14 @@
 // On the author's phone the seed letters show with their own, by status (decision 5).
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import { compressImage } from '../core/images.js';
-import { layer as stickerLayer, decorate, loadAlbum } from './stickers.js';
+import { layer as stickerLayer, decorate, loadAlbum, albumView } from './stickers.js';
 
 const { el, icon } = util;
 const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
 const fmtTime = new Intl.DateTimeFormat('es-CO', { hour: 'numeric', minute: '2-digit' });
 const KEY = `${CONFIG.storageKey}.cartas.tab`;
-const readTab = () => { try { return localStorage.getItem(KEY) === 'write' ? 'write' : 'mine'; } catch { return 'mine'; } };
+const TABS = ['mine', 'write', 'stickers'];
+const readTab = () => { try { const v = localStorage.getItem(KEY); return TABS.includes(v) ? v : 'mine'; } catch { return 'mine'; } };
 const saveTab = (v) => { try { localStorage.setItem(KEY, v); } catch { /* private mode */ } };
 const AUTHOR = Object.entries(CONFIG.people || {}).find(([, p]) => p.role === 'author')?.[0] || 'david';
 const pending = (t) => !t || seed.needsCompletion(t);
@@ -362,15 +363,29 @@ export async function render(ctx) {
         el('div', { class: 'sent-grid' }, read.map(sent))) : null);
   }
 
+  // "Decorar un sobre" from the album: the newest draft, or a new letter when there is none.
+  async function useStickers() {
+    const me = profile.active();
+    const draft = letters.filter((l) => l.from === me && l.status === 'draft').sort((a, b) => (b.raw?.updatedAt || '').localeCompare(a.raw?.updatedAt || ''))[0];
+    tab = 'write'; saveTab(tab); draw();
+    if (draft) await decorateLetter(draft);
+    else { ui.toast('Primero escribe la carta; luego "Decorar sobre" en su hoja.'); openEditor(); }
+  }
+
   function draw() {
     const me = profile.active();
     const toOpen = letters.filter((l) => l.to === me && l.status === 'sealed' && !l.incomplete && l.body).length;
     const tabs = ui.segmented({
       label: 'Cartas', value: tab,
-      options: [{ value: 'mine', label: toOpen ? `Para ti (${toOpen})` : 'Para ti' }, { value: 'write', label: 'Escribimos' }],
+      options: [{ value: 'mine', label: toOpen ? `Para ti (${toOpen})` : 'Para ti' }, { value: 'write', label: 'Escribimos' }, { value: 'stickers', label: 'Estampillas' }],
       onChange: (v) => { tab = v; saveTab(v); draw(); },
     });
-    body.replaceChildren(tabs, tab === 'mine' ? forMe() : writing());
+    if (tab === 'stickers') {
+      // Third section (decided 2026-11-20): the sticker album, always in view.
+      const slot = el('div', { class: 'cartas-section' });
+      body.replaceChildren(tabs, slot);
+      albumView({ onUse: useStickers }).then((view) => { if (tab === 'stickers' && slot.isConnected) slot.replaceWith(view); }).catch((e) => console.error(e));
+    } else body.replaceChildren(tabs, tab === 'mine' ? forMe() : writing());
     if (justOpened) { body.querySelector(`.futo[data-id="${CSS.escape(justOpened)}"]`)?.classList.add('just-opened'); justOpened = null; }
   }
 
@@ -400,7 +415,7 @@ export async function render(ctx) {
         const blob = await res.blob();
         const { makeSticker } = await import('./sticker-maker.js');
         const rec = await makeSticker(new File([blob], 'compartida', { type: blob.type || 'image/png' }));
-        if (rec) { tab = 'write'; saveTab(tab); await load(); draw(); ui.toast('Úsala con "Decorar sobre" en un borrador.'); }
+        if (rec) { tab = 'stickers'; saveTab(tab); await load(); draw(); ui.toast('Quedó en el álbum. Úsala con "Decorar un sobre".'); }
       } catch (e) { console.error(e); ui.toast('No pudimos abrir la imagen compartida.', { tone: 'error' }); }
     });
   }
