@@ -2188,3 +2188,23 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 @keyframes sparkle { to { opacity: 0; transform: translateY(-14px) scale(.3); } }
 .center-row { justify-content: center; }
 .section-title { margin: 0; font-family: var(--font-serif); font-size: 1.1rem; }
+
+/* ---------- Calendario del ciclo (Fase 4B) ---------- */
+.dot-ciclo { background: var(--accent); opacity: .55; }
+.dot-ciclo.cyc-period { opacity: 1; background: var(--danger); }
+.dot-ciclo.cyc-predicted { background: transparent; box-shadow: inset 0 0 0 1.5px var(--accent); opacity: 1; }
+.dot-ciclo.cyc-fertile, .dot-ciclo.cyc-ovulation { background: var(--success); opacity: .8; }
+.dot-privado { background: var(--text-2); opacity: .7; }
+.cyc-big { font-family: var(--font-serif); font-size: 1.5rem; line-height: 1.2; margin: 0; }
+.cyc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: var(--space-3, 12px); margin: 0; }
+.cyc-stats div { display: flex; flex-direction: column; gap: 2px; }
+.cyc-stats dt { font-size: .85rem; color: var(--text-2); }
+.cyc-stats dd { margin: 0; font-weight: 600; }
+.cyc-row { display: grid; grid-template-columns: 4.5rem 1fr auto; gap: var(--space-2, 8px); align-items: start; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.cyc-row:last-child { border-bottom: 0; }
+.cyc-date { font-weight: 600; font-size: .9rem; }
+.cyc-rec { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cyc-rec .badge { align-self: flex-start; }
+.cyc-actions { display: flex; gap: 2px; }
+.cyc-history > summary, .cyc-settings > summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.cyc-priv-line { display: inline-flex; align-items: center; gap: 4px; }

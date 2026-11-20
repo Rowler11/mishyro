@@ -59,8 +59,11 @@ function privacidad() {
         ui.button({ label: 'Modo sin terceros', iconName: 'shield', href: '#/ajustes/terceros' }),
         ui.button({ label: 'Política de privacidad', iconName: 'file-text', variant: 'ghost', href: '#/ajustes/legal/privacidad' }))),
     card('Ciclo y capa privada',
-      el('p', { class: 'muted' }, `Llegan pronto con el Calendario. Ahí ${profile.name('sofia')} decide qué es privado y qué ve ${profile.name('david')}, y sus ajustes se cambian solo desde su perfil.`),
-      el('span', { class: 'badge soon-pill' }, 'Pronto'))), cleanup: off };
+      el('ul', { class: 'privacy-points' },
+        el('li', {}, `Lo decide ${profile.name('sofia')}. Sus registros se quedan solo en sus equipos.`),
+        el('li', {}, `A ${profile.name('david')} le llega, cifrado, solo lo que ella marque "Visible para ${profile.name('david')}", y solo puede verlo.`),
+        el('li', {}, 'Nunca sale en el Resumen, las insignias, la búsqueda ni los archivos del calendario del teléfono.')),
+      el('div', { class: 'btn-row' }, ui.button({ label: me === 'sofia' ? 'Abrir mi calendario' : 'Ver lo compartido', iconName: 'calendar', href: '#/ciclo' })))), cleanup: off };
 }
 
 // ---------- Modo sin terceros ----------
