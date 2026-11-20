@@ -991,6 +991,77 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 7. Fase 3: Preguntas, Retos, Ánimo, Calendario with .ics, Fechas, Recordatorios ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
+    const page = await ctx.newPage();
+    const errs = [];
+    page.on('pageerror', (e) => errs.push(e.message));
+    page.on('dialog', async (d) => { errs.push('dialog'); await d.dismiss(); });
+    await completeSetup(page);
+    const now = new Date();
+    const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const dl = async (fn) => { const [d] = await Promise.all([page.waitForEvent('download'), fn()]); return fs.readFileSync(await d.path(), 'utf8'); };
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel); };
+
+    await go('/preguntas', '.qa-card');
+    await page.locator('.qa-form textarea').first().fill('Un café juntos');
+    await page.getByRole('button', { name: 'Guardar respuesta' }).first().click();
+    await page.waitForTimeout(400);
+    ok('fase 3: question answered, partner face down', (await page.locator('.qa-face.is-up').count()) >= 1);
+    await go('/retos', '.reto-card');
+    await page.getByRole('button', { name: 'Marcar como cumplido' }).click();
+    await page.waitForTimeout(500);
+    ok('fase 3: weekly challenge done with seal', (await page.locator('.reto-card.is-done').count()) === 1);
+    await go('/animo', '.mood-picker, .mood-pick, .animo');
+    ok('fase 3: mood screen opens', (await page.locator('main h1').first().textContent()).includes('nimo'));
+
+    await go('/calendario', '.cal-grid');
+    ok('calendario: month grid and today', (await page.locator('.cal-cell:not(.is-empty)').count()) >= 28 && (await page.locator('.cal-cell.is-today').count()) === 1);
+    await page.getByRole('button', { name: 'Nueva cita' }).click();
+    await page.getByLabel('Qué van a hacer').fill('Cena, sushi; y cine');
+    await page.getByLabel('Fecha').fill(iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3)));
+    await page.getByLabel('Hora (opcional)').fill('19:30');
+    await page.locator('label.segmented-option', { hasText: '1 hora antes' }).click();
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await page.waitForTimeout(500);
+    ok('calendario: new date shows on its day with a dot', (await page.locator('.cal-day .cal-event-title').count()) === 1 && (await page.locator('.cal-cell.is-selected .dot-cita').count()) === 1);
+    const one = await dl(() => page.locator('.cal-day').getByRole('button', { name: 'Al teléfono' }).click());
+    ok('calendario: .ics escapes text, keeps the time and adds the alarm', one.includes('SUMMARY:Cena\\, sushi\\; y cine') && /DTSTART:\d{8}T193000/.test(one) && one.includes('TRIGGER:-PT1H') && one.includes('\r\n'));
+    await page.getByRole('button', { name: 'Nueva cita' }).click();
+    await page.getByLabel('Qué van a hacer').fill('Picnic');
+    await page.getByLabel('Fecha').fill(iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2)));
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await page.waitForTimeout(500);
+    await page.locator('.cal-day').getByRole('link', { name: 'Crear recuerdo' }).click();
+    await page.waitForTimeout(800);
+    ok('calendario: a past date becomes a prefilled memory', (await page.getByLabel('Título').inputValue()) === 'Picnic');
+    await page.keyboard.press('Escape');
+
+    await go('/fechas', '.fecha-card');
+    ok('fechas: dates with countdown and age', (await page.locator('.fecha-card').count()) >= 3 && (await page.locator('.fecha-age').count()) >= 1);
+    const f = await dl(() => page.getByRole('button', { name: 'Agregar todas al teléfono' }).click());
+    ok('fechas: yearly .ics', (f.match(/RRULE:FREQ=YEARLY/g) || []).length >= 3);
+
+    await go('/recordatorios', '.rem-card');
+    await page.getByRole('button', { name: 'Agregar', exact: true }).click();
+    await page.getByLabel('Qué recordar').fill('Comprar flores');
+    await page.getByLabel('Fecha').fill(iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)));
+    await page.getByRole('button', { name: 'Guardar' }).click();
+    await page.waitForTimeout(500);
+    const rem = await dl(() => page.getByRole('button', { name: 'Agregar al calendario del teléfono' }).click());
+    ok('recordatorios: .ics with monthly rule and their own', rem.includes('FREQ=MONTHLY;BYMONTHDAY=') && rem.includes('Comprar flores'));
+    await page.getByRole('switch', { name: /Recordatorios discretos/ }).check();
+    await page.waitForTimeout(300);
+    const rem2 = await dl(() => page.getByRole('button', { name: 'Agregar al calendario del teléfono' }).click());
+    ok('recordatorios: discreet mode keeps the .ics neutral', !rem2.includes('Comprar flores') && rem2.includes('SUMMARY:Día especial'));
+    await go('/inicio', '.counter-card, .home-card');
+    await page.waitForTimeout(900);
+    ok('inicio: "Para hoy" shows the reminder', (await page.locator('.today-row', { hasText: 'Mañana: comprar flores' }).count()) === 1);
+    ok('fase 3: no page errors or native dialogs', errs.length === 0, errs.join(' | '));
+    await ctx.close();
+  }
+
   await browser.close();
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed`);

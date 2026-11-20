@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.3.1 (Fase 3, parte 2: organizarnos)
+
+- Calendario: el mes completo con puntos por capa (Citas, Fechas y Ánimo, cada una se prende o se apaga). Al tocar un día se ve lo que tiene. Agreguen citas con hora, lugar, nota y un aviso de 1 día o 1 hora antes. Cada cita se lleva al calendario del teléfono con su aviso, o todas juntas con "Exportar todo al teléfono". Las citas pasadas quedan en un historial y con "Crear recuerdo" abren la Cápsula con el título y la fecha listos.
+- Fechas especiales: aniversario, cumpleaños y mascotas en orden, con los días que faltan y los años que se cumplen. En la última semana la cuenta pasa a un reloj de días, horas y minutos. Cada fecha se agrega al calendario del teléfono y se repite sola cada año. La tarjeta del cumpleaños se viste con el color favorito de esa persona (nuevo en Perfil y datos).
+- Recordatorios: mesiversario, aniversario, cumpleaños, mascotas, una cita de la semana (elijan el día y la hora) y los suyos propios. Cada uno se prende o se apaga, con aviso el mismo día, 1 día, 3 días o 1 semana antes, y su hora. "Agregar al calendario del teléfono" los lleva todos, así suenan aunque la app esté cerrada. Con "Recordatorios discretos" el teléfono dice solo "Día especial".
+- Inicio, en "Para hoy": cuando falta poco para un mesiversario, la cita de la semana o un recordatorio propio, sale un aviso suave con una idea.
+
 ## 0.3.0 (Fase 3, parte 1: el día a día)
 
 - Preguntas: una pregunta del día para los dos, sin repetirse hasta terminar la lista. La respuesta del otro queda boca abajo hasta que respondes; cuando los dos responden se voltean, sale un sello y "Coincidencia" si usaron la misma palabra. Sofía puede escribir su propia pregunta. Historial con búsqueda, favoritas y racha.

@@ -57,11 +57,15 @@ async function nosotros(box) {
     const fullName = textField('Nombre completo', p.fullName, { max: 80, hint: 'Solo se guarda en este dispositivo.' });
     const birth = textField('Cumpleaños', p.birth, { type: 'date' });
     birth.control.max = today();
-    forms[who] = { shortName, nickname, fullName, birth };
+    // Favorite color: the birthday card in Fechas especiales wears it.
+    const color = el('select', { class: 'input' }, [['', 'Sin elegir'], ['sakura', 'Sakura (rosa)'], ['fuji', 'Fuji (lila)'], ['matcha', 'Matcha (verde)'], ['kohaku', 'Kohaku (ámbar)']]
+      .map(([v, l]) => el('option', { value: v, selected: (p.color || '') === v }, l)));
+    const colorF = ui.field({ label: 'Color favorito', control: color, hint: 'Viste su tarjeta de cumpleaños.' });
+    forms[who] = { shortName, nickname, fullName, birth, color };
     return el('section', { class: 'card stack' },
       el('h2', { class: 'card-title perfil-person' }, el('span', { class: `person-dot dot-${who}`, 'aria-hidden': 'true' }), p.shortName || (who === 'sofia' ? 'Ella' : 'Él'),
         profile.active() === who ? el('span', { class: 'badge' }, 'Usa este dispositivo') : null),
-      shortName.f, nickname.f, fullName.f, birth.f);
+      shortName.f, nickname.f, fullName.f, birth.f, colorF);
   };
   const start = textField('Fecha en que empezamos', rel?.startDate ? String(rel.startDate).slice(0, 10) : '', { type: 'date', hint: 'El contador de Inicio cuenta desde aquí.' });
   start.control.max = today();
@@ -78,7 +82,7 @@ async function nosotros(box) {
     const next = { ...people, id: 'people' };
     for (const who of profile.PEOPLE) {
       const f = forms[who];
-      next[who] = { ...(people[who] || {}), shortName: f.shortName.value, nickname: f.nickname.value, fullName: f.fullName.value, birth: f.birth.value };
+      next[who] = { ...(people[who] || {}), shortName: f.shortName.value, nickname: f.nickname.value, fullName: f.fullName.value, birth: f.birth.value, color: f.color.value };
     }
     await db.put('profile', next);
     await db.put('profile', { ...(rel || {}), id: 'relationship', startDate: start.value });
