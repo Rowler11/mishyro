@@ -55,11 +55,11 @@ export function dateIcs(d, { discreet = false } = {}) {
     rrule: rec === 'monthly' ? `FREQ=MONTHLY;BYMONTHDAY=${next.date.getDate()}` : rec === 'none' ? '' : 'FREQ=YEARLY', alarms: [ics.dayAlarm(1, '09:00')] };
 }
 
-function editor(existing, { day, onSaved }) {
-  const title = ui.input({ maxlength: 80, autocomplete: 'off', value: existing?.title || '', autofocus: true });
+export function editor(existing, { day, onSaved, prefill = {} }) {
+  const title = ui.input({ maxlength: 80, autocomplete: 'off', value: existing?.title || prefill.title || '', autofocus: true });
   const date = ui.input({ type: 'date', value: existing ? dayOf(existing) : day });
   const timeIn = ui.input({ type: 'time', value: existing ? timeOf(existing) : '' });
-  const place = ui.input({ maxlength: 80, autocomplete: 'off', value: existing?.place || '' });
+  const place = ui.input({ maxlength: 80, autocomplete: 'off', value: existing?.place || prefill.place || '' });
   const note = ui.textarea({ rows: 3, maxlength: 500 }); note.value = existing?.note || '';
   let remind = existing?.remind || 'none';
   const fTitle = ui.field({ label: 'Qué van a hacer', control: title });

@@ -1062,6 +1062,187 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 8. Fase 4A: recuerdos y vínculo (fake microphone, fictitious data) ----------
+  {
+    const b2 = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
+    const ctx = await b2.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true, permissions: ['microphone'] });
+    const page = await ctx.newPage();
+    const errs = [];
+    page.on('pageerror', (e) => errs.push(e.message));
+    page.on('dialog', async (d) => { errs.push('dialog'); await d.dismiss(); });
+    await completeSetup(page);
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 15000 }); await page.waitForTimeout(300); };
+    const today = await page.evaluate(async () => (await import('./js/core/util.js')).localDay());
+
+    // Pure rules
+    const logic = await page.evaluate(async () => {
+      const ins = await import('./js/features/insignias.js');
+      const res = await import('./js/features/resumen.js');
+      const ll = await import('./js/features/lenguajes.js');
+      const map = await import('./js/features/mapa.js');
+      const tc = await import('./js/features/capsula-tiempo.js');
+      const s1 = ins.computeStreak(new Set(['2026-11-16', '2026-11-17', '2026-11-19', '2026-11-20']), '2026-11-20');
+      const s2 = ins.computeStreak(new Set(['2026-11-16', '2026-11-19', '2026-11-20']), '2026-11-20');
+      const s3 = ins.computeStreak(new Set(['2026-11-18', '2026-11-19']), '2026-11-20');
+      const sc = ll.score({ q1: 'tiempo', q2: 'tiempo', q3: 'actos' });
+      const r = map.roundPosition(4.6097123, -74.0817456, 'city');
+      return {
+        grace: [s1.current, s1.graceDays.join()], twoEmpty: s2.current, todayPending: s3.current,
+        dueMonth: res.periodDueOn('2026-11-29', '2026-05-02')?.id, dueStart: res.periodDueOn('2026-12-02', '2026-05-02')?.id,
+        dueYear: res.periodDueOn('2027-01-03', '2026-05-02')?.id, dueWrapped: res.periodDueOn('2027-05-04', '2026-05-02')?.id, dueNone: res.periodDueOn('2026-11-15', '2026-05-02'),
+        top: ll.top(sc), city: [r.lat, r.lng],
+        tcClosed: tc.canOpen({ to: 'both', by: 'david', openAt: '2099-01-01' }, 'sofia'), tcOpen: tc.canOpen({ to: 'both', by: 'david', openAt: '2020-01-01' }, 'sofia'),
+      };
+    });
+    ok('4A rules: streak forgives one empty day a week', logic.grace[0] === 4 && logic.grace[1] === '2026-11-18', JSON.stringify(logic.grace));
+    ok('4A rules: two empty days in a row break the streak', logic.twoEmpty === 2, String(logic.twoEmpty));
+    ok('4A rules: today without activity yet keeps the streak', logic.todayPending === 2, String(logic.todayPending));
+    ok('4A rules: Resumen shows up at month end, year end and the anniversary', logic.dueMonth === 'm:2026-11' && logic.dueStart === 'm:2026-11' && logic.dueYear === 'y:2026' && logic.dueWrapped === 'w:1' && logic.dueNone === null, JSON.stringify(logic));
+    ok('4A rules: love language top and city-level rounding', logic.top === 'tiempo' && logic.city[0] === 4.5 && logic.city[1] === -74, JSON.stringify(logic));
+    ok('4A rules: a time capsule opens only on its day', !logic.tcClosed && logic.tcOpen);
+
+    // Memory with photo and voice note -> Galería and viewer; a "Solo yo" one stays out
+    const addMemory = async (title, { self = false, voice = false } = {}) => {
+      await go('/capsula', '.page-new');
+      await page.locator('.page-new').click();
+      const ed = page.locator('.memory-editor');
+      await page.setInputFiles('.memory-editor input[type=file]', path.join(__dirname, 'fixtures', 'foto-ficticia.jpg'));
+      await page.waitForFunction(() => document.querySelectorAll('.memory-editor .photo-tile').length === 1, null, { timeout: 20000 });
+      await ed.getByLabel('Título').fill(title);
+      await ed.getByLabel('Fecha').fill(today);
+      if (voice) {
+        await ed.getByRole('button', { name: /Agregar una nota de voz/ }).click();
+        await ed.locator('.rec-btn').click(); await page.waitForTimeout(1300); await ed.locator('.rec-btn').click();
+        await ed.locator('.rec-status', { hasText: 'Grabación lista' }).waitFor();
+      }
+      if (self) {
+        await ed.locator('label', { hasText: 'Solo yo' }).first().click();
+        const later = page.getByRole('button', { name: 'Ahora no' });
+        if (await later.isVisible({ timeout: 1500 }).catch(() => false)) await later.click();
+        await page.waitForTimeout(300);
+      }
+      await ed.getByRole('button', { name: 'Guardar recuerdo' }).click();
+      await ed.waitFor({ state: 'detached' });
+    };
+    await addMemory('Picnic ficticio', { voice: true });
+    await addMemory('Secreto ficticio', { self: true });
+    const mem = await page.evaluate(async () => { const { db } = await import('./js/core.js'); return (await db.query('memories')).filter((m) => /ficticio/.test(m.title)).map((m) => [m.title, !!m.voiceMediaId, m.visibility]); });
+    ok('4A voz: a memory keeps its voice note', mem.some(([t, v]) => t === 'Picnic ficticio' && v), JSON.stringify(mem));
+    await go('/galeria', '.gallery-tile');
+    const tiles = await page.locator('.gallery-tile').count();
+    ok('4A galería: shared photo shows, "Solo yo" does not', tiles === 1, `${tiles} tiles`);
+    await page.locator('.gallery-tile').first().click();
+    await page.waitForSelector('.viewer-media');
+    await page.keyboard.press('Escape'); await page.waitForTimeout(400);
+    ok('4A galería: viewer opens and Esc closes it', (await page.locator('.modal-viewer').count()) === 0);
+    await go('/album', '.album-page, .mes-grid');
+    ok('4A álbum: "Nuestro mes" calendar renders', (await page.locator('.mes-grid').count()) === 1);
+
+    // Places, firsts, photobooth
+    await go('/mapa', '.page-new');
+    await page.locator('.page-new').click();
+    await page.getByLabel('Nombre del lugar').fill('Café ficticio');
+    await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(600);
+    await page.locator('.section-tabs label', { hasText: 'Lista' }).click().catch(() => {});
+    await page.waitForTimeout(400);
+    ok('4A mapa: a place is saved and listed', (await page.locator('.place-name', { hasText: 'Café ficticio' }).count()) === 1);
+    await go('/primeras-veces', '.first-progress');
+    ok('4A primeras veces: progress and pages', (await page.locator('.first-progress').count()) === 1);
+    await go('/photobooth', '.page-new');
+    await page.locator('.page-new').click();
+    await page.waitForSelector('.booth-studio');
+    ok('4A photobooth: studio opens', true);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+
+    // Time capsule: the form only allows tomorrow onwards (closed envelope); one from David that opens today -> Inicio notice -> open
+    await go('/capsula-tiempo', '.page-new');
+    await page.locator('.page-new').click();
+    await page.getByLabel('Título').fill('Para mañana, ficticia');
+    await page.getByLabel('Mensaje').fill('Mensaje cerrado');
+    await page.getByLabel('Se abre el').fill(today);
+    await page.getByRole('button', { name: 'Sellar' }).click(); await page.waitForTimeout(300);
+    ok('4A cápsula del tiempo: today is not allowed as opening day', (await page.getByText('Elige un día a partir de mañana.').count()) === 1);
+    await page.getByLabel('Se abre el').fill('2099-05-02');
+    await page.getByRole('button', { name: 'Sellar' }).click(); await page.waitForTimeout(600);
+    ok('4A cápsula del tiempo: a sealed envelope stays closed', (await page.locator('.tc-env-btn[disabled]', { hasText: 'Para mañana, ficticia' }).count()) === 1);
+    await page.evaluate(async (d) => { const { db } = await import('./js/core.js'); await db.put('timeCapsules', { id: 'tc-ficticia', by: 'david', to: 'both', title: 'Para hoy, ficticia', text: 'Mensaje ficticio', mediaId: null, openAt: d, openedBy: [], visibility: 'shared', owner: 'both' }); }, today);
+    await go('/inicio', '.home-card');
+    await page.waitForTimeout(900);
+    ok('4A cápsula del tiempo: Inicio says it opens today', (await page.locator('.today-row', { hasText: /cápsula del tiempo/ }).count()) === 1);
+    await go('/capsula-tiempo', '.tc-env-btn');
+    await page.locator('.tc-env-btn:not([disabled])').first().click();
+    await page.waitForSelector('.tc-paper');
+    ok('4A cápsula del tiempo: opens on its day', (await page.locator('.tc-paper', { hasText: 'Mensaje ficticio' }).count()) === 1);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+
+    // Vínculo
+    await go('/planes', '.ema');
+    await page.locator('.ema-check input').first().click();
+    await page.getByRole('button', { name: 'Marcar cumplido' }).click(); await page.waitForTimeout(600);
+    ok('4A planes: a plan is marked done', (await page.locator('.ema.is-done').count()) >= 1);
+    await go('/regalos', '.section-tabs');
+    await page.locator('.section-tabs label', { hasText: 'Mi lista' }).click();
+    await page.locator('.page-new').click();
+    await page.getByLabel('¿Qué te gustaría?').fill('Libro ficticio');
+    await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(600);
+    ok('4A regalos: a wish is added to my list', (await page.locator('.gift', { hasText: 'Libro ficticio' }).count()) === 1);
+    await go('/encuentro', '.page');
+    await page.getByRole('button', { name: 'Poner la fecha' }).click();
+    await page.getByLabel('Fecha').fill('2099-01-10');
+    await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(600);
+    ok('4A encuentro: countdown shows', /Faltan/.test(await page.locator('.meet-line').textContent()));
+    await go('/lenguajes', '.page');
+    await page.getByRole('button', { name: 'Responder el cuestionario' }).click();
+    for (let k = 0; k < 10; k++) { await page.locator('.ll-opt').first().click(); await page.waitForTimeout(80); }
+    await page.waitForSelector('.radar');
+    ok('4A lenguajes: quiz ends with the chart', (await page.locator('.radar').count()) === 1);
+    await go('/gratitud', '.jar-card');
+    await page.getByRole('button', { name: 'Escribir una nota' }).click();
+    await page.locator('.modal textarea').fill('Gracias, nota ficticia');
+    await page.getByRole('button', { name: 'Echar al frasco' }).click(); await page.waitForTimeout(600);
+    ok('4A gratitud: the note falls in the jar', (await page.locator('.jar-card strong').textContent()) === '1');
+    await go('/citas', '.gacha-card');
+    await page.getByRole('button', { name: 'Girar' }).click();
+    await page.waitForSelector('.idea-card .idea-title', { timeout: 5000 });
+    ok('4A citas: the gacha gives an idea', true);
+
+    // Letter with a voice note: sealing takes it out of "Solo yo"
+    await go('/cartas', '.page');
+    await page.getByRole('button', { name: 'Escribir carta' }).click();
+    const le = page.locator('.letter-editor');
+    await le.locator('input').first().fill('me extrañes');
+    await le.locator('textarea').fill('Carta ficticia con voz.');
+    await le.getByRole('button', { name: /Agregar una nota de voz/ }).click();
+    await le.locator('.rec-btn').click(); await page.waitForTimeout(1200); await le.locator('.rec-btn').click();
+    await le.locator('.rec-status', { hasText: 'Grabación lista' }).waitFor();
+    await le.getByRole('button', { name: 'Guardar borrador' }).click(); await le.waitFor({ state: 'detached' });
+    const letter = await page.evaluate(async () => { const { db } = await import('./js/core.js'); const l = (await db.query('letters')).find((x) => x.body === 'Carta ficticia con voz.'); return l ? { v: !!l.voiceMediaId, d: l.voiceDuration, vis: l.visibility } : null; });
+    ok('4A voz: a letter draft keeps its voice note', letter?.v && letter.d >= 1 && letter.vis === 'self', JSON.stringify(letter));
+
+    // Racha e insignias, Resumen
+    await go('/insignias', '.streak-card');
+    ok('4A racha: today counts', /Hoy ya cuenta/.test(await page.locator('.streak-card').innerText()));
+    const stamps = await page.locator('.ins-badge.is-on .ins-badge-name').allTextContents();
+    ok('4A insignias: unlocked stamps in the showcase', stamps.includes('Primera gracia') && stamps.includes('Primer lugar'), stamps.join(', '));
+    ok('4A insignias: locked ones show progress', (await page.locator('.ins-badge:not(.is-on) [role=progressbar]').count()) >= 3);
+    await go('/resumen', '.resumen-tiles');
+    await page.waitForSelector('.resumen-tile');
+    const tilesText = (await page.locator('.resumen-tile').allInnerTexts()).join(' | ');
+    ok('4A resumen: counts what they did this month', /Recuerdos\s*1\b/.test(tilesText) && /Gratitud/.test(tilesText) && /Lugares/.test(tilesText), tilesText);
+    ok('4A resumen: "Solo yo" stays out', !/Recuerdos\s*2\b/.test(tilesText));
+    await page.getByRole('button', { name: 'Ver las historias' }).click();
+    await page.waitForSelector('.story-canvas');
+    await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300);
+    const label = await page.locator('.story-canvas').getAttribute('aria-label');
+    ok('4A resumen: stories move with the keyboard and read aloud', !!label && label.length > 3, label);
+    const dl = await Promise.race([page.waitForEvent('download', { timeout: 6000 }).then((d) => d.suggestedFilename()), page.getByRole('button', { name: 'Compartir' }).click().then(() => new Promise(() => {}))]).catch(() => '');
+    ok('4A resumen: a card exports as PNG', /\.png$/.test(dl), dl);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    if (SHOTS) await shot(page, 'fase4a-resumen-390');
+    ok('fase 4A: no page errors or native dialogs', errs.length === 0, errs.join(' | '));
+    await b2.close();
+  }
+
   await browser.close();
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed`);

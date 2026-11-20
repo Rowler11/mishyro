@@ -9,7 +9,7 @@
 
 export const CONFIG = {
   // Versión visible de la app (Ajustes > Acerca de). Súbela junto con CACHE_VERSION en sw.js.
-  appVersion: '0.3.1',
+  appVersion: '0.4.0',
   // Prefijo de la base de datos y de las 2 preferencias en localStorage (tema y perfil activo).
   // Si lo cambias, también en theme-boot.js. Cambiarlo "empieza de cero" en cada dispositivo.
   storageKey: 'aishiteru',
@@ -147,7 +147,7 @@ export const CONFIG = {
 
   // Insignias: condición medible (la evalúa la sección de Insignias en la Fase 4A).
   badges: [
-    { id: 'cfg:badge:primera-pregunta', name: 'Primera pregunta', description: 'Respondieron su primera pregunta del día.', icon: 'message-circle-question', condition: { type: 'count', store: 'questionsDaily', min: 1 } },
+    { id: 'cfg:badge:primera-pregunta', name: 'Primera pregunta', description: 'Respondieron su primera pregunta del día.', icon: 'message-circle-question', condition: { type: 'count', store: 'questionsDaily', where: { kind: 'answer' }, min: 1 } },
     { id: 'cfg:badge:racha-7', name: 'Una semana seguida', description: '7 días de racha.', icon: 'flame', condition: { type: 'streak', streak: 'daily', min: 7 } },
     { id: 'cfg:badge:racha-30', name: 'Un mes seguido', description: '30 días de racha.', icon: 'flame', condition: { type: 'streak', streak: 'daily', min: 30 } },
     { id: 'cfg:badge:racha-100', name: 'Cien días seguidos', description: '100 días de racha.', icon: 'flame', condition: { type: 'streak', streak: 'daily', min: 100 } },
@@ -158,6 +158,15 @@ export const CONFIG = {
     { id: 'cfg:badge:primer-aporte', name: 'Primer aporte', description: 'Hicieron su primer aporte a la Alcancía.', icon: 'piggy-bank', condition: { type: 'count', store: 'savingsEntries', min: 1 } },
     { id: 'cfg:badge:primera-meta', name: 'Meta cumplida', description: 'Cumplieron su primera meta de ahorro.', icon: 'award', condition: { type: 'count', store: 'savingsGoals', where: { status: 'done' }, min: 1 } },
     { id: 'cfg:badge:primera-capsula', name: 'Cápsula abierta', description: 'Abrieron su primera cápsula del tiempo.', icon: 'lock-open', condition: { type: 'count', store: 'timeCapsules', where: { opened: true }, min: 1 } },
+    { id: 'cfg:badge:primera-gratitud', name: 'Primera gracia', description: 'Echaron la primera nota al frasco de gratitud.', icon: 'hand-heart', condition: { type: 'count', store: 'gratitude', min: 1 } },
+    { id: 'cfg:badge:frasco-30', name: 'Frasco lleno', description: '30 notas en el frasco de gratitud.', icon: 'hand-heart', condition: { type: 'count', store: 'gratitude', min: 30 } },
+    { id: 'cfg:badge:5-primeras', name: 'Cinco primeras veces', description: 'Completaron 5 páginas de Primeras veces.', icon: 'star', condition: { type: 'count', store: 'firsts', min: 5 } },
+    { id: 'cfg:badge:primera-purikura', name: 'Primera tira', description: 'Hicieron su primera tira en el Photobooth.', icon: 'camera', condition: { type: 'count', store: 'content', where: { kind: 'purikura' }, min: 1 } },
+    { id: 'cfg:badge:10-lugares', name: 'Exploradores', description: 'Marcaron 10 lugares en el mapa.', icon: 'map', condition: { type: 'count', store: 'places', min: 10 } },
+    { id: 'cfg:badge:primer-plan', name: 'Plan cumplido', description: 'Cumplieron su primer plan juntos.', icon: 'flag', condition: { type: 'count', store: 'bucketList', where: { done: true }, min: 1 } },
+    { id: 'cfg:badge:primer-sueno', name: 'Sueño cumplido', description: 'Cumplieron su primer sueño.', icon: 'plane', condition: { type: 'count', store: 'dreams', where: { status: 'done' }, min: 1 } },
+    { id: 'cfg:badge:primera-voz', name: 'Primera nota de voz', description: 'Grabaron su primera nota de voz para el otro.', icon: 'mic', condition: { type: 'count', store: 'voiceNotes', min: 1 } },
+    { id: 'cfg:badge:revision-4', name: 'Un mes de revisiones', description: 'Hicieron 4 revisiones semanales.', icon: 'notebook-pen', condition: { type: 'count', store: 'weeklyReviews', min: 4 } },
     { id: 'cfg:badge:100-dias', name: '100 días juntos', description: 'Cumplieron 100 días.', icon: 'heart', condition: { type: 'daysTogether', min: 100 } },
     { id: 'cfg:badge:365-dias', name: 'Un año juntos', description: 'Cumplieron 365 días.', icon: 'heart', condition: { type: 'daysTogether', min: 365 } },
   ],
@@ -183,11 +192,11 @@ export const CONFIG = {
   // Se pueden editar desde la app y volver a este texto con "Restaurar". Párrafos separados
   // por una línea en blanco; "## " inicia un subtítulo y "- " un punto de lista.
   legalTexts: [
-    { id: 'cfg:legal:privacidad', title: 'Política de privacidad', summary: 'Qué guarda la app, dónde (solo en este dispositivo), qué servicios externos opcionales existen, quién puede ver qué y cómo borrar todo.', body: "Esta app es solo para ustedes dos. No tiene cuentas, ni servidor, ni publicidad, ni analítica, ni cookies.\n\n## Qué guarda\n- Lo que ustedes escriben o eligen: nombres, apodos, fechas, recuerdos con sus fotos, cartas, cupones, frases y ajustes.\n- Datos técnicos mínimos para funcionar, como la versión de la app y un registro local de errores sin datos personales.\n\n## Dónde lo guarda\nTodo vive en el navegador de cada dispositivo (IndexedDB). Cada teléfono y el PC tienen su propia copia. Nada se envía a internet. La única forma de pasar los datos de un dispositivo a otro es la copia de seguridad, que ustedes descargan y mueven.\n\n## Quién ve qué\n- \"Los dos\": lo ve quien use la app en ese dispositivo.\n- \"Solo yo\": no se le muestra a la otra persona ni se cuenta. Con PIN personal, además, queda cifrado.\n- Sin PIN, la privacidad es de cortesía: quien tenga el teléfono desbloqueado podría llegar a los datos con herramientas del navegador.\n\n## Servicios externos\nHoy la app no hace solicitudes a terceros. Cuando lleguen el mapa, Spotify o los enlaces a Google Maps, serán opcionales y se apagan con \"Modo sin terceros\".\n\n## Cifrado\nCon PIN, lo privado se cifra en el dispositivo (AES-GCM, con una clave derivada del PIN). El PIN nunca se guarda. Si lo olvidan, lo cifrado no se puede recuperar.\n\n## Cómo borrar todo\nAjustes, Centro de seguridad, \"Borrar todo\". También se borra todo al eliminar los datos del sitio en Chrome. Las copias descargadas se borran a mano." },
+    { id: 'cfg:legal:privacidad', title: 'Política de privacidad', summary: 'Qué guarda la app, dónde (solo en este dispositivo), qué servicios externos opcionales existen, quién puede ver qué y cómo borrar todo.', body: "Esta app es solo para ustedes dos. No tiene cuentas, ni servidor, ni publicidad, ni analítica, ni cookies.\n\n## Qué guarda\n- Lo que ustedes escriben o eligen: nombres, apodos, fechas, recuerdos con sus fotos, cartas, cupones, frases y ajustes.\n- Datos técnicos mínimos para funcionar, como la versión de la app y un registro local de errores sin datos personales.\n\n## Dónde lo guarda\nTodo vive en el navegador de cada dispositivo (IndexedDB). Cada teléfono y el PC tienen su propia copia. Nada se envía a internet. La única forma de pasar los datos de un dispositivo a otro es la copia de seguridad, que ustedes descargan y mueven.\n\n## Quién ve qué\n- \"Los dos\": lo ve quien use la app en ese dispositivo.\n- \"Solo yo\": no se le muestra a la otra persona ni se cuenta. Con PIN personal, además, queda cifrado.\n- Sin PIN, la privacidad es de cortesía: quien tenga el teléfono desbloqueado podría llegar a los datos con herramientas del navegador.\n\n## Servicios externos\nEl Mapa de lugares descarga las imágenes del mapa de OpenStreetMap: ese servicio sabe qué zona del mapa se está mirando, nada más. Canciones usa el reproductor de Spotify solo cuando lo tocan. Todo eso es opcional y se apaga con \"Modo sin terceros\": entonces el mapa se ve como lista.\n\n## Cifrado\nCon PIN, lo privado se cifra en el dispositivo (AES-GCM, con una clave derivada del PIN). El PIN nunca se guarda. Si lo olvidan, lo cifrado no se puede recuperar.\n\n## Cómo borrar todo\nAjustes, Centro de seguridad, \"Borrar todo\". También se borra todo al eliminar los datos del sitio en Chrome. Las copias descargadas se borran a mano." },
     { id: 'cfg:legal:uso', title: 'Aviso de uso', summary: 'App privada de pareja para uso personal. El Rincón privado es solo para adultos que consienten. Las grabaciones no se comparten sin permiso.', body: "Aishiteru es una app privada de pareja, para el uso personal de dos personas. No es un servicio público ni comercial.\n\n## Uso esperado\n- Es para conectar en persona, no para controlar al otro. Nada en la app sirve para vigilar, rastrear ni revisar el teléfono de la otra persona.\n- Cada uno decide qué comparte. \"Solo yo\" se respeta.\n\n## Contenido\n- Lo que escriben, las fotos y las grabaciones son de quienes las crean. No se comparten fuera de la pareja sin el permiso de los dos.\n- El Rincón privado es solo para adultos que consienten, y cada uno puede decir que no en cualquier momento.\n\n## Responsabilidad\n- La app se entrega tal cual, como un regalo hecho a mano. Hagan copias de seguridad con frecuencia: si se borran los datos del navegador sin copia, se pierden.\n- Si algo falla, no se pierde lo guardado salvo que se borre el dispositivo." },
     { id: 'cfg:legal:salud', title: 'Avisos de salud', summary: 'El ciclo y sus predicciones son estimaciones, no consejo médico ni anticonceptivo. Los datos de salud de la mascota no reemplazan al veterinario.', body: "## Ciclo\nEl calendario del ciclo, sus predicciones y la ventana fértil son estimaciones hechas con los datos que se ingresan. No son consejo médico ni un método anticonceptivo. Ante cualquier duda de salud, consulten a un profesional.\n\n## Mascotas\nLas vacunas, citas y notas de salud de la mascota son un apoyo para recordar. No reemplazan la opinión del veterinario.\n\n## Ánimo\nEl medidor de ánimo es para acompañarse. Si alguno está pasando por un momento difícil, busquen apoyo de personas de confianza o de un profesional." },
     { id: 'cfg:legal:permisos', title: 'Permisos', summary: 'Para qué se usan la cámara, el micrófono, la ubicación, las notificaciones y el almacenamiento, y cómo quitarlos desde Chrome.', body: "La app pide cada permiso solo cuando se usa la función que lo necesita, explica antes para qué es y sigue funcionando si se niega.\n\n- Fotos y cámara: para agregar fotos a los recuerdos y cartas. Las fotos se achican y se quedan en el dispositivo.\n- Micrófono: para las notas de voz, solo después de tocar \"Grabar\".\n- Ubicación: para compartir dónde están en un momento puntual, con la precisión que elijan. No hay seguimiento continuo.\n- Notificaciones: para los recordatorios suaves.\n- Almacenamiento persistente: para que el navegador no borre los datos por su cuenta.\n\n## Cómo quitarlos en Chrome\nEn Android: mantener presionado el ícono de la app, \"Información\", \"Permisos\". En el PC: el candado junto a la dirección, \"Configuración del sitio\". Desde ahí también se puede borrar todo lo guardado." },
-    { id: 'cfg:legal:licencias', title: 'Licencias y créditos', summary: 'Lucide (ISC), Leaflet (BSD-2), OpenStreetMap (atribución), fuentes Shippori Mincho, Zen Maru Gothic y Atkinson Hyperlegible (OFL), ONNX Runtime Web (MIT), el modelo U²-Net (Apache 2.0), qrcode-generator (MIT), jsQR (Apache 2.0) y los términos de Spotify.', body: "La app usa piezas de terceros con licencias libres. Gracias a sus autores.\n\n- Íconos Lucide, licencia ISC.\n- Fuentes Shippori Mincho, Zen Maru Gothic y Atkinson Hyperlegible, licencia SIL Open Font License 1.1. Se sirven desde la propia app.\n- Mapas (cuando lleguen): Leaflet, licencia BSD-2, con datos de OpenStreetMap y su atribución obligatoria en el mapa.\n- Quitar el fondo de las estampillas: ONNX Runtime Web de Microsoft, licencia MIT, con el modelo U²-Net pequeño de Xuebin Qin y colaboradores, licencia Apache 2.0. Funciona dentro del teléfono; la foto no sale de él.\n- Códigos QR para unir equipos: qrcode-generator de Kazuhiko Arase, licencia MIT, y jsQR de Cosmo Wolfe, licencia Apache 2.0, para leer el código con la cámara. Todo pasa dentro del equipo.\n- Spotify: en Canciones se usa solo su reproductor oficial y su servicio público de nombres (oEmbed), según los términos de Spotify. La app no busca en Spotify ni guarda audio.\n\nLas ilustraciones japonesas, el logo de sakura y el resto del diseño son propios de esta app." },
+    { id: 'cfg:legal:licencias', title: 'Licencias y créditos', summary: 'Lucide (ISC), Leaflet (BSD-2), OpenStreetMap (atribución), fuentes Shippori Mincho, Zen Maru Gothic y Atkinson Hyperlegible (OFL), ONNX Runtime Web (MIT), el modelo U²-Net (Apache 2.0), qrcode-generator (MIT), jsQR (Apache 2.0) y los términos de Spotify.', body: "La app usa piezas de terceros con licencias libres. Gracias a sus autores.\n\n- Íconos Lucide, licencia ISC.\n- Fuentes Shippori Mincho, Zen Maru Gothic y Atkinson Hyperlegible, licencia SIL Open Font License 1.1. Se sirven desde la propia app.\n- Mapa de lugares: Leaflet, licencia BSD-2, con mapas de OpenStreetMap (© colaboradores de OpenStreetMap, ODbL) y su atribución en el mapa.\n- Quitar el fondo de las estampillas: ONNX Runtime Web de Microsoft, licencia MIT, con el modelo U²-Net pequeño de Xuebin Qin y colaboradores, licencia Apache 2.0. Funciona dentro del teléfono; la foto no sale de él.\n- Códigos QR para unir equipos: qrcode-generator de Kazuhiko Arase, licencia MIT, y jsQR de Cosmo Wolfe, licencia Apache 2.0, para leer el código con la cámara. Todo pasa dentro del equipo.\n- Spotify: en Canciones se usa solo su reproductor oficial y su servicio público de nombres (oEmbed), según los términos de Spotify. La app no busca en Spotify ni guarda audio.\n\nLas ilustraciones japonesas, el logo de sakura y el resto del diseño son propios de esta app." },
     { id: 'cfg:legal:version', title: 'Versión y novedades', summary: 'Versión instalada, historial de cambios y cómo reportar un problema sin datos personales.', body: "Aquí está la versión instalada y cómo contar un problema sin compartir datos personales.\n\n## Reportar un problema\n\"Copiar reporte técnico\" copia la versión, el navegador, el tamaño de pantalla, cuántos elementos hay por sección (solo números) y los últimos errores técnicos. No incluye nombres, textos, fotos ni fechas de ustedes. Pueden pegarlo en un mensaje o en un correo." },
   ],
   legalFooter: 'Estos textos no constituyen asesoría legal. David debe revisarlos y adaptarlos.',
@@ -204,7 +213,17 @@ export const CONFIG = {
     {"id": "cfg:quiz:antojo", "text": "¿Qué antojo no puedo resistir?"},
     {"id": "cfg:quiz:loteria", "text": "¿Qué haría si me ganara la lotería?"},
   ],
-  bucketList: [], // Fase 4A
+  // Planes juntos (sección 2): pequeños y rápidos; ustedes agregan, cumplen y borran.
+  bucketList: [
+    { id: 'cfg:bucket:01', title: "Ver un amanecer desde un lugar alto", done: false, doneAt: '', order: 1 },
+    { id: 'cfg:bucket:02', title: "Hacer un picnic en un parque nuevo", done: false, doneAt: '', order: 2 },
+    { id: 'cfg:bucket:03', title: "Aprender juntos a preparar un plato japonés", done: false, doneAt: '', order: 3 },
+    { id: 'cfg:bucket:04', title: "Ir a un concierto de un artista que nos guste a los dos", done: false, doneAt: '', order: 4 },
+    { id: 'cfg:bucket:05', title: "Pasar un fin de semana fuera de Bogotá", done: false, doneAt: '', order: 5 },
+    { id: 'cfg:bucket:06', title: "Plantar algo y cuidarlo juntos", done: false, doneAt: '', order: 6 },
+    { id: 'cfg:bucket:07', title: "Tomarnos una foto en cada estación del año", done: false, doneAt: '', order: 7 },
+    { id: 'cfg:bucket:08', title: "Hacer un viaje en tren o en bus a un pueblo que no conozcamos", done: false, doneAt: '', order: 8 },
+  ],
   // Retos semanales (uno por semana, sin repetirse hasta terminar la lista).
   weeklyChallenges: [
     {"id": "cfg:challenge:01", "title": "Nota escondida", "text": "Escóndele una nota a mano donde la encuentre durante la semana.", "category": "detalle"},
@@ -242,13 +261,101 @@ export const CONFIG = {
     { min: 0.6, text: 'Vas muy bien.' },
     { min: 0, text: 'Hay mucho por descubrir, y eso es lo bonito.' },
   ],
-  firsts: [], // Fase 4A
-  gratitudePrompts: [], // Fase 4A
-  weeklyReviewQuestions: [], // Fase 4A
+  // Primeras veces sugeridas (sección 22): páginas en blanco que ustedes completan, editan u ocultan.
+  firsts: [
+    { id: 'cfg:first:cita', title: 'Nuestra primera cita' },
+    { id: 'cfg:first:foto', title: 'Nuestra primera foto juntos' },
+    { id: 'cfg:first:te-quiero', title: 'El primer "te quiero"' },
+    { id: 'cfg:first:beso', title: 'Nuestro primer beso' },
+    { id: 'cfg:first:pelicula', title: 'La primera película juntos' },
+    { id: 'cfg:first:cocinar', title: 'La primera vez que cocinamos juntos' },
+    { id: 'cfg:first:viaje', title: 'Nuestro primer viaje' },
+    { id: 'cfg:first:familia', title: 'La primera vez con la familia del otro' },
+    { id: 'cfg:first:amigos', title: 'La primera salida con los amigos' },
+    { id: 'cfg:first:regalo', title: 'El primer regalo' },
+    { id: 'cfg:first:cancion', title: 'Nuestra primera canción' },
+    { id: 'cfg:first:pelea', title: 'La primera pelea que arreglamos' },
+    { id: 'cfg:first:lluvia', title: 'La primera vez bajo la lluvia' },
+    { id: 'cfg:first:baile', title: 'Nuestro primer baile' },
+    { id: 'cfg:first:mesiversario', title: 'Nuestro primer mesiversario' },
+    { id: 'cfg:first:mascota', title: 'El primer día con {mascota}', requires: 'pets' },
+    { id: 'cfg:first:concierto', title: 'Nuestro primer concierto o evento' },
+    { id: 'cfg:first:amanecer', title: 'El primer amanecer juntos' },
+    { id: 'cfg:first:carta', title: 'La primera carta' },
+    { id: 'cfg:first:aniversario', title: 'Nuestro primer aniversario' },
+  ],
+  // Frasco de gratitud (sección 28): disparadores para empezar la nota.
+  gratitudePrompts: [
+    { id: 'cfg:gratitude:01', text: "Hoy te agradezco que…" },
+    { id: 'cfg:gratitude:02', text: "Algo pequeño que hiciste y me encantó…" },
+    { id: 'cfg:gratitude:03', text: "Gracias por escucharme cuando…" },
+    { id: 'cfg:gratitude:04', text: "Me hiciste reír cuando…" },
+    { id: 'cfg:gratitude:05', text: "Me sentí cuidado o cuidada cuando…" },
+    { id: 'cfg:gratitude:06', text: "Admiro cómo…" },
+    { id: 'cfg:gratitude:07', text: "Gracias por tu paciencia con…" },
+    { id: 'cfg:gratitude:08', text: "Lo que más disfruté de esta semana contigo…" },
+    { id: 'cfg:gratitude:09', text: "Gracias por acompañarme en…" },
+    { id: 'cfg:gratitude:10', text: "Me gustó mucho que me dijeras…" },
+    { id: 'cfg:gratitude:11', text: "Gracias por hacer más fácil…" },
+    { id: 'cfg:gratitude:12', text: "Un detalle tuyo que no quiero olvidar…" },
+    { id: 'cfg:gratitude:13', text: "Gracias por confiar en mí cuando…" },
+    { id: 'cfg:gratitude:14', text: "Me encanta cuando tú…" },
+    { id: 'cfg:gratitude:15', text: "Gracias por el abrazo de…" },
+    { id: 'cfg:gratitude:16', text: "Algo que aprendí de ti…" },
+    { id: 'cfg:gratitude:17', text: "Gracias por darme espacio cuando…" },
+    { id: 'cfg:gratitude:18', text: "Me sentí orgulloso u orgullosa de ti cuando…" },
+    { id: 'cfg:gratitude:19', text: "Gracias por pensar en mí cuando…" },
+    { id: 'cfg:gratitude:20', text: "Hoy me alegraste el día con…" },
+  ],
+  // Revisión semanal (sección 28): se eligen de 3 a 5 cada semana.
+  weeklyReviewQuestions: [
+    { id: 'cfg:review:01', text: "¿Qué salió bien esta semana entre nosotros?", order: 1 },
+    { id: 'cfg:review:02', text: "¿Qué momento juntos disfrutaste más?", order: 2 },
+    { id: 'cfg:review:03', text: "¿Qué necesito de ti la próxima semana?", order: 3 },
+    { id: 'cfg:review:04', text: "¿Qué te agradezco de esta semana?", order: 4 },
+    { id: 'cfg:review:05', text: "¿Hubo algo que nos costó? ¿Cómo lo hacemos mejor?", order: 5 },
+    { id: 'cfg:review:06', text: "¿Qué plan pequeño hacemos la próxima semana?", order: 6 },
+    { id: 'cfg:review:07', text: "¿Cómo llegas de energía y de ánimo?", order: 7 },
+    { id: 'cfg:review:08', text: "¿Qué quieres que celebremos?", order: 8 },
+  ],
   scratchPrizes: [], // Fase 4B
   habitTemplates: [], // Fase 4B
-  loveLanguageQuestions: [], // Fase 4A
-  loveLanguageIdeas: [], // Fase 4A
+  // Lenguajes del amor (sección 27): nombres, 10 preguntas de elección y una guía amable, no un diagnóstico.
+  loveLanguageNames: {"palabras": "Palabras de afirmación", "tiempo": "Tiempo de calidad", "regalos": "Detalles y regalos", "actos": "Actos de servicio", "contacto": "Contacto físico"},
+  loveLanguageQuestions: [
+    { id: 'cfg:ll:01', text: "Me siento más querido o querida cuando…", options: [{ lang: 'palabras', text: "me dices lo que admiras de mí" }, { lang: 'tiempo', text: "pasamos una tarde sin teléfonos" }] },
+    { id: 'cfg:ll:02', text: "Después de un día difícil prefiero…", options: [{ lang: 'contacto', text: "un abrazo largo" }, { lang: 'actos', text: "que me ayudes con algo pendiente" }] },
+    { id: 'cfg:ll:03', text: "Un buen detalle para mí es…", options: [{ lang: 'regalos', text: "algo pequeño que te hizo pensar en mí" }, { lang: 'palabras', text: "una nota escrita a mano" }] },
+    { id: 'cfg:ll:04', text: "Me duele más cuando…", options: [{ lang: 'tiempo', text: "estamos juntos pero distraídos" }, { lang: 'palabras', text: "no me dices nada bonito en días" }] },
+    { id: 'cfg:ll:05', text: "En una cita, lo que más valoro es…", options: [{ lang: 'tiempo', text: "la conversación sin afán" }, { lang: 'contacto', text: "ir de la mano todo el tiempo" }] },
+    { id: 'cfg:ll:06', text: "Me haces sentir importante cuando…", options: [{ lang: 'actos', text: "te encargas de algo para que yo descanse" }, { lang: 'regalos', text: "recuerdas algo que quería y me sorprendes" }] },
+    { id: 'cfg:ll:07', text: "Un buen saludo es…", options: [{ lang: 'contacto', text: "un beso y un abrazo" }, { lang: 'palabras', text: "un \"te extrañé\" sincero" }] },
+    { id: 'cfg:ll:08', text: "Prefiero que me demuestres cariño…", options: [{ lang: 'actos', text: "haciendo algo por mí sin que lo pida" }, { lang: 'tiempo', text: "eligiendo un plan solo para los dos" }] },
+    { id: 'cfg:ll:09', text: "Lo que más recuerdo de un cumpleaños es…", options: [{ lang: 'regalos', text: "el regalo pensado para mí" }, { lang: 'actos', text: "que alguien organizó todo" }] },
+    { id: 'cfg:ll:10', text: "Cuando estoy triste me ayuda…", options: [{ lang: 'palabras', text: "que me digas que todo va a estar bien" }, { lang: 'contacto', text: "que me abraces sin decir nada" }] },
+  ],
+  loveLanguageIdeas: [
+    { id: 'cfg:llidea:palabras-1', lang: 'palabras', text: "Déjale una nota escondida con algo que admiras." },
+    { id: 'cfg:llidea:palabras-2', lang: 'palabras', text: "Dile en persona tres cosas que te gustan de él o ella." },
+    { id: 'cfg:llidea:palabras-3', lang: 'palabras', text: "Mándale un \"Pensando en ti\" en un día cualquiera." },
+    { id: 'cfg:llidea:palabras-4', lang: 'palabras', text: "Cuéntale a alguien, delante de él o ella, algo bonito suyo." },
+    { id: 'cfg:llidea:tiempo-1', lang: 'tiempo', text: "Una tarde sin teléfonos, solo los dos." },
+    { id: 'cfg:llidea:tiempo-2', lang: 'tiempo', text: "Caminen sin rumbo y conversen." },
+    { id: 'cfg:llidea:tiempo-3', lang: 'tiempo', text: "Saquen una cita de Sugerencias de citas y háganla." },
+    { id: 'cfg:llidea:tiempo-4', lang: 'tiempo', text: "Respondan juntos la pregunta del día, en voz alta." },
+    { id: 'cfg:llidea:regalos-1', lang: 'regalos', text: "Un detalle pequeño que te recuerde a él o ella." },
+    { id: 'cfg:llidea:regalos-2', lang: 'regalos', text: "Una flor, un dulce o su snack favorito, sin motivo." },
+    { id: 'cfg:llidea:regalos-3', lang: 'regalos', text: "Algo hecho a mano: una grulla de papel, un dibujo." },
+    { id: 'cfg:llidea:regalos-4', lang: 'regalos', text: "Revisa su lista de Regalos secretos." },
+    { id: 'cfg:llidea:actos-1', lang: 'actos', text: "Hazte cargo de algo que tenga pendiente." },
+    { id: 'cfg:llidea:actos-2', lang: 'actos', text: "Prepárale el desayuno o la comida." },
+    { id: 'cfg:llidea:actos-3', lang: 'actos', text: "Ayúdale con algo de su trabajo o estudio." },
+    { id: 'cfg:llidea:actos-4', lang: 'actos', text: "Hagan juntos una tarea de la casa que no le guste." },
+    { id: 'cfg:llidea:contacto-1', lang: 'contacto', text: "Un abrazo largo al saludar y al despedirse." },
+    { id: 'cfg:llidea:contacto-2', lang: 'contacto', text: "Tomarse de la mano al caminar." },
+    { id: 'cfg:llidea:contacto-3', lang: 'contacto', text: "Un masaje de 10 minutos." },
+    { id: 'cfg:llidea:contacto-4', lang: 'contacto', text: "Ver una película abrazados." },
+  ],
   albumTemplates: [], // Fase 4A
   recipes: [], // Fase 4B
   dateMenuIdeas: [], // Fase 4B

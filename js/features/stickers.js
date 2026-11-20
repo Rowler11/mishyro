@@ -53,6 +53,15 @@ export async function loadAlbum() {
 }
 const known = (k) => byKind.has(k) || album.has(k);
 
+/** The drawn set (k, name), for other screens that use the same stickers (Photobooth). */
+export const builtIn = () => SET.map(({ k, name }) => ({ k, name }));
+/** Source string of a drawn sticker as a standalone SVG (for <img> and canvas), or the own sticker URL. */
+export function imageSrc(k) {
+  if (isCustom(k)) return album.get(k)?.url || '';
+  const d = byKind.get(k);
+  return d ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256">${d.svg}</svg>`)}` : '';
+}
+
 /** Keep only well-formed stickers of known kinds (data may come from a backup or another phone). */
 export function clean(list) {
   if (!Array.isArray(list)) return [];

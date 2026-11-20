@@ -7,13 +7,16 @@ const path = require('path');
 
 const BASE = process.env.BASE || 'http://127.0.0.1:8765/mishyro/';
 const SEED = path.join(__dirname, '..', 'seed-privado.example.json');
-const ROUTES = ['/inicio', '/capsula', '/capsula/nuevo', '/cupones', '/cartas', '/mas', '/ajustes', '/ajustes/perfil',
+const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null;
+const ROUTES_ALL = ['/inicio', '/capsula', '/capsula/nuevo', '/cupones', '/cartas', '/mas', '/ajustes', '/ajustes/perfil',
   '/ajustes/seguridad', '/ajustes/privacidad', '/ajustes/terceros', '/ajustes/copia', '/ajustes/apariencia',
   '/ajustes/movimiento', '/ajustes/legal', '/ajustes/legal/privacidad', '/ajustes/legal/version', '/buscar',
-  '/ajustes/acerca', '/calendario', '/preguntas', '/canciones', '/diario', '/animo', '/jibun', '/retos', '/fechas', '/recordatorios'];
+  '/ajustes/acerca', '/calendario', '/preguntas', '/canciones', '/diario', '/animo', '/jibun', '/retos', '/fechas', '/recordatorios', '/galeria', '/album', '/mapa', '/primeras-veces', '/photobooth', '/capsula-tiempo', '/planes', '/suenos', '/citas', '/regalos', '/encuentro', '/voz', '/lenguajes', '/gratitud', '/insignias', '/resumen'];
+
+const ROUTES = ONLY ? ROUTES_ALL.filter((r) => ONLY.includes(r)) : ROUTES_ALL;
 
 // Screens behind a tap: [route, button to press].
-const OPENED = [['/cupones', 'Nuevo cupón'], ['/cartas', 'Escribir carta'], ['/inicio', /^Usa la app/], ['/ajustes/guia-estilo', 'Modal'], ['/canciones', 'Dedicar'], ['/diario', 'Escribir'], ['/jibun', 'Agregar'], ['/preguntas', 'Escribir mi pregunta'], ['/calendario', 'Nueva cita'], ['/recordatorios', /^Agregar$/]];
+const OPENED = [['/cupones', 'Nuevo cupón'], ['/cartas', 'Escribir carta'], ['/inicio', /^Usa la app/], ['/ajustes/guia-estilo', 'Modal'], ['/canciones', 'Dedicar'], ['/diario', 'Escribir'], ['/jibun', 'Agregar'], ['/preguntas', 'Escribir mi pregunta'], ['/calendario', 'Nueva cita'], ['/recordatorios', /^Agregar$/], ['/mapa', 'Lugar'], ['/planes', 'Plan'], ['/suenos', 'Sueño'], ['/regalos', 'Deseo'], ['/capsula-tiempo', 'Escribir'], ['/gratitud', 'Escribir una nota'], ['/lenguajes', 'Responder el cuestionario'], ['/encuentro', /Poner la fecha|Cambiar/], ['/photobooth', 'Nueva foto'], ['/citas', '¿Quién decide?']];
 
 async function setup(page) {
   await page.goto(BASE);
@@ -46,6 +49,8 @@ function audit(MIN) {
     if (!visible(el) || el.disabled) continue;
     // Inline links inside running text are exempt (WCAG 2.5.8).
     if (el.tagName === 'A' && getComputedStyle(el).display === 'inline' && el.parentElement.closest('p, li')) continue;
+    // The map's attribution line (Leaflet · OpenStreetMap) is running text too.
+    if (el.closest('.leaflet-control-attribution')) continue;
     if (el.matches('.visually-hidden, .sr-only') || el.getBoundingClientRect().bottom < 0) continue;
     // A hidden radio counts as its visible label (segmented control).
     const shown = el.classList.contains('segmented-input') ? el.nextElementSibling : el;
