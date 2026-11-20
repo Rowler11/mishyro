@@ -61,7 +61,7 @@ function privacidad() {
     card('Ciclo y capa privada',
       el('ul', { class: 'privacy-points' },
         el('li', {}, `Lo decide ${profile.name('sofia')}. Sus registros se quedan solo en sus equipos.`),
-        el('li', {}, `A ${profile.name('david')} le llega, cifrado, solo lo que ella marque "Visible para ${profile.name('david')}", y solo puede verlo.`),
+        el('li', {}, `A ${profile.name('david')} le llega, cifrado, lo que esté marcado "Visible para ${profile.name('david')}", y solo puede verlo. Los registros del ciclo vienen marcados así de entrada; ${profile.name('sofia')} lo cambia en su calendario, por registro o para todos. La capa privada viene oculta.`),
         el('li', {}, 'Nunca sale en el Resumen, las insignias, la búsqueda ni los archivos del calendario del teléfono.')),
       el('div', { class: 'btn-row' }, ui.button({ label: me === 'sofia' ? 'Abrir mi calendario' : 'Ver lo compartido', iconName: 'calendar', href: '#/ciclo' })))), cleanup: off };
 }

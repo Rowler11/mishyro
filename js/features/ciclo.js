@@ -1,9 +1,12 @@
 // Calendario del ciclo (docs/05 §20) with its private layer. Sofía decides everything (decided
-// 2026-11-20): every record lives only on her devices ("Solo yo", her personal sync key) unless she
-// marks it "Visible para David"; only those travel to him, end-to-end encrypted with the cycle key,
-// and he sees them read-only. Turning the mark off removes his copy (the record changes id, so the
-// shared one is purged). Predictions are estimates, never medical or contraceptive advice, and are
-// shown only to her. Nothing here goes to the Resumen, insignias, rachas, .ics, Galería, search or Diario.
+// 2026-11-20): every record lives only on her devices ("Solo yo", her personal sync key) unless it is
+// marked "Visible para David". David asked (2026-11-20) that cycle records are visible to him by
+// default, so he can help her; Sofía can turn that default off and un-mark any record. The private
+// layer stays private by default. Only visible ones travel to him, end-to-end encrypted with the
+// cycle key; he sees them read-only, plus an estimate computed only from what he can see. Turning the
+// mark off removes his copy (the record changes id, so the shared one is purged). Predictions are
+// estimates, never medical or contraceptive advice. Nothing here goes to the Resumen, insignias,
+// rachas, .ics, Galería, search or Diario.
 // cycleDays:   { id: 'cycle:<date>[:v]', date, period, flow, symptoms[], mood, note, owner, visibility, visibleToPartner, private }
 // intimateLog: { id, date, mood, protection: 'si'|'no'|'na', note (≤140), owner, visibility, visibleToPartner, private }
 import { ui, util, db, profile, security, CONFIG } from '../core.js';
@@ -23,7 +26,7 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 export const DEFAULTS = {
   hidePrivate: !!PRIV.hidePrivateByDefault,
-  shareCycleByDefault: !PRIV.cycleRecordsPrivateByDefault && !!PRIV.visibleToPartnerByDefault,
+  shareCycleByDefault: true,
   shareIntimateByDefault: false,
   cycleLength: C.cycleLength || 28,
   periodLength: C.periodLength || 5,
@@ -94,6 +97,30 @@ export function predict(ps, settings, today = util.localDay()) {
   return { ...st, margin, next, late, inDays: diff(today, next), dayOfCycle: diff(last.start, today) + 1, lastStart: last.start, ahead };
 }
 
+/** Fertility of a day from the estimate: 'peak' (most fertile), 'fertile', 'low' or null without data. */
+export function fertilityOn(day, pred) {
+  if (!pred || day < pred.lastStart) return null;
+  for (const a of pred.ahead) {
+    if (day >= a.fertileStart && day <= a.fertileEnd) return day >= addDay(a.ovulation, -2) && day <= a.ovulation ? 'peak' : 'fertile';
+  }
+  return 'low';
+}
+export const FERTILITY = { peak: 'Día más fértil', fertile: 'Día fértil', low: 'Día poco fértil' };
+
+/** The next ovulation and fertile window that have not ended yet (estimates). */
+export function nextFertile(pred, today = util.localDay()) {
+  const a = pred?.ahead.find((x) => x.fertileEnd >= today);
+  return a ? { ovulation: a.ovulation, from: a.fertileStart, to: a.fertileEnd } : null;
+}
+const fertilityToday = (pred) => { const f = fertilityOn(util.localDay(), pred); return f ? `Hoy: ${FERTILITY[f].toLowerCase()} (estimado).` : null; };
+const fertileLine = (pred) => {
+  const f = nextFertile(pred);
+  if (!f) return null;
+  const today = util.localDay();
+  const inWin = today >= f.from && today <= f.to;
+  return `${inWin ? 'Ahora, en la ventana fértil estimada' : 'Ventana fértil estimada'}: ${fmtShort.format(util.parseDay(f.from))} al ${fmtShort.format(util.parseDay(f.to))}. Ovulación estimada: ${fmtShort.format(util.parseDay(f.ovulation))}.`;
+};
+
 /** Phase of a day, from the real periods (and the average for the days after the last one). */
 export function phaseOf(day, ps, avgCycle = 28) {
   const prev = [...ps].reverse().find((p) => p.start <= day);
@@ -115,6 +142,7 @@ export function dayKind(day, { days, pred }) {
   for (const a of pred.ahead) {
     if (day >= addDay(a.start, -pred.margin) && day <= a.end && day >= util.localDay()) return 'predicted';
     if (day === a.ovulation) return 'ovulation';
+    if (day >= addDay(a.ovulation, -2) && day < a.ovulation) return 'peak';
     if (day >= a.fertileStart && day <= a.fertileEnd) return 'fertile';
   }
   return null;
@@ -158,7 +186,7 @@ export async function loadCycle() {
     days: d, periods: ps, settings, mine,
     intimate: intimate.filter(keep).sort((a, b) => b.date.localeCompare(a.date)),
     locked: days.some((r) => r.locked) || intimate.some((r) => r.locked),
-    pred: mine ? predict(ps, settings) : null,
+    pred: predict(ps, settings), // for David it only uses what Sofía shared
   };
 }
 
@@ -295,7 +323,7 @@ export async function calendarData() {
   const data = await loadCycle();
   return { ...data, canSeeCycle: data.mine || data.days.length > 0, canSeePrivate: (data.mine && !data.settings.hidePrivate) || (!data.mine && data.intimate.length > 0) };
 }
-const KIND_LABEL = { period: 'período', predicted: 'período estimado', fertile: 'ventana fértil estimada', ovulation: 'ovulación estimada' };
+const KIND_LABEL = { period: 'período', predicted: 'período estimado', fertile: 'día fértil estimado', peak: 'día más fértil estimado', ovulation: 'ovulación estimada (día más fértil)' };
 export const kindLabel = (k) => KIND_LABEL[k] || '';
 
 /** Day panel block for the Calendario. */
@@ -304,9 +332,11 @@ export function dayBlock(day, data, { cycle, priv, refresh }) {
   const kind = cycle ? dayKind(day, data) : null;
   const intim = priv ? data.intimate.filter((r) => r.date === day) : [];
   const owner = data.mine;
-  if (!rec && !kind && !intim.length && !(owner && (cycle || priv))) return null;
+  const fert = cycle ? fertilityOn(day, data.pred) : null;
+  if (!rec && !kind && !fert && !intim.length && !(owner && (cycle || priv))) return null;
   const lines = [];
   if (kind && !rec) lines.push(el('span', { class: 'muted small' }, cap(kindLabel(kind))));
+  if (fert && kind !== 'period' && kind !== 'predicted') lines.push(el('span', { class: 'muted small' }, `${FERTILITY[fert]} (estimado)`));
   if (rec) lines.push(recordSummary(rec));
   for (const r of intim) lines.push(el('span', { class: 'small cyc-priv-line' }, icon('heart', { size: 14 }), ` Registro privado${r.note ? `: ${r.note}` : ''}`));
   return el('div', { class: 'card paper-card cyc-day stack-tight' },
@@ -349,6 +379,8 @@ export async function render() {
       p ? el('p', {}, p.late > 0 ? `El período estimado era hace ${plural(p.late, 'día', 'días')}.`
         : p.inDays === 0 ? `El período podría llegar hoy (± ${plural(p.margin, 'día', 'días')}).`
           : `Próximo período: ${fmtShort.format(util.parseDay(p.next))}, en unos ${plural(p.inDays, 'día', 'días')} (± ${p.margin}).`) : null,
+      p ? el('p', {}, fertilityToday(p)) : null,
+      p ? el('p', {}, fertileLine(p)) : null,
       p && !p.reliable ? el('span', { class: 'badge badge-warn' }, 'Predicción poco fiable: faltan datos o los ciclos varían mucho') : null,
       care ? el('p', { class: 'note-inline' }, icon('heart', { size: 18 }), el('span', {}, care[new Date().getDate() % care.length])) : null,
       el('p', { class: 'muted small' }, C.notice || ''),
@@ -356,6 +388,24 @@ export async function render() {
         ui.button({ label: 'Registrar hoy', iconName: 'plus', variant: 'primary', onClick: () => dayEditor(today, { onSaved: refresh }) }),
         ui.button({ label: 'Otro día', iconName: 'calendar', onClick: () => dayEditor(addDay(today, -1), { onSaved: refresh }) }),
         data.settings.hidePrivate ? null : ui.button({ label: 'Registro privado', iconName: 'lock', variant: 'ghost', onClick: () => intimateEditor(null, { onSaved: refresh }) })));
+  }
+
+  /** David's view: the estimate from what is shared, with the same honest notice. */
+  function partnerCard() {
+    const p = data.pred;
+    if (!p) return null;
+    const who = profile.name(OWNER);
+    const ph = phaseOf(util.localDay(), data.periods, p.cycle);
+    return el('section', { class: 'card paper-card cyc-today stack-tight' },
+      el('span', { class: 'card-kicker' }, `Para acompañar a ${who}`),
+      ph ? el('p', { class: 'cyc-big' }, PHASES[ph]) : null,
+      el('p', {}, p.late > 0 ? `El período estimado era hace ${plural(p.late, 'día', 'días')}.`
+        : p.inDays === 0 ? 'El período podría llegar hoy.'
+          : `Próximo período estimado: ${fmtShort.format(util.parseDay(p.next))}, en unos ${plural(p.inDays, 'día', 'días')} (± ${p.margin}).`),
+      el('p', {}, fertilityToday(p)),
+      el('p', {}, fertileLine(p)),
+      !p.reliable ? el('span', { class: 'badge badge-warn' }, 'Estimación poco fiable: faltan datos') : null,
+      el('p', { class: 'muted small' }, `Se calcula solo con lo que ${who} comparte. ${C.notice || ''}`));
   }
 
   function statsCard() {
@@ -449,7 +499,7 @@ export async function render() {
       const partner = profile.name(OWNER);
       body.replaceChildren(
         el('p', { class: 'note-inline' }, icon('eye', { size: 18 }), el('span', {}, `Aquí ves solo lo que ${partner} decidió compartir contigo.`)),
-        ...(data.days.length || data.intimate.length ? [recordsCard(), privateCard()].filter(Boolean)
+        ...(data.days.length || data.intimate.length ? [partnerCard(), recordsCard(), privateCard()].filter(Boolean)
           : [ui.emptyState({ title: 'Nada compartido todavía', text: `Cuando ${partner} comparta algo, aparece aquí y en el calendario.`, art: 'sakura' })]));
       body.querySelectorAll('details').forEach((d) => { d.open = true; });
       return;

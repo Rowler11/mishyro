@@ -1287,7 +1287,11 @@ async function completeSetup(page) {
       const ps = C.periods(cyc);
       const pr = C.predict(ps, C.DEFAULTS, '2026-10-01');
       const irregular = C.stats(C.periods([...['2026-03-01', '2026-03-22', '2026-04-30', '2026-05-20'].map((d) => ({ date: d, period: true, flow: 'light' }))]));
+      const nf = C.nextFertile(pr, '2026-10-01');
+      const fert = ['2026-10-01', '2026-10-03', '2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-12'].map((d) => C.fertilityOn(d, pr));
       return {
+        fert,
+        nf: [nf.ovulation, nf.from, nf.to],
         merged: [merged.added, merged.items.length], shares: G.shares({ amountCOP: 10001, split: { sofia: 50 } }), settle: G.settlement(ex), csvBom: csv.charCodeAt(0) === 0xFEFF, csvQuoted: csv.includes('"a;b"'),
         pct: A.pctOf({ targetCOP: 200000 }, 150000), mark: A.crossedMark(20, 55), both: [...H.bothDays(checks, 'h')].join(), plant: H.plantStage(0, 5),
         prize: R.pickPrize([{ id: 'p1' }, { id: 'p2' }], ['p1'], () => 0).id, cleared: R.clearedRatio(new Uint8ClampedArray([0, 0, 0, 0, 0, 0, 0, 255]), 1),
@@ -1309,6 +1313,8 @@ async function completeSetup(page) {
     ok('4B mascotas: dose status', logic.dose.join() === 'overdue,ok,none', logic.dose.join());
     ok('4B ciclo: periods, lengths and average', logic.periods === 4 && logic.lens === '28,28,28' && logic.avg === 28 && logic.reliable, JSON.stringify(logic));
     ok('4B ciclo: next start, ovulation 14 days before', logic.next === '2026-10-21' && logic.ov === '2026-10-07', `${logic.next} ${logic.ov}`);
+    ok('4B ciclo: fertile window is 5 days before to 1 after ovulation', logic.nf.join() === '2026-10-07,2026-10-02,2026-10-08', logic.nf.join());
+    ok('4B ciclo: fertility levels (low, fertile, most fertile)', logic.fert.join() === 'low,fertile,peak,peak,peak,fertile,low', logic.fert.join());
     ok('4B ciclo: phases', logic.phase.join() === 'menstrual,fertil,lutea', logic.phase.join());
     ok('4B ciclo: irregular cycles are not reliable', logic.irregular === false);
     ok('4B ciclo: the shared copy has its own id', logic.ids[0] === 'cycle:2026-11-01:v' && logic.ids[1] === 'cycle:2026-11-01');
@@ -1325,8 +1331,8 @@ async function completeSetup(page) {
 
     // Ciclo: Sofía registers today, shares it; the private record stays hers; David sees only the shared one
     await go('/ciclo', '.cyc-today');
-    await page.getByRole('button', { name: 'Registrar hoy' }).click();
-    await page.locator('.switch-label', { hasText: 'Visible para' }).click();
+    await page.getByRole('button', { name: 'Registrar hoy' }).click(); // visible for him by default
+    ok('4B ciclo: new records are visible for David by default', await page.locator('.modal .switch-row', { hasText: 'Visible para' }).locator('input').isChecked());
     await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(400);
     await page.getByRole('button', { name: 'Registro privado' }).click();
     await page.getByLabel('Nota (opcional)').fill('Nota privada ficticia');
@@ -1340,7 +1346,7 @@ async function completeSetup(page) {
     await page.evaluate(async () => { (await import('./js/core/profile.js')).setActive('david'); });
     await go('/ciclo', '.page.ciclo .note-inline');
     const davidText = await page.locator('.page.ciclo').innerText();
-    ok('4B ciclo: David sees only what was shared, read-only', davidText.includes('compartir contigo') && !davidText.includes('Nota privada ficticia') && (await page.locator('.page.ciclo .icon-btn[aria-label^="Borrar"]').count()) === 0 && !/Día \d+ del ciclo/.test(davidText), davidText.slice(0, 160));
+    ok('4B ciclo: David sees only what was shared, read-only', davidText.includes('compartir contigo') && /entana fértil estimada/.test(davidText) && !davidText.includes('Nota privada ficticia') && (await page.locator('.page.ciclo .icon-btn[aria-label^="Borrar"]').count()) === 0 && !/Día \d+ del ciclo/.test(davidText) && /para acompañar a/i.test(davidText), davidText.slice(0, 160));
     await go('/calendario', '.cal-grid');
     ok('4B calendario: David has no Privado layer', (await page.locator('.cal-layers .chip', { hasText: 'Privado' }).count()) === 0);
     await page.evaluate(async () => { (await import('./js/core/profile.js')).setActive('sofia'); });
