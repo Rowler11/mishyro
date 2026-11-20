@@ -5,7 +5,7 @@
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
 import { voiceAttach, saveAttached, player as voicePlayer } from './voz.js';
-import { compressImage, isQuotaError, MAX_PHOTOS, readVideo, isVideoFile, MAX_VIDEO_SECONDS } from '../core/images.js';
+import { compressImage, isQuotaError, MAX_PHOTOS, readVideo, isVideoFile, MAX_VIDEO_SECONDS, lightenVideo, canLightenVideo } from '../core/images.js';
 
 const { el, icon } = util;
 const WIDE = '(min-width: 1100px)';
@@ -198,7 +198,11 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
     for (const f of take) {
       try {
         if (isVideoFile(f) && !isImage(f)) {
-          const out = await readVideo(f);
+          let out = await readVideo(f);
+          if (canLightenVideo()) {
+            photoMsg.textContent = 'Haciendo el video más liviano… (dura lo mismo que el video)';
+            out = await lightenVideo(out, (p) => { photoMsg.textContent = `Haciendo el video más liviano… ${Math.round(p * 100)} %`; });
+          }
           photos.push({ ...out, video: true, url: bag.track(URL.createObjectURL(out.blob), true) });
         } else {
           const out = await compressImage(f);

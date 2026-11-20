@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.4.1 (más espacio en la nube)
+
+- Medidor "Espacio en la nube" en Sincronizar: muestra cuánto llevan usado de los 5 GB gratis.
+- Aviso cariñoso al llegar al 80 %, también en Inicio, y un mensaje claro si se llena: lo nuevo se queda guardado en cada teléfono y se envía cuando haya espacio.
+- La nube ahora reparte las fotos y los videos en 5 bloques, así que alcanzan los 5 GB gratis en vez de 1 GB. Lo que ya estaba guardado se sigue leyendo igual.
+- Los videos cortos se hacen más livianos al agregarlos (hasta 1280 px, mismo largo). Tarda lo que dura el video; si no ahorra espacio, se guarda el original.
+- Borrar una foto o un video libera su espacio en la nube.
+
 ## 0.4.0 (Fase 4A: recuerdos y vínculo)
 
 Recuerdos

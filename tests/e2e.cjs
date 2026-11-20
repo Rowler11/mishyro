@@ -1239,6 +1239,20 @@ async function completeSetup(page) {
     ok('4A resumen: a card exports as PNG', /\.png$/.test(dl), dl);
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     if (SHOTS) await shot(page, 'fase4a-resumen-390');
+    // v0.4.1: a heavy video is re-recorded lighter (1280 px, same length); a small one is kept as it came.
+    const lv = await page.evaluate(async () => {
+      const im = await import('./js/core/images.js');
+      const c = document.createElement('canvas'); c.width = 1920; c.height = 1080; const x = c.getContext('2d');
+      const rec = new MediaRecorder(c.captureStream(30), { mimeType: 'video/webm;codecs=vp8', videoBitsPerSecond: 12000000 });
+      const ch = []; rec.ondataavailable = (e) => ch.push(e.data); rec.start(200);
+      const t0 = Date.now();
+      await new Promise((res) => { const f = () => { for (let i = 0; i < 400; i++) { x.fillStyle = `hsl(${Math.random() * 360},80%,50%)`; x.fillRect(Math.random() * 1920, Math.random() * 1080, 120, 90); } Date.now() - t0 < 3000 ? requestAnimationFrame(f) : res(); }; f(); });
+      const done = new Promise((r) => { rec.onstop = r; }); rec.stop(); await done;
+      const blob = new Blob(ch, { type: 'video/webm' });
+      const out = await im.lightenVideo({ blob, duration: 3, width: 1920, height: 1080 });
+      return { orig: blob.size, light: out.blob.size, w: out.width };
+    });
+    ok('4.0.1 videos: a heavy video comes out lighter and at 1280 px', lv.light < lv.orig * 0.7 && lv.w === 1280, JSON.stringify(lv));
     ok('fase 4A: no page errors or native dialogs', errs.length === 0, errs.join(' | '));
     await b2.close();
   }

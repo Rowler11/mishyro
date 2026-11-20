@@ -11,6 +11,11 @@ const MAX_BODY = 4 * 1024 * 1024; // ops batch
 const MAX_CHUNK = 1.5 * 1024 * 1024; // one media chunk
 const MAX_OP = 1024 * 1024; // one encrypted record
 const INVITE_TTL = 10 * 60 * 1000;
+// Photos and videos are split over SHARDS Durable Objects. On the free plan each Durable Object
+// holds up to 1 GB and the account up to 5 GB in total, so 5 shards is the most the free plan gives.
+const SHARDS = 5;
+const SHARD_LIMIT = 1024 * 1024 * 1024;
+const ACCOUNT_LIMIT = 5 * SHARD_LIMIT;
 // Only real browser push services, so a device cannot make the server call any other address.
 const PUSH_HOSTS = /^https:\/\/(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|[a-z0-9.-]+\.notify\.windows\.com|web\.push\.apple\.com)\//;
 
@@ -33,7 +38,9 @@ export default {
         const stub = env.SPACE.get(env.SPACE.idFromName(parts[1]));
         const inner = new URL(request.url);
         inner.pathname = `/${parts.slice(2).join('/')}`;
-        return stub.fetch(new Request(inner, request));
+        const forward = new Request(inner, request);
+        forward.headers.set('x-space', parts[1]); // set here, so a device cannot choose it
+        return stub.fetch(forward);
       }
       return fail(404, 'not_found');
     } catch (e) {
@@ -65,6 +72,7 @@ export class Space extends DurableObject {
       CREATE TABLE IF NOT EXISTS devices (id TEXT PRIMARY KEY, tok TEXT NOT NULL, label TEXT, created INTEGER, seen INTEGER);
       CREATE TABLE IF NOT EXISTS invites (h TEXT PRIMARY KEY, exp INTEGER);
       CREATE TABLE IF NOT EXISTS ops (seq INTEGER PRIMARY KEY AUTOINCREMENT, k TEXT UNIQUE NOT NULL, ts INTEGER NOT NULL, e TEXT NOT NULL, dev TEXT);
+      -- chunks: media saved before v0.4.1; new photos and videos go to the shards
       CREATE TABLE IF NOT EXISTS chunks (id TEXT NOT NULL, n INTEGER NOT NULL, data BLOB NOT NULL, PRIMARY KEY (id, n));
       CREATE TABLE IF NOT EXISTS subs (dev TEXT PRIMARY KEY, sub TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT);
@@ -88,15 +96,17 @@ export class Space extends DurableObject {
       if (a === 'invite' && method === 'POST') return this.invite(request);
       if (a === 'blob' && ID.test(b || '') && /^\d{1,4}$/.test(c || '')) {
         if (method === 'PUT') return this.putChunk(request, b, Number(c));
-        if (method === 'GET') return this.getChunk(b, Number(c));
+        if (method === 'GET') return this.getChunk(request, b, Number(c));
       }
+      if (a === 'blob' && ID.test(b || '') && !c && method === 'DELETE') return this.dropMedia(request, b);
+      if (a === 'usage' && method === 'GET') return this.usage(request);
       if (a === 'devices' && method === 'GET') return this.devices();
       if (a === 'devices' && b && method === 'PATCH') return this.relabel(request, dev, b);
       if (a === 'devices' && b && method === 'DELETE') return this.removeDevice(b);
       if (a === 'vapid' && method === 'GET') return json({ key: (await this.vapid()).publicKey });
       if (a === 'sub' && method === 'PUT') return this.subscribe(request, dev);
       if (a === 'sub' && method === 'DELETE') { this.sql.exec('DELETE FROM subs WHERE dev = ?', dev); return json({ ok: true }); }
-      if (a === 'space' && method === 'DELETE') return this.destroy();
+      if (a === 'space' && method === 'DELETE') return this.destroy(request);
       return fail(404, 'not_found');
     } catch (e) {
       if (e.status) return fail(e.status, e.message);
@@ -174,8 +184,9 @@ export class Space extends DurableObject {
     this.broadcast({ t: 'devices' });
     return json({ ok: true });
   }
-  async destroy() {
+  async destroy(request) {
     for (const ws of this.ctx.getWebSockets()) { try { ws.close(4002, 'deleted'); } catch { /* gone */ } }
+    for (let i = 0; i < SHARDS; i++) await this.shard(request, '', i).fetch('https://shard/wipe', { method: 'POST' }).catch(() => {});
     await this.ctx.storage.deleteAll();
     return json({ ok: true });
   }
@@ -208,18 +219,51 @@ export class Space extends DurableObject {
   }
 
   // ---------- media chunks ----------
+  space(request) {
+    const id = request.headers.get('x-space') || '';
+    if (!ID.test(id)) throw Object.assign(new Error('space'), { status: 400 });
+    return id;
+  }
+  /** The shard that keeps (all the chunks of) one photo or video. */
+  shard(request, mediaId, i = null) {
+    let h = 2166136261;
+    for (let k = 0; k < mediaId.length; k++) { h ^= mediaId.charCodeAt(k); h = Math.imul(h, 16777619) >>> 0; }
+    const idx = i ?? h % SHARDS;
+    return this.env.SHARD.get(this.env.SHARD.idFromName(`${this.space(request)}:${idx}`));
+  }
   async putChunk(request, id, n) {
     const len = Number(request.headers.get('content-length') || 0);
     if (len > MAX_CHUNK) return fail(413, 'too big');
     const data = await request.arrayBuffer();
     if (data.byteLength > MAX_CHUNK || !data.byteLength) return fail(413, 'too big');
-    this.sql.exec('INSERT OR REPLACE INTO chunks (id, n, data) VALUES (?, ?, ?)', id, n, data);
+    const res = await this.shard(request, id).fetch(`https://shard/put/${id}/${n}`, { method: 'PUT', body: data });
+    if (res.status === 507) return fail(507, 'storage_full');
+    if (!res.ok) return fail(500, 'server');
+    this.sql.exec('DELETE FROM chunks WHERE id = ? AND n = ?', id, n); // an older copy kept here
     return json({ ok: true });
   }
-  getChunk(id, n) {
-    const row = this.sql.exec('SELECT data FROM chunks WHERE id = ? AND n = ?', id, n).toArray()[0];
+  async getChunk(request, id, n) {
+    const res = await this.shard(request, id).fetch(`https://shard/get/${id}/${n}`);
+    if (res.ok) return new Response(res.body, { headers: { 'content-type': 'application/octet-stream', 'cache-control': 'no-store' } });
+    const row = this.sql.exec('SELECT data FROM chunks WHERE id = ? AND n = ?', id, n).toArray()[0]; // saved before the shards existed
     if (!row) return fail(404, 'not_found');
     return new Response(row.data, { headers: { 'content-type': 'application/octet-stream', 'cache-control': 'no-store' } });
+  }
+  /** A photo or video was deleted on a device: free its space. */
+  async dropMedia(request, id) {
+    this.sql.exec('DELETE FROM chunks WHERE id = ?', id);
+    await this.shard(request, id).fetch(`https://shard/drop/${id}`, { method: 'DELETE' });
+    return json({ ok: true });
+  }
+  /** Bytes used: this object (records, devices and older media) and each shard. */
+  async usage(request) {
+    const shards = await Promise.all(Array.from({ length: SHARDS }, async (_, i) => {
+      try { return (await (await this.shard(request, '', i).fetch('https://shard/size')).json()).bytes || 0; } catch { return 0; }
+    }));
+    const own = this.sql.databaseSize || 0;
+    // The fullest object is the one that fills first; the account total is what the plan allows.
+    const fullest = Math.max(own, ...shards);
+    return json({ own, shards, used: own + shards.reduce((a, b) => a + b, 0), shardLimit: SHARD_LIMIT, accountLimit: ACCOUNT_LIMIT, pct: Math.min(100, Math.round((fullest / SHARD_LIMIT) * 100)) });
   }
 
   // ---------- live channel ----------
@@ -279,6 +323,43 @@ export class Space extends DurableObject {
         const status = await sendPush(JSON.parse(row.sub), payload, v, origin);
         if (status === 404 || status === 410) this.sql.exec('DELETE FROM subs WHERE dev = ?', String(dev));
       } catch (e) { console.error('push', e?.message); }
+    }
+  }
+}
+
+/**
+ * Keeps the encrypted chunks of some of a space's photos and videos. Only the Space object talks
+ * to it (it has no public route), and it never sees anything readable.
+ */
+export class MediaShard extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.sql = ctx.storage.sql;
+    this.sql.exec('CREATE TABLE IF NOT EXISTS chunks (id TEXT NOT NULL, n INTEGER NOT NULL, data BLOB NOT NULL, PRIMARY KEY (id, n))');
+  }
+  async fetch(request) {
+    const [a, id, n] = new URL(request.url).pathname.slice(1).split('/');
+    const m = request.method;
+    try {
+      if (a === 'put' && m === 'PUT') {
+        const data = await request.arrayBuffer();
+        // Leave a little room: SQLite needs space to finish a write.
+        if ((this.sql.databaseSize || 0) + data.byteLength > SHARD_LIMIT - 8 * 1024 * 1024) return fail(507, 'storage_full');
+        this.sql.exec('INSERT OR REPLACE INTO chunks (id, n, data) VALUES (?, ?, ?)', id, Number(n), data);
+        return json({ ok: true });
+      }
+      if (a === 'get' && m === 'GET') {
+        const row = this.sql.exec('SELECT data FROM chunks WHERE id = ? AND n = ?', id, Number(n)).toArray()[0];
+        return row ? new Response(row.data, { headers: { 'content-type': 'application/octet-stream' } }) : fail(404, 'not_found');
+      }
+      if (a === 'drop' && m === 'DELETE') { this.sql.exec('DELETE FROM chunks WHERE id = ?', id); return json({ ok: true }); }
+      if (a === 'size' && m === 'GET') return json({ bytes: this.sql.databaseSize || 0 });
+      if (a === 'wipe' && m === 'POST') { await this.ctx.storage.deleteAll(); return json({ ok: true }); }
+      return fail(404, 'not_found');
+    } catch (e) {
+      if (/SQLITE_FULL/.test(e?.message || '')) return fail(507, 'storage_full');
+      console.error(e?.stack || e);
+      return fail(500, 'server');
     }
   }
 }

@@ -318,6 +318,10 @@ function comingCard(data, start) {
 // A kind hint first when the other one marked a low mood and allowed it (docs/05 Detalles: Ánimo).
 async function todayCard() {
   const [qa, retos, animo, rem, tc] = await Promise.all([import('./preguntas.js'), import('./retos.js'), import('./animo.js'), import('./recordatorios.js'), import('./capsula-tiempo.js')]);
+  const spaceRow = await import('../core/sync.js').then(async (m) => {
+    const u = m.isLinked() ? await m.lastUsage() : null;
+    return u && u.pct >= m.USAGE_WARN ? { href: '#/ajustes/sincronizar', icon: 'hard-drive', title: u.pct >= 100 ? 'Se llenó el espacio en la nube' : 'La nube se está llenando', sub: 'Mira cuánto queda y qué hacer.' } : null;
+  }).catch(() => null);
   const [badgeRow, summaryRow] = await Promise.all([
     import('./insignias.js').then((m) => m.homeRow()).catch(() => null), import('./resumen.js').then((m) => m.homeRow()).catch(() => null)]);
   const me = profile.active();
@@ -332,6 +336,7 @@ async function todayCard() {
   // Recordatorios suaves (§41): mesiversario, the weekly date and their own, when they are close.
   for (const r of soon.slice(0, 2)) rows.push(r);
   if (badgeRow) rows.push(badgeRow);
+  if (spaceRow) rows.push(spaceRow);
   if (hint) rows.push({ href: '#/animo', icon: 'heart', title: `Hoy a ${hint.name} podría venirle bien un abrazo`, sub: 'Un detalle pequeño hace la diferencia.' });
   if (pending?.count) rows.push({ href: '#/preguntas', icon: 'message-circle-question', title: pending.partnerDone ? 'Ya te respondieron: te toca' : 'La pregunta del día', sub: pending.first });
   if (week?.rec && !week.rec.doneAt && week.challenge) rows.push({ href: '#/retos', icon: 'flag', title: `Reto de la semana: ${week.challenge.title}`, sub: week.challenge.text });
