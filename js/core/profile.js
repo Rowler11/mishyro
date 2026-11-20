@@ -40,7 +40,8 @@ export async function load() {
     people = (await db.rawGet('profile', 'people')) || {};
     relationship = (await db.rawGet('profile', 'relationship')) || {};
     const pets = (await db.rawAll('pets')).filter((x) => !x.deleted);
-    petName = pets[0]?.name || '';
+    petName = (pets.find((x) => !x.memorial) || pets[0])?.name || '';
+    lastPets = pets; petsListener?.(pets);
   } catch { people = {}; relationship = {}; }
   emit();
 }
@@ -56,6 +57,10 @@ export const startDay = () => (/^\d{4}-\d{2}-\d{2}/.exec(startDate()) || [''])[0
 
 /** Replace {apodo} with the nickname of who receives the message. */
 let petName = '';
+let petsListener = null;
+let lastPets = [];
+/** dates.js registers here so pet birthdays follow the pets list without an import cycle. */
+export const onPets = (fn) => { petsListener = fn; fn(lastPets); };
 /** Name of the first pet, for "{mascota}" in texts. Texts that use it carry requires: 'pets'. */
 export const setPetName = (name) => { petName = name || ''; };
 /**

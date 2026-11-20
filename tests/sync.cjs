@@ -94,6 +94,12 @@ const waitFor = async (page, src, arg, ms = 8000) => {
     await A.page.waitForTimeout(1500);
     ok('"Solo yo" de Sofía no llega al equipo de David', !(await mod(B.page, "return !!(await db.rawGet('personal', 'self-1'));")));
 
+    // Fase 4B: the cycle. Only what Sofía marks "Visible para David" reaches him; un-marking removes it.
+    await mod(A.page, "await db.put('cycleDays', { id: 'cycle:2026-11-01', date: '2026-11-01', period: true, flow: 'light', owner: 'sofia', visibility: 'self', visibleToPartner: false, private: true }); await db.put('cycleDays', { id: 'cycle:2026-11-02:v', date: '2026-11-02', period: true, flow: 'light', owner: 'sofia', visibility: 'shared', visibleToPartner: true, private: true }); await db.put('intimateLog', { id: 'il-1', date: '2026-11-02', note: 'ficticia', owner: 'sofia', visibility: 'self', visibleToPartner: false, private: true });");
+    ok('ciclo: lo marcado visible llega a David', await waitFor(B.page, "return !!(await db.rawGet('cycleDays', 'cycle:2026-11-02:v'));"));
+    ok('ciclo: lo no marcado y la capa privada no llegan a David', !(await mod(B.page, "return !!(await db.rawGet('cycleDays', 'cycle:2026-11-01')) || !!(await db.rawGet('intimateLog', 'il-1'));")));
+    await mod(A.page, "await db.purge('cycleDays', 'cycle:2026-11-02:v'); await db.put('cycleDays', { id: 'cycle:2026-11-02', date: '2026-11-02', period: true, flow: 'light', owner: 'sofia', visibility: 'self', visibleToPartner: false, private: true });");
+    ok('ciclo: al desmarcarlo se borra del equipo de David', await waitFor(B.page, "return !(await db.rawGet('cycleDays', 'cycle:2026-11-02:v'));"));
     // C: Sofía's PC joins with the "mine" code and gets her "Solo yo".
     const C = await device(browser, 'sofia', { seed: false });
     const codeC = await mod(A.page, "return sync.makeInvite('sofia');");
@@ -102,6 +108,7 @@ const waitFor = async (page, src, arg, ms = 8000) => {
     const selfPhoto = await mod(A.page, "return db.putMedia(new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' }), { ownerStore: 'personal', ownerId: 'self-1' });");
     ok('foto de "Solo yo" llega a su PC', await waitFor(C.page, 'return !!(await db.getMedia(a));', selfPhoto));
     ok('foto de "Solo yo" no llega al equipo de David', !(await mod(B.page, "return !!(await db.rawGet('media', a));", selfPhoto)));
+    ok('ciclo: lo de Sofía llega a su PC', await waitFor(C.page, "return !!(await db.rawGet('cycleDays', 'cycle:2026-11-01')) && !!(await db.rawGet('intimateLog', 'il-1'));"));
     ok('el PC sin seed recibe todo', await waitFor(C.page, "return (await db.rawAll('memories')).length >= 2 && !!(await db.rawGet('profile', 'people'));"));
 
     // Photos: bytes arrive intact.

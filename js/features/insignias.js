@@ -34,6 +34,10 @@ export const ACTIVITY = [
   { store: 'dreams', day: (r) => r.updatedAt },
   { store: 'gifts', where: (r) => r.kind === 'wish', day: (r) => r.updatedAt },
   { store: 'timeCapsules', day: (r) => r.createdAt },
+  { store: 'petRecords', day: (r) => r.date },
+  { store: 'dateMenus', day: (r) => r.createdAt },
+  { store: 'expenses', day: (r) => r.date },
+  { store: 'scratchCards', where: (r) => r.scratchedAt, day: (r) => r.scratchedAt },
   { store: 'albums', day: (r) => r.updatedAt },
 ];
 
@@ -93,7 +97,10 @@ export async function progressOf(badge, ctx) {
   let value = 0;
   if (c.type === 'count') {
     const recs = ctx.cache[c.store] ||= await safeQuery(c.store);
-    value = recs.filter((r) => matchesWhere(r, c.where) && !r.skipped).length;
+    value = recs.filter((r) => matchesWhere(r, c.where) && (c.has || []).every((k) => r[k]) && !r.skipped).length;
+  } else if (c.type === 'cooked') { // Fase 4B: dishes cooked together, summed over the recipes
+    const recs = ctx.cache.recipes ||= await safeQuery('recipes');
+    value = recs.reduce((n, r) => n + (r.cooked?.length || 0), 0);
   } else if (c.type === 'streak') value = ctx.streak.best;
   else if (c.type === 'daysTogether') {
     const s = util.parseDay(profile.startDay());

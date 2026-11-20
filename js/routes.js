@@ -36,7 +36,7 @@ export const GROUPS = [
     { id: 'lenguajes', title: 'Lenguajes del amor', jp: '愛', romaji: 'ai', icon: 'heart-handshake', phase: '4A', module: 'lenguajes', blurb: 'Cómo le gusta a cada uno sentirse querido.' },
     { id: 'gratitud', title: 'Gratitud y revisión', jp: '感謝', romaji: 'kansha', icon: 'hand-heart', phase: '4A', module: 'gratitud', blurb: 'El frasco de gracias y la revisión semanal.' },
     { id: 'retos', title: 'Reto semanal', jp: '挑戦', romaji: 'chōsen', icon: 'flag', phase: '3', module: 'retos', blurb: 'Un reto de pareja cada semana.' },
-    { id: 'habitos', title: 'Hábitos', jp: '習慣', romaji: 'shūkan', icon: 'repeat', phase: '4B', blurb: 'Pequeños hábitos que hacen juntos.' },
+    { id: 'habitos', title: 'Hábitos', jp: '習慣', romaji: 'shūkan', icon: 'repeat', phase: '4B', module: 'habitos', blurb: 'Pequeños hábitos que hacen juntos.' },
     { id: 'canciones', title: 'Canciones', jp: '歌', romaji: 'uta', icon: 'music', phase: '3', module: 'canciones', blurb: 'Las canciones que se dedican y su playlist.' },
     { id: 'planes', title: 'Planes juntos', jp: '願い', romaji: 'negai', icon: 'list-checks', phase: '4A', module: 'planes', blurb: 'Lo que quieren vivir juntos.' },
     { id: 'suenos', title: 'Sueños y viajes', jp: '夢', romaji: 'yume', icon: 'moon-star', phase: '4A', module: 'suenos', blurb: 'Los grandes sueños, paso a paso.' },
@@ -45,15 +45,15 @@ export const GROUPS = [
   ] },
   { id: 'jugar', title: 'Jugar', jp: '遊び', romaji: 'asobi', sections: [
     { id: 'juegos', title: 'Juegos', jp: '遊び', romaji: 'asobi', icon: 'gamepad-2', phase: '5', blurb: 'Juegos en pareja, en persona.' },
-    { id: 'rasca', title: 'Rasca y gana', jp: '当たり', romaji: 'atari', icon: 'wand-sparkles', phase: '4B', blurb: 'Premios pequeños para raspar.' },
+    { id: 'rasca', title: 'Rasca y gana', jp: '当たり', romaji: 'atari', icon: 'wand-sparkles', phase: '4B', module: 'rasca', blurb: 'Premios pequeños para raspar.' },
     { id: 'eventos', title: 'Eventos de temporada', jp: '季節', romaji: 'kisetsu', icon: 'party-popper', phase: '5', moment: true, blurb: 'Fechas del año con su decoración.' },
   ] },
   { id: 'hogar', title: 'Hogar', sections: [
-    { id: 'mascotas', title: 'Mascotas', jp: 'ペット', romaji: 'petto', icon: 'paw-print', phase: '4B', blurb: 'Perfil, salud y fotos de cada mascota.' },
-    { id: 'alcancia', title: 'Alcancía', jp: '貯金', romaji: 'chokin', icon: 'piggy-bank', phase: '4B', blurb: 'Metas de ahorro para sus planes.' },
-    { id: 'gastos', title: 'Gastos compartidos', jp: '家計', romaji: 'kakei', icon: 'wallet', phase: '4B', blurb: 'Cuentas claras y sin culpa.' },
-    { id: 'listas', title: 'Listas', jp: 'リスト', romaji: 'risuto', icon: 'list-todo', phase: '4B', blurb: 'Mercado y pendientes de la casa.' },
-    { id: 'recetas', title: 'Recetas y menú en casa', jp: 'レシピ', romaji: 'reshipi', icon: 'chef-hat', phase: '4B', blurb: 'Recetas y citas para cocinar juntos.' },
+    { id: 'mascotas', title: 'Mascotas', jp: 'ペット', romaji: 'petto', icon: 'paw-print', phase: '4B', module: 'mascotas', blurb: 'Perfil, salud y fotos de cada mascota.' },
+    { id: 'alcancia', title: 'Alcancía', jp: '貯金', romaji: 'chokin', icon: 'piggy-bank', phase: '4B', module: 'alcancia', blurb: 'Metas de ahorro para sus planes.' },
+    { id: 'gastos', title: 'Gastos compartidos', jp: '家計', romaji: 'kakei', icon: 'wallet', phase: '4B', module: 'gastos', blurb: 'Cuentas claras y sin culpa.' },
+    { id: 'listas', title: 'Listas', jp: 'リスト', romaji: 'risuto', icon: 'list-todo', phase: '4B', module: 'listas', blurb: 'Mercado y pendientes de la casa.' },
+    { id: 'recetas', title: 'Recetas y menú en casa', jp: 'レシピ', romaji: 'reshipi', icon: 'chef-hat', phase: '4B', module: 'recetas', blurb: 'Recetas y citas para cocinar juntos.' },
   ] },
   { id: 'personal', title: 'Mi espacio', jp: '自分', romaji: 'jibun', sections: [
     { id: 'jibun', title: 'Mi espacio', jp: '自分', romaji: 'jibun', icon: 'user-round', phase: '3', module: 'jibun', lock: 'person', blurb: 'Lo tuyo, solo para ti.' },
@@ -70,6 +70,7 @@ export const GROUPS = [
 /** Hidden section: not listed in "Más"; opened with the secret gesture. Neutral name only. */
 export const HIDDEN = [
   { id: 'yoru', title: 'Rincón', jp: '夜', romaji: 'yoru', icon: 'moon', phase: '6', lock: 'vault', blurb: '' },
+  { id: 'ciclo', title: 'Mi calendario', icon: 'calendar', phase: '4B', module: 'ciclo', lock: 'cycle', blurb: '' },
   { id: 'buscar', title: 'Buscar', icon: 'search', phase: '2', module: 'buscar', blurb: 'Busca en todo lo que no es privado.' },
 ];
 

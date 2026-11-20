@@ -1,12 +1,14 @@
 // Calendario de citas (docs/05 §21): month grid with dots per layer (Citas, Fechas, Ánimo), the
 // selected day's list, dates with time, place, note and an optional reminder, and .ics export
 // (one date or everything) with VALARM so the phone's calendar rings. Past dates go to a history
-// with "Crear recuerdo". The cycle and private layers arrive with Fase 4B.
+// with "Crear recuerdo". Fase 4B adds the cycle and private layers (ciclo.js): Sofía sees hers and her
+// estimates; David sees the chips only once she shared something, and only what she shared.
 // Record in "events": { id, title, start: "YYYY-MM-DD" | "YYYY-MM-DDTHH:MM", place, note, remind, by, createdAt }.
 import { ui, util, db, profile } from '../core.js';
 import * as dates from '../core/dates.js';
 import * as ics from '../core/ics.js';
 import { MOODS } from './animo.js';
+import * as ciclo from './ciclo.js';
 
 const { el, icon } = util;
 const fmtMonthName = new Intl.DateTimeFormat('es-CO', { month: 'long' });
@@ -14,27 +16,39 @@ const fmtMonth = { format: (d) => `${fmtMonthName.format(d)} ${d.getFullYear()}`
 const fmtDay = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
 const fmtShort = new Intl.DateTimeFormat('es-CO', { weekday: 'short', day: 'numeric', month: 'short' });
 const WEEK = [['L', 'lunes'], ['M', 'martes'], ['X', 'miércoles'], ['J', 'jueves'], ['V', 'viernes'], ['S', 'sábado'], ['D', 'domingo']];
-const LAYERS = [{ id: 'citas', label: 'Citas' }, { id: 'fechas', label: 'Fechas' }, { id: 'animo', label: 'Ánimo' }];
+const LAYERS = [{ id: 'citas', label: 'Citas' }, { id: 'fechas', label: 'Fechas' }, { id: 'animo', label: 'Ánimo' },
+  { id: 'ciclo', label: 'Ciclo' }, { id: 'privado', label: 'Privado' }];
+const DOT = { citas: 'cita', fechas: 'fecha', animo: 'animo', ciclo: 'ciclo', privado: 'privado' };
 const REMIND = [{ value: 'none', label: 'Sin aviso' }, { value: '1d', label: '1 día antes' }, { value: '1h', label: '1 hora antes' }];
 const KEY = 'aishiteru.calendar.layers';
+// Stores the layers turned off, so a new layer (Ciclo, Privado) starts on. Older installs kept the ones on.
+const OFF_KEY = 'aishiteru.calendar.layersOff';
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-const readLayers = () => { try { const v = JSON.parse(localStorage.getItem(KEY)); if (Array.isArray(v)) return new Set(v); } catch { /* none */ } return new Set(LAYERS.map((l) => l.id)); };
-const saveLayers = (s) => { try { localStorage.setItem(KEY, JSON.stringify([...s])); } catch { /* private mode */ } };
+const readLayers = () => {
+  const all = LAYERS.map((l) => l.id);
+  try {
+    let off = JSON.parse(localStorage.getItem(OFF_KEY));
+    if (!Array.isArray(off)) { const on = JSON.parse(localStorage.getItem(KEY)); off = Array.isArray(on) ? ['citas', 'fechas', 'animo'].filter((id) => !on.includes(id)) : []; }
+    return new Set(all.filter((id) => !off.includes(id)));
+  } catch { return new Set(all); }
+};
+const saveLayers = (s) => { try { localStorage.setItem(OFF_KEY, JSON.stringify(LAYERS.map((l) => l.id).filter((id) => !s.has(id)))); } catch { /* private mode */ } };
 
 const dayOf = (ev) => String(ev.start || '').slice(0, 10);
 const timeOf = (ev) => String(ev.start || '').slice(11, 16);
 const startDate = (ev) => { const d = util.parseDay(dayOf(ev)); if (!d) return null; const t = timeOf(ev); if (t) { const [h, m] = t.split(':').map(Number); d.setHours(h, m); } return d; };
 
 async function loadAll() {
-  const [events, moods, special, remPrefs] = await Promise.all([
-    db.query('events'), db.query('moods'), dates.listed(), db.get('reminders', 'prefs'),
+  const [events, moods, special, remPrefs, cycle] = await Promise.all([
+    db.query('events'), db.query('moods'), dates.listed(), db.get('reminders', 'prefs'), ciclo.calendarData().catch(() => null),
   ]);
   return {
     events: events.filter((e) => !e.deleted && dayOf(e)).sort((a, b) => String(a.start).localeCompare(String(b.start))),
     moods: moods.filter((m) => !m.deleted),
     special: dates.withProfile(special),
     discreet: !!remPrefs?.discreet,
+    cycle,
   };
 }
 
@@ -129,6 +143,8 @@ export async function render(ctx = {}) {
           el('button', { class: 'icon-btn', type: 'button', 'aria-label': `Borrar ${ev.title}`, onClick: () => remove(ev) }, icon('trash-2', { size: 18 })))));
   }
 
+  const shown = (id) => layers.has(id) && (id === 'ciclo' ? !!data.cycle?.canSeeCycle : id === 'privado' ? !!data.cycle?.canSeePrivate : true);
+
   function dayItems(day) {
     const d = util.parseDay(day);
     const out = { events: [], fechas: [], moods: [] };
@@ -146,6 +162,7 @@ export async function render(ctx = {}) {
     if (layers.has('citas')) for (const e of data.events) { const k = dayOf(e); if (k.startsWith(`${y}-${String(m + 1).padStart(2, '0')}`)) monthEvents.set(k, (monthEvents.get(k) || 0) + 1); }
     const fechas = layers.has('fechas') ? dates.inMonth(data.special, y, m) : [];
     const moods = layers.has('animo') ? new Set(data.moods.filter((x) => x.level).map((x) => x.date)) : new Set();
+    const privDays = shown('privado') ? new Set(data.cycle.intimate.map((r) => r.date)) : new Set();
     const cells = [];
     for (let i = 0; i < first; i++) cells.push(el('span', { class: 'cal-cell is-empty', 'aria-hidden': 'true' }));
     for (let day = 1; day <= last; day++) {
@@ -153,7 +170,9 @@ export async function render(ctx = {}) {
       const n = monthEvents.get(key) || 0;
       const f = fechas.filter((x) => x.day === day);
       const mood = moods.has(key);
-      const parts = [n ? `${n} ${n === 1 ? 'cita' : 'citas'}` : '', ...f.map((x) => x.name), mood ? 'ánimo registrado' : ''].filter(Boolean);
+      const cyc = shown('ciclo') ? ciclo.dayKind(key, data.cycle) : null;
+      const priv = privDays.has(key);
+      const parts = [n ? `${n} ${n === 1 ? 'cita' : 'citas'}` : '', ...f.map((x) => x.name), mood ? 'ánimo registrado' : '', cyc ? ciclo.kindLabel(cyc) : '', priv ? 'registro privado' : ''].filter(Boolean);
       const date = new Date(y, m, day);
       cells.push(el('button', {
         class: `cal-cell${key === today ? ' is-today' : ''}${key === selected ? ' is-selected' : ''}${f.length ? ' has-date' : ''}`, type: 'button',
@@ -163,7 +182,9 @@ export async function render(ctx = {}) {
       el('span', { class: 'cal-dots', 'aria-hidden': 'true' },
         n ? el('span', { class: 'cal-dot dot-cita' }) : null,
         f.length ? el('span', { class: 'cal-dot dot-fecha' }) : null,
-        mood ? el('span', { class: 'cal-dot dot-animo' }) : null)));
+        mood ? el('span', { class: 'cal-dot dot-animo' }) : null,
+        cyc ? el('span', { class: `cal-dot dot-ciclo cyc-${cyc}` }) : null,
+        priv ? el('span', { class: 'cal-dot dot-privado' }) : null)));
     }
     return el('div', { class: 'cal-grid', role: 'group', 'aria-label': cap(fmtMonth.format(view)) },
       WEEK.map(([s, full]) => el('abbr', { class: 'cal-wd', title: full }, s)), cells);
@@ -178,10 +199,11 @@ export async function render(ctx = {}) {
       el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Mes siguiente', onClick: () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); draw(); } }, icon('chevron-right')),
       el('button', { class: 'btn btn-ghost btn-small cal-today', type: 'button', onClick: () => { selected = today; const t = util.parseDay(today); view = new Date(t.getFullYear(), t.getMonth(), 1); draw(); } }, 'Hoy'));
     const chips = el('div', { class: 'chip-row cal-layers', role: 'group', 'aria-label': 'Capas' },
-      LAYERS.map((l) => el('button', { class: `chip chip-${l.id}`, type: 'button', 'aria-pressed': String(layers.has(l.id)), onClick: () => {
+      LAYERS.filter((l) => (l.id === 'ciclo' ? data.cycle?.canSeeCycle : l.id === 'privado' ? data.cycle?.canSeePrivate : true)).map((l) => el('button', { class: `chip chip-${l.id}`, type: 'button', 'aria-pressed': String(layers.has(l.id)), onClick: () => {
         if (layers.has(l.id)) layers.delete(l.id); else layers.add(l.id); saveLayers(layers); draw();
-      } }, el('span', { class: `cal-dot dot-${l.id === 'citas' ? 'cita' : l.id === 'fechas' ? 'fecha' : 'animo'}`, 'aria-hidden': 'true' }), l.label)));
-    const empty = !it.events.length && !it.fechas.length && !it.moods.length;
+      } }, el('span', { class: `cal-dot dot-${DOT[l.id]}`, 'aria-hidden': 'true' }), l.label)));
+    const cycBlock = (shown('ciclo') || shown('privado')) ? ciclo.dayBlock(selected, data.cycle, { cycle: shown('ciclo'), priv: shown('privado'), refresh }) : null;
+    const empty = !it.events.length && !it.fechas.length && !it.moods.length && !cycBlock;
     const dayPanel = el('section', { class: 'cal-day stack-tight', 'aria-labelledby': 'cal-day-title' },
       el('h2', { class: 'card-kicker cal-day-title', id: 'cal-day-title', tabindex: '-1' }, selected === today ? `Hoy, ${fmtDay.format(sel)}` : cap(fmtDay.format(sel))),
       empty ? el('p', { class: 'muted' }, 'Nada este día.') : null,
@@ -195,6 +217,7 @@ export async function render(ctx = {}) {
         const md = MOODS.find((x) => x.level === mo.level);
         return el('li', { class: 'cal-mood' }, el('span', { 'aria-hidden': 'true' }, md?.emoji || ''), el('span', {}, `${profile.name(mo.by)}: ${(md?.name || '').toLowerCase()}`));
       })) : null,
+      cycBlock,
       el('div', { class: 'btn-row' }, ui.button({ label: 'Agregar una cita este día', iconName: 'plus', small: true, onClick: () => add(selected) })));
     const upcoming = data.events.filter((e) => dayOf(e) >= today).slice(0, 5);
     const past = data.events.filter((e) => dayOf(e) < today).reverse();

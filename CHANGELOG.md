@@ -1,5 +1,25 @@
 # Cambios
 
+## 0.5.0 (Fase 4B: hogar, bienestar y finanzas)
+
+Hogar
+- Mascotas: perfil de cada mascota con edad, días en casa y "En memoria"; salud (vacunas y desparasitación con aviso de la próxima dosis), peso con gráfica, veterinario, cuidados, gastos y momentos con foto. Las próximas dosis van al calendario del teléfono. Sus cumpleaños y el día que llegaron a casa salen solos en Fechas y en el Calendario.
+- Listas: mercado y pendientes con plantillas, fechas, modo "Ordenar" e historial para usar otra vez.
+- Recetas y menú en casa: recetas con fotos, etiquetas y búsqueda; modo cocina con la pantalla encendida, temporizadores y pasos grandes; la lista del mercado sale de la receta sin repetir. Menú de cita en casa (entrada, plato, postre, bebida, canciones y ambiente), para imprimir, agendar y calificar.
+- Alcancía: el gatito de la suerte guarda el total y cada meta sube por el monte Fuji. Avisos al 25, 50 y 75 %, fuegos artificiales al cumplirla y "Agendar la cita".
+- Gastos compartidos: 50/50 por defecto y editable en cada gasto, "Para quedar parejos" claro, "Ya quedamos parejos", meses con gráfica y exportar a Excel (CSV). Un gasto puede ser aporte a una meta.
+
+Bienestar
+- Hábitos: cada uno marca lo suyo; el día cuenta cuando marcan los dos, con un día de gracia por semana. La plantita crece con la racha y se marchita un poco si la dejan, pero nunca se muere.
+- Rasca y gana: tarjetas para raspar que se ganan al cumplir una meta o una semana de hábito, o que se regalan con fecha. El premio se puede volver cupón.
+- Calendario del ciclo: lo decide Sofía. Los registros del ciclo vienen visibles para David por defecto (él los ve cifrados y solo para ver, con la estimación del próximo período, la ventana fértil y la ovulación calculadas con lo que ella comparte), y ella lo apaga por registro o para todos. La capa privada viene oculta. Si desmarca un registro, se borra del otro teléfono. Predicciones con margen y aviso de que son estimaciones, resumen con gráficas, ánimo y síntomas por fase, mensajes de autocuidado opcionales, PIN propio de la sección y borrado por registro, del ciclo completo o de la capa privada. En el Calendario aparecen las capas "Ciclo" y "Privado". Nunca sale en el Resumen, las insignias, la búsqueda ni los archivos .ics.
+
+Conectado con lo anterior
+- Inicio: tarjeta de la mascota (foto, días en casa o su próxima fecha y la dosis que toca), que se puede ocultar.
+- Galería: también las fotos de Mascotas y Recetas.
+- Insignias nuevas: primer plato juntos, cocina de casa, cena en casa, familia peluda, cuentas claras y primer premio.
+- Resumen y Wrapped: platos cocinados, cenas en casa, momentos con la mascota y premios raspados.
+
 ## 0.4.2 (videos de 15 segundos)
 
 - Los videos de la Cápsula ahora duran hasta 15 segundos (antes 30). Pesan la mitad y el espacio de la nube rinde el doble. Los videos que ya estaban guardados no se tocan.

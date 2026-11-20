@@ -44,4 +44,4 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 - Commits pequeños por fase, con un mensaje claro en español.
 
 ## Estado
-Actualiza esta línea al cerrar cada fase: **Fase actual: 4A entregada (v0.4.0 a v0.4.2, esperando aprobación). Fase 3 aprobada el 2026-11-20; Fase A aprobada el 2026-11-20; Fase 2 sin aprobar formalmente; Fase 1 aprobada el 2026-11-19. Siguiente: Fase 4B.**
+Actualiza esta línea al cerrar cada fase: **Fase actual: 4B entregada (v0.5.0, esperando aprobación). Fase 4A aprobada el 2026-11-20; Fase 3 aprobada el 2026-11-20; Fase A aprobada el 2026-11-20; Fase 2 sin aprobar formalmente; Fase 1 aprobada el 2026-11-19. Siguiente: Fase 5.**

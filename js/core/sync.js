@@ -138,7 +138,8 @@ const nameByKid = (kid) => Object.entries(cfg?.keys || {}).find(([, e]) => e.kid
 function scopeOf(store, rec) {
   if (store === 'vault') return 'vault';
   if (rec.visibility === 'self') return `person:${rec.owner}`;
-  if ((store === 'cycleDays' || store === 'intimateLog') && rec.private) return 'cycle';
+  // Cycle records reach the partner only when Sofía marks them visible; those travel with the cycle key.
+  if (store === 'cycleDays' || store === 'intimateLog') return 'cycle';
   return 'space';
 }
 async function mediaScope(m) {

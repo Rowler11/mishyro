@@ -11,7 +11,7 @@ const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null;
 const ROUTES_ALL = ['/inicio', '/capsula', '/capsula/nuevo', '/cupones', '/cartas', '/mas', '/ajustes', '/ajustes/perfil',
   '/ajustes/seguridad', '/ajustes/privacidad', '/ajustes/terceros', '/ajustes/copia', '/ajustes/apariencia',
   '/ajustes/movimiento', '/ajustes/legal', '/ajustes/legal/privacidad', '/ajustes/legal/version', '/buscar',
-  '/ajustes/acerca', '/calendario', '/preguntas', '/canciones', '/diario', '/animo', '/jibun', '/retos', '/fechas', '/recordatorios', '/galeria', '/album', '/mapa', '/primeras-veces', '/photobooth', '/capsula-tiempo', '/planes', '/suenos', '/citas', '/regalos', '/encuentro', '/voz', '/lenguajes', '/gratitud', '/insignias', '/resumen'];
+  '/ajustes/acerca', '/calendario', '/preguntas', '/canciones', '/diario', '/animo', '/jibun', '/retos', '/fechas', '/recordatorios', '/galeria', '/album', '/mapa', '/primeras-veces', '/photobooth', '/capsula-tiempo', '/planes', '/suenos', '/citas', '/regalos', '/encuentro', '/voz', '/lenguajes', '/gratitud', '/insignias', '/resumen', '/mascotas', '/listas', '/recetas', '/alcancia', '/gastos', '/habitos', '/rasca', '/ciclo'];
 
 const ROUTES = ONLY ? ROUTES_ALL.filter((r) => ONLY.includes(r)) : ROUTES_ALL;
 

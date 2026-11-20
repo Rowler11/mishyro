@@ -768,7 +768,7 @@ async function completeSetup(page) {
       && !(await page.evaluate(async () => (await import('./js/core/security.js')).thirdPartyAllowed())));
     await page.evaluate(() => { location.hash = '#/ajustes/privacidad'; });
     await page.locator('.status-row').first().waitFor();
-    ok('privacidad: uses the names of the data, not fixed ones', /Ana decide qué es privado y qué ve Leo/.test(await page.locator('main').textContent()));
+    ok('privacidad: uses the names of the data, not fixed ones', /Lo decide Ana\..*Visible para Leo/.test(await page.locator('main').textContent()));
     await page.evaluate(() => { location.hash = '#/ajustes/legal/privacidad'; });
     await page.locator('.legal-doc h2').first().waitFor();
     ok('legal: the privacy policy is written, with subtitles and lists', (await page.locator('.legal-doc h2').count()) >= 4 && (await page.locator('.legal-doc li').count()) >= 3);
@@ -1255,6 +1255,127 @@ async function completeSetup(page) {
     ok('4.0.1 videos: a heavy video comes out lighter and at 1280 px', lv.light < lv.orig * 0.7 && lv.w === 1280, JSON.stringify(lv));
     ok('fase 4A: no page errors or native dialogs', errs.length === 0, errs.join(' | '));
     await b2.close();
+  }
+
+  // ---------- 9. Fase 4B: hogar, bienestar y finanzas (fictitious data) ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true });
+    const page = await ctx.newPage();
+    const errs = [];
+    page.on('pageerror', (e) => errs.push(e.message));
+    page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
+    page.on('dialog', async (d) => { errs.push('dialog'); await d.dismiss(); });
+    await completeSetup(page);
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 15000 }); await page.waitForTimeout(300); };
+
+    const logic = await page.evaluate(async () => {
+      const L = await import('./js/features/listas.js');
+      const G = await import('./js/features/gastos.js');
+      const A = await import('./js/features/alcancia.js');
+      const H = await import('./js/features/habitos.js');
+      const R = await import('./js/features/rasca.js');
+      const Rc = await import('./js/features/recetas.js');
+      const M = await import('./js/features/mascotas.js');
+      const C = await import('./js/features/ciclo.js');
+      const merged = L.mergeItems([{ id: 'a', text: 'Tomates', done: false, order: 1 }], ['tomates ', 'Arroz', 'arroz', '']);
+      const ex = [{ amountCOP: 40000, paidBy: 'sofia', split: { sofia: 50 } }, { amountCOP: 10000, paidBy: 'david', split: { sofia: 30 } }];
+      const csv = G.toCSV([{ date: '2026-11-01', amountCOP: 1000, category: 'mercado', paidBy: 'sofia', split: { sofia: 50 }, note: 'a;b' }]);
+      const checks = ['sofia', 'david'].flatMap((by) => ['2026-11-18', '2026-11-19'].map((date) => ({ habitId: 'h', date, by }))).concat([{ habitId: 'h', date: '2026-11-20', by: 'sofia' }]);
+      const day = (s, n) => { const d = new Date(`${s}T12:00:00`); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+      const cyc = [];
+      for (const st of ['2026-07-01', '2026-07-29', '2026-08-26', '2026-09-23']) for (let i = 0; i < 5; i++) cyc.push({ date: day(st, i), period: true, flow: 'medium' });
+      const ps = C.periods(cyc);
+      const pr = C.predict(ps, C.DEFAULTS, '2026-10-01');
+      const irregular = C.stats(C.periods([...['2026-03-01', '2026-03-22', '2026-04-30', '2026-05-20'].map((d) => ({ date: d, period: true, flow: 'light' }))]));
+      const nf = C.nextFertile(pr, '2026-10-01');
+      const fert = ['2026-10-01', '2026-10-03', '2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-12'].map((d) => C.fertilityOn(d, pr));
+      return {
+        fert,
+        nf: [nf.ovulation, nf.from, nf.to],
+        merged: [merged.added, merged.items.length], shares: G.shares({ amountCOP: 10001, split: { sofia: 50 } }), settle: G.settlement(ex), csvBom: csv.charCodeAt(0) === 0xFEFF, csvQuoted: csv.includes('"a;b"'),
+        pct: A.pctOf({ targetCOP: 200000 }, 150000), mark: A.crossedMark(20, 55), both: [...H.bothDays(checks, 'h')].join(), plant: H.plantStage(0, 5),
+        prize: R.pickPrize([{ id: 'p1' }, { id: 'p2' }], ['p1'], () => 0).id, cleared: R.clearedRatio(new Uint8ClampedArray([0, 0, 0, 0, 0, 0, 0, 255]), 1),
+        ing: Rc.parseIngredient('2 tazas de arroz'), step: Rc.parseStep('Hervir el arroz (15 min)'),
+        dose: [M.doseStatus('2000-01-01'), M.doseStatus('2999-01-01'), M.doseStatus('')],
+        periods: ps.length, lens: C.cycleLengths(ps).map((c) => c.length).join(), avg: pr.cycle, reliable: pr.reliable, next: pr.next, ov: pr.ahead[0].ovulation,
+        phase: [C.phaseOf('2026-09-24', ps, 28), C.phaseOf('2026-10-07', ps, 28), C.phaseOf('2026-10-15', ps, 28)], irregular: irregular.reliable,
+        ids: [C.dayId('2026-11-01', true), C.dayId('2026-11-01', false)],
+      };
+    });
+    ok('4B listas: merging skips duplicates and empty lines', logic.merged[0] === 1 && logic.merged[1] === 2, JSON.stringify(logic.merged));
+    ok('4B gastos: shares add up and the balance settles', logic.shares.sofia + logic.shares.david === 10001 && logic.settle?.from === 'david' && logic.settle.amount === 17000, JSON.stringify([logic.shares, logic.settle]));
+    ok('4B gastos: CSV opens in Excel (BOM and quoted ";")', logic.csvBom && logic.csvQuoted);
+    ok('4B alcancía: percent and the 25/50 marks', logic.pct === 75 && logic.mark === 50, JSON.stringify([logic.pct, logic.mark]));
+    ok('4B hábitos: a day counts only when both marked', logic.both === '2026-11-18,2026-11-19', logic.both);
+    ok('4B hábitos: the plant droops, never dies', logic.plant.droop && logic.plant.stage === 0);
+    ok('4B rasca: no repeated prize and scratch ratio', logic.prize === 'p2' && logic.cleared === 0.5, JSON.stringify([logic.prize, logic.cleared]));
+    ok('4B recetas: ingredient and step timer parsing', logic.ing.qty === '2' && logic.ing.text === 'arroz' && logic.step.timerSec === 900, JSON.stringify([logic.ing, logic.step]));
+    ok('4B mascotas: dose status', logic.dose.join() === 'overdue,ok,none', logic.dose.join());
+    ok('4B ciclo: periods, lengths and average', logic.periods === 4 && logic.lens === '28,28,28' && logic.avg === 28 && logic.reliable, JSON.stringify(logic));
+    ok('4B ciclo: next start, ovulation 14 days before', logic.next === '2026-10-21' && logic.ov === '2026-10-07', `${logic.next} ${logic.ov}`);
+    ok('4B ciclo: fertile window is 5 days before to 1 after ovulation', logic.nf.join() === '2026-10-07,2026-10-02,2026-10-08', logic.nf.join());
+    ok('4B ciclo: fertility levels (low, fertile, most fertile)', logic.fert.join() === 'low,fertile,peak,peak,peak,fertile,low', logic.fert.join());
+    ok('4B ciclo: phases', logic.phase.join() === 'menstrual,fertil,lutea', logic.phase.join());
+    ok('4B ciclo: irregular cycles are not reliable', logic.irregular === false);
+    ok('4B ciclo: the shared copy has its own id', logic.ids[0] === 'cycle:2026-11-01:v' && logic.ids[1] === 'cycle:2026-11-01');
+
+    // Gastos UI: one expense 50/50, the balance line and "Ya quedamos parejos"
+    await go('/gastos', '.page');
+    await page.getByRole('button', { name: 'Anotar un gasto' }).click();
+    await page.getByLabel('Monto', { exact: true }).fill('40000');
+    await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(400);
+    ok('4B gastos: balance after a 50/50 expense', /20\.000/.test(await page.locator('.balance-line').innerText()));
+    await page.getByRole('button', { name: 'Ya quedamos parejos' }).click();
+    await page.getByRole('button', { name: 'Anotar' }).click(); await page.waitForTimeout(400);
+    ok('4B gastos: settled', /parejos/i.test(await page.locator('.balance-line').innerText()));
+
+    // Ciclo: Sofía registers today, shares it; the private record stays hers; David sees only the shared one
+    await go('/ciclo', '.cyc-today');
+    await page.getByRole('button', { name: 'Registrar hoy' }).click(); // visible for him by default
+    ok('4B ciclo: new records are visible for David by default', await page.locator('.modal .switch-row', { hasText: 'Visible para' }).locator('input').isChecked());
+    await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(400);
+    await page.getByRole('button', { name: 'Registro privado' }).click();
+    await page.getByLabel('Nota (opcional)').fill('Nota privada ficticia');
+    await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(400);
+    if (SHOTS) await shot(page, 'fase4b-ciclo-390');
+    const stored = await page.evaluate(async () => { const db = await import('./js/core/db.js'); return { days: (await db.rawAll('cycleDays')).map((r) => [r.id.endsWith(':v'), r.visibility]), priv: (await db.rawAll('intimateLog')).map((r) => r.visibility) }; });
+    ok('4B ciclo: shared day is "shared", private record is "Solo yo"', stored.days.length === 1 && stored.days[0][0] && stored.days[0][1] === 'shared' && stored.priv.join() === 'self', JSON.stringify(stored));
+    await go('/calendario', '.cal-grid');
+    ok('4B calendario: Sofía sees the Ciclo and Privado layers', (await page.locator('.cal-layers .chip', { hasText: 'Ciclo' }).count()) === 1 && (await page.locator('.cal-layers .chip', { hasText: 'Privado' }).count()) === 1);
+    if (SHOTS) await shot(page, 'fase4b-calendario-ciclo-390');
+    await page.evaluate(async () => { (await import('./js/core/profile.js')).setActive('david'); });
+    await go('/ciclo', '.page.ciclo .note-inline');
+    const davidText = await page.locator('.page.ciclo').innerText();
+    ok('4B ciclo: David sees only what was shared, read-only', davidText.includes('compartir contigo') && /entana fértil estimada/.test(davidText) && !davidText.includes('Nota privada ficticia') && (await page.locator('.page.ciclo .icon-btn[aria-label^="Borrar"]').count()) === 0 && !/Día \d+ del ciclo/.test(davidText) && /para acompañar a/i.test(davidText), davidText.slice(0, 160));
+    await go('/calendario', '.cal-grid');
+    ok('4B calendario: David has no Privado layer', (await page.locator('.cal-layers .chip', { hasText: 'Privado' }).count()) === 0);
+    await page.evaluate(async () => { (await import('./js/core/profile.js')).setActive('sofia'); });
+    // Un-sharing purges the shared copy (so it leaves the other phone too)
+    await go('/ciclo', '.cyc-today');
+    await page.getByRole('button', { name: 'Registrar hoy' }).click();
+    await page.locator('.switch-label', { hasText: 'Visible para' }).click();
+    await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(400);
+    const after = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const m = await db.getMeta(); return { ids: (await db.rawAll('cycleDays')).map((r) => r.id), tomb: Object.keys(m.tombstones || {}).some((k) => k.startsWith('cycleDays:') && k.endsWith(':v')) }; });
+    ok('4B ciclo: turning sharing off purges the shared copy', after.ids.length === 1 && !after.ids[0].endsWith(':v') && after.tomb, JSON.stringify(after));
+    const excluded = await page.evaluate(async () => { const r = await import('./js/features/resumen.js'); const s = await r.stats({ from: '2000-01-01', to: '2999-12-31', kind: 'year' }); return JSON.stringify(s).includes('ficticia'); });
+    ok('4B ciclo: never in the Resumen', !excluded);
+
+    // Inicio: pet card with the days at home; hidden from Mascotas
+    await page.evaluate(async () => { const db = await import('./js/core/db.js'); await db.put('pets', { id: 'e2e-pet', name: 'Michi', species: 'gato', arrival: { y: 2026, m: 1, d: 1 }, visibility: 'shared', owner: 'both', createdAt: '2000-01-01T00:00:00Z' }); });
+    await go('/inicio', '.pet-home-card');
+    ok('4B inicio: pet card', /Michi/.test(await page.locator('.pet-home-card').innerText()));
+    await page.getByRole('button', { name: /Ocultar la tarjeta de/ }).click(); await page.waitForTimeout(800);
+    ok('4B inicio: pet card can be hidden', (await page.locator('.pet-home-card').count()) === 0);
+
+    // Rasca y gana: a gift card is revealed without scratching
+    await page.evaluate(async () => { const r = await import('./js/features/rasca.js'); await r.createCard({ to: 'sofia', from: 'david', origin: 'gift' }); });
+    await go('/rasca', '.scratch-ticket');
+    await page.locator('.scratch-ticket').first().click();
+    await page.getByRole('button', { name: 'Revelar sin raspar' }).click(); await page.waitForTimeout(600);
+    const scratched = await page.evaluate(async () => (await (await import('./js/core/db.js')).query('scratchCards')).some((c) => c.scratchedAt));
+    ok('4B rasca: "Revelar sin raspar" works', scratched);
+    ok('fase 4B: no page errors or native dialogs', errs.length === 0, errs.join(' | '));
+    await ctx.close();
   }
 
   await browser.close();

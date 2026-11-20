@@ -37,8 +37,12 @@ export function policy(store, rec) {
   if (NEVER_ENCRYPT.includes(store) || !rec) return null;
   if (store === 'vault') return 'vault';
   const pick = (...scopes) => scopes.find((s) => scopesWithKeys.has(s)) || null;
+  // The cycle and its private layer prefer their own section PIN, also for Sofía's "Solo yo" records.
+  if (store === 'cycleDays' || store === 'intimateLog') {
+    if (rec.visibility === 'self') return pick('cycle', `person:${rec.owner}`, 'app');
+    if (rec.private) return pick('cycle', 'app');
+  }
   if (rec.visibility === 'self') return pick(`person:${rec.owner}`, 'app');
-  if ((store === 'cycleDays' || store === 'intimateLog') && rec.private) return pick('cycle', 'app');
   if (rec.private) return pick('app');
   return null;
 }
