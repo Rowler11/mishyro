@@ -113,6 +113,45 @@ const waitFor = async (page, src, arg, ms = 8000) => {
       const b = await db.getMedia(a); if (!b) return false;
       const x = new Uint8Array(await b.arrayBuffer()); return x.length === 2.5 * 1024 * 1024 && x[12345] === (12345 * 7) % 251;`, sent, 15000));
 
+    // v0.4.1: photos live in the 5 shards, not in the main object, and deleting a photo frees its space.
+    const u1 = await mod(A.page, 'return sync.refreshUsage({ force: true });');
+    const MB = 1024 * 1024;
+    ok('espacio: la foto de 2,5 MB cabe en los bloques y no en el objeto principal', u1 && u1.used >= 2.5 * MB && u1.pct >= 0, JSON.stringify(u1));
+    const raw = await mod(A.page, `
+      const c = await db.rawGet('settings', 'sync');
+      const r = await fetch(new URL('api/s/' + c.spaceId + '/usage', document.baseURI), { headers: { authorization: 'Bearer ' + c.deviceId + '.' + c.token } });
+      return r.json();`);
+    ok('espacio: 5 bloques, la foto no está en el principal', raw.shards?.length === 5 && raw.own < 1.5 * MB && raw.shards.reduce((x, y) => x + y, 0) >= 2.5 * MB, JSON.stringify(raw));
+    ok('espacio: el medidor guarda su último valor en el equipo', !!(await mod(A.page, 'return sync.lastUsage();')));
+    await mod(A.page, "await db.purge('media', a);", sent);
+    ok('espacio: borrar la foto libera su espacio', await (async () => {
+      for (let i = 0; i < 20; i++) {
+        const r = await mod(A.page, `
+          const c = await db.rawGet('settings', 'sync');
+          const x = await fetch(new URL('api/s/' + c.spaceId + '/usage', document.baseURI), { headers: { authorization: 'Bearer ' + c.deviceId + '.' + c.token } });
+          return (await x.json()).shards.reduce((p, q) => p + q, 0);`);
+        if (r < 1.2 * MB) return true;
+        await new Promise((res) => setTimeout(res, 800));
+      }
+      return false;
+    })());
+
+    // The meter warns from 80 % and says plainly when it is full (the server answer is faked: 1 GB cannot be filled here).
+    await A.page.route('**/api/s/*/usage', (r) => r.fulfill({ json: { own: 1000, shards: [0, 0, 0, 0, 0], used: 900 * MB, shardLimit: 1024 * MB, accountLimit: 5120 * MB, pct: 88 } }));
+    await A.page.evaluate(() => { location.hash = '#/inicio'; });
+    await A.page.waitForTimeout(400);
+    await A.page.evaluate(() => { location.hash = '#/ajustes/sincronizar'; });
+    await A.page.getByText('Se está llenando').waitFor({ timeout: 8000 }).then(() => ok('espacio: avisa con cariño al 80 %', true)).catch(() => ok('espacio: avisa con cariño al 80 %', false));
+    await A.page.evaluate(() => { location.hash = '#/inicio'; });
+    await A.page.waitForTimeout(1500);
+    ok('espacio: Inicio avisa que la nube se llena', (await A.page.locator('.today-row', { hasText: 'La nube se está llenando' }).count()) === 1);
+    await A.page.unroute('**/api/s/*/usage');
+    await A.page.route('**/api/s/*/usage', (r) => r.fulfill({ json: { own: 1000, shards: [0, 0, 0, 0, 0], used: 5000 * MB, shardLimit: 1024 * MB, accountLimit: 5120 * MB, pct: 100 } }));
+    await A.page.evaluate(() => { location.hash = '#/ajustes/sincronizar'; });
+    await A.page.getByText('Se llenó el espacio').waitFor({ timeout: 8000 }).then(() => ok('espacio: dice claro cuando se llenó', true)).catch(() => ok('espacio: dice claro cuando se llenó', false));
+    await A.page.unroute('**/api/s/*/usage');
+    await mod(A.page, "await db.setSettings('syncUsage', { pct: 3, used: 1, accountLimit: 1, at: '' });");
+
     // Deletion travels.
     await mod(A.page, "await db.purge('thinkingOfYou', 'toy-1');");
     ok('borrar en A borra en B', await waitFor(B.page, "return !(await db.rawGet('thinkingOfYou', 'toy-1'));"));

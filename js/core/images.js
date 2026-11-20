@@ -69,3 +69,57 @@ export async function readVideo(file) {
     return { blob, width: meta.width || undefined, height: meta.height || undefined, duration: Math.round(meta.duration * 10) / 10 };
   } finally { URL.revokeObjectURL(url); }
 }
+
+// Lighter videos (v0.4.1, chosen 2026-11-20): the free cloud space is 5 GB and videos are what fills
+// it, so each video is re-recorded in the phone at up to 720p and ~1.5 Mbps (a 30 s clip drops from
+// tens of MB to a few). It plays once in real time with its sound. If anything fails, or the result
+// is not clearly smaller, the original is kept.
+export const LIGHT_VIDEO = { maxSide: 1280, videoBps: 1_500_000, audioBps: 64_000, fps: 30, minGain: 0.85 };
+const LIGHT_MIMES = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+export const canLightenVideo = () => typeof MediaRecorder === 'function' && !!HTMLCanvasElement.prototype.captureStream && typeof AudioContext === 'function' && LIGHT_MIMES.some((t) => MediaRecorder.isTypeSupported?.(t));
+
+/**
+ * { blob, width, height, duration } -> the same shape, lighter when possible.
+ * onProgress(0..1) is called while it records. Never throws: it returns the original on any problem.
+ */
+export async function lightenVideo(video, onProgress) {
+  if (!canLightenVideo()) return video;
+  const url = URL.createObjectURL(video.blob);
+  let audioCtx = null; let stream = null;
+  try {
+    const v = document.createElement('video');
+    v.playsInline = true; v.preload = 'auto'; v.src = url;
+    await new Promise((res, rej) => { v.onloadeddata = res; v.onerror = () => rej(new Error('decode')); setTimeout(() => rej(new Error('timeout')), 15000); });
+    const scale = Math.min(1, LIGHT_VIDEO.maxSide / Math.max(v.videoWidth, v.videoHeight));
+    const w = Math.max(2, Math.round((v.videoWidth * scale) / 2) * 2); const h = Math.max(2, Math.round((v.videoHeight * scale) / 2) * 2);
+    const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    audioCtx = new AudioContext();
+    const dest = audioCtx.createMediaStreamDestination();
+    try { audioCtx.createMediaElementSource(v).connect(dest); } catch { /* no audio track */ }
+    stream = canvas.captureStream(LIGHT_VIDEO.fps);
+    dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
+    const mime = LIGHT_MIMES.find((t) => MediaRecorder.isTypeSupported(t));
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: LIGHT_VIDEO.videoBps, audioBitsPerSecond: LIGHT_VIDEO.audioBps });
+    const chunks = []; rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    const stopped = new Promise((res) => { rec.onstop = res; });
+    let raf = 0;
+    const draw = () => { ctx.drawImage(v, 0, 0, w, h); onProgress?.(Math.min(1, v.currentTime / (v.duration || 1))); raf = requestAnimationFrame(draw); };
+    const ended = new Promise((res) => { v.onended = res; });
+    await audioCtx.resume().catch(() => {});
+    ctx.drawImage(v, 0, 0, w, h);
+    rec.start(500);
+    await v.play();
+    draw();
+    await Promise.race([ended, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), (video.duration || 30) * 1000 * 2 + 10000))]);
+    cancelAnimationFrame(raf);
+    rec.stop(); await stopped;
+    const blob = new Blob(chunks, { type: mime.split(';')[0] });
+    if (!blob.size || blob.size > video.blob.size * LIGHT_VIDEO.minGain) return video;
+    return { blob, width: w, height: h, duration: video.duration };
+  } catch { return video; } finally {
+    stream?.getTracks().forEach((t) => t.stop());
+    audioCtx?.close().catch(() => {});
+    URL.revokeObjectURL(url);
+  }
+}

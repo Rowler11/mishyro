@@ -13,11 +13,13 @@
   "durable_objects": {
     "bindings": [
       { "name": "SPACE", "class_name": "Space" },
-      { "name": "MAILBOX", "class_name": "Mailbox" }
+      { "name": "MAILBOX", "class_name": "Mailbox" },
+      { "name": "SHARD", "class_name": "MediaShard" }
     ]
   },
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["Space", "Mailbox"] }
+    { "tag": "v1", "new_sqlite_classes": ["Space", "Mailbox"] },
+    { "tag": "v2", "new_sqlite_classes": ["MediaShard"] }
   ],
   "observability": { "enabled": false }
 }

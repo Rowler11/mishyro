@@ -1939,3 +1939,6 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 
 /* Leaflet zoom buttons: 44 px touch targets on phones and tablets. */
 @media (max-width: 1024px) { .map-box .leaflet-control-zoom.leaflet-bar a { width: 44px; height: 44px; line-height: 44px; } }
+
+/* Space used in the cloud (v0.4.1) */
+.progress-fill.is-warn { background: var(--danger); }

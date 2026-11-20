@@ -82,7 +82,7 @@ export function status() {
   return {
     linked: !!cfg?.spaceId, online, pending: [...dirty].filter((k) => !blocked.has(k)).length, lastSyncAt, error: lastError,
     me: cfg?.me || null, deviceId: cfg?.deviceId || null, notify: !!cfg?.notify,
-    removed: !!cfg?.removed, hasPersonal: !!cfg?.keys?.[`person:${cfg?.me}`],
+    removed: !!cfg?.removed, full: lastError === 'storage_full', hasPersonal: !!cfg?.keys?.[`person:${cfg?.me}`],
   };
 }
 export const isLinked = () => !!cfg?.spaceId && !cfg?.removed;
@@ -205,7 +205,7 @@ function schedulePush(delay = 400) {
   clearTimeout(pushTimer);
   pushTimer = setTimeout(() => queue(flushPush), delay);
 }
-const queue = (fn) => { running = running.then(fn).catch((e) => { lastError = e?.message || String(e); console.warn('sync', e); emit(); }); return running; };
+const queue = (fn) => { running = running.then(fn).catch((e) => { lastError = e?.message || String(e); console.warn('sync', e); if (lastError === 'storage_full') refreshUsage({ force: true }).catch(() => {}); emit(); }); return running; };
 
 function onLocalChange(store, id) {
   if (!isLinked() || db.LOCAL_ONLY.includes(store)) return;
@@ -283,6 +283,8 @@ async function flushPush() {
     for (const x of batch) {
       await setState(x.key, { ts: x.ts, n: x.n, gone: x.gone, scope: x.name });
       dirty.delete(x.key);
+      // A deleted photo or video also frees its space on the server (best effort).
+      if (x.gone && x.key.startsWith('media:')) api(`blob/${x.key.slice(6)}`, { method: 'DELETE' }).catch(() => {});
     }
   }
   for (const m of media) {
@@ -291,6 +293,30 @@ async function flushPush() {
   }
   lastSyncAt = Date.now(); lastError = '';
   emit();
+  refreshUsage().catch(() => {});
+}
+
+// ---------- space used on the server (Fase 4A, v0.4.1) ----------
+// Cloudflare's free plan keeps up to 1 GB per storage object and 5 GB per account, and the media
+// is split in 5 objects. The fullest object is the one that fills first, so that sets the percentage.
+const USAGE_GROUP = 'syncUsage';
+export const USAGE_WARN = 80;
+let usageAt = 0;
+/** Ask the server how full it is (at most once an hour unless force). Saves the answer on this device. */
+export async function refreshUsage({ force = false } = {}) {
+  if (!isLinked() || !navigator.onLine) return null;
+  if (!force && Date.now() - usageAt < 3600000) return null;
+  usageAt = Date.now();
+  const u = await api('usage');
+  const rec = { pct: u.pct, used: u.used, accountLimit: u.accountLimit, shardLimit: u.shardLimit, at: nowISO() };
+  await db.setSettings(USAGE_GROUP, rec);
+  emit();
+  return rec;
+}
+/** The last answer saved on this device, or null. */
+export async function lastUsage() {
+  const r = await db.getSettings(USAGE_GROUP, {});
+  return Number.isFinite(r.pct) ? r : null;
 }
 
 async function pushMedia({ key, rec, r, name, ts }) {

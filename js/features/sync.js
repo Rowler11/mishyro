@@ -273,6 +273,28 @@ function statusCard() {
     btnRow(now));
 }
 
+const fmtBytes = (n) => (n >= 1024 ** 3 ? `${(n / 1024 ** 3).toFixed(1)} GB` : `${Math.max(1, Math.round(n / 1024 ** 2))} MB`);
+
+/** "Espacio en la nube": how full the free server space is, with a kind warning from 80 %. */
+function usageCard() {
+  const body = el('div', { class: 'stack' }, muted('Midiendo…', true));
+  const draw = (u) => {
+    const full = sync.status().full || u?.pct >= 100;
+    put(body,
+      u ? el('div', { class: 'stack' },
+        el('p', {}, el('strong', {}, fmtBytes(u.used)), ` de ${fmtBytes(u.accountLimit)} gratis`),
+        el('div', { class: 'progress', role: 'progressbar', 'aria-label': 'Espacio usado en la nube', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(Math.min(100, u.pct)) },
+          el('span', { class: `progress-fill${u.pct >= sync.USAGE_WARN ? ' is-warn' : ''}`, style: { width: `${Math.min(100, u.pct)}%` } })),
+        full ? el('p', { class: 'field-error', role: 'alert' }, 'Se llenó el espacio. Lo nuevo se guarda en cada teléfono, pero no se envía hasta liberar espacio.')
+          : u.pct >= sync.USAGE_WARN ? muted('Se está llenando. Los videos cortos y las fotos pesan menos; borrar lo que ya no quieren libera espacio.', true)
+            : muted('Todo va cifrado. Las fotos pesan poco; los videos son lo que más espacio usa.', true))
+        : muted('No se pudo medir. Revisa la conexión.', true));
+  };
+  sync.lastUsage().then((u) => u && draw(u));
+  sync.refreshUsage({ force: true }).then((u) => u && draw(u)).catch(() => sync.lastUsage().then((u) => { if (!u) draw(null); }));
+  return card('Espacio en la nube', body, muted('El plan gratis de Cloudflare da hasta 5 GB. Los teléfonos guardan todo aparte, así que nada se pierde si se llena.', true));
+}
+
 function linked(box, redraw) {
   const s = sync.status();
   const me = s.me;
@@ -315,6 +337,7 @@ function linked(box, redraw) {
 
   put(box,
     statusCard(),
+    usageCard(),
     card('Equipos unidos', list, btnRow(ui.button({ label: 'Unir otro equipo', iconName: 'plus', variant: 'primary', onClick: () => addFlow({ onDone: () => sync.refreshDevices().then(drawDevices).catch(() => {}) }) }))),
     card('Avisos', notifyToggle, muted('Se activan por equipo. Si los bloqueaste, permítelos en los ajustes del navegador.', true)),
     card('Lo privado', personal),
