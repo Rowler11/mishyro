@@ -2170,3 +2170,21 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .plant .stem-g { transform-origin: 32px 49px; transition: transform var(--dur-slow, .6s) ease; }
 .plant.is-droop .stem-g { transform: rotate(14deg); }
 .plant.is-droop .leaf { fill: color-mix(in srgb, var(--gold) 50%, var(--surface)); }
+
+/* Rasca y gana (Fase 4B) */
+.scratch-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.scratch-ticket { width: 100%; min-height: 130px; display: grid; justify-items: center; align-content: center; gap: 4px; padding: var(--space-3); border: 0; border-radius: var(--radius-m); background: linear-gradient(135deg, #C9A24A, #EAD08A 50%, #B98E36); color: #3B2A0A; cursor: pointer; box-shadow: var(--shadow-1); text-align: center; }
+.scratch-ticket.is-locked { filter: grayscale(.6); cursor: default; opacity: .8; }
+.scratch-ticket .muted { color: #5a4415; }
+.scratch-ticket:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.scratch { position: relative; width: 100%; aspect-ratio: 16 / 10; border-radius: var(--radius-m); overflow: hidden; background: var(--paper) var(--grain); border: 1px solid var(--border); touch-action: none; user-select: none; }
+.scratch-prize { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding: var(--space-4); gap: var(--space-2); }
+.scratch-prize p { margin: 0; font-family: var(--font-serif); font-size: 1.3rem; }
+.scratch-kicker { font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+.scratch-cover { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; transition: opacity .5s ease; }
+.scratch-cover.is-gone { opacity: 0; pointer-events: none; }
+.scratch-sparkles { position: absolute; inset: 0; pointer-events: none; }
+.scratch-sparkles i { position: absolute; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px #fff, 0 0 12px var(--gold); animation: sparkle .6s ease-out forwards; }
+@keyframes sparkle { to { opacity: 0; transform: translateY(-14px) scale(.3); } }
+.center-row { justify-content: center; }
+.section-title { margin: 0; font-family: var(--font-serif); font-size: 1.1rem; }

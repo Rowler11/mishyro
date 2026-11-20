@@ -102,7 +102,14 @@ export async function render() {
       const id = checkId(h.id, today, me);
       if (on) { await db.put('habitChecks', { id, habitId: h.id, date: today, by: me, visibility: 'shared', owner: 'both' }); util.haptic(10); }
       else await db.purge('habitChecks', id);
-      load();
+      await load();
+      if (on) {
+        // Every full week of the shared streak wins a Rasca y gana card for each (once per day and habit).
+        const all = (await db.query('habitChecks')).filter((c) => !c.deleted);
+        const days = bothDays(all, h.id);
+        const st = computeStreak(days, today);
+        if (days.has(today) && st.current > 0 && st.current % 7 === 0) (await import('./rasca.js')).earnForBoth(`habit-${h.id}-${today}`, 'habit');
+      }
     };
     const card = (h) => {
       const days = bothDays(live, h.id);

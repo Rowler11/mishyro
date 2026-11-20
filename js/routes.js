@@ -45,7 +45,7 @@ export const GROUPS = [
   ] },
   { id: 'jugar', title: 'Jugar', jp: '遊び', romaji: 'asobi', sections: [
     { id: 'juegos', title: 'Juegos', jp: '遊び', romaji: 'asobi', icon: 'gamepad-2', phase: '5', blurb: 'Juegos en pareja, en persona.' },
-    { id: 'rasca', title: 'Rasca y gana', jp: '当たり', romaji: 'atari', icon: 'wand-sparkles', phase: '4B', blurb: 'Premios pequeños para raspar.' },
+    { id: 'rasca', title: 'Rasca y gana', jp: '当たり', romaji: 'atari', icon: 'wand-sparkles', phase: '4B', module: 'rasca', blurb: 'Premios pequeños para raspar.' },
     { id: 'eventos', title: 'Eventos de temporada', jp: '季節', romaji: 'kisetsu', icon: 'party-popper', phase: '5', moment: true, blurb: 'Fechas del año con su decoración.' },
   ] },
   { id: 'hogar', title: 'Hogar', sections: [

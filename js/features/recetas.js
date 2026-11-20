@@ -337,7 +337,7 @@ export async function render() {
     body.replaceChildren(el('div', { class: 'menu-list' }, data.menus.map((m) => {
       const chosen = COURSES.map(([k]) => byId.get(m[k])).filter(Boolean);
       const schedule = async () => {
-        const ev = { id: m.eventId || util.uuid(), by: profile.active(), title: 'Cena en casa', start: `${m.date}T19:30`, place: 'En casa', note: chosen.map((r) => r.name).join(', '), remind: 'day' };
+        const ev = { id: m.eventId || util.uuid(), by: profile.active(), title: 'Cena en casa', start: `${m.date}T19:30`, place: 'En casa', note: chosen.map((r) => r.name).join(', '), remind: '1d' };
         await db.put('events', ev); await db.put('dateMenus', { ...m, eventId: ev.id });
         ui.toast('Está en el Calendario.', { tone: 'success', action: { label: 'Ver', onClick: () => { location.hash = '#/calendario'; } } }); load();
       };

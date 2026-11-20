@@ -130,6 +130,7 @@ function entryEditor(goal, existing, { saved, onSaved, entries }) {
 async function celebrate(goal) {
   hanabi({ bursts: 5 }); util.haptic([20, 60, 20, 60, 40]); coins(5);
   await db.put('savingsGoals', { ...goal, status: 'done', doneAt: util.localDay() });
+  import('./rasca.js').then((r) => r.earnForBoth(`goal-${goal.id}`, 'goal')).catch(() => {});
   const m = ui.openModal({
     title: '¡Meta cumplida!', size: 'sm', className: 'goal-done',
     body: el('div', { class: 'stack goal-done-body' }, ui.hanko({ text: '愛', size: 96, stamp: true, label: 'Sello' }),
