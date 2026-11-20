@@ -103,7 +103,7 @@ function counterCard(start, onNewDay) {
     petals,
     el('h2', { class: 'sr-only', id: 'counter-title' }, 'Nuestro tiempo'),
     el('div', { class: 'counter-ring', 'aria-hidden': 'true' }, ring, el('p', { class: 'counter-big' }, big, bigLabel),
-      el('span', { class: 'counter-seal' }, icon('heart', { size: 16 }))),
+      el('span', { class: 'counter-seal' }, icon('heart', { size: 11 }))),
     el('div', { 'aria-hidden': 'true' }, goal, el('p', { class: 'counter-detail' }, detail, clock)),
     sr);
   // Ticks every second while visible; stops when the tab is hidden and recalculates on return.
@@ -250,28 +250,34 @@ function omikujiCard(data) {
     data.reasons.length > 1 ? ui.button({ label: 'Sacar otra', iconName: 'repeat', variant: 'ghost', small: true, onClick: () => draw(true) }) : null);
 }
 
-// ---------- the day's carousel ----------
-function carousel(slides, cleanups) {
-  const track = el('div', { class: 'home-carousel-track', tabindex: '0', 'aria-label': 'Tarjetas del día. Desliza de lado para ver las demás.' });
-  slides.forEach((s, i) => { s.classList.add('home-slide'); s.setAttribute('aria-roledescription', 'tarjeta'); s.dataset.index = String(i); track.append(s); });
-  const dots = slides.map((s, i) => el('button', {
-    class: 'home-dot', type: 'button',
-    'aria-label': `Tarjeta ${i + 1} de ${slides.length}: ${s.querySelector('.card-kicker')?.textContent || ''}`,
-    onClick: () => track.scrollTo({ left: s.offsetLeft - track.firstElementChild.offsetLeft, behavior: util.prefersReducedMotion() ? 'auto' : 'smooth' }),
-  }));
-  const mark = () => {
-    const x = track.scrollLeft;
-    let best = 0;
-    slides.forEach((s, i) => { if (Math.abs(s.offsetLeft - track.firstElementChild.offsetLeft - x) < Math.abs(slides[best].offsetLeft - track.firstElementChild.offsetLeft - x)) best = i; });
-    dots.forEach((d, i) => (i === best ? d.setAttribute('aria-current', 'true') : d.removeAttribute('aria-current')));
-  };
-  let frame = 0;
-  const onScroll = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(mark); };
-  track.addEventListener('scroll', onScroll, { passive: true });
-  cleanups.push(() => cancelAnimationFrame(frame));
-  mark();
-  return el('section', { class: 'home-carousel', 'aria-roledescription': 'carrusel', 'aria-label': 'Lo de hoy' },
-    track, slides.length > 1 ? el('div', { class: 'home-dots' }, dots) : null);
+// ---------- the day's cards: one at a time, chosen with buttons (Inicio B, decided 2026-11-19) ----------
+// No sideways swipe. "Pensando en ti" shows first. From 900 px the three share one row and the buttons hide.
+const SLIDE_LABEL = { 'thinking-card': 'Pensando en ti', 'omikuji-card': 'Razón' };
+function daySwitcher(slides) {
+  const label = (s) => SLIDE_LABEL[[...s.classList].find((c) => SLIDE_LABEL[c])] || s.querySelector('.card-kicker')?.textContent || 'Saludo';
+  const first = Math.max(0, slides.findIndex((s) => s.classList.contains('thinking-card')));
+  const buttons = slides.map((s, i) => {
+    s.classList.add('home-slide');
+    s.id = `day-card-${i}`;
+    return el('button', { class: 'day-pick', type: 'button', 'aria-controls': s.id, onClick: () => show(i, true) }, label(s));
+  });
+  const bar = el('div', { class: 'day-picks', role: 'group', 'aria-label': 'Tarjetas del día' }, buttons);
+  bar.addEventListener('keydown', (e) => {
+    const i = buttons.indexOf(document.activeElement);
+    const next = { ArrowRight: i + 1, ArrowLeft: i - 1 }[e.key];
+    if (i < 0 || next === undefined) return;
+    e.preventDefault();
+    buttons[(next + buttons.length) % buttons.length].focus();
+  });
+  function show(i, animate) {
+    slides.forEach((s, k) => s.classList.toggle('is-active', k === i));
+    buttons.forEach((b, k) => b.setAttribute('aria-pressed', String(k === i)));
+    if (animate && !util.prefersReducedMotion()) { const s = slides[i]; s.classList.remove('day-in'); void s.offsetWidth; s.classList.add('day-in'); }
+  }
+  show(first, false);
+  return el('section', { class: 'home-day', 'aria-label': 'Lo de hoy' },
+    slides.length > 1 ? bar : null,
+    el('div', { class: 'home-day-cards' }, slides));
 }
 
 // ---------- 6. next special date ----------
@@ -368,7 +374,7 @@ export async function render() {
     body.replaceChildren(...[
       counter ? counter.card : noStartCard(),
       celebrationCard(events),
-      slides.length ? carousel(slides, cleanups) : null,
+      slides.length ? daySwitcher(slides) : null,
       comingCard(data, start),
       backupCard(data.meta),
     ].filter(Boolean));

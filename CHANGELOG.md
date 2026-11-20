@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.1.27 (Más con puertas, Inicio compacto)
+
+- Más: los 7 grupos son puertas shoji, dos por fila, con su nombre, cuántas secciones tienen y algunos íconos. Al tocar una, las hojas de papel se corren y aparecen sus tarjetas. "Volver" o el botón Atrás del teléfono regresan a las puertas, y la que abriste se cierra sola.
+- Inicio más compacto: el ensō es pequeño y va a la izquierda, con "Faltan N días…" al lado y olas seigaiha debajo. "Lo que viene" pasa a filas, una por fecha, con el número en un sello rojo.
+- Inicio: las tarjetas del día ya no se deslizan de lado. Se ve una a la vez y arriba eliges cuál con unas cortinas noren colgadas de una vara (saludo, Pensando en ti o Razón); al abrir sale "Pensando en ti". En el PC se ven las tres juntas. Los títulos llevan un trazo de pincel.
+- Modo oscuro: vuelve a verse el fondo de olas, en rosado suave.
+- Esc cierra una ventana aunque se pulse justo cuando se está abriendo.
+
 ## 0.1.26 (entrada con pétalos)
 
 - Entrada nueva: entra una rama de sakura frondosa que el viento ya va meciendo y suelta pétalos. A los lados flotan nubes de tinta al estilo de los grabados japoneses, y una luz cálida se abre desde la esquina.
