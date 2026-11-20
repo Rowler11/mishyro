@@ -317,14 +317,21 @@ function comingCard(data, start) {
 // ---------- 7 + 8. "Para hoy": the question of the day, the week's challenge and the mood (Fase 3) ----------
 // A kind hint first when the other one marked a low mood and allowed it (docs/05 Detalles: Ánimo).
 async function todayCard() {
-  const [qa, retos, animo, rem] = await Promise.all([import('./preguntas.js'), import('./retos.js'), import('./animo.js'), import('./recordatorios.js')]);
+  const [qa, retos, animo, rem, tc] = await Promise.all([import('./preguntas.js'), import('./retos.js'), import('./animo.js'), import('./recordatorios.js'), import('./capsula-tiempo.js')]);
+  const [badgeRow, summaryRow] = await Promise.all([
+    import('./insignias.js').then((m) => m.homeRow()).catch(() => null), import('./resumen.js').then((m) => m.homeRow()).catch(() => null)]);
   const me = profile.active();
-  const [pending, week, hint, mine, soon] = await Promise.all([
+  const [pending, week, hint, mine, soon, capsules] = await Promise.all([
     qa.pendingToday().catch(() => null), retos.ensureWeek().catch(() => null), animo.partnerLowHint().catch(() => null), animo.getMood(util.localDay(), me).catch(() => null),
-    rem.dueSoon().catch(() => [])]);
+    rem.dueSoon().catch(() => []), tc.readyToOpen(me).catch(() => [])]);
   const rows = [];
+  // Cápsula del tiempo (decided 2026-11-20): a notice only on (or after) its opening day.
+  // Resumen y Wrapped (a "moment"): only at the end of a month or year and on the anniversary.
+  if (summaryRow) rows.push(summaryRow);
+  if (capsules.length) rows.push({ href: '#/capsula-tiempo', icon: 'lock-open', title: capsules.length === 1 ? 'Hoy se abre una cápsula del tiempo' : `Hay ${capsules.length} cápsulas del tiempo para abrir`, sub: capsules[0].title });
   // Recordatorios suaves (§41): mesiversario, the weekly date and their own, when they are close.
   for (const r of soon.slice(0, 2)) rows.push(r);
+  if (badgeRow) rows.push(badgeRow);
   if (hint) rows.push({ href: '#/animo', icon: 'heart', title: `Hoy a ${hint.name} podría venirle bien un abrazo`, sub: 'Un detalle pequeño hace la diferencia.' });
   if (pending?.count) rows.push({ href: '#/preguntas', icon: 'message-circle-question', title: pending.partnerDone ? 'Ya te respondieron: te toca' : 'La pregunta del día', sub: pending.first });
   if (week?.rec && !week.rec.doneAt && week.challenge) rows.push({ href: '#/retos', icon: 'flag', title: `Reto de la semana: ${week.challenge.title}`, sub: week.challenge.text });
@@ -386,12 +393,16 @@ export async function render() {
     const events = todayEvents(data, start, recv);
     const slides = [greetingCard(data, recv), thinkingCard(data, recv), omikujiCard(data)].filter(Boolean);
     const today = await todayCard().catch((e) => { console.error(e); return null; });
+    const meeting = await import('./encuentro.js').then((m) => m.homeCard()).catch(() => null);
+    const weekend = await import('./citas.js').then((m) => m.weekendCard()).catch(() => null);
     body.replaceChildren(...[
       counter ? counter.card : noStartCard(),
       celebrationCard(events),
+      meeting,
       slides.length ? daySwitcher(slides) : null,
       comingCard(data, start),
       today,
+      weekend,
       backupCard(data.meta),
     ].filter(Boolean));
     ui.stagger(body);

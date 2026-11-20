@@ -4,6 +4,7 @@
 // delete own memories with confirmation. Photos live in the `media` store, never inline.
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
+import { voiceAttach, saveAttached, player as voicePlayer } from './voz.js';
 import { compressImage, isQuotaError, MAX_PHOTOS, readVideo, isVideoFile, MAX_VIDEO_SECONDS } from '../core/images.js';
 
 const { el, icon } = util;
@@ -120,6 +121,7 @@ function detailView(m, { bag, onEdit, onDelete, back }) {
     el('h2', { class: 'memory-title', id: `md-${m.id}` }, titleOf(m)),
     m.visibility === 'self' ? el('span', { class: 'badge' }, icon('lock', { size: 14 }), ' Solo yo') : null,
     noteText ? el('div', { class: 'memory-note' }, noteText.split(/\n{2,}/).map((p) => el('p', {}, p))) : null,
+    m.voiceMediaId ? el('div', { class: 'memory-voice' }, voicePlayer({ mediaId: m.voiceMediaId, duration: m.voiceDuration, title: 'la nota de voz del recuerdo' }, { add: (u) => bag.track(u) })) : null,
     (pending(m.title) || pending(m.note) || isDraft(m)) ? el('p', { class: 'pending' }, 'Le faltan datos: tócalo en Editar para completarlo.') : null,
     el('div', { class: 'card-actions' },
       ui.button({ label: 'Editar', iconName: 'pencil', small: true, onClick: () => onEdit(m) }),
@@ -133,6 +135,7 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
   // Slots: kept ones { mediaId, url, video } and new ones { blob, width, height, duration, url, video }.
   const photos = [];
   const removed = [];
+  const voice = voiceAttach({ mediaId: m.voiceMediaId || null, duration: m.voiceDuration || 0 });
   let visibility = m.visibility || 'shared';
   let busy = 0;
 
@@ -269,6 +272,20 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
         saved.push(id); mediaIds.push(id);
       }
       rec.mediaIds = mediaIds;
+      // The voice note is media of the memory too, with its same privacy.
+      if (voice.recording()) { formError.textContent = 'Detén la grabación primero.'; for (const id of saved) await db.rawDelete('media', id).catch(() => {}); return false; }
+      const v = voice.value();
+      if (v.keep && !v.blob) {
+        const raw = await db.rawGet('media', v.keep);
+        if (raw && !!raw.enc !== !!scope) {
+          const blob = await db.getMedia(v.keep);
+          if (blob) { v.blob = blob; v.seconds = raw.duration || v.keepDuration; replaced.push(v.keep); v.keep = null; }
+        }
+      }
+      const sv = await saveAttached(v, { ownerStore: 'memories', ownerId: m.id, encryptScope: scope });
+      if (sv.created) saved.push(sv.created);
+      rec.voiceMediaId = sv.voiceMediaId; rec.voiceDuration = sv.voiceDuration;
+      if (m.voiceMediaId && m.voiceMediaId !== rec.voiceMediaId && !replaced.includes(m.voiceMediaId)) removed.push(m.voiceMediaId);
       await db.put('memories', rec);
       for (const id of [...removed, ...replaced]) await db.rawDelete('media', id).catch(() => {});
       util.haptic(15);
@@ -285,7 +302,7 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
   };
 
   const body = el('form', { class: 'memory-form', novalidate: true, onSubmit: (e) => { e.preventDefault(); } },
-    drop, fTitle, fDate, fNote,
+    drop, fTitle, fDate, fNote, voice.node,
     ui.visibilityPicker({ value: visibility, onChange: (v) => {
       visibility = v;
       // First "Solo yo" of this person: offer the personal PIN (docs/04).
@@ -293,7 +310,7 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
     } }),
     formError);
   const modal = ui.openModal({
-    title: isNew ? 'Nuevo recuerdo' : 'Editar recuerdo', kind: 'sheet', size: 'lg', className: 'memory-editor', body,
+    title: isNew ? 'Nuevo recuerdo' : 'Editar recuerdo', kind: 'sheet', size: 'lg', className: 'memory-editor', body, onClose: () => voice.cleanup(),
     actions: [
       { label: 'Cancelar', variant: 'ghost' },
       { label: isNew ? 'Guardar recuerdo' : 'Guardar cambios', variant: 'primary', onClick: save },
@@ -405,7 +422,9 @@ export async function render(ctx) {
   const bag = urlBag();
   const page = el('section', { class: 'page page-wide capsula' });
   const fab = ui.newButton('Nuevo recuerdo', () => openEditor());
-  const header = ui.pageHeader({ title: 'Cápsula', jp: '思い出', romaji: 'omoide', actions: [fab] });
+  const future = ui.button({ label: 'Para el futuro', iconName: 'lock', small: true, variant: 'ghost', href: '#/capsula-tiempo' });
+  future.classList.add('capsula-future');
+  const header = ui.pageHeader({ title: 'Cápsula', jp: '思い出', romaji: 'omoide', actions: [future, fab] });
   const body = el('div', { class: 'capsula-body' }, ui.skeleton(4));
   page.append(header, body);
   const wide = window.matchMedia(WIDE);

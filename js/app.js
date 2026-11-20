@@ -40,6 +40,22 @@ const load = {
   recordatorios: () => import('./features/recordatorios.js'),
   jibun: () => import('./features/jibun.js'),
   retos: () => import('./features/retos.js'),
+  galeria: () => import('./features/galeria.js'),
+  mapa: () => import('./features/mapa.js'),
+  album: () => import('./features/album.js'),
+  'primeras-veces': () => import('./features/primeras-veces.js'),
+  photobooth: () => import('./features/photobooth.js'),
+  'capsula-tiempo': () => import('./features/capsula-tiempo.js'),
+  planes: () => import('./features/planes.js'),
+  suenos: () => import('./features/suenos.js'),
+  citas: () => import('./features/citas.js'),
+  regalos: () => import('./features/regalos.js'),
+  encuentro: () => import('./features/encuentro.js'),
+  voz: () => import('./features/voz.js'),
+  insignias: () => import('./features/insignias.js'),
+  resumen: () => import('./features/resumen.js'),
+  lenguajes: () => import('./features/lenguajes.js'),
+  gratitud: () => import('./features/gratitud.js'),
 };
 
 function registerSection(base, def) {

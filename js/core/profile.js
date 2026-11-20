@@ -51,6 +51,8 @@ export const name = (id) => person(id).shortName || defaults[id]?.shortName || '
 /** Nickname if set, else short name. Used for {apodo}. */
 export const nick = (id) => person(id).nickname || name(id);
 export const startDate = () => relationship.startDate || '';
+/** The start as a local day (YYYY-MM-DD), or ''. startDate() may carry a time and offset. */
+export const startDay = () => (/^\d{4}-\d{2}-\d{2}/.exec(startDate()) || [''])[0];
 
 /** Replace {apodo} with the nickname of who receives the message. */
 let petName = '';

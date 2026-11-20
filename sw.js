@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.3.1';
+const CACHE_VERSION = 'aishiteru-v0.4.0';
 const SHELL = [
   './',
   './styles.css',
@@ -29,6 +29,9 @@ const SHELL = [
   './js/features/intro.js',
   './js/features/preguntas.js', './js/features/canciones.js', './js/features/diario.js', './js/features/animo.js', './js/features/jibun.js', './js/features/retos.js',
   './js/features/calendario.js', './js/features/fechas.js', './js/features/recordatorios.js', './js/core/ics.js', './js/core/dates.js',
+  './js/core/viewer.js', './js/features/galeria.js', './js/features/mapa.js',
+  './js/features/album.js', './js/features/primeras-veces.js', './js/features/photobooth.js', './js/features/capsula-tiempo.js',
+  './js/features/planes.js', './js/features/suenos.js', './js/features/citas.js', './js/features/regalos.js', './js/features/encuentro.js', './js/features/voz.js', './js/features/lenguajes.js', './js/features/gratitud.js', './js/features/insignias.js', './js/features/resumen.js',
   './js/features/cartas.js', './js/features/stickers.js', './js/features/sticker-maker.js', './js/features/bg-remove.js',
   './js/features/ajustes.js',
   './js/features/perfil.js',
@@ -110,7 +113,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   if (url.origin !== self.location.origin) return; // external resources are never cached
   if (url.pathname.includes('/api/')) return; // sync server: always live, never cached
-  if (/\/vendor\/(ort|u2netp)\//.test(url.pathname)) {
+  if (/\/vendor\/(ort|u2netp|leaflet)\//.test(url.pathname)) {
     event.respondWith(caches.open(MODELS).then(async (c) => {
       const hit = await c.match(req);
       if (hit) return hit;

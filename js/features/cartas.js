@@ -7,6 +7,7 @@
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import { compressImage } from '../core/images.js';
 import { layer as stickerLayer, decorate, loadAlbum, albumView } from './stickers.js';
+import { voiceAttach, saveAttached, player as voicePlayer } from './voz.js';
 
 const { el, icon } = util;
 const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -39,7 +40,7 @@ const fromSeed = (c, state) => ({
 });
 const fromOwn = (l) => ({
   id: l.id, kind: 'own', from: l.author, to: l.to || profile.partnerOf(l.author), label: labelOf(l.condition), condition: l.condition,
-  body: l.body, signature: l.signature, mediaId: l.mediaId || null, status: l.status, openedAt: l.openedAt || null, sealedAt: l.sealedAt || null, stickers: l.stickers || [], raw: l,
+  body: l.body, signature: l.signature, mediaId: l.mediaId || null, voiceMediaId: l.voiceMediaId || null, voiceDuration: l.voiceDuration || 0, status: l.status, openedAt: l.openedAt || null, sealedAt: l.sealedAt || null, stickers: l.stickers || [], raw: l,
 });
 
 function seal(letter, { size = 56 } = {}) {
@@ -126,15 +127,18 @@ async function letterModal(letter, { onShareable = true, flown = false, onDelete
     const blob = await db.getMedia(letter.mediaId).catch(() => null);
     if (blob) { url = URL.createObjectURL(blob); photo = el('img', { class: 'washi-photo', src: url, alt: `Foto de la carta ${letter.label}` }); }
   }
+  const bag = new Set();
+  const voice = letter.voiceMediaId ? el('div', { class: 'washi-voice' }, el('p', { class: 'muted small' }, 'Con una nota de voz'), voicePlayer({ mediaId: letter.voiceMediaId, duration: letter.voiceDuration, title: 'la nota de voz de la carta' }, bag)) : null;
   const body = el('div', { class: 'washi' },
     photo,
     paras.map((p) => el('p', {}, p)),
+    voice,
     el('p', { class: 'washi-sign' }, letter.signature || profile.name(letter.from)),
     letter.openedAt ? el('p', { class: 'washi-meta' }, openedText(letter.openedAt)) : null);
   const actions = [{ label: 'Cerrar', variant: 'ghost' }];
   if (onShareable) actions.unshift({ label: 'Compartir el texto', onClick: () => { ui.share({ title: letter.label, text: `${letter.label}\n\n${paras.join('\n\n')}\n\n${letter.signature || profile.name(letter.from)}` }); return false; } });
   if (onDelete) actions.unshift({ label: 'Borrar', variant: 'ghost', onClick: () => { onDelete(); return true; } });
-  return ui.openModal({ title: letter.label, size: 'lg', className: `washi-modal${flown ? ' is-flown' : ''}`, body, actions, onClose: () => { if (url) URL.revokeObjectURL(url); } });
+  return ui.openModal({ title: letter.label, size: 'lg', className: `washi-modal${flown ? ' is-flown' : ''}`, body, actions, onClose: () => { if (url) URL.revokeObjectURL(url); bag.forEach((u) => URL.revokeObjectURL(u)); } });
 }
 
 function editor(existing, { onSaved }) {
@@ -168,11 +172,13 @@ function editor(existing, { onSaved }) {
     busy = false; paintPhoto();
   });
   paintPhoto();
+  const voice = voiceAttach({ mediaId: l.voiceMediaId || null, duration: l.voiceDuration || 0 });
   const formError = el('p', { class: 'field-error form-error', role: 'alert' });
 
   const save = async () => {
     formError.textContent = '';
     if (busy) { formError.textContent = 'Espera a que la foto esté lista.'; return false; }
+    if (voice.recording()) { formError.textContent = 'Detén la grabación primero.'; return false; }
     const c = cond.value.trim(); const b = body.value.trim();
     fCond.setError(c ? '' : '¿Cuándo debe abrirla? Escríbelo aquí.');
     fBody.setError(b ? '' : 'Escribe la carta.');
@@ -184,8 +190,12 @@ function editor(existing, { onSaved }) {
     try {
       const scope = security.policy('letters', rec) || undefined;
       if (photo) { const id = await db.putMedia(photo.blob, { ownerStore: 'letters', ownerId: l.id, width: photo.width, height: photo.height, encryptScope: scope }); created.push(id); rec.mediaId = id; } else rec.mediaId = keepMedia;
+      const v = await saveAttached(voice.value(), { ownerStore: 'letters', ownerId: l.id, encryptScope: scope });
+      if (v.created) created.push(v.created);
+      rec.voiceMediaId = v.voiceMediaId; rec.voiceDuration = v.voiceDuration;
       await db.put('letters', rec);
       if (l.mediaId && l.mediaId !== rec.mediaId) await db.rawDelete('media', l.mediaId).catch(() => {});
+      if (l.voiceMediaId && l.voiceMediaId !== rec.voiceMediaId) await db.rawDelete('media', l.voiceMediaId).catch(() => {});
       onSaved(rec, isNew);
       return true;
     } catch (e) {
@@ -198,10 +208,10 @@ function editor(existing, { onSaved }) {
   return ui.openModal({
     title: isNew ? `Carta para ${profile.name(l.to)}` : 'Editar borrador', kind: 'sheet', size: 'lg', className: 'letter-editor',
     body: el('form', { class: 'memory-form', novalidate: true, onSubmit: (e) => e.preventDefault() },
-      fCond, fBody, ui.field({ label: 'Firma', control: sign }), photoBox,
+      fCond, fBody, ui.field({ label: 'Firma', control: sign }), photoBox, voice.node,
       el('p', { class: 'muted small' }, 'Se guarda como borrador: solo tú la ves. Cuando esté lista, séllala.'), formError),
     actions: [{ label: 'Cancelar', variant: 'ghost' }, { label: 'Guardar borrador', variant: 'primary', onClick: save }],
-    onClose: () => { if (photoUrl) URL.revokeObjectURL(photoUrl); },
+    onClose: () => { if (photoUrl) URL.revokeObjectURL(photoUrl); voice.cleanup(); },
   });
 }
 
@@ -250,13 +260,14 @@ export async function render(ctx) {
     if (!yes) return;
     try {
       const rec = { ...l.raw, status: 'sealed', sealedAt: util.nowISO(), visibility: 'shared', private: false, owner: 'both' };
-      // The photo follows the letter out of "Solo yo": saved again without the personal key.
-      if (rec.mediaId) {
-        const raw = await db.rawGet('media', rec.mediaId);
+      // The photo and the voice note follow the letter out of "Solo yo": saved again without the personal key.
+      for (const key of ['mediaId', 'voiceMediaId']) {
+        if (!rec[key]) continue;
+        const raw = await db.rawGet('media', rec[key]);
         if (raw?.enc) {
-          const blob = await db.getMedia(rec.mediaId);
-          const old = rec.mediaId;
-          rec.mediaId = blob ? await db.putMedia(blob, { ownerStore: 'letters', ownerId: rec.id, width: raw.width, height: raw.height }) : null;
+          const blob = await db.getMedia(rec[key]);
+          const old = rec[key];
+          rec[key] = blob ? await db.putMedia(blob, { ownerStore: 'letters', ownerId: rec.id, width: raw.width, height: raw.height, duration: raw.duration }) : null;
           await db.rawDelete('media', old).catch(() => {});
         }
       }

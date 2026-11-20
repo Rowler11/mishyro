@@ -1,5 +1,29 @@
 # Cambios
 
+## 0.4.0 (Fase 4A: recuerdos y vínculo)
+
+Recuerdos
+- Galería: todas sus fotos juntas (Cápsula, Diario, Mapa, Primeras veces y Photobooth), por mes y con filtros. Se abren a pantalla completa y se pasan con el dedo o las flechas. Lo "Solo yo" nunca aparece.
+- Álbum "Nuestro año": collages por mes (washi, purikura, pergamino y polaroid) que se arman solos y se pueden editar, descargar o imprimir. La pestaña "Nuestro mes" muestra el calendario con una mini foto por día.
+- Mapa de lugares: marquen donde han estado y adonde quieren ir, con foto y nota. "Compartir dónde estoy" manda una foto del momento (exacta, aproximada o solo la ciudad), nunca seguimiento. Sin internet o con "Modo sin terceros" se ve como lista.
+- Primeras veces: un álbum con 20 sugerencias para completar con fecha, foto y nota, y una barra de avance.
+- Photobooth: tiras de 3 o 4 fotos, polaroid o washi, con marcos y estampillas que se mueven, giran y cambian de tamaño. Se descargan o se guardan en la Cápsula.
+- Cápsula del tiempo: desde la Cápsula, "Para el futuro" guarda un mensaje (con foto) que se abre el día elegido. Ese día sale un aviso en Inicio.
+- Notas de voz: grabar hasta 2 minutos para el otro, para los dos o para uno mismo, con ocasión, favoritas y velocidad 1.5x. Ahora también se puede poner una nota de voz en una carta o en un recuerdo.
+
+Vínculo
+- Planes: tablillas ema con lo que quieren hacer juntos; al cumplir uno se anota la fecha.
+- Sueños y viajes: sueños con pasos, punto en el mapa, prioridad y avance. Al cumplirse pueden volverse recuerdo y lugar.
+- Sugerencias de citas: una gacha sorpresa, búsqueda con filtros, pendientes, historial con calificación, sus propias ideas, citas sorpresa con pistas y "¿Quién decide?" por turnos justos. Jueves y viernes, Inicio sugiere un plan para el fin de semana.
+- Regalos secretos: cada uno tiene su lista de deseos; lo que el otro marca como comprado no se ve hasta que lo da.
+- Próximo encuentro: la cuenta regresiva para verse, también en Inicio.
+- Lenguajes del amor: un cuestionario de 10 preguntas, el gráfico de los dos e ideas para el otro.
+- Gratitud y revisión: el frasco de notas de gracias (se leen al azar) y una revisión semanal de 3 a 5 preguntas.
+
+Logros
+- Racha e insignias: la racha cuenta cuando cualquiera de los dos hace algo en la app, y cada semana hay un día de gracia. 22 insignias como sellos que se estampan al desbloquearse, con vitrina y avance de las que faltan.
+- Resumen del año y Wrapped: historias a pantalla completa con lo que vivieron en el mes, el año o el año de pareja (Wrapped, cada 2 de mayo). Cada tarjeta se comparte como imagen y se puede crear un video corto en el teléfono. Sale en Inicio al final de cada mes y año y en el aniversario. Nada del ciclo, el Rincón ni lo "Solo yo" entra.
+
 ## 0.3.1 (Fase 3, parte 2: organizarnos)
 
 - Calendario: el mes completo con puntos por capa (Citas, Fechas y Ánimo, cada una se prende o se apaga). Al tocar un día se ve lo que tiene. Agreguen citas con hora, lugar, nota y un aviso de 1 día o 1 hora antes. Cada cita se lleva al calendario del teléfono con su aviso, o todas juntas con "Exportar todo al teléfono". Las citas pasadas quedan en un historial y con "Crear recuerdo" abren la Cápsula con el título y la fecha listos.
