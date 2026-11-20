@@ -121,6 +121,7 @@ export class Space extends DurableObject {
   }
   async register(body) {
     if (!ID.test(body.device || '') || !str(body.token, 128) || (body.label && !str(body.label, 2048))) throw Object.assign(new Error('bad device'), { status: 400 });
+    if (this.sql.exec('SELECT COUNT(*) FROM devices WHERE id = ?', body.device).one()['COUNT(*)']) throw Object.assign(new Error('device exists'), { status: 409 });
     if (this.sql.exec('SELECT COUNT(*) AS n FROM devices').one().n >= 12) throw Object.assign(new Error('too many devices'), { status: 409 });
     const now = Date.now();
     this.sql.exec('INSERT OR REPLACE INTO devices (id, tok, label, created, seen) VALUES (?, ?, ?, ?, ?)',
@@ -165,6 +166,7 @@ export class Space extends DurableObject {
   }
   removeDevice(id) {
     this.sql.exec('DELETE FROM devices WHERE id = ?', id);
+    this.sql.exec('DELETE FROM invites'); // a code made just before the removal must not let it back in
     this.sql.exec('DELETE FROM subs WHERE dev = ?', id);
     for (const ws of this.ctx.getWebSockets()) {
       if (ws.deserializeAttachment()?.dev === id) { try { ws.close(4001, 'removed'); } catch { /* gone */ } }

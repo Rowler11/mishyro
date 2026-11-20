@@ -99,6 +99,9 @@ const waitFor = async (page, src, arg, ms = 8000) => {
     const codeC = await mod(A.page, "return sync.makeInvite('sofia');");
     await mod(C.page, 'return sync.joinWithCode(a);', codeC);
     ok('"Solo yo" de Sofía llega a su PC', await waitFor(C.page, "return !!(await db.rawGet('personal', 'self-1'));"));
+    const selfPhoto = await mod(A.page, "return db.putMedia(new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' }), { ownerStore: 'personal', ownerId: 'self-1' });");
+    ok('foto de "Solo yo" llega a su PC', await waitFor(C.page, 'return !!(await db.getMedia(a));', selfPhoto));
+    ok('foto de "Solo yo" no llega al equipo de David', !(await mod(B.page, "return !!(await db.rawGet('media', a));", selfPhoto)));
     ok('el PC sin seed recibe todo', await waitFor(C.page, "return (await db.rawAll('memories')).length >= 2 && !!(await db.rawGet('profile', 'people'));"));
 
     // Photos: bytes arrive intact.

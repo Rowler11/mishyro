@@ -361,7 +361,7 @@ function fatal(message) {
 }
 
 /** Live sync (Fase A): start it, and redraw the open view when changes arrive from the other devices. */
-function startSync() {
+async function startSync() {
   sync.onApplied((stores) => {
     if (stores.includes('profile')) profile.load();
     const route = router.currentRoute();
@@ -371,7 +371,7 @@ function startSync() {
     app.keepScroll = window.scrollY;
     router.refresh();
   });
-  sync.start().catch((e) => db.logError(`sync: ${e?.message}`, e?.stack, CONFIG.appVersion));
+  await sync.start().catch((e) => db.logError(`sync: ${e?.message}`, e?.stack, CONFIG.appVersion));
 }
 
 // ---------- start ----------
@@ -413,9 +413,9 @@ async function start() {
     await security.lockScreen({ scope: 'app' });
   });
   buildShell();
+  await startSync(); // before the first view, so Sincronización knows this device is linked
   await router.start({ render, navigate: onNavigate });
   appReady();
-  startSync();
   registerServiceWorker();
   document.documentElement.classList.add('ready');
 }

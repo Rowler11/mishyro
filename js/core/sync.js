@@ -135,7 +135,6 @@ async function loadKeys() {
 const nameByKid = (kid) => Object.entries(cfg?.keys || {}).find(([, e]) => e.kid === kid)?.[0] || null;
 
 // ---------- which key protects a record ----------
-const LOCAL_TO_SYNC = { app: 'space' };
 function scopeOf(store, rec) {
   if (store === 'vault') return 'vault';
   if (rec.visibility === 'self') return `person:${rec.owner}`;
@@ -143,12 +142,15 @@ function scopeOf(store, rec) {
   return 'space';
 }
 async function mediaScope(m) {
+  // The owner record decides first: a "Solo yo" photo must travel with its owner's personal key,
+  // even when it is sealed here with the app PIN (local "app" scope).
   if (m.ownerStore === 'vault') return 'vault';
-  if (m.enc?.keyRef) return LOCAL_TO_SYNC[m.enc.keyRef] || m.enc.keyRef;
   if (m.ownerStore && m.ownerId) {
     const owner = await db.rawGet(m.ownerStore, m.ownerId).catch(() => null);
     if (owner) return scopeOf(m.ownerStore, owner);
+    return null; // owner not here (yet): wait instead of guessing
   }
+  if (m.enc?.keyRef && m.enc.keyRef !== 'app') return m.enc.keyRef;
   return 'space';
 }
 
@@ -259,6 +261,7 @@ async function flushPush() {
       r = { ...open, enc: null }; delete r.locked; delete r.payload;
     }
     const name = rec ? (store === 'media' ? await mediaScope(rec) : scopeOf(store, rec)) : (prev?.scope || 'space');
+    if (!name) continue; // a photo whose record has not arrived: retried on the next scan
     if (!keys.has(name) && !(name.startsWith('person:') && await ensurePersonalKey(name))) {
       if (!cfg.keys?.[name]) { blocked.add(key); dirty.delete(key); }
       continue;

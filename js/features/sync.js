@@ -213,9 +213,14 @@ function syncPage() {
   const root = page('Sincronización');
   const box = el('div', { class: 'stack' });
   root.append(box);
-  const draw = () => (sync.isLinked() ? linked(box, draw) : sync.status().removed ? removed(box, draw) : unlinked(box, draw));
+  const mode = () => (sync.isLinked() ? 'linked' : sync.status().removed ? 'removed' : 'unlinked');
+  let drawn = '';
+  const draw = () => { drawn = mode(); return ({ linked, removed, unlinked })[drawn](box, draw); };
   draw();
-  const off = sync.onStatus(() => { box.querySelector('[data-live-status]')?.replaceWith(statusCard()); });
+  const off = sync.onStatus(() => {
+    if (mode() !== drawn) { draw(); return; } // linked elsewhere, removed from another device…
+    box.querySelector('[data-live-status]')?.replaceWith(statusCard());
+  });
   return { node: root, cleanup: off };
 }
 
