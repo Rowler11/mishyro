@@ -5,8 +5,11 @@ import { encryptWithPassword, decryptWithPassword } from './crypto.js';
 
 export const FORMAT = 'aniversario-backup';
 export const VAULT_FORMAT = 'aniversario-vault-backup';
-const EXCLUDED = ['vault', 'errors', 'media'];
+const EXCLUDED = ['vault', 'errors', 'media', 'syncState', 'syncInbox'];
 const SPLIT_BYTES = 50 * 1024 * 1024;
+// Sync keys and this device's pairing never go into a file (docs: Fase A).
+const DEVICE_SETTINGS = ['sync', 'syncNotify'];
+const portable = (name, r) => !(name === 'settings' && DEVICE_SETTINGS.includes(r.id));
 
 /** Upgrades an older backup in memory. One function per schema version step. */
 export const backupMigrations = {
@@ -26,7 +29,7 @@ export async function exportBackup({ includePrivate = false, encryptPrivate = tr
   const liveOwners = new Set();
   for (const name of db.STORE_NAMES) {
     if (EXCLUDED.includes(name)) continue;
-    const all = await db.rawAll(name);
+    const all = (await db.rawAll(name)).filter((r) => portable(name, r));
     const pub = []; const priv = [];
     for (const r of all) {
       if (isPrivateRecord(r) && !r.enc) {
@@ -149,8 +152,9 @@ export async function applyBackup(backup, mode = 'merge') {
 
   for (const name of db.STORE_NAMES) {
     if (EXCLUDED.includes(name) || name === 'meta') continue;
-    const incoming = backup.stores[name] || [];
+    const incoming = (backup.stores[name] || []).filter((r) => portable(name, r));
     if (mode === 'replace') {
+      if (name === 'settings') for (const r of await db.rawAll('settings')) if (!portable(name, r)) incoming.push(r);
       await db.rawPutMany(name, incoming, { clear: true });
       for (const r of incoming) if (!r.deleted) alive.add(`${name}:${r.id}`);
       continue;

@@ -1,5 +1,5 @@
 // Ajustes: Privacidad (who sees what, honestly) and Modo sin terceros (docs/04).
-import { ui, util, db, security, profile, router } from '../core.js';
+import { ui, util, db, security, profile, router, sync } from '../core.js';
 
 const { el, icon } = util;
 const put = (box, ...kids) => box.replaceChildren(...kids.flat().filter(Boolean));
@@ -15,7 +15,7 @@ export function render(ctx) {
 async function ownSelfCount(me) {
   let n = 0;
   for (const name of db.STORE_NAMES) {
-    if (['meta', 'settings', 'errors', 'vault', 'media'].includes(name)) continue;
+    if (['meta', 'settings', 'errors', 'vault', 'media', 'syncState', 'syncInbox'].includes(name)) continue;
     for (const r of await db.rawAll(name)) if (!r.deleted && r.visibility === 'self' && r.owner === me) n++;
   }
   return n;
@@ -67,11 +67,13 @@ function privacidad() {
 const EXTERNAL = [
   { what: 'Fuentes de letra', who: 'Ninguno: vienen dentro de la app', when: 'Siempre', status: 'local' },
   { what: 'Actualizaciones de la app', who: 'El mismo sitio de la app', when: 'Al abrirla con internet', status: 'own' },
+  { what: 'Sincronización entre sus equipos', who: 'El mismo sitio de la app (Cloudflare), todo cifrado de extremo a extremo', when: 'Solo si unen sus equipos en Ajustes > Sincronización', status: 'own' },
+  { what: 'Avisos cariñosos', who: 'El servicio de avisos del navegador (Google en Android y Chrome), sin contenido', when: 'Solo si los activan en Sincronización', status: 'opt' },
   { what: 'Mapa de lugares y Sueños', who: 'OpenStreetMap (imágenes del mapa)', when: 'Al abrir el mapa', status: 'soon' },
   { what: 'Canciones', who: 'Spotify (reproductor)', when: 'Al reproducir una canción', status: 'soon' },
   { what: 'Ideas de citas', who: 'Google Maps (enlace)', when: 'Solo si tocan "Buscar en Google Maps"', status: 'soon' },
 ];
-const STATUS = { local: 'Sin red', own: 'Propio', soon: 'Pronto' };
+const STATUS = { local: 'Sin red', own: 'Propio', soon: 'Pronto', opt: 'Opcional' };
 
 function terceros() {
   const box = el('div', { class: 'stack' }, ui.skeleton(2));
@@ -82,9 +84,9 @@ function terceros() {
       el('td', {}, el('span', { class: `badge${x.status === 'local' ? ' badge-ok' : ''}` }, STATUS[x.status]))));
     put(box,
       ui.toggle({ label: 'Modo sin terceros', checked: s.off,
-        hint: 'Apaga el mapa, Spotify y los enlaces externos opcionales. La app sigue funcionando completa sin ellos.',
-        onChange: async (v) => { await db.setSettings('thirdParty', { off: v }); ui.toast(v ? 'Modo sin terceros activo.' : 'Servicios externos opcionales permitidos.'); } }),
-      el('p', { class: 'note-inline' }, icon('shield-check', { size: 18 }), el('span', {}, 'Hoy la app no hace ninguna solicitud a terceros. Lo que dice "Pronto" llega con su sección y respetará este interruptor.')),
+        hint: 'Apaga el mapa, Spotify, los avisos y los enlaces externos opcionales. La app sigue funcionando completa sin ellos.',
+        onChange: async (v) => { await db.setSettings('thirdParty', { off: v }); if (v && sync.status().notify) await sync.disableNotifications().catch(() => {}); ui.toast(v ? 'Modo sin terceros activo.' : 'Servicios externos opcionales permitidos.'); } }),
+      el('p', { class: 'note-inline' }, icon('shield-check', { size: 18 }), el('span', {}, 'Hoy la app solo habla con su propio sitio. Lo que dice "Pronto" llega con su sección y respetará este interruptor.')),
       el('div', { class: 'table-wrap' }, el('table', { class: 'summary-table external-table' },
         el('caption', { class: 'visually-hidden' }, 'Solicitudes externas de la app'),
         el('thead', {}, el('tr', {}, el('th', { scope: 'col' }, 'Para qué'), el('th', { scope: 'col' }, 'A quién'), el('th', { scope: 'col' }, 'Cuándo'), el('th', { scope: 'col' }, 'Estado'))),

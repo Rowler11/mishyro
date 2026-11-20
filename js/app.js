@@ -1,6 +1,6 @@
 // App bootstrap: database, theme, profile, security layers, navigation shell,
 // router, service worker and global shortcuts.
-import { CONFIG, db, router, theme, ui, security, seed, profile, util, cryptoBox } from './core.js';
+import { CONFIG, db, router, theme, ui, security, seed, profile, util, cryptoBox, sync } from './core.js';
 import { TABS, GROUPS, HIDDEN, SETTINGS_PAGES } from './routes.js';
 
 const { el, icon, ja } = util;
@@ -30,6 +30,7 @@ const load = {
   buscar: () => import('./features/buscar.js'),
   styleguide: () => import('./features/styleguide.js'),
   setup: () => import('./features/setup.js'),
+  sync: () => import('./features/sync.js'),
 };
 
 function registerSection(base, def) {
@@ -43,6 +44,7 @@ function registerSection(base, def) {
 function registerRoutes() {
   router.register('/setup', { id: 'setup', title: 'Configuración inicial', layer: true, load: load.setup });
   router.register('/setup/historia', { id: 'historia', title: 'Bienvenida', layer: true, load: load.setup });
+  router.register('/unir', { id: 'unir', title: 'Traerlos de otro equipo', layer: true, load: load.sync });
   router.register('/mas', { ...TABS[4], load: load.more, tab: 'mas' });
   router.register('/mas/:a', { ...TABS[4], load: load.more, tab: 'mas' });
   router.register('/ajustes/guia-estilo', { id: 'guia-estilo', title: 'Guía de estilo', tab: 'mas', load: load.styleguide });
@@ -186,7 +188,7 @@ async function render(route) {
   if (!app.firstRender) swapped.then(() => requestAnimationFrame(() => (main.querySelector('[data-autofocus]') || main.querySelector('h1') || main).focus({ preventScroll: true })));
   if (app.firstRender) preloadSections();
   app.firstRender = false;
-  window.scrollTo({ top: 0 });
+  if (app.keepScroll != null) { const y = app.keepScroll; app.keepScroll = null; requestAnimationFrame(() => window.scrollTo({ top: y })); } else window.scrollTo({ top: 0 });
 }
 
 function swapView(main, node) {
@@ -332,6 +334,8 @@ function registerServiceWorker() {
 }
 
 async function wipeEverything() {
+  // A wiped device also leaves the sync space, so it stops receiving at once.
+  await Promise.race([sync.leave().catch(() => {}), util.sleep(3000)]);
   await db.deleteDatabase();
   // Every per-device key of the app (theme, active person, remembered tabs and orders).
   try { Object.keys(localStorage).filter((k) => k.startsWith(`${CONFIG.storageKey}.`)).forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
@@ -354,6 +358,20 @@ function fatal(message) {
   document.getElementById('app').replaceChildren(el('section', { class: 'page fatal' },
     el('h1', {}, 'No se pudo abrir la app'), el('p', {}, message),
     el('p', {}, 'Si estás en modo incógnito o sin espacio, prueba en una ventana normal o libera espacio.')));
+}
+
+/** Live sync (Fase A): start it, and redraw the open view when changes arrive from the other devices. */
+async function startSync() {
+  sync.onApplied((stores) => {
+    if (stores.includes('profile')) profile.load();
+    const route = router.currentRoute();
+    const t = document.activeElement;
+    const typing = t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
+    if (!route || route.def.layer || ui.hasOpenModal() || typing || route.def.settingsPage) return;
+    app.keepScroll = window.scrollY;
+    router.refresh();
+  });
+  await sync.start().catch((e) => db.logError(`sync: ${e?.message}`, e?.stack, CONFIG.appVersion));
 }
 
 // ---------- start ----------
@@ -395,6 +413,7 @@ async function start() {
     await security.lockScreen({ scope: 'app' });
   });
   buildShell();
+  await startSync(); // before the first view, so Sincronización knows this device is linked
   await router.start({ render, navigate: onNavigate });
   appReady();
   registerServiceWorker();

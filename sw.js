@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.1.28';
+const CACHE_VERSION = 'aishiteru-v0.2.0';
 const SHELL = [
   './',
   './styles.css',
@@ -23,6 +23,8 @@ const SHELL = [
   './js/core/time.js',
   './js/core/ui.js',
   './js/core/util.js',
+  './js/core/sync.js',
+  './js/features/sync.js',
   './js/features/capsula.js',
   './js/features/intro.js',
   './js/features/cartas.js', './js/features/stickers.js', './js/features/sticker-maker.js', './js/features/bg-remove.js',
@@ -105,6 +107,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method === 'POST' && url.origin === self.location.origin && url.pathname.endsWith('/compartir')) { event.respondWith(receiveShare(req)); return; }
   if (req.method !== 'GET') return;
   if (url.origin !== self.location.origin) return; // external resources are never cached
+  if (url.pathname.includes('/api/')) return; // sync server: always live, never cached
   if (/\/vendor\/(ort|u2netp)\//.test(url.pathname)) {
     event.respondWith(caches.open(MODELS).then(async (c) => {
       const hit = await c.match(req);
@@ -127,4 +130,60 @@ self.addEventListener('fetch', (event) => {
     }
     return res;
   }))));
+});
+
+// ---------- caring notices (Fase A) ----------
+// The push carries only the kind of notice, encrypted by the sender with a key the server does not
+// have. The notice never shows content; without the key it says something generic.
+const NOTICES = {
+  thinking: ['Pensando en ti', 'Alguien está pensando en ti 💗', '#/inicio'],
+  letter: ['Te llegó una carta', 'Ábrela en Cartas 💌', '#/cartas'],
+  coupon: ['Te regalaron un cupón', 'Míralo en la Cuponera', '#/cupones'],
+  memory: ['Un recuerdo nuevo', 'Hay algo nuevo en la Cápsula 🌸', '#/capsula'],
+  capsule: ['Una cápsula del tiempo', 'Hay una cápsula nueva para ustedes', '#/inicio'],
+};
+function readNotifyKey() {
+  return new Promise((resolve) => {
+    const req = indexedDB.open('aishiteru-db');
+    req.onerror = () => resolve(null);
+    req.onsuccess = () => {
+      const idb = req.result;
+      try {
+        const g = idb.transaction('settings').objectStore('settings').get('syncNotify');
+        g.onsuccess = () => { resolve(g.result?.key || null); idb.close(); };
+        g.onerror = () => { resolve(null); idb.close(); };
+      } catch { resolve(null); idb.close(); }
+    };
+  });
+}
+const fromB64u = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
+async function noticeKind(text) {
+  try {
+    const key = await readNotifyKey();
+    if (!key || !text) return null;
+    const k = await crypto.subtle.importKey('raw', fromB64u(key), 'AES-GCM', false, ['decrypt']);
+    const box = fromB64u(text);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: box.subarray(0, 12) }, k, box.subarray(12));
+    return JSON.parse(new TextDecoder().decode(plain)).k || null;
+  } catch { return null; }
+}
+self.addEventListener('push', (event) => {
+  event.waitUntil((async () => {
+    const kind = await noticeKind(event.data ? event.data.text() : '');
+    const [title, body, hash] = NOTICES[kind] || ['Aishiteru', 'Hay algo nuevo para ti 💗', '#/inicio'];
+    await self.registration.showNotification(title, {
+      body, tag: kind || 'aishiteru', icon: './icons/icon-192.png', badge: './icons/icon-192.png',
+      data: { url: new URL(`./${hash}`, self.registration.scope).href },
+    });
+  })());
+});
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || self.registration.scope;
+  event.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const open = all.find((c) => c.url.startsWith(self.registration.scope));
+    if (open) { await open.focus(); try { await open.navigate(url); } catch { /* cross-state */ } return; }
+    await self.clients.openWindow(url);
+  })());
 });

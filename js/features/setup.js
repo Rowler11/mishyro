@@ -103,7 +103,8 @@ function wizard({ app }) {
       el('p', { class: 'muted' }, 'Importa el archivo privado con sus nombres, fechas y textos, o escríbelos a mano. Ese archivo nunca se sube a internet.'),
       fileIn, drop, out,
       el('div', { class: 'divider-text' }, el('span', {}, 'o')),
-      ui.button({ label: 'Escribirlos a mano', iconName: 'pencil', onClick: () => manual() })), null);
+      ui.button({ label: 'Escribirlos a mano', iconName: 'pencil', onClick: () => manual() }),
+      ui.button({ label: 'Traerlos de otro equipo', iconName: 'smartphone', variant: 'ghost', href: '#/unir' })), null);
   }
 
   function manual() {

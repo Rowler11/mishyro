@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.2.0 (Fase A: sincronización en vivo)
+
+- Nuevo en Ajustes > Sincronización: unan sus celulares y sus PC para tener lo mismo en todos, al instante mientras la app está abierta. Lo que se guarda sin internet se envía al volver.
+- Sin cuentas ni contraseñas: el primer equipo crea "nuestro espacio" y los demás se unen con un código QR. Un celular escanea el código de otro equipo; un PC muestra su propio código para escanearlo con el celular. En la configuración inicial de un equipo nuevo, "Traerlos de otro equipo" trae todo sin importar el archivo de datos.
+- Viaja todo, con fotos y videos, cifrado en el equipo antes de salir. El servidor (Cloudflare, plan gratis) guarda datos que no puede leer.
+- Lo de "Solo yo" llega solo a los equipos de su dueño, con una llave que el otro no tiene. El Rincón llega a los cuatro y en cada uno pide su PIN de 6.
+- Si los dos cambian lo mismo a la vez, queda el último cambio. Lo que se borra se borra en todos.
+- La lista de equipos unidos muestra cuándo se vio cada uno. Un equipo perdido se saca desde otro y deja de recibir al momento. También se puede sacar este equipo o borrar todo del servidor.
+- Avisos cariñosos (opcionales, por equipo): cuando te llega un Pensando en ti, una carta, un cupón o un recuerdo nuevo. El aviso nunca muestra el contenido. Se apagan solos con el Modo sin terceros.
+- Las copias de seguridad nunca llevan las llaves de la sincronización.
+
 ## 0.1.28 (un solo estilo: washi y sello)
 
 - Toda la app usa ahora la misma tarjeta de papel suave. Lo japonés queda en detalles finos: la celosía de las puertas, el sello rojo y el trazo de pincel.

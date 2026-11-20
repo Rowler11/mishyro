@@ -107,7 +107,7 @@ async function persistedState() {
 async function encryptionCounts() {
   let enc = 0; let plain = 0;
   for (const name of db.STORE_NAMES) {
-    if (['meta', 'settings', 'errors', 'vault', 'media'].includes(name)) continue;
+    if (['meta', 'settings', 'errors', 'vault', 'media', 'syncState', 'syncInbox'].includes(name)) continue;
     for (const r of await db.rawAll(name)) {
       if (r.deleted) continue;
       if (r.enc) enc++;
@@ -394,7 +394,7 @@ const isPrivate = (r) => r.private === true && r.visibility !== 'self' && !r.del
 async function privateCounts() {
   let plain = 0; let enc = 0;
   for (const name of db.STORE_NAMES) {
-    if (['meta', 'errors', 'vault', 'media'].includes(name)) continue;
+    if (['meta', 'errors', 'vault', 'media', 'syncState', 'syncInbox'].includes(name)) continue;
     for (const r of await db.rawAll(name)) if (isPrivate(r)) (r.enc ? enc++ : plain++);
   }
   return { plain, enc };

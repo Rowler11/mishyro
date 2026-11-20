@@ -2,7 +2,7 @@
 import { nowISO, uuid } from './util.js';
 import * as cryptoBox from './crypto.js';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 // [store, indexes] — indexes: name -> keyPath (string or array)
 export const STORES = [
@@ -63,7 +63,12 @@ export const STORES = [
   ['voiceNotes', { at: 'at', by: 'by' }],
   ['reminders', { kind: 'kind' }],
   ['errors', { at: 'at' }],
+  // Fase A (schema 2): what this device already sent, and received changes waiting for a key.
+  ['syncState', {}],
+  ['syncInbox', {}],
 ];
+/** Stores that only ever describe this device: never synced nor backed up. */
+export const LOCAL_ONLY = ['meta', 'settings', 'errors', 'syncState', 'syncInbox'];
 export const STORE_NAMES = STORES.map(([n]) => n);
 
 // Fields every record has (docs/08 §2). They stay in clear text even when encrypted.
@@ -79,6 +84,8 @@ const migrations = {
       for (const [iname, path] of Object.entries(indexes)) os.createIndex(iname, path, { unique: false });
     }
   } },
+  // 2 (Fase A): new stores only; `1` already creates any store that is missing.
+  2: { structure(idb) { migrations[1].structure(idb); } },
 };
 
 let idb = null;
@@ -155,6 +162,8 @@ export function visibleToActive(rec) {
   return true;
 }
 
+/** Encrypt a record per the local policy (used by sync to store what arrives). */
+export const seal = (store, rec) => sealIfNeeded(store, rec);
 async function sealIfNeeded(store, rec) {
   const scope = encryptionPolicy(store, rec);
   if (!scope) return { ...rec, enc: null };
@@ -166,6 +175,8 @@ async function sealIfNeeded(store, rec) {
   return out;
 }
 
+/** Open a stored record (decrypting it when its key is unlocked). */
+export const openRecord = (rec) => open_(rec);
 async function open_(rec) {
   if (!rec?.enc) return rec;
   if (!cryptoBox.canOpen(rec.payload)) { const { payload: _p, ...common } = rec; return { ...common, locked: true }; }
@@ -281,7 +292,7 @@ export async function logError(message, stack = '', version = '') {
 /** Re-encrypt all records sealed with fromScope using the current policy (used when a PIN is removed or added). */
 export async function reseal(fromScope) {
   for (const name of STORE_NAMES) {
-    if (name === 'meta' || name === 'settings' || name === 'errors') continue;
+    if (LOCAL_ONLY.includes(name)) continue;
     const all = await rawAll(name);
     for (const rec of all) {
       if (fromScope && rec.enc?.keyRef !== fromScope) continue;
