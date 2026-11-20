@@ -19,7 +19,7 @@ Es un regalo: calidad y pulido antes que velocidad. Esta revisión va antes de m
 - Textos en español cercano, cortos, sin jerga técnica.
 
 ## 2. Checklist de UI UX Pro Max
-Usa la skill `ui-ux-pro-max` (en `.claude/skills/`) como segunda opinión. Su `references/pro-rules.md` trae la lista previa a entregar; lo mínimo:
+No cargues la skill `ui-ux-pro-max` entera (pesa mucho): esta lista ya resume lo que importa. Solo si hay una duda que esta lista no resuelve, lee `.claude/skills/ui-ux-pro-max/references/pro-rules.md`. Lo mínimo:
 - Contraste 4.5:1 en texto (3:1 en texto grande e íconos), de día y de noche.
 - Áreas táctiles de 44×44 px o más, con 8 px entre ellas.
 - Foco visible con teclado; todo botón de solo ícono con `aria-label`.

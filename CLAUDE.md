@@ -35,8 +35,8 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 ## Skills del proyecto (`.claude/skills/`)
 - `aishiteru-release`: cada versión o arreglo que va a `main` (versión, CHANGELOG, pruebas, PR, despliegue).
 - `aishiteru-design-check`: antes de mostrar o publicar cualquier cambio visual (reglas propias, checklist UI y capturas).
-- `ui-ux-pro-max` (MIT, de terceros): guía de UI/UX y accesibilidad como segunda opinión; las reglas de este archivo mandan sobre ella.
-- También sirven, si están instaladas: `frontend-design` (construir pantallas), `design:accessibility-review`, `design:ux-copy`, `security-review` (obligatoria antes de cerrar la Fase A: sincronización y cifrado) y `dataviz` (Resumen del año).
+- `ui-ux-pro-max` (MIT, de terceros): guía de UI/UX solo para consultas puntuales (es pesada; no cargarla en cada cambio). Las reglas de este archivo mandan sobre ella.
+- También sirven, si están instaladas: `security-review` (al tocar sincronización, cifrado o privacidad), `code-review` en nivel bajo antes de cada PR, `superpowers:systematic-debugging` para bugs difíciles, `design:ux-copy` (textos) y `dataviz` (Resumen del año). Evita las que lanzan muchos pasos o agentes (`superpowers:brainstorming`, `writing-plans`, `subagent-driven-development`).
 
 ## Estilo de trabajo
 - Responde en español, con un tono cercano y directo. El código, las variables y los comentarios técnicos van en inglés; los comentarios de CONFIG van en español.
@@ -44,4 +44,4 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 - Commits pequeños por fase, con un mensaje claro en español.
 
 ## Estado
-Actualiza esta línea al cerrar cada fase: **Fase actual: 4A entregada (v0.4.0, esperando aprobación). Fase 3 aprobada el 2026-11-20; Fase A aprobada el 2026-11-20; Fase 2 sin aprobar formalmente; Fase 1 aprobada el 2026-11-19. Siguiente: Fase 4B.**
+Actualiza esta línea al cerrar cada fase: **Fase actual: 4A entregada (v0.4.0 a v0.4.2, esperando aprobación). Fase 3 aprobada el 2026-11-20; Fase A aprobada el 2026-11-20; Fase 2 sin aprobar formalmente; Fase 1 aprobada el 2026-11-19. Siguiente: Fase 4B.**
