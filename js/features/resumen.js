@@ -117,6 +117,10 @@ export async function stats(p, today = util.localDay()) {
   s.cooked = (await rows('recipes')).flatMap((r) => r.cooked || []).filter((c) => inP(c.date)).length;
   s.homeMenus = menus;
   s.petMoments = (await rows('petRecords')).filter((r) => r.type === 'moment' && inP(r.date)).length;
+  // Fase 5: games played (real ones in the Liga too) and minutes in Modo juntos.
+  const games = (await rows('games')).filter((r) => inP(r.date || r.endedAt));
+  s.games = games.filter((r) => r.gameId !== 'juntos').length;
+  s.togetherMin = games.filter((r) => r.gameId === 'juntos').reduce((n, r) => n + (Number(r.minutes) || 0), 0);
   s.prizes = (await rows('scratchCards')).filter((r) => r.scratchedAt && inP(r.scratchedAt)).length;
   const reasons = (await rows('content')).filter((r) => r.kind === 'reason' && r.text);
   s.reason = reasons.length ? reasons[Math.floor(Math.random() * reasons.length)].text : '';
@@ -145,6 +149,7 @@ export function cards(p, s) {
   add(s.plans || s.dreams, { key: 'dreams', kicker: 'Planes y sueños', value: fmtNum.format(s.plans + s.dreams), label: 'cumplidos', sub: [s.plans ? plural(s.plans, 'plan', 'planes') : '', s.dreams ? plural(s.dreams, 'sueño', 'sueños') : ''].filter(Boolean).join(' y ') });
   add(s.saved || s.goals, { key: 'saved', kicker: 'Alcancía', value: s.saved ? util.formatCOP(s.saved) : fmtNum.format(s.goals), label: s.saved ? 'ahorrados juntos' : 'metas cumplidas', sub: s.saved && s.goals ? plural(s.goals, 'meta cumplida', 'metas cumplidas') : '', small: true });
   add(s.cooked, { key: 'cooked', kicker: 'En la cocina', value: fmtNum.format(s.cooked), label: s.cooked === 1 ? 'plato cocinado juntos' : 'platos cocinados juntos', sub: s.homeMenus ? plural(s.homeMenus, 'cena en casa', 'cenas en casa') : '' });
+  add(s.games, { key: 'games', kicker: 'A jugar', value: fmtNum.format(s.games), label: s.games === 1 ? 'partida jugada juntos' : 'partidas jugadas juntos', sub: s.togetherMin ? `${fmtNum.format(s.togetherMin)} minutos sin teléfonos` : '' });
   add(s.petMoments, { key: 'pets', kicker: 'Familia peluda', value: fmtNum.format(s.petMoments), label: s.petMoments === 1 ? 'momento con su mascota' : 'momentos con su mascota', sub: '' });
   add(full && s.prizes, { key: 'prizes', kicker: 'Rasca y gana', value: fmtNum.format(s.prizes), label: s.prizes === 1 ? 'premio raspado' : 'premios raspados', sub: '' });
   add(full && s.voice, { key: 'voice', kicker: 'Notas de voz', value: fmtNum.format(s.voice), label: s.voice === 1 ? 'nota de voz' : 'notas de voz', sub: '' });

@@ -101,6 +101,9 @@ export async function progressOf(badge, ctx) {
   } else if (c.type === 'cooked') { // Fase 4B: dishes cooked together, summed over the recipes
     const recs = ctx.cache.recipes ||= await safeQuery('recipes');
     value = recs.reduce((n, r) => n + (r.cooked?.length || 0), 0);
+  } else if (c.type === 'sum') { // Fase 5: e.g. minutes in Modo juntos
+    const recs = ctx.cache[c.store] ||= await safeQuery(c.store);
+    value = recs.filter((r) => matchesWhere(r, c.where)).reduce((n, r) => n + (Number(r[c.field]) || 0), 0);
   } else if (c.type === 'streak') value = ctx.streak.best;
   else if (c.type === 'daysTogether') {
     const s = util.parseDay(profile.startDay());

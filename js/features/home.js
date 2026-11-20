@@ -322,8 +322,9 @@ async function todayCard() {
     const u = m.isLinked() ? await m.lastUsage() : null;
     return u && u.pct >= m.USAGE_WARN ? { href: '#/ajustes/sincronizar', icon: 'hard-drive', title: u.pct >= 100 ? 'Se llenó el espacio en la nube' : 'La nube se está llenando', sub: 'Mira cuánto queda y qué hacer.' } : null;
   }).catch(() => null);
-  const [badgeRow, summaryRow] = await Promise.all([
-    import('./insignias.js').then((m) => m.homeRow()).catch(() => null), import('./resumen.js').then((m) => m.homeRow()).catch(() => null)]);
+  const [badgeRow, summaryRow, eventRow] = await Promise.all([
+    import('./insignias.js').then((m) => m.homeRow()).catch(() => null), import('./resumen.js').then((m) => m.homeRow()).catch(() => null),
+    import('./eventos.js').then((m) => m.homeRow()).catch(() => null)]);
   const me = profile.active();
   const [pending, week, hint, mine, soon, capsules] = await Promise.all([
     qa.pendingToday().catch(() => null), retos.ensureWeek().catch(() => null), animo.partnerLowHint().catch(() => null), animo.getMood(util.localDay(), me).catch(() => null),
@@ -331,6 +332,8 @@ async function todayCard() {
   const rows = [];
   // Cápsula del tiempo (decided 2026-11-20): a notice only on (or after) its opening day.
   // Resumen y Wrapped (a "moment"): only at the end of a month or year and on the anniversary.
+  // Eventos de temporada (a "moment", Fase 5): a notice only while an event is on.
+  if (eventRow) rows.push(eventRow);
   if (summaryRow) rows.push(summaryRow);
   if (capsules.length) rows.push({ href: '#/capsula-tiempo', icon: 'lock-open', title: capsules.length === 1 ? 'Hoy se abre una cápsula del tiempo' : `Hay ${capsules.length} cápsulas del tiempo para abrir`, sub: capsules[0].title });
   // Recordatorios suaves (§41): mesiversario, the weekly date and their own, when they are close.
@@ -413,6 +416,9 @@ export async function render() {
       backupCard(data.meta),
     ].filter(Boolean));
     ui.stagger(body);
+    // Seasonal decoration while an event is on (San Valentín hearts, Tanabata lanterns…).
+    page.querySelector('.season-deco')?.remove();
+    import('./eventos.js').then((m) => m.decoration()).then((d) => { if (d) page.prepend(d); }).catch(() => {});
 
     // First visit of a new day: petals over the counter; on a milestone day, confetti once.
     if (counter && recall('petalDay') !== util.localDay()) { remember('petalDay', util.localDay()); playPetals(counter.petals); }

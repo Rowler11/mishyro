@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.5.0';
+const CACHE_VERSION = 'aishiteru-v0.6.0';
 const SHELL = [
   './',
   './styles.css',
@@ -33,6 +33,7 @@ const SHELL = [
   './js/features/album.js', './js/features/primeras-veces.js', './js/features/photobooth.js', './js/features/capsula-tiempo.js',
   './js/features/planes.js', './js/features/suenos.js', './js/features/citas.js', './js/features/regalos.js', './js/features/encuentro.js', './js/features/voz.js', './js/features/lenguajes.js', './js/features/gratitud.js', './js/features/insignias.js', './js/features/resumen.js',
   './js/features/hogar-kit.js', './js/features/listas.js', './js/features/mascotas.js', './js/features/recetas.js', './js/features/alcancia.js', './js/features/gastos.js', './js/features/habitos.js', './js/features/rasca.js', './js/features/ciclo.js',
+  './js/config-juegos.js', './js/features/juegos.js', './js/features/juegos-kit.js', './js/features/juegos-cartas.js', './js/features/juegos-mesa.js', './js/features/eventos.js',
   './js/features/cartas.js', './js/features/stickers.js', './js/features/sticker-maker.js', './js/features/bg-remove.js',
   './js/features/ajustes.js',
   './js/features/perfil.js',
