@@ -1942,3 +1942,98 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 
 /* Space used in the cloud (v0.4.1) */
 .progress-fill.is-warn { background: var(--danger); }
+
+/* Listas (Fase 4B) */
+.list-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); align-items: start; }
+.list-card { display: grid; gap: var(--space-3); }
+.list-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); }
+.list-name { margin: 0; font-family: var(--font-serif); font-size: 1.15rem; }
+.list-items { list-style: none; margin: 0; padding: 0; display: grid; }
+.list-item { display: flex; align-items: center; gap: var(--space-2); min-height: 48px; border-bottom: 1px dashed var(--border); }
+.list-check { display: flex; align-items: center; gap: var(--space-3); flex: 1; min-width: 0; min-height: 44px; cursor: pointer; }
+.list-check input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; }
+.list-text { overflow-wrap: anywhere; }
+.list-item.is-done .list-text { text-decoration: line-through; color: var(--text-2); }
+.list-due { color: var(--text-2); }
+.list-due.is-late { color: var(--danger); font-weight: 600; }
+.list-item-actions { display: flex; gap: 2px; flex: none; }
+.list-add { display: flex; gap: var(--space-2); align-items: center; }
+.list-add .input { flex: 1; }
+.list-card-foot { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
+.list-card-foot:empty { display: none; }
+.list-history { list-style: none; margin: 0; padding: 0; overflow: hidden; }
+.grow { flex: 1; min-width: 0; }
+
+/* Shared Fase 4B pieces (hogar-kit) */
+.badge-danger { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--text); font-size: .8rem; }
+.check-inline { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; cursor: pointer; }
+.check-inline input { width: 20px; height: 20px; accent-color: var(--accent); }
+.text-danger { color: var(--danger); }
+.kit-note { display: flex; gap: var(--space-2); align-items: flex-start; margin: 0; }
+.kit-note .icon { flex: none; margin-top: 2px; }
+.money-input { position: relative; display: flex; align-items: center; }
+.money-prefix { position: absolute; left: 14px; color: var(--text-2); pointer-events: none; }
+.money-input .input { padding-left: 30px; width: 100%; }
+.kit-chart-wrap { margin: 0; }
+.kit-chart { display: block; width: 100%; height: auto; max-height: 240px; }
+.kit-bar { fill: color-mix(in srgb, var(--accent) 45%, var(--surface)); }
+.kit-bar.is-last { fill: var(--accent); }
+.kit-axis { fill: var(--text-2); font: 11px var(--font-ui); }
+.kit-value { fill: var(--text); font: 600 11px var(--font-ui); }
+.kit-axis-line, .kit-grid { stroke: var(--border); stroke-width: 1; }
+.kit-line { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.kit-dot { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+
+/* Mascotas (Fase 4B) */
+.pet-selector { display: flex; gap: var(--space-3); overflow-x: auto; padding: 2px 2px var(--space-1); scrollbar-width: none; }
+.pet-pick { flex: none; display: grid; justify-items: center; gap: 4px; width: 76px; padding: 0; border: 0; background: none; color: var(--text); font: 500 .85rem var(--font-ui); cursor: pointer; }
+.pet-pick-photo { width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; background: var(--accent-soft); color: var(--accent); border: 2px solid transparent; }
+.pet-pick-photo img { width: 100%; height: 100%; object-fit: cover; }
+.pet-pick.is-on .pet-pick-photo { border-color: var(--accent); box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px color-mix(in srgb, var(--accent) 35%, transparent); }
+.pet-pick.is-memorial .pet-pick-photo { filter: grayscale(.6); }
+.pet-pick-add .pet-pick-photo { background: var(--surface); border: 1.5px dashed var(--border); color: var(--text-2); }
+.pet-pick:focus-visible { outline: none; }
+.pet-pick:focus-visible .pet-pick-photo { outline: 3px solid var(--focus); outline-offset: 2px; }
+.pet-hero { position: relative; display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-4); align-items: center; overflow: hidden; }
+.pet-hero-photo { width: 96px; height: 96px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.pet-hero-btn { all: unset; cursor: zoom-in; width: 100%; height: 100%; }
+.pet-hero-btn:focus-visible { outline: 3px solid var(--focus); }
+.pet-hero-photo img { width: 100%; height: 100%; object-fit: cover; }
+.pet-hero.is-memorial .pet-hero-photo { filter: grayscale(.5); }
+.pet-name { margin: 0; font-family: var(--font-serif); font-size: 1.5rem; }
+.pet-hero-text { display: grid; gap: 4px; min-width: 0; }
+.pet-hero-text p { margin: 0; }
+.pet-stats { display: flex; gap: var(--space-5); margin: var(--space-1) 0 0; }
+.pet-stats dt { font-size: .75rem; color: var(--text-2); }
+.pet-stats dd { margin: 0; font-weight: 700; font-family: var(--font-serif); font-size: 1.1rem; }
+.pet-next, .pet-memorial-line { display: flex; align-items: center; gap: 4px; color: var(--text-2); font-size: .9rem; }
+.pet-hero-actions { align-self: start; position: relative; z-index: 1; }
+.pet-neko { position: absolute; right: 8px; bottom: -6px; color: var(--accent); opacity: .16; pointer-events: none; }
+@media (max-width: 480px) { .pet-hero { grid-template-columns: auto 1fr; } .pet-hero-photo { width: 76px; height: 76px; } .pet-hero-actions { position: absolute; top: var(--space-3); right: var(--space-3); } .pet-stats { gap: var(--space-4); } }
+.pet-block { display: grid; gap: var(--space-3); }
+.pet-block-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
+.pet-block-head h2 { margin: 0; font-family: var(--font-serif); font-size: 1.1rem; }
+.pet-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.pet-row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px dashed var(--border); }
+.pet-row:last-child { border-bottom: 0; }
+.pet-row > .icon { color: var(--accent); flex: none; }
+.pet-row p { margin: 2px 0 0; }
+.pet-row.is-past { opacity: .7; }
+.pet-thumb { flex: none; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; overflow: hidden; cursor: zoom-in; background: var(--surface-2); }
+.pet-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.pet-profile { display: grid; gap: var(--space-3); margin: 0; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }
+.pet-profile dt { font-size: .8rem; color: var(--text-2); }
+.pet-profile dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.pet-weight-now { margin: 0; font-size: 1.05rem; }
+.pet-weight-now strong { font-family: var(--font-serif); font-size: 1.5rem; }
+.pet-timeline { list-style: none; margin: 0; padding: 0 0 0 var(--space-4); border-left: 2px solid color-mix(in srgb, var(--accent) 35%, transparent); display: grid; gap: var(--space-4); }
+.pet-moment { position: relative; display: flex; gap: var(--space-3); align-items: flex-start; }
+.pet-moment::before { content: ''; position: absolute; left: calc(-1 * var(--space-4) - 7px); top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); }
+.pet-moment p { margin: 0; }
+.pet-moment-title { display: block; margin-top: 4px; }
+.pet-moment-photo { flex: none; width: 96px; height: 112px; padding: 6px 6px 18px; border: 0; background: #fff; box-shadow: var(--shadow-1); transform: rotate(-2deg); cursor: zoom-in; }
+.pet-moment-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pet-memorial-box summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; }
+.pet-dose input { width: 24px; height: 24px; }

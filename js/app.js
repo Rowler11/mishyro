@@ -18,6 +18,8 @@ export const app = {
 // ---------- route table ----------
 const load = {
   placeholder: () => import('./features/placeholder.js'),
+  listas: () => import('./features/listas.js'),
+  mascotas: () => import('./features/mascotas.js'),
   home: () => import('./features/home.js'),
   capsula: () => import('./features/capsula.js'),
   cupones: () => import('./features/cupones.js'),
@@ -388,7 +390,7 @@ function fatal(message) {
 /** Live sync (Fase A): start it, and redraw the open view when changes arrive from the other devices. */
 async function startSync() {
   sync.onApplied((stores) => {
-    if (stores.includes('profile')) profile.load();
+    if (stores.includes('profile') || stores.includes('pets')) profile.load();
     const route = router.currentRoute();
     const t = document.activeElement;
     const typing = t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
@@ -411,6 +413,7 @@ async function start() {
   if (!meta.installId) await db.setMeta({ installId: util.uuid(), schemaVersion: db.SCHEMA_VERSION, createdAt: util.nowISO() });
   await seed.syncConfig(CONFIG);
   await profile.load();
+  db.onChange((store) => { if (store === 'pets') profile.load(); });
   await applySettings();
   ui.installRipple();
   installShortcuts();

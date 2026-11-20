@@ -318,6 +318,33 @@ export const CONFIG = {
     { id: 'cfg:review:07', text: "¿Cómo llegas de energía y de ánimo?", order: 7 },
     { id: 'cfg:review:08', text: "¿Qué quieres que celebremos?", order: 8 },
   ],
+  // Listas (sección 32): plantillas que traen elementos típicos; luego se editan en la app.
+  listTemplates: [
+    { id: 'cfg:list:mercado', name: 'Mercado de la semana', kind: 'shopping', items: ['Arroz', 'Huevos', 'Leche', 'Pan', 'Frutas', 'Verduras', 'Pollo', 'Café', 'Papel higiénico', 'Jabón de loza'] },
+    { id: 'cfg:list:mascota', name: 'Cosas de la mascota', kind: 'shopping', items: ['Concentrado', 'Arena', 'Snacks', 'Juguete nuevo'] },
+    { id: 'cfg:list:aseo', name: 'Aseo de la casa', kind: 'todo', items: ['Barrer y trapear', 'Lavar la ropa', 'Cambiar sábanas', 'Sacar la basura', 'Limpiar el baño', 'Limpiar la arena'] },
+    { id: 'cfg:list:cita', name: 'Para una cita en casa', kind: 'shopping', items: ['Velas', 'Postre', 'Bebida', 'Snacks', 'Flores'] },
+    { id: 'cfg:list:viaje', name: 'Maleta de viaje', kind: 'todo', items: ['Documentos', 'Cargadores', 'Ropa', 'Medicinas', 'Cepillo de dientes', 'Dejar comida y arena a la mascota'] },
+  ],
+  // Mascotas (sección 26). Plantillas GENÉRICAS de salud: el veterinario decide las fechas reales.
+  petHealthTemplates: [
+    { id: 'cfg:pethealth:gato-triple', species: 'gato', type: 'vaccine', product: 'Triple felina (refuerzo)', everyDays: 365 },
+    { id: 'cfg:pethealth:gato-rabia', species: 'gato', type: 'vaccine', product: 'Rabia', everyDays: 365 },
+    { id: 'cfg:pethealth:gato-leucemia', species: 'gato', type: 'vaccine', product: 'Leucemia felina', everyDays: 365 },
+    { id: 'cfg:pethealth:perro-multiple', species: 'perro', type: 'vaccine', product: 'Múltiple canina (refuerzo)', everyDays: 365 },
+    { id: 'cfg:pethealth:perro-rabia', species: 'perro', type: 'vaccine', product: 'Rabia', everyDays: 365 },
+    { id: 'cfg:pethealth:interna', type: 'deworm', product: 'Desparasitación interna', everyDays: 90 },
+    { id: 'cfg:pethealth:externa', type: 'deworm', product: 'Antipulgas (externa)', everyDays: 30 },
+  ],
+  petMilestones: [
+    { id: 'cfg:petmilestone:llegada', title: 'Primer día en casa' },
+    { id: 'cfg:petmilestone:vet', title: 'Primera visita al veterinario' },
+    { id: 'cfg:petmilestone:juguete', title: 'Su primer juguete favorito' },
+    { id: 'cfg:petmilestone:cama', title: 'Eligió su lugar para dormir' },
+    { id: 'cfg:petmilestone:travesura', title: 'Su primera gran travesura' },
+    { id: 'cfg:petmilestone:cumple', title: 'Su primer cumpleaños con nosotros' },
+    { id: 'cfg:petmilestone:foto', title: 'Foto del mes' },
+  ],
   scratchPrizes: [], // Fase 4B
   habitTemplates: [], // Fase 4B
   // Lenguajes del amor (sección 27): nombres, 10 preguntas de elección y una guía amable, no un diagnóstico.
