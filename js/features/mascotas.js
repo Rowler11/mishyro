@@ -8,7 +8,7 @@ import { ui, util, db, profile, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
 import * as ics from '../core/ics.js';
 import { openViewer } from '../core/viewer.js';
-import { photoField, dropOldMedia, mediaImg, moneyInput, barChart, lineChart, tagsInput, petArt, lastMonths, monthLabel, monthOf, isQuotaError } from './hogar-kit.js';
+import { photoField, dropOldMedia, mediaImg, moneyField, barChart, lineChart, tagsInput, petArt, lastMonths, monthLabel, monthOf, isQuotaError } from './hogar-kit.js';
 
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -109,14 +109,13 @@ function recordEditor(pet, type, existing, { onSaved }) {
     let c;
     const val = key === 'date' ? (existing?.date || today) : key === 'cost' ? (existing?.amountCOP ?? '') : (data[key] ?? '');
     if (kind === 'textarea') { c = ui.textarea({ rows: 3, maxlength: 1000 }); c.value = val; }
-    else if (kind === 'money') { const w = moneyInput({ value: val }); c = w.querySelector('input'); c.wrap = w; }
+    else if (kind === 'money') { const mf = moneyField({ label, value: val }); c = mf.input; c.wrap = mf; }
     else if (kind === 'select') {
       const opts = key === 'milestone' ? (CONFIG.petMilestones || []).map((m) => ({ value: m.id, label: m.title })) : o.options;
       c = el('select', { class: 'input' }, key === 'milestone' ? el('option', { value: '' }, 'Ninguno') : null, opts.map((x) => el('option', { value: x.value, selected: x.value === val }, x.label)));
     } else c = ui.input({ type: kind === 'number' ? 'number' : kind, value: val, maxlength: o.max, step: o.step, min: o.min, max: kind === 'date' && o.past ? today : o.max, placeholder: o.placeholder || '', inputmode: kind === 'number' ? 'decimal' : undefined });
     controls[key] = c;
-    fields[key] = ui.field({ label: o.required ? label : label, control: c, hint: key === 'next' ? 'Pregunten la fecha real al veterinario.' : key === 'lastsDays' ? 'Con esto calculamos cuándo reponer.' : undefined });
-    if (kind === 'money') { fields[key].replaceChild(c.wrap, c); c.wrap.append(c); }
+    fields[key] = kind === 'money' ? c.wrap.node : ui.field({ label, control: c, hint: key === 'next' ? 'Pregunten la fecha real al veterinario.' : key === 'lastsDays' ? 'Con esto calculamos cuándo reponer.' : undefined });
   }
   let tplSel = null;
   if (tplOptions.length && !existing) {
@@ -143,7 +142,7 @@ function recordEditor(pet, type, existing, { onSaved }) {
       const out = {}; let amount = null;
       for (const [key, label, kind, o] of spec.fields) {
         const c = controls[key]; let v = c.value?.trim?.() ?? c.value;
-        if (kind === 'money') { const n = c.wrap.querySelector('input').amount?.() ?? NaN; v = Number.isFinite(n) ? n : ''; if (v !== '' && v <= 0) { fields[key].setError('Escribe un monto mayor que cero.'); return false; } amount = v === '' ? null : v; continue; }
+        if (kind === 'money') { const n = c.amount(); v = Number.isFinite(n) ? n : ''; if (v !== '' && v <= 0) { fields[key].setError('Escribe un monto mayor que cero.'); return false; } amount = v === '' ? null : v; continue; }
         if (o.required && (v === '' || v == null)) { fields[key].setError(`Completa "${label}".`); c.focus(); return false; }
         if (kind === 'date' && v && !util.isValidDay(v)) { fields[key].setError('Fecha no válida.'); return false; }
         if (kind === 'date' && o.past && v > today) { fields[key].setError('Elige una fecha de hoy o de antes.'); return false; }

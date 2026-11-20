@@ -50,7 +50,7 @@ export const GROUPS = [
   ] },
   { id: 'hogar', title: 'Hogar', sections: [
     { id: 'mascotas', title: 'Mascotas', jp: 'ペット', romaji: 'petto', icon: 'paw-print', phase: '4B', module: 'mascotas', blurb: 'Perfil, salud y fotos de cada mascota.' },
-    { id: 'alcancia', title: 'Alcancía', jp: '貯金', romaji: 'chokin', icon: 'piggy-bank', phase: '4B', blurb: 'Metas de ahorro para sus planes.' },
+    { id: 'alcancia', title: 'Alcancía', jp: '貯金', romaji: 'chokin', icon: 'piggy-bank', phase: '4B', module: 'alcancia', blurb: 'Metas de ahorro para sus planes.' },
     { id: 'gastos', title: 'Gastos compartidos', jp: '家計', romaji: 'kakei', icon: 'wallet', phase: '4B', blurb: 'Cuentas claras y sin culpa.' },
     { id: 'listas', title: 'Listas', jp: 'リスト', romaji: 'risuto', icon: 'list-todo', phase: '4B', module: 'listas', blurb: 'Mercado y pendientes de la casa.' },
     { id: 'recetas', title: 'Recetas y menú en casa', jp: 'レシピ', romaji: 'reshipi', icon: 'chef-hat', phase: '4B', module: 'recetas', blurb: 'Recetas y citas para cocinar juntos.' },

@@ -153,3 +153,44 @@ export function petArt(species = 'otro', { size = 64, label } = {}) {
   svg.innerHTML = PET_ART[key];
   return svg;
 }
+
+let audio = null;
+/** Short coin clinks (Web Audio, no files); only when "Sonidos suaves" is on. */
+export function coins(n = 3) {
+  if (document.documentElement.dataset.sound !== 'on') return;
+  try {
+    audio = audio || new AudioContext();
+    const t = audio.currentTime;
+    for (let i = 0; i < n; i++) {
+      const o = audio.createOscillator(); const g = audio.createGain();
+      o.type = 'triangle'; o.frequency.value = 2200 + i * 340;
+      g.gain.setValueAtTime(0.0001, t + i * 0.09);
+      g.gain.exponentialRampToValueAtTime(0.08, t + i * 0.09 + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.09 + 0.25);
+      o.connect(g).connect(audio.destination); o.start(t + i * 0.09); o.stop(t + i * 0.09 + 0.3);
+    }
+  } catch { /* audio not available */ }
+}
+
+/** Hanabi: a few CSS firework bursts over the page (skipped with reduced motion). */
+export function hanabi({ bursts = 4 } = {}) {
+  if (util.prefersReducedMotion()) return;
+  const layer = el('div', { class: 'hanabi', 'aria-hidden': 'true' });
+  for (let b = 0; b < bursts; b++) {
+    const burst = el('span', { class: 'hanabi-burst', style: { left: `${15 + Math.random() * 70}%`, top: `${12 + Math.random() * 40}%`, animationDelay: `${b * 260}ms` } });
+    for (let i = 0; i < 14; i++) burst.append(el('i', { style: { '--a': `${(360 / 14) * i}deg`, animationDelay: `${b * 260}ms` } }));
+    layer.append(burst);
+  }
+  document.body.append(layer);
+  setTimeout(() => layer.remove(), 2600);
+}
+
+/** Labelled money field: { node, input, amount(), setError(msg) }. */
+export function moneyField({ label, value = '', hint } = {}) {
+  const wrap = moneyInput({ value });
+  const input = wrap.querySelector('input');
+  const f = ui.field({ label, control: input, hint });
+  f.insertBefore(wrap, f.querySelector('.field-label').nextSibling);
+  wrap.append(input);
+  return { node: f, input, amount: () => input.amount(), setError: (m) => f.setError(m) };
+}

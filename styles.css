@@ -2094,3 +2094,41 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
   body.printing-menu .print-menu { display: block; padding: 2cm; }
   .print-menu .menu-card { box-shadow: none; background: #fff; color: #222; max-width: 14cm; margin: 0 auto; }
 }
+
+/* Alcancía (Fase 4B): maneki-neko and Mount Fuji */
+.center { text-align: center; }
+.bank { --fill: 0; display: flex; align-items: center; gap: var(--space-4); }
+.bank-neko { flex: none; color: var(--accent); }
+.bank-neko .bank-body { fill: color-mix(in srgb, var(--gold) calc(var(--fill) * 55%), transparent); transition: fill var(--dur-slow, .6s) ease; }
+.bank-koban { fill: var(--gold); stroke: color-mix(in srgb, var(--gold) 60%, #000); stroke-width: 1.5; }
+.bank-koban-line { stroke: color-mix(in srgb, var(--gold) 50%, #000); stroke-width: 1.4; fill: none; stroke-linecap: round; }
+.bank-text p { margin: 0; }
+.bank-total { font-family: var(--font-serif); font-size: clamp(1.7rem, 6vw, 2.3rem); font-weight: 700; color: var(--text); }
+.goal-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.goal { display: grid; grid-template-columns: auto 1fr; gap: var(--space-4); align-items: start; }
+.goal.is-done { opacity: .9; }
+.goal-art { position: relative; display: grid; justify-items: center; }
+.goal-icon { position: absolute; bottom: -6px; right: -4px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); color: var(--accent); }
+.goal-main { display: grid; gap: var(--space-2); min-width: 0; }
+.goal-main p { margin: 0; }
+.goal-name { margin: 0; font-family: var(--font-serif); font-size: 1.1rem; }
+.goal-amount strong { font-family: var(--font-serif); font-size: 1.25rem; }
+.fuji-empty { fill: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.fuji-fill { fill: color-mix(in srgb, var(--accent) 70%, var(--surface)); transition: y var(--dur-slow, .6s) ease, height var(--dur-slow, .6s) ease; }
+.fuji-snow { fill: #fff; opacity: .9; stroke: var(--border); stroke-width: .6; }
+.fuji-line { fill: none; stroke: var(--text-2); stroke-width: 1.6; stroke-linejoin: round; }
+.fuji.is-full .fuji-snow { fill: #fff; filter: drop-shadow(0 0 3px var(--gold)); }
+.icon-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.icon-pick-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: var(--radius-s, 10px); background: var(--surface); color: var(--text-2); cursor: pointer; }
+.icon-pick-btn[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.icon-pick-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.filter-row { display: grid; gap: var(--space-2); grid-template-columns: 1fr; }
+@media (min-width: 720px) { .filter-row { grid-template-columns: 2fr 1fr 1fr; } }
+.entry-list { list-style: none; margin: 0; padding: var(--space-2) var(--space-4); }
+.goal-done-body { align-items: center; text-align: center; }
+.goal-done-name { font-family: var(--font-serif); font-size: 1.3rem; margin: 0; }
+.hanabi { position: fixed; inset: 0; pointer-events: none; z-index: 400; }
+.hanabi-burst { position: absolute; width: 0; height: 0; }
+.hanabi-burst i { position: absolute; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 6px var(--gold); opacity: 0; animation: hanabi 1.4s ease-out forwards; transform: rotate(var(--a)) translateY(0); }
+.hanabi-burst i:nth-child(3n) { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+@keyframes hanabi { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(1); } 70% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-90px) scale(.4); } }
