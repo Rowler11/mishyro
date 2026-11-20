@@ -263,10 +263,10 @@ async function completeSetup(page) {
       { name: 'rot.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(files.rot, 'base64') },
     ]);
     await page.waitForFunction(() => document.querySelectorAll('.photo-tile').length === 2, null, { timeout: 20000 });
-    // Videos (decided 2026-11-19): up to 30 s; a longer one is refused with a clear reason.
+    // Videos (decided 2026-11-19): up to 15 s; a longer one is refused with a clear reason.
     await page.setInputFiles('.memory-editor input[type=file]', [path.join(__dirname, 'fixtures/video-ficticio.webm'), path.join(__dirname, 'fixtures/video-largo-ficticio.webm')]);
     await page.waitForFunction(() => document.querySelectorAll('.photo-tile').length === 3 && /30 segundos/.test(document.querySelector('.photo-msg')?.textContent || ''), null, { timeout: 20000 }).catch(() => {});
-    ok(`cápsula @${w}: a 3 s video is added and a 32 s one is refused`, (await ed.locator('.photo-tile video').count()) === 1 && /dura más de 30 segundos/.test(await ed.locator('.photo-msg').textContent()), await ed.locator('.photo-msg').textContent());
+    ok(`cápsula @${w}: a 3 s video is added and a 32 s one is refused (limit 15 s)`, (await ed.locator('.photo-tile video').count()) === 1 && /dura más de 15 segundos/.test(await ed.locator('.photo-msg').textContent()), await ed.locator('.photo-msg').textContent());
     await ed.getByLabel('Título').fill('Picnic en el parque');
     ok(`cápsula @${w}: the error goes away once the field is fixed`, (await ed.locator('.field-error:not(:empty)').count()) === 1);
     // A year ago today, so "Un día como hoy" finds it whatever day the suite runs.
