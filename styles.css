@@ -2132,3 +2132,12 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .hanabi-burst i { position: absolute; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 6px var(--gold); opacity: 0; animation: hanabi 1.4s ease-out forwards; transform: rotate(var(--a)) translateY(0); }
 .hanabi-burst i:nth-child(3n) { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 @keyframes hanabi { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(1); } 70% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-90px) scale(.4); } }
+
+/* Gastos compartidos (Fase 4B) */
+.balance { display: grid; gap: var(--space-2); }
+.balance p { margin: 0; }
+.balance-line { font-size: 1.05rem; }
+.balance-line strong { font-family: var(--font-serif); font-size: 1.2rem; }
+.split-out { margin: 0; color: var(--text-2); font-size: .9rem; }
+.gastos input[type="range"], .modal input[type="range"] { width: 100%; accent-color: var(--accent); min-height: 44px; }
+.month-nav h2 { flex: 1; text-align: center; }

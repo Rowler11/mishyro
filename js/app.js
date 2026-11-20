@@ -22,6 +22,7 @@ const load = {
   mascotas: () => import('./features/mascotas.js'),
   recetas: () => import('./features/recetas.js'),
   alcancia: () => import('./features/alcancia.js'),
+  gastos: () => import('./features/gastos.js'),
   home: () => import('./features/home.js'),
   capsula: () => import('./features/capsula.js'),
   cupones: () => import('./features/cupones.js'),
