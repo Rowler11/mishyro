@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.4.2 (videos de 15 segundos)
+
+- Los videos de la Cápsula ahora duran hasta 15 segundos (antes 30). Pesan la mitad y el espacio de la nube rinde el doble. Los videos que ya estaban guardados no se tocan.
+
 ## 0.4.1 (más espacio en la nube)
 
 - Medidor "Espacio en la nube" en Sincronizar: muestra cuánto llevan usado de los 5 GB gratis.

@@ -43,8 +43,8 @@ export async function compressImage(file, { max = MAX_SIDE, quality = QUALITY } 
 /** True for the errors IndexedDB raises when the device storage is full. */
 export const isQuotaError = (e) => e?.name === 'QuotaExceededError' || e?.inner?.name === 'QuotaExceededError' || /quota/i.test(e?.message || '');
 
-// Short videos for Cápsula (decided 2026-11-19): up to 30 s and 50 MB, stored as they come.
-export const MAX_VIDEO_SECONDS = 30;
+// Short videos for Cápsula (decided 2026-11-19, lowered to 15 s on 2026-11-20 to save cloud space): up to 15 s and 50 MB.
+export const MAX_VIDEO_SECONDS = 15;
 export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 export const isVideoFile = (f) => (f?.type || '').startsWith('video/') || /\.(mp4|webm|mov|m4v|3gp|mkv)$/i.test(f?.name || '');
 
