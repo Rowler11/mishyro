@@ -36,7 +36,7 @@ export const GROUPS = [
     { id: 'lenguajes', title: 'Lenguajes del amor', jp: '愛', romaji: 'ai', icon: 'heart-handshake', phase: '4A', module: 'lenguajes', blurb: 'Cómo le gusta a cada uno sentirse querido.' },
     { id: 'gratitud', title: 'Gratitud y revisión', jp: '感謝', romaji: 'kansha', icon: 'hand-heart', phase: '4A', module: 'gratitud', blurb: 'El frasco de gracias y la revisión semanal.' },
     { id: 'retos', title: 'Reto semanal', jp: '挑戦', romaji: 'chōsen', icon: 'flag', phase: '3', module: 'retos', blurb: 'Un reto de pareja cada semana.' },
-    { id: 'habitos', title: 'Hábitos', jp: '習慣', romaji: 'shūkan', icon: 'repeat', phase: '4B', blurb: 'Pequeños hábitos que hacen juntos.' },
+    { id: 'habitos', title: 'Hábitos', jp: '習慣', romaji: 'shūkan', icon: 'repeat', phase: '4B', module: 'habitos', blurb: 'Pequeños hábitos que hacen juntos.' },
     { id: 'canciones', title: 'Canciones', jp: '歌', romaji: 'uta', icon: 'music', phase: '3', module: 'canciones', blurb: 'Las canciones que se dedican y su playlist.' },
     { id: 'planes', title: 'Planes juntos', jp: '願い', romaji: 'negai', icon: 'list-checks', phase: '4A', module: 'planes', blurb: 'Lo que quieren vivir juntos.' },
     { id: 'suenos', title: 'Sueños y viajes', jp: '夢', romaji: 'yume', icon: 'moon-star', phase: '4A', module: 'suenos', blurb: 'Los grandes sueños, paso a paso.' },

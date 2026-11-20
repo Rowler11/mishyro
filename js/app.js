@@ -23,6 +23,7 @@ const load = {
   recetas: () => import('./features/recetas.js'),
   alcancia: () => import('./features/alcancia.js'),
   gastos: () => import('./features/gastos.js'),
+  habitos: () => import('./features/habitos.js'),
   home: () => import('./features/home.js'),
   capsula: () => import('./features/capsula.js'),
   cupones: () => import('./features/cupones.js'),

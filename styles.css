@@ -2141,3 +2141,32 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .split-out { margin: 0; color: var(--text-2); font-size: .9rem; }
 .gastos input[type="range"], .modal input[type="range"] { width: 100%; accent-color: var(--accent); min-height: 44px; }
 .month-nav h2 { flex: 1; text-align: center; }
+
+/* Hábitos (Fase 4B) */
+.habit-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.habit { display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: start; }
+.habit.is-paused { opacity: .75; }
+.habit-main { display: grid; gap: var(--space-2); min-width: 0; }
+.habit-main p { margin: 0; }
+.habit-name { margin: 0; font-family: var(--font-serif); font-size: 1.1rem; }
+.habit-streak { display: flex; align-items: center; gap: 4px; font-weight: 600; }
+.habit-streak .icon { color: var(--accent); }
+.habit-today { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-4); }
+.habit-partner { display: inline-flex; align-items: center; gap: 4px; color: var(--text-2); font-size: .9rem; }
+.habit-partner.is-on { color: var(--success); }
+.habit-week { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; max-width: 280px; }
+.habit-week li { display: grid; justify-items: center; gap: 2px; font-size: .7rem; color: var(--text-2); }
+.hw-dot { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface); }
+.hw-both .hw-dot { background: var(--accent); border-color: var(--accent); }
+.hw-one .hw-dot { background: linear-gradient(90deg, var(--accent) 50%, var(--surface) 50%); border-color: var(--accent); }
+.hw-grace .hw-dot { border-style: dashed; border-color: var(--gold); }
+.is-today .hw-dow { color: var(--text); font-weight: 700; }
+.plant { color: var(--success); }
+.plant .pot { fill: color-mix(in srgb, var(--wood-1, #c9a27a) 80%, var(--surface)); stroke: var(--text-2); stroke-width: 1.2; }
+.plant .pot-rim { fill: var(--wood-2, #a77b55); }
+.plant .stem { stroke: var(--success); stroke-width: 2.2; stroke-linecap: round; fill: none; }
+.plant .leaf { fill: color-mix(in srgb, var(--success) 70%, var(--surface)); stroke: var(--success); stroke-width: 1; }
+.plant .bloom { fill: var(--accent); }
+.plant .stem-g { transform-origin: 32px 49px; transition: transform var(--dur-slow, .6s) ease; }
+.plant.is-droop .stem-g { transform: rotate(14deg); }
+.plant.is-droop .leaf { fill: color-mix(in srgb, var(--gold) 50%, var(--surface)); }
