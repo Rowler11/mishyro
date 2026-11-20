@@ -566,22 +566,21 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 .doors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
 @media (min-width: 768px) { .doors { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
 .door {
-  --door-frame: color-mix(in srgb, var(--gold) 50%, var(--text-2)); --door-lattice: color-mix(in srgb, var(--door-frame) 26%, transparent);
-  position: relative; min-height: 148px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text);
+  --door-frame: var(--border-strong); --door-lattice: color-mix(in srgb, var(--border-strong) 30%, transparent);
+  position: relative; min-height: 148px; padding: 0; border: 0; border-radius: var(--radius-m); background: none; color: var(--text);
   font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .door:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
-:root[data-theme="night"] .door { --door-frame: color-mix(in srgb, var(--gold) 40%, var(--border-strong)); }
-.door-frame { position: absolute; inset: 0; overflow: hidden; border: 3px solid var(--door-frame); border-top-width: 6px; border-top-color: var(--accent); border-radius: 6px; background: var(--surface-2); }
+.door-frame { position: absolute; inset: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-m); background: var(--surface-2); box-shadow: var(--shadow-1); }
 .door-inside { position: absolute; inset: 0; display: grid; place-items: center; color: var(--accent); }
 .door-panel {
   position: absolute; top: 0; bottom: 0; width: 50%; background-color: var(--paper);
   background-image: linear-gradient(var(--door-lattice) 1.5px, transparent 1.5px), linear-gradient(90deg, var(--door-lattice) 1.5px, transparent 1.5px);
-  background-size: 100% 28px, 33.4% 100%; background-position: 0 6px, 6px 0;
+  background-size: 100% 26px, 33.4% 100%; background-position: 0 6px, 6px 0;
   transition: transform var(--dur-door, .52s) var(--ease-in-out);
 }
-.door-panel-l { left: 0; border-right: 2px solid var(--door-frame); }
-.door-panel-r { right: 0; border-left: 1px solid var(--door-frame); }
+.door-panel-l { left: 0; border-right: 1px solid var(--door-frame); }
+.door-panel-r { right: 0; }
 .door.is-open .door-panel-l { transform: translateX(-97%); }
 .door.is-open .door-panel-r { transform: translateX(97%); }
 @media (hover: hover) {
@@ -590,8 +589,8 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
   .door.is-open:hover .door-panel-l { transform: translateX(-97%); }
   .door.is-open:hover .door-panel-r { transform: translateX(97%); }
 }
-.door-icon { position: absolute; top: 14px; right: 12px; z-index: 1; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: color-mix(in srgb, var(--paper) 90%, transparent); color: var(--accent); transition: opacity var(--dur-2); }
-.door-label { position: absolute; left: 9px; right: 9px; bottom: 9px; z-index: 1; display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: 6px; background: color-mix(in srgb, var(--paper) 92%, transparent); transition: opacity var(--dur-2); }
+.door-icon { position: absolute; top: 14px; right: 12px; z-index: 1; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); transition: opacity var(--dur-2); }
+.door-label { position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 1; display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: var(--radius-s); transition: opacity var(--dur-2); }
 .door-name { font-family: var(--font-serif); font-weight: 700; font-size: 1.12rem; line-height: 1.2; }
 .door-count { color: var(--text-2); font-size: .78rem; }
 .door-peek { display: flex; gap: 6px; margin-top: 3px; color: var(--text-2); }
@@ -690,15 +689,16 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 .counter-detail { margin: var(--space-1) 0 0; color: var(--text-2); font-size: .8rem; }
 .counter-clock { font-variant-numeric: tabular-nums; }
 /* the day's cards are washi paper too */
-.home-slide { border-radius: 8px; background: var(--paper) var(--grain); }
+.home-slide { background: var(--paper) var(--grain); }
 
 /* the day's cards: one at a time with buttons on top (no swipe); a row of three from 900 px */
-/* noren (Inicio A "Noren y sellos", 2026-11-19): cloth curtains hanging from a wooden rod */
-.day-picks { display: flex; gap: 4px; margin-bottom: var(--space-2); border-top: 4px solid color-mix(in srgb, var(--gold) 55%, var(--text-2)); }
-.day-pick { position: relative; flex: 1; min-width: 0; min-height: 46px; padding: 0 var(--space-2) 6px; border: 0; border-radius: 0 0 10px 10px; background: var(--surface-2); color: var(--text-2);
-  font: 600 .82rem var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: background-color var(--dur-2), color var(--dur-2); -webkit-tap-highlight-color: transparent; }
-.day-pick::before { content: ''; position: absolute; left: 50%; bottom: 7px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: currentColor; opacity: .5; }
-.day-pick[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+/* the day picks: the same segmented pill as Cartas and Cuponera (A "Washi y sello", 2026-11-20) */
+.day-picks { display: flex; gap: 4px; margin-bottom: var(--space-2); padding: 4px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--surface-2); }
+.day-pick { position: relative; flex: 1; min-width: 0; min-height: 38px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-pill); background: none; color: var(--text-2);
+  font: 500 .86rem var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: background-color var(--dur-2), color var(--dur-2); -webkit-tap-highlight-color: transparent; }
+.day-pick::after { content: ''; position: absolute; inset: -4px 0; }
+.day-pick[aria-pressed="true"] { background: var(--surface); color: var(--text); font-weight: 700; box-shadow: var(--shadow-1); }
+:root[data-theme="night"] .day-pick[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .day-pick:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
 .home-day-cards { display: grid; }
 .home-slide:not(.is-active) { display: none; }
@@ -784,22 +784,21 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 .capsula-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--space-5); align-items: start; }
 .capsula-detail { position: sticky; top: var(--space-5); max-height: calc(100dvh - 2 * var(--space-5)); overflow: auto; }
 
-/* timeline (decided 2026-11-19, Cápsula A): the red thread of fate, a hanko per year and a sakura per month */
+/* timeline: a thin red thread right by the cards, a hanko per year and a sakura per month
+   (A "Washi y sello", 2026-11-20: compact rows so the line reads at a glance) */
 .timeline-wrap { display: flex; flex-direction: column; gap: var(--space-3); }
-.timeline { list-style: none; margin: 0; padding: 0 0 0 30px; position: relative; display: flex; flex-direction: column; gap: var(--space-4); }
-.timeline::before { content: ''; position: absolute; left: 2px; top: 4px; bottom: 4px; width: 14px; background: var(--accent); opacity: .85;
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='80'%3E%3Cpath d='M7 0Q1 20 7 40T7 80' fill='none' stroke='%23000' stroke-width='1.8'/%3E%3C/svg%3E") 0 0 / 14px 80px repeat-y;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='80'%3E%3Cpath d='M7 0Q1 20 7 40T7 80' fill='none' stroke='%23000' stroke-width='1.8'/%3E%3C/svg%3E") 0 0 / 14px 80px repeat-y; }
+.timeline { list-style: none; margin: 0; padding: 0 0 0 22px; position: relative; display: flex; flex-direction: column; gap: var(--space-2); }
+.timeline::before { content: ''; position: absolute; left: 6px; top: 4px; bottom: 4px; width: 1.5px; border-radius: 1px; background: var(--accent); opacity: .5; }
 .timeline-drafts::before { background: var(--border-strong); }
 /* the year as a hanko seal */
 .tl-year { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
-.tl-hanko { display: grid; place-items: center; width: 60px; height: 60px; flex: none; border-radius: 50%; border: 2.5px solid var(--accent); color: var(--accent); background: var(--surface);
-  font-family: var(--font-serif); font-weight: 700; font-size: 1rem; transform: rotate(-8deg); box-shadow: inset 0 0 0 3px var(--surface), inset 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent); }
+.tl-hanko { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); background: var(--surface);
+  font-family: var(--font-serif); font-weight: 700; font-size: .82rem; transform: rotate(-8deg); box-shadow: inset 0 0 0 3px var(--surface), inset 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent); }
 /* a month: its name with a sakura on the thread */
-.tl-month { position: relative; margin-bottom: calc(-1 * var(--space-2)); font-weight: 700; font-size: .9rem; color: var(--accent-2); }
-.tl-sakura { position: absolute; left: -30px; top: 50%; margin-top: -9px; color: var(--accent); background: var(--bg); border-radius: 50%; }
+.tl-month { position: relative; margin-top: var(--space-2); font-weight: 700; font-size: .9rem; color: var(--accent-2); }
+.tl-sakura { position: absolute; left: -22px; top: 50%; margin-top: -9px; color: var(--accent); background: var(--bg); border-radius: 50%; }
 .tl-item { position: relative; }
-.tl-knot { position: absolute; left: -25px; top: 22px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--bg); }
+.tl-knot { position: absolute; left: -19px; top: 50%; margin-top: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--bg); }
 .timeline-drafts .tl-knot { background: var(--border-strong); }
 .tl-card[aria-current="true"] { outline: 2px solid var(--accent); outline-offset: 4px; }
 .tl-card:focus-visible { outline: 3px solid var(--focus, var(--accent)); outline-offset: 4px; }
@@ -813,36 +812,21 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 .seal-sq { display: inline-grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 4px; background: var(--accent); color: var(--accent-ink); transform: rotate(-6deg);
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-ink) 25%, transparent); }
 .seal-sq .icon { fill: currentColor; stroke: none; }
-/* with photos or videos: a shikishi board with a gold inner border */
-.tl-shikishi { position: relative; display: flex; flex-direction: column; gap: var(--space-2); max-width: 420px; padding: 16px 16px 14px; color: var(--text); text-decoration: none;
-  background: var(--paper) var(--grain); border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--border)); border-radius: 3px;
-  box-shadow: inset 0 0 0 5px var(--paper), inset 0 0 0 6.5px var(--gold), var(--shadow-1); transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2); }
-@media (hover: hover) { .tl-shikishi:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 5px var(--paper), inset 0 0 0 6.5px var(--gold), var(--shadow-2); } }
-.tl-shikishi .tl-text { padding-right: 36px; }
-.tl-shikishi .tl-title { font-size: 1.12rem; }
-.tl-seal { position: absolute; right: 16px; bottom: 16px; }
-.tl-photo { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; background: var(--surface-2); border-radius: 1px; }
+/* every memory is the same paper row: a 56 px thumbnail (photo, or an icon by kind) and its text */
+.tl-shikishi, .tl-ema { --tone: var(--accent); position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: var(--space-3); row-gap: 2px; align-items: center; align-content: center;
+  max-width: 560px; padding: 8px 36px 8px 8px; color: var(--text); text-decoration: none;
+  background: var(--paper) var(--grain); border: 1px solid var(--border); border-radius: var(--radius-m); box-shadow: var(--shadow-1); transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2); }
+@media (hover: hover) { .tl-shikishi:hover, .tl-ema:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); } }
+.tl-ema > :not(.tl-ema-icon) { grid-column: 2; }
+.tl-seal { position: absolute; right: 10px; top: 10px; width: 22px; height: 22px; }
+.tl-photo { position: relative; display: block; width: 56px; height: 56px; overflow: hidden; background: var(--surface-2); border-radius: var(--radius-s); }
 .tl-photo img, .tl-photo video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-.tl-more { position: absolute; right: 6px; bottom: 6px; padding: 0 6px; border-radius: var(--radius-pill); background: rgb(0 0 0 / .6); color: #fff; font-size: .72rem; font-weight: 700; }
+.tl-more { position: absolute; right: 3px; bottom: 3px; padding: 0 5px; border-radius: var(--radius-pill); background: rgb(0 0 0 / .6); color: #fff; font-size: .72rem; font-weight: 700; }
 /* a video's first frame carries a play mark */
 .media-play { position: absolute; left: 50%; top: 50%; width: 38px; height: 38px; margin: -19px 0 0 -19px; display: grid; place-items: center; border-radius: 50%; background: rgb(0 0 0 / .55); color: #fff; pointer-events: none; }
 .media-play .icon { fill: currentColor; stroke: none; margin-left: 2px; }
-/* without photos: an ema plaque hanging from a cord, with an icon by kind */
-.tl-ema { --tone: var(--accent); position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px;
-  width: min(100%, 264px); margin-top: 14px; padding: 36px var(--space-4) var(--space-4); color: var(--text); text-decoration: none;
-  transform: rotate(-1deg); transform-origin: 50% -14px; transition: transform var(--dur-3) var(--ease-out); }
-.tl-ema.is-right { transform: rotate(1deg); }
-@media (hover: hover) { .tl-ema:hover { transform: rotate(0deg); } }
-.tl-ema::before, .tl-ema::after { content: ''; position: absolute; z-index: -1; clip-path: polygon(0 30px, 50% 0, 100% 30px, 100% 100%, 0 100%); }
-.tl-ema::before { inset: 0; background: color-mix(in srgb, var(--gold) 65%, var(--border-strong)); }
-.tl-ema::after { inset: 1.5px; background: var(--paper) var(--grain); }
-.tl-ema[aria-current="true"] { outline: none; }
-.tl-ema[aria-current="true"]::before { background: var(--accent); inset: -1px; }
-.tl-ema[aria-current="true"]::after { inset: 2px; }
-.tl-cord { position: absolute; top: -14px; left: 50%; width: 2px; height: 28px; margin-left: -1px; background: var(--accent); }
-.tl-cord::after { content: ''; position: absolute; left: 50%; bottom: -6px; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%; background: var(--paper); border: 2px solid var(--accent); }
-.tl-ema-icon { display: grid; place-items: center; margin-bottom: 2px; color: color-mix(in srgb, var(--tone) 80%, var(--text)); }
-.tl-ema .tl-tags { justify-content: center; }
+.tl-ema-icon { grid-row: 1 / span 4; display: grid; place-items: center; width: 56px; height: 56px; border-radius: var(--radius-s); color: color-mix(in srgb, var(--tone) 80%, var(--text)); background: color-mix(in srgb, var(--tone) 12%, var(--surface-2)); }
+.tl-card[aria-current="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
 .tone-violet { --tone: var(--accent-2); }
 .tone-gold { --tone: var(--gold); }
 .tl-item.unroll .tl-card { animation: scroll-unroll var(--dur-5) var(--ease-out) both; transform-origin: top; }
@@ -851,10 +835,9 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 @keyframes scroll-unroll { from { clip-path: inset(0 0 100% 0); opacity: .3; transform: scaleY(.9); } to { clip-path: inset(0); opacity: 1; transform: none; } }
 
 /* "Un día como hoy": washi paper with a red seal */
-.otd-card { display: flex; gap: var(--space-3); align-items: center; background: var(--paper) var(--grain); border-left: 4px solid var(--accent); border-radius: 6px; }
+.otd-card { display: flex; gap: var(--space-3); align-items: center; background: var(--paper) var(--grain); }
 .otd-thumb.seal-sq { width: 40px; height: 40px; }
-.otd-thumb.has-photo { position: relative; flex: none; width: 76px; height: 76px; padding: 5px; overflow: hidden; border-radius: 2px; background: var(--paper);
-  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--border)); box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 3px var(--gold); }
+.otd-thumb.has-photo { position: relative; flex: none; width: 60px; height: 60px; overflow: hidden; border-radius: var(--radius-s); background: var(--surface-2); }
 .otd-thumb img, .otd-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .otd-thumb .media-play { width: 28px; height: 28px; margin: -14px 0 0 -14px; }
 .otd-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -1278,3 +1261,11 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .cupones-body > .cupones-tabs { align-self: stretch; display: flex; flex-wrap: nowrap; }
 .cupones-tabs .segmented-option { flex: 1; justify-content: center; padding-inline: var(--space-2); white-space: nowrap; }
 @media (min-width: 640px) { .cupones-body > .cupones-tabs { align-self: flex-start; } .cupones-tabs .segmented-option { padding-inline: var(--space-4); } }
+
+/* Cartas > Estampillas: the shared album (2026-11-20) */
+.sticker-album { display: flex; flex-direction: column; gap: var(--space-3); }
+.sticker-howto { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; background: var(--paper) var(--grain); }
+.sticker-howto-text { flex: 1 1 200px; margin: 0; color: var(--text-2); }
+.sticker-pick.is-static { cursor: default; }
+.sticker-pick.is-static:hover { background: var(--surface-2); }
+.sticker-pick.is-static:active { transform: none; }
