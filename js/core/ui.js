@@ -248,7 +248,12 @@ export function field({ label, control, hint, error, id = `f-${uuid().slice(0, 8
 }
 
 export function input(attrs = {}) { return el('input', { class: 'input', type: 'text', ...attrs }); }
-export function textarea(attrs = {}) { return el('textarea', { class: 'input textarea', rows: 4, ...attrs }); }
+/** A textarea takes its text from .value (a "value" attribute does nothing), so it is set here. */
+export function textarea({ value, ...attrs } = {}) {
+  const t = el('textarea', { class: 'input textarea', rows: 4, ...attrs });
+  if (value != null) t.value = String(value);
+  return t;
+}
 
 /** Accessible switch (checkbox with role="switch"). */
 export function toggle({ label, checked = false, onChange, hint, disabled = false } = {}) {

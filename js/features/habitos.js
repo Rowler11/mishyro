@@ -143,7 +143,7 @@ export async function render() {
             } }, icon('trash-2', { size: 16 })))));
     };
     const active = list.filter((h) => h.active);
-    body.replaceChildren(
+    util.fill(body,
       el('p', { class: 'muted small' }, 'Cada uno marca lo suyo. Un día cuenta en la racha cuando los dos lo marcan; si un día se les pasa, hay uno de gracia por semana.'),
       el('ul', { class: 'habit-list' }, list.map(card)),
       active.length ? ui.button({ label: 'Recordatorio en el teléfono', iconName: 'bell', small: true, variant: 'ghost', onClick: () => reminderDialog(active) }) : null);

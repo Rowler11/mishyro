@@ -15,7 +15,7 @@ export function render(ctx) {
 async function ownSelfCount(me) {
   let n = 0;
   for (const name of db.STORE_NAMES) {
-    if (['meta', 'settings', 'errors', 'vault', 'media', 'syncState', 'syncInbox'].includes(name)) continue;
+    if (['meta', 'settings', 'errors', 'vault', 'media', 'syncState', 'syncInbox', 'trash'].includes(name)) continue;
     for (const r of await db.rawAll(name)) if (!r.deleted && r.visibility === 'self' && r.owner === me) n++;
   }
   return n;
@@ -72,11 +72,11 @@ const EXTERNAL = [
   { what: 'Actualizaciones de la app', who: 'El mismo sitio de la app', when: 'Al abrirla con internet', status: 'own' },
   { what: 'Sincronización entre sus equipos', who: 'El mismo sitio de la app (Cloudflare), todo cifrado de extremo a extremo', when: 'Solo si unen sus equipos en Ajustes > Sincronización', status: 'own' },
   { what: 'Avisos cariñosos', who: 'El servicio de avisos del navegador (Google en Android y Chrome), sin contenido', when: 'Solo si los activan en Sincronización', status: 'opt' },
-  { what: 'Mapa de lugares y Sueños', who: 'OpenStreetMap (imágenes del mapa)', when: 'Al abrir el mapa', status: 'soon' },
+  { what: 'Mapa de lugares y Sueños', who: 'OpenStreetMap (imágenes del mapa)', when: 'Al abrir el mapa', status: 'opt' },
   { what: 'Canciones', who: 'Spotify (reproductor y nombre de la canción)', when: 'Solo al tocar "Escuchar" o al pegar un enlace', status: 'opt' },
-  { what: 'Ideas de citas', who: 'Google Maps (enlace)', when: 'Solo si tocan "Buscar en Google Maps"', status: 'soon' },
+  { what: 'Ideas de citas', who: 'Google Maps (enlace)', when: 'Solo si tocan "Buscar en Google Maps"', status: 'opt' },
 ];
-const STATUS = { local: 'Sin red', own: 'Propio', soon: 'Pronto', opt: 'Opcional' };
+const STATUS = { local: 'Sin red', own: 'Propio', opt: 'Opcional' };
 
 function terceros() {
   const box = el('div', { class: 'stack' }, ui.skeleton(2));
@@ -89,7 +89,7 @@ function terceros() {
       ui.toggle({ label: 'Modo sin terceros', checked: s.off,
         hint: 'Apaga el mapa, Spotify, los avisos y los enlaces externos opcionales. La app sigue funcionando completa sin ellos.',
         onChange: async (v) => { await db.setSettings('thirdParty', { off: v }); if (v && sync.status().notify) await sync.disableNotifications().catch(() => {}); ui.toast(v ? 'Modo sin terceros activo.' : 'Servicios externos opcionales permitidos.'); } }),
-      el('p', { class: 'note-inline' }, icon('shield-check', { size: 18 }), el('span', {}, 'Hoy la app solo habla con su propio sitio. Lo que dice "Pronto" llega con su sección y respetará este interruptor.')),
+      el('p', { class: 'note-inline' }, icon('shield-check', { size: 18 }), el('span', {}, 'Sin este modo, la app habla con su propio sitio y, solo cuando usan esas secciones, con lo que dice "Opcional". Con el modo activo, solo con su propio sitio.')),
       el('div', { class: 'table-wrap' }, el('table', { class: 'summary-table external-table' },
         el('caption', { class: 'visually-hidden' }, 'Solicitudes externas de la app'),
         el('thead', {}, el('tr', {}, el('th', { scope: 'col' }, 'Para qué'), el('th', { scope: 'col' }, 'A quién'), el('th', { scope: 'col' }, 'Cuándo'), el('th', { scope: 'col' }, 'Estado'))),

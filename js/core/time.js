@@ -94,6 +94,13 @@ export function milestoneProgress(milestones, totalDays) {
   return { today, next, prev, progress, daysLeft: next ? next.days - totalDays : 0 };
 }
 
+/** Round numbers celebrated on their own, besides the editable list: every 1000 days and 1111, 2222… */
+export function roundMilestone(totalDays) {
+  if (totalDays > 0 && totalDays % 1111 === 0) return { days: totalDays, message: `${totalDays.toLocaleString('es-CO')} días: un número de pedir deseos.` };
+  if (totalDays > 0 && totalDays % 1000 === 0) return { days: totalDays, message: 'Un número redondo para un amor que no se cuenta.' };
+  return null;
+}
+
 /** Days since 1970-01-01 for a local date: a stable "day number" for daily picks. */
 export const dayNumber = (d = new Date()) => daysBetween(new Date(1970, 0, 1), d);
 

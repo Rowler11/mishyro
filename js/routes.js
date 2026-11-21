@@ -41,6 +41,7 @@ export const GROUPS = [
     { id: 'planes', title: 'Planes juntos', jp: '願い', romaji: 'negai', icon: 'list-checks', phase: '4A', module: 'planes', blurb: 'Lo que quieren vivir juntos.' },
     { id: 'suenos', title: 'Sueños y viajes', jp: '夢', romaji: 'yume', icon: 'moon-star', phase: '4A', module: 'suenos', blurb: 'Los grandes sueños, paso a paso.' },
     { id: 'citas', title: 'Sugerencias de citas', jp: 'デート', romaji: 'dēto', icon: 'dices', phase: '4A', module: 'citas', blurb: 'Una idea nueva cuando no se les ocurre nada.' },
+    { id: 'modo-cita', title: 'Modo cita', jp: 'お出かけ', romaji: 'odekake', icon: 'heart', phase: '0.10', module: 'modo-cita', blurb: 'Para la salida: al final arma el recuerdo solo.' },
     { id: 'regalos', title: 'Regalos secretos', jp: '贈り物', romaji: 'okurimono', icon: 'gift', phase: '4A', module: 'regalos', blurb: 'Ideas de regalo que el otro no ve.' },
   ] },
   { id: 'jugar', title: 'Jugar', jp: '遊び', romaji: 'asobi', sections: [
@@ -80,6 +81,7 @@ export const SETTINGS_PAGES = [
   { id: 'seguridad', title: 'Centro de seguridad', icon: 'shield-check', phase: '2', module: 'ajustes' },
   { id: 'privacidad', title: 'Privacidad', icon: 'eye-off', phase: '2', module: 'privacidad' },
   { id: 'copia', title: 'Copia de seguridad', icon: 'hard-drive', phase: '2', module: 'ajustes' },
+  { id: 'papelera', title: 'Papelera', icon: 'trash-2', phase: '0.10', module: 'papelera' },
   { id: 'sincronizar', title: 'Sincronización', icon: 'refresh-cw', phase: 'A', module: 'sync' },
   { id: 'apariencia', title: 'Apariencia', icon: 'palette', phase: '1', module: 'settings' },
   { id: 'movimiento', title: 'Movimiento y sonido', icon: 'sparkles', phase: '1', module: 'settings' },

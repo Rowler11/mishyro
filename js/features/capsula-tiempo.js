@@ -6,6 +6,7 @@
 import { ui, util, db, profile } from '../core.js';
 import { compressImage, isQuotaError } from '../core/images.js';
 import { openViewer } from '../core/viewer.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -136,9 +137,8 @@ export async function render() {
           el('span', { class: 'tc-env-to small' }, toLabel(c, me)),
           el('span', { class: 'tc-env-when' }, !forMe(c, me) && c.openAt <= today ? `Ya es de ${profile.name(c.to)}` : open ? (isNew ? 'Ábrela' : `Se abrió el ${fmtDay.format(util.parseDay(c.openAt))}`) : `${countdownText(c.openAt, today)} · ${fmtDay.format(util.parseDay(c.openAt))}`)),
         mine && !open ? el('button', { class: 'icon-btn icon-btn-small tc-del', type: 'button', 'aria-label': `Borrar "${c.title}"`, onClick: async () => {
-          if (!(await ui.confirmDialog({ title: '¿Borrar esta cápsula?', message: 'Se borra sin abrirse, en los dos teléfonos.', confirmLabel: 'Borrar', danger: true }))) return;
-          if (c.mediaId) await db.rawDelete('media', c.mediaId).catch(() => {});
-          await db.purge('timeCapsules', c.id); load();
+          if (!(await ui.confirmDialog({ title: '¿Borrar esta cápsula?', message: `Se borra sin abrirse. ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true }))) return;
+          await toTrash('timeCapsules', c.id, { label: c.title, what: 'Cápsula borrada', extraMedia: [c.mediaId], onRestored: load }); load();
         } }, icon('trash-2', { size: 16 })) : null);
     };
     if (!all.length) {

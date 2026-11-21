@@ -8,7 +8,7 @@
 // Revised the same day (option B "anillo"): the counter sits inside a ring that fills up toward the
 // next anniversary; special dates and the next milestone share one "Lo que viene" list (the
 // anniversary is not repeated there) and the backup reminder is a slim note.
-import { ui, util, db, profile, seed, CONFIG } from '../core.js';
+import { ui, util, db, profile, seed, sync, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
 import * as dates from '../core/dates.js';
 import * as fx from '../core/fx.js';
@@ -178,7 +178,8 @@ function todayEvents(data, start, receiver) {
       out.push({ kind: 'monthly', title: `¡Feliz mesiversario! ${plural(m, 'mes', 'meses')}`, text: 'Un mes más eligiéndose.' });
     }
     const ms = time.milestoneProgress(data.milestones, e.totalDays);
-    if (ms.today) out.push({ kind: 'milestone', title: `¡${ms.today.days.toLocaleString('es-CO')} días juntos!`, text: profile.fill(ms.today.message || '', receiver), confetti: true });
+    const hit = ms.today || time.roundMilestone(e.totalDays);
+    if (hit) out.push({ kind: 'milestone', title: `¡${hit.days.toLocaleString('es-CO')} días juntos!`, text: profile.fill(hit.message || '', receiver), confetti: true });
   }
   for (const d of data.specialDates) {
     if (d.kind === 'anniversary') continue; // already covered by the start date
@@ -226,11 +227,41 @@ function thinkingCard(data, receiver) {
     plane.classList.remove('fly'); void plane.offsetWidth; plane.classList.add('fly');
     util.haptic(15);
   });
+  // "Yo también": when the other one thought of you today (it arrives with the sync), one tap answers
+  // with a caring notice. No text travels, only that it happened.
+  const theirs = data.thinking.filter((t) => t.by === receiver && (t.at || '').slice(0, 10) === today).sort((x, y) => (x.at || '').localeCompare(y.at || ''));
+  const lastTheirs = theirs[theirs.length - 1];
+  const answered = lastTheirs && mine.some((t) => t.reply && (t.at || '') > (lastTheirs.at || ''));
+  const reply = lastTheirs ? el('div', { class: 'thinking-reply' },
+    el('p', { class: 'small' }, icon('heart', { size: 16 }), ` ${profile.nick(receiver)} pensó en ti hoy.`),
+    answered ? el('p', { class: 'muted small' }, 'Le respondiste: yo también.')
+      : ui.button({ label: 'Yo también', iconName: 'heart', small: true, variant: 'ghost', onClick: async (e) => {
+        const b = e.currentTarget; b.disabled = true;
+        await db.put('thinkingOfYou', { at: util.nowISO(), by: profile.active(), phraseId: null, reply: true });
+        todayCount++; monthCount++; paintCount();
+        plane.classList.remove('fly'); void plane.offsetWidth; plane.classList.add('fly');
+        util.haptic(15); util.sound('chime');
+        b.replaceWith(el('p', { class: 'muted small' }, sync.isLinked() ? `Listo: a ${profile.nick(receiver)} le llega un aviso cariñoso.` : 'Le respondiste: yo también.'));
+      } })) : null;
   return el('article', { class: 'card home-card thinking-card', 'aria-labelledby': 'thinking-title' },
     plane,
     el('h2', { class: 'card-kicker', id: 'thinking-title' }, 'Pensando en ti'),
     el('p', {}, `Mándale a ${profile.nick(receiver)} una frase bonita por donde quieras.`),
-    btn, count);
+    btn, count, reply);
+}
+
+// ---------- 1b. "Hoy los dos pasaron por aquí" ----------
+// With the sync on, a device of the other person that talked to the server today means they opened
+// the app. Only today and only when it happened: no hour, no "last seen", nothing to check on anyone.
+export function bothToday(devices, partner, now = new Date()) {
+  const today = util.localDay(now);
+  return devices.some((d) => d.person === partner && !d.me && d.seen && util.localDay(new Date(d.seen)) === today);
+}
+function bothLine(partner) {
+  const line = el('p', { class: 'both-today', hidden: true }, icon('heart', { size: 16 }), el('span', {}, 'Hoy los dos pasaron por aquí.'));
+  const paint = () => { line.hidden = !(sync.isLinked() && bothToday(sync.devices(), partner)); };
+  paint();
+  return { node: line, cleanup: sync.onStatus(paint) };
 }
 
 // ---------- 5. omikuji ----------
@@ -409,8 +440,11 @@ export async function render() {
     const meeting = await import('./encuentro.js').then((m) => m.homeCard()).catch(() => null);
     const weekend = await import('./citas.js').then((m) => m.weekendCard()).catch(() => null);
     const pet = await import('./mascotas.js').then((m) => m.homeCard({ onChange: build })).catch(() => null);
+    const both = bothLine(recv);
+    cleanups.push(both.cleanup);
     body.replaceChildren(...[
       counter ? counter.card : noStartCard(),
+      both.node,
       celebrationCard(events),
       meeting,
       slides.length ? daySwitcher(slides) : null,

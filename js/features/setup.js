@@ -31,7 +31,7 @@ function wizard({ app }) {
       class: `step-dot${i + 1 === step ? ' on' : ''}${i + 1 < step ? ' done' : ''}`,
       'aria-current': i + 1 === step ? 'step' : undefined,
     }, el('span', { class: 'sr-only' }, `Paso ${i + 1}${i + 1 < step ? ', hecho' : ''}`))));
-    card.replaceChildren(
+    util.fill(card,
       el('div', { class: 'layer-top' },
         back && step > 1 ? el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Paso anterior', onClick: () => go(step - 1) }, icon('arrow-left')) : el('span', { class: 'icon-btn-space' }),
         el('p', { class: 'step-count' }, `Paso ${step} de ${STEPS}`), progress),

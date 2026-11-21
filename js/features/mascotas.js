@@ -497,6 +497,9 @@ export async function render() {
  * Inicio card (Fase 4B): photo, days at home or the next birthday/arrival, and a dose that is due.
  * One pet (the first that is not in memory); hidden with "Ocultar" (per device, Ajustes de Inicio).
  */
+/** Days at home that get a little cake on Inicio (besides every 1000). */
+const PET_ROUND = [100, 365, 500];
+
 export async function homeCard({ onChange } = {}) {
   const prefs = await db.getSettings('home', { petHidden: false });
   if (prefs.petHidden) return null;
@@ -510,13 +513,14 @@ export async function homeCard({ onChange } = {}) {
   const urls = new Set();
   const line = next && next.days <= 30 ? (next.days === 0 ? `${next.label}: ¡hoy!` : `${next.label} en ${next.days} ${next.days === 1 ? 'día' : 'días'}`)
     : home !== null ? `${home.toLocaleString('es-CO')} días en casa` : ageText(pet.birth) || '';
+  const petRound = home !== null && home > 0 && (PET_ROUND.includes(home) || home % 1000 === 0);
   const hide = async () => { await db.setSettings('home', { petHidden: true }); ui.toast(`Listo. Vuelve a mostrar a ${pet.name} desde Mascotas.`); onChange?.(); };
   return el('section', { class: 'home-card pet-home-card', 'aria-labelledby': 'pet-home-title' },
     el('a', { class: 'pet-home-link', href: '#/mascotas' },
       el('span', { class: 'pet-home-photo' }, pet.mediaId ? mediaImg(pet.mediaId, { alt: '', urls }) : petArt(pet.species, { size: 56 })),
       el('span', { class: 'pet-home-text' },
         el('span', { class: 'pet-home-name', id: 'pet-home-title' }, pet.name),
-        line ? el('span', {}, line) : null,
+        petRound ? el('span', { class: 'pet-home-round' }, icon('cake', { size: 16 }), ` ¡Hoy cumple ${home.toLocaleString('es-CO')} días en casa!`) : line ? el('span', {}, line) : null,
         due ? el('span', { class: `badge ${due.st === 'overdue' ? 'badge-danger' : 'badge-warn'}` }, `${due.r.data.product}: ${due.st === 'overdue' ? 'vencida' : `el ${fmtDM.format(util.parseDay(due.r.data.next))}`}`) : null)),
     el('button', { class: 'icon-btn', type: 'button', 'aria-label': `Ocultar la tarjeta de ${pet.name} en Inicio`, onClick: hide }, icon('eye-off', { size: 18 })));
 }

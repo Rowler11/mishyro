@@ -1,5 +1,25 @@
 # Cambios
 
+## 0.10.0 (revisión completa: arreglos, detalles, Papelera y Modo cita)
+
+Nuevo
+- Modo cita (Más → Juntos, o "Empezar" en una cita aceptada): una pantalla tranquila para la salida, con una pregunta para conversar, un botón de foto y una línea "para no olvidar". Al terminar, el recuerdo queda armado solo en la Cápsula, con fecha, lugar, fotos y cuánto duró. Después les pide guardar el teléfono.
+- Papelera (Ajustes → Papelera): lo que borran en Cápsula, Cartas, Diario, Primeras veces, Mapa, Cápsula del tiempo, Notas de voz, Canciones, Sueños, Planes, Recetas y Calendario queda 30 días en este equipo, con sus fotos. Al borrar sale "Deshacer", y desde la Papelera se recupera en los dos teléfonos.
+
+Detalles
+- Inicio: "Hoy los dos pasaron por aquí" cuando los dos abrieron la app el mismo día (con la sincronización; nunca dice a qué hora).
+- Pensando en ti: si tu pareja pensó en ti hoy, lo ves en la tarjeta y respondes con un toque "Yo también"; le llega el aviso cariñoso.
+- Hitos redondos: además de su lista, se celebran solos los 1000, 1111, 2000, 2222… días juntos. La mascota lleva un pastelito en Inicio a los 100, 365, 500 y 1000 días en casa.
+- Pantalla del PIN: una frase cariñosa distinta cada día (sin nombres ni nada personal).
+- Cuponera: sello "¡Úsame pronto!" en los cupones que vencen en 7 días o menos.
+- Próximo encuentro: "¡Mañana se ven!", "Faltan 3 sueños" y "Ya casi" según cuánto falta.
+- Planes juntos: la tablilla ema se balancea al cumplir un plan y suena la campanilla (si el sonido está activo).
+
+Arreglos
+- Ya no aparece la palabra "null" en Rasca y gana, el Mapa, el visor de fotos sin título, Hábitos, Insignias, Mi espacio y la bienvenida.
+- Modo sin terceros ahora dice la verdad: el Mapa y Google Maps ya existen y salen como "Opcional".
+- Al editar un registro del diario del Rincón, la nota ya no aparece vacía (antes, al guardar sin reescribirla, se perdía).
+
 ## 0.9.0 (Fase 7: pulido y publicación)
 
 Detalles nuevos

@@ -7,6 +7,7 @@
 import { ui, util, db, profile, CONFIG } from '../core.js';
 import { photoField, dropOldMedia, mediaImg, isQuotaError } from './hogar-kit.js';
 import { addItems, openLists, norm } from './listas.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const KEY = 'aishiteru.recetas.tab';
@@ -210,9 +211,8 @@ function recipeDetail(r, { reload, urls }) {
       el('div', { class: 'btn-row' },
         ui.button({ label: 'Editar', iconName: 'pencil', variant: 'ghost', small: true, onClick: () => { modal.close(); recipeEditor(r, { onSaved: reload }); } }),
         ui.button({ label: 'Borrar', iconName: 'trash-2', variant: 'ghost', small: true, onClick: async () => {
-          if (!(await ui.confirmDialog({ title: '¿Borrar esta receta?', message: `"${r.name}" se borra en los dos teléfonos.`, confirmLabel: 'Borrar', danger: true }))) return;
-          if (r.mediaId) await db.rawDelete('media', r.mediaId).catch(() => {});
-          await db.purge('recipes', r.id); modal.close(); reload();
+          if (!(await ui.confirmDialog({ title: '¿Borrar esta receta?', message: `"${r.name}". ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true }))) return;
+          await toTrash('recipes', r.id, { label: r.name, what: 'Receta borrada', extraMedia: [r.mediaId], onRestored: reload }); modal.close(); reload();
         } }))),
   });
   return modal;

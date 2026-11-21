@@ -6,6 +6,7 @@
 // the title when there is network; without it, they type it.
 import { ui, util, db, profile, security, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -139,8 +140,8 @@ function detail(s, { onChange }) {
       el('div', { class: 'btn-row' },
         el('a', { class: 'btn btn-ghost btn-small', href: s.url, target: '_blank', rel: 'noopener noreferrer' }, icon('music', { size: 16 }), el('span', {}, 'Abrir en Spotify')),
         s.by === me ? el('button', { class: 'btn btn-ghost btn-small', type: 'button', onClick: async () => {
-          if (!(await ui.confirmDialog({ title: '¿Borrar esta canción?', message: songName(s), confirmLabel: 'Borrar', danger: true }))) return;
-          await db.purge('songs', s.id); m.close(); onChange();
+          if (!(await ui.confirmDialog({ title: '¿Borrar esta canción?', message: `${songName(s)}. ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true }))) return;
+          await toTrash('songs', s.id, { label: songName(s), what: 'Canción borrada', onRestored: onChange }); m.close(); onChange();
         } }, icon('trash-2', { size: 16 }), el('span', {}, 'Borrar')) : null)),
   });
   // Letter by letter (instant with reduced motion); the full text is there for screen readers.

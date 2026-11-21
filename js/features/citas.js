@@ -231,7 +231,7 @@ function decider(log, after) {
 export async function render() {
   const page = el('section', { class: 'page page-wide citas' });
   let log = [];
-  page.append(ui.pageHeader({ title: 'Sugerencias de citas', jp: 'デート', romaji: 'dēto', back: '/mas', actions: [ui.button({ label: '¿Quién decide?', iconName: 'dices', small: true, onClick: () => decider(log, () => {}) })] }));
+  page.append(ui.pageHeader({ title: 'Sugerencias de citas', jp: 'デート', romaji: 'dēto', back: '/mas', actions: [ui.button({ label: '¿Quién decide?', iconName: 'dices', small: true, onClick: () => decider(log, () => {}) }), ui.button({ label: 'Modo cita', iconName: 'heart', small: true, href: '#/modo-cita' })] }));
   const body = el('div', { class: 'stack' }, ui.skeleton(3));
   page.append(body);
   let tab = 'sorpresa';
@@ -302,6 +302,7 @@ export async function render() {
         ...pub.map(sCard),
         accepted.length ? el('div', { class: 'idea-grid' }, accepted.map((i) => ideaCard(i, { thirdParty, actions: [
           ui.button({ label: 'Agendar', iconName: 'calendar', small: true, onClick: () => schedule(i) }),
+          ui.button({ label: 'Empezar', iconName: 'heart', small: true, href: `#/modo-cita?${new URLSearchParams({ titulo: i.title })}` }),
           ui.button({ label: 'La hicimos', iconName: 'check', small: true, variant: 'primary', onClick: () => doneFlow(i, data.states.get(i.id), draw_) }),
           ui.button({ label: 'Soltar', small: true, variant: 'ghost', onClick: async () => { await setState(i.id, { status: '' }); draw_(); } })] }))) : null,
         !accepted.length && !pub.length ? ui.emptyState({ title: 'Nada pendiente', text: 'Acepten una idea en Sorpresa o Con filtros y aparece aquí.', art: 'lantern' }) : null,

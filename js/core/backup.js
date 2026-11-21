@@ -5,7 +5,7 @@ import { encryptWithPassword, decryptWithPassword } from './crypto.js';
 
 export const FORMAT = 'aniversario-backup';
 export const VAULT_FORMAT = 'aniversario-vault-backup';
-const EXCLUDED = ['vault', 'errors', 'media', 'syncState', 'syncInbox'];
+const EXCLUDED = ['vault', 'errors', 'media', 'syncState', 'syncInbox', 'trash'];
 const SPLIT_BYTES = 50 * 1024 * 1024;
 // Sync keys and this device's pairing never go into a file (docs: Fase A).
 const DEVICE_SETTINGS = ['sync', 'syncNotify'];

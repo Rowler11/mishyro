@@ -29,6 +29,12 @@ export const redeemedText = (iso) => {
 };
 /** Expired when the expiry day is before today (it can be used all of that day). */
 export const isExpired = (c, today = util.localDay()) => !!c.expiresOn && c.expiresOn < today;
+/** Still valid and expiring within 7 days (today included): gets the soft "¡Úsame pronto!" stamp. */
+export const isExpiringSoon = (c, today = util.localDay()) => {
+  if (!c.expiresOn || isExpired(c, today)) return false;
+  const a = util.parseDay(today); const b = util.parseDay(c.expiresOn);
+  return !!a && !!b && util.daysBetween(a, b) <= 7;
+};
 
 // Compact train ticket (decided 2026-11-19): number, giver and title on the ticket, the tear-off
 // stub is the "Canjear" button or holds the hanko. Tapping the ticket opens its full detail.
@@ -40,6 +46,7 @@ function ticket(c, state, { tab, number, onRedeem, onOpen, onGive }) {
   const meta = redeemed ? redeemedText(state.redeemedAt) : expired ? `Venció el ${util.formatDay(c.expiresOn)}`
     : c.expiresOn ? `Vale hasta el ${util.formatDay(c.expiresOn)}` : 'Sin vencimiento';
   const titleText = pending(c.title) ? 'Cupón sin título' : c.title;
+  const soon = tab === 'mine' && !redeemed && isExpiringSoon(c);
   const titleId = `kp-${c.id.replace(/[^a-z0-9]/gi, '')}`;
   let stub;
   if (tab === 'mine' && !redeemed && !expired) {
@@ -58,7 +65,8 @@ function ticket(c, state, { tab, number, onRedeem, onOpen, onGive }) {
       el('span', { class: 'kippu-row' }, el('span', { class: 'kippu-kicker' }, who), el('span', { class: 'kippu-no' }, no)),
       el('span', { class: 'kippu-title', id: titleId }, titleText),
       el('span', { class: `kippu-meta${redeemed ? ' is-ok' : ''}`, id: `${titleId}-m` }, redeemed ? icon('check', { size: 14 }) : null, meta, el('span', { class: 'kippu-admit', 'aria-hidden': 'true' }, 'Admite 1')),
-      pending(c.title) || (c.description && pending(c.description)) ? el('span', { class: 'pending' }, 'Por completar') : null),
+      pending(c.title) || (c.description && pending(c.description)) ? el('span', { class: 'pending' }, 'Por completar') : null,
+      soon ? el('span', { class: 'kippu-soon' }, '¡Úsame pronto!') : null),
     stub);
 }
 
