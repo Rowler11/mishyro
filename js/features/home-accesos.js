@@ -13,7 +13,7 @@ const VISITED = `${CONFIG.storageKey}.visited`;
 export const QUICK = [
   { label: 'Escribir carta', icon: 'pencil', href: '#/cartas?escribir=1' },
   { label: 'Nuevo recuerdo', icon: 'hourglass', href: '#/capsula/nuevo' },
-  { label: 'Subir foto', icon: 'image-plus', href: '#/galeria?subir=1' },
+  { label: 'Subir foto', icon: 'image-plus', href: '#/capsula/nuevo?fotos=1' },
   { label: 'Idea de cita', icon: 'dices', href: '#/citas' },
 ];
 

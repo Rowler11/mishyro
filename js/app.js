@@ -18,6 +18,7 @@ export const app = {
 // ---------- route table ----------
 const load = {
   placeholder: () => import('./features/placeholder.js'),
+  permisos: () => import('./features/permisos.js'),
   listas: () => import('./features/listas.js'),
   mascotas: () => import('./features/mascotas.js'),
   recetas: () => import('./features/recetas.js'),

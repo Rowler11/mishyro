@@ -14,12 +14,14 @@
     "bindings": [
       { "name": "SPACE", "class_name": "Space" },
       { "name": "MAILBOX", "class_name": "Mailbox" },
-      { "name": "SHARD", "class_name": "MediaShard" }
+      { "name": "SHARD", "class_name": "MediaShard" },
+      { "name": "RESCUE", "class_name": "Rescue" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["Space", "Mailbox"] },
-    { "tag": "v2", "new_sqlite_classes": ["MediaShard"] }
+    { "tag": "v2", "new_sqlite_classes": ["MediaShard"] },
+    { "tag": "v3", "new_sqlite_classes": ["Rescue"] }
   ],
   "observability": { "enabled": false }
 }

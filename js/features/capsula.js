@@ -168,6 +168,8 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
       el('span', { class: 'field-label' }, 'Fotos y videos'),
       el('span', { class: 'field-hint' }, `Hasta ${MAX_PHOTOS}, videos de ${MAX_VIDEO_SECONDS} s. La primera es la portada.`)),
     grid, photoMsg, fileInput);
+  // "Subir" from Galería or Inicio: the photo picker opens right away.
+  if (prefill.pick) setTimeout(() => fileInput.click(), 350);
 
   const paintPhotos = () => {
     const tiles = photos.map((p, i) => el('div', { class: 'photo-tile' },
@@ -561,7 +563,7 @@ export async function render(ctx) {
   if (ctx.params?.a === 'nuevo') {
     // From a past date in the Calendario: title, day and a note come prefilled.
     const q = ctx.query || {};
-    const prefill = { ...(q.titulo ? { title: String(q.titulo).slice(0, 80) } : {}), ...(util.isValidDay(q.fecha) ? { date: q.fecha } : {}), ...(q.nota ? { note: String(q.nota).slice(0, 2000) } : {}) };
+    const prefill = { ...(q.titulo ? { title: String(q.titulo).slice(0, 80) } : {}), ...(util.isValidDay(q.fecha) ? { date: q.fecha } : {}), ...(q.nota ? { note: String(q.nota).slice(0, 2000) } : {}), ...(q.fotos ? { pick: true } : {}) };
     history.replaceState(history.state, '', '#/capsula');
     requestAnimationFrame(() => openEditor(null, prefill));
   }

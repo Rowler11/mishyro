@@ -1,5 +1,21 @@
 # Cambios
 
+## 0.11.0 (menos secciones, Inicio con accesos y entrar sin perder nada)
+
+Nuevo
+- Volver a entrar sin archivo: en Ajustes → Tus datos → Sincronización, "Activar huella y frase". Cada uno guarda su huella (en su cuenta de Google) y una frase de 12 palabras. Si desinstalan la app o cambian de teléfono, en la bienvenida tocan "Ya tenemos Aishiteru" y entran con la huella o las palabras: llega todo, también lo de "Solo yo". Gratis y cifrado de extremo a extremo.
+- Inicio: 4 accesos rápidos (Escribir carta, Nuevo recuerdo, Subir foto, Idea de cita), "Sus favoritos" (6 secciones que cada uno elige) y "Prueben hoy", que sugiere una sección que todavía no han abierto.
+- Permisos de una vez: un paso del asistente pide avisos, ubicación, cámara y micrófono con una línea de para qué sirve cada uno. Se ven y se cambian en Ajustes → Privacidad → Permisos.
+- Galería, centro de fotos: suma las fotos de Cartas abiertas, Sueños, Cápsulas del tiempo ya abiertas y Juegos, con pestañas Todas, Nuestro año y Photobooth, y un botón "Subir" que guarda las fotos como recuerdo.
+
+Más ordenado (nada se quitó, solo se juntó)
+- Más pasa de 34 a 23 secciones: Calendario (Mes, Fechas, Avisos y el botón Próximo encuentro), Planes (Lista, Sueños y viajes, Ideas de citas), Galería, Conocernos (Preguntas y Lenguajes del amor), Retos y hábitos, Dinero (Alcancía y Gastos) y Juegos (con Rasca y gana).
+- Ajustes pasa de 10 a 6: Privacidad (con Permisos y Sin terceros), Tus datos (Copia, Sincronización y Papelera), Acerca de (con Legal) y Apariencia (con Movimiento y sonido).
+
+Arreglos
+- La flecha de atrás vuelve al grupo de Más donde estabas (o a Inicio si viniste de ahí), no al principio.
+- Las cartas "En camino" se pueden abrir y editar mientras no las abran; siguen selladas.
+
 ## 0.10.0 (revisión completa: arreglos, detalles, Papelera y Modo cita)
 
 Nuevo

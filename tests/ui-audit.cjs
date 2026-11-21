@@ -26,6 +26,7 @@ async function setup(page) {
   await page.getByRole('button', { name: 'Importar' }).click();
   await page.getByRole('button', { name: 'Todo bien' }).click();
   await page.getByRole('button', { name: 'Ahora no' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Terminar' }).click();
   await page.getByRole('button', { name: 'Saltar' }).click();
   await page.waitForFunction(() => location.hash === '#/inicio');

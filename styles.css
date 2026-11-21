@@ -2818,3 +2818,19 @@ audio.rec-media { background: transparent; max-height: none; }
 .hub-tab { display: inline-flex; align-items: center; min-height: 38px; padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--text-2); font-weight: 500; text-decoration: none; }
 .hub-tab.is-on { background: var(--surface); color: var(--text); font-weight: 700; box-shadow: var(--shadow-1); }
 .hub-tab:not(.is-on):hover { color: var(--text); }
+
+/* Permisos (setup step and Ajustes > Privacidad > Permisos) */
+.perm-row { align-items: flex-start; }
+.perm-row .list-title { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); }
+.perm-granted { background: var(--success-bg); color: var(--success); border-color: transparent; }
+.perm-denied { color: var(--danger, var(--accent)); }
+.perm-hint { margin: 4px 0 0; }
+
+/* Recovery phrase (Sincronización) */
+.phrase-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); padding: 0; margin: 0; list-style: none; counter-reset: w; }
+.phrase-grid li { counter-increment: w; padding: var(--space-2); border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--border); font-weight: 700; font-size: .92rem; overflow-wrap: anywhere; }
+.phrase-grid li::before { content: counter(w) ". "; color: var(--text-2); font-weight: 500; }
+.rescue-status { list-style: none; padding: 0; }
+.rescue-line .icon { vertical-align: -3px; color: var(--accent); }
+@media (max-width: 360px) { .phrase-grid { grid-template-columns: repeat(2, 1fr); } }
+.success-text { color: var(--success); font-weight: 600; display: flex; align-items: center; gap: 6px; }

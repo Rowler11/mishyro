@@ -30,6 +30,7 @@ async function completeSetup(page) {
   await page.getByRole('button', { name: 'Importar' }).click();
   await page.getByRole('button', { name: 'Todo bien' }).click();
   await page.getByRole('button', { name: 'Ahora no' }).click();
+  await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Terminar' }).click();
   await page.getByRole('button', { name: 'Saltar' }).click();
   await page.waitForFunction(() => location.hash === '#/inicio');
@@ -65,6 +66,7 @@ async function completeSetup(page) {
     ok('setup: seed imported once (4 memories? example has 2)', counts.memories === 2 && counts.content === 4, JSON.stringify(counts));
     await page.getByRole('button', { name: 'Todo bien' }).click();
     await page.getByRole('button', { name: 'Ahora no' }).click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
     const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar primera copia' }).click()]);
     const file = await download.path();
     const backup = JSON.parse(fs.readFileSync(file, 'utf8'));

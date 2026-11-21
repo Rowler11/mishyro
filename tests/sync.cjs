@@ -26,6 +26,7 @@ async function device(browser, who, { seed = true } = {}) {
     await page.getByRole('button', { name: 'Importar' }).click();
     await page.getByRole('button', { name: 'Todo bien' }).click();
     await page.getByRole('button', { name: 'Ahora no' }).click();
+    await page.getByRole('button', { name: 'Continuar' }).click();
     await page.getByRole('button', { name: 'Terminar' }).click();
     await page.getByRole('button', { name: 'Saltar' }).click();
     await page.waitForFunction(() => location.hash === '#/inicio');
@@ -192,6 +193,55 @@ const waitFor = async (page, src, arg, ms = 8000) => {
     const dId = await mod(D.page, 'return sync.status().deviceId;');
     await mod(A.page, 'await sync.removeDevice(a);', dId);
     ok('sacar un equipo lo desconecta', await waitFor(D.page, 'return sync.status().removed;'));
+
+    // Recovery (2026-11-21): 12 words and the passkey bring a reinstalled phone back, "Solo yo" included.
+    {
+      const rmod = (page, src, arg) => page.evaluate(async ([code, x]) => {
+        const rescue = await import('./js/core/rescue.js');
+        const sync = await import('./js/core/sync.js');
+        const db = await import('./js/core/db.js');
+        // eslint-disable-next-line no-new-func
+        return new Function('rescue', 'sync', 'db', 'a', `return (async () => { ${code} })()`)(rescue, sync, db, x);
+      }, [src, arg]);
+      await mod(A.page, "await db.put('memories', { id: 'mem-self-r', date: '2026-03-03', title: 'Solo de Sofía (respaldo)', note: '', visibility: 'self', owner: 'sofia' });");
+      const words = await rmod(A.page, 'const w = await rescue.newPhrase(); await rescue.protect({ phrase: w }); return w;');
+      ok('frase: 12 palabras válidas', words.length === 12 && (await rmod(A.page, 'return (await rescue.checkPhrase(a.join(" "))).ok;', words)));
+      ok('frase: detecta una palabra cambiada', !(await rmod(A.page, 'const w = [...a]; w[3] = w[3] === "abeja" ? "ábaco" : "abeja"; return (await rescue.checkPhrase(w.join(" "))).ok;', words)));
+      ok('frase: tildes y mayúsculas no importan', await rmod(A.page, 'return (await rescue.checkPhrase(a.map((x) => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()).join("  "))).ok;', words));
+      const E = await device(browser, 'david', { seed: false });
+      let wrong = false;
+      try { const other = await rmod(E.page, 'return rescue.newPhrase();'); await rmod(E.page, 'return rescue.restore({ phrase: a });', other); } catch { wrong = true; }
+      ok('frase equivocada no entra', wrong);
+      ok('volver a entrar con la frase', (await rmod(E.page, 'return rescue.restore({ phrase: a });', words)) === 'joined');
+      ok('vuelve como la misma persona', await waitFor(E.page, "return sync.status().me === 'sofia';"));
+      ok('llegan los datos compartidos', await waitFor(E.page, "return !!(await db.rawGet('memories', 'mem-a1'));"));
+      ok('llega lo de "Solo yo"', await waitFor(E.page, "const m = await db.get('memories', 'mem-self-r').catch(() => null); return m?.title === 'Solo de Sofía (respaldo)';"));
+      ok('la frase sirve otra vez (no se gasta)', await (async () => {
+        const F = await device(browser, 'david', { seed: false });
+        const r = await rmod(F.page, 'return rescue.restore({ phrase: a });', words).catch(() => null);
+        await F.ctx.close(); return r === 'joined';
+      })());
+      // Passkey with PRF on a virtual authenticator (the credential is copied to the "new" phone).
+      try {
+        const cdpA = await A.ctx.newCDPSession(A.page);
+        await cdpA.send('WebAuthn.enable');
+        const { authenticatorId } = await cdpA.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', ctap2Version: 'ctap2_1', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, hasPrf: true, automaticPresenceSimulation: true } });
+        // The virtual authenticator cannot export its PRF seed, so the "new phone" gets the secret that the
+        // fingerprint gives on A (in real life Google's password manager syncs the passkey itself).
+        const made = await rmod(A.page, 'const s = await rescue.createPasskey("Sofía"); if (!s) return null; await rescue.protect({ passkey: s }); return Array.from(s);');
+        ok('huella: se guarda el respaldo', !!made);
+        const again = await rmod(A.page, 'const s = await rescue.passkeySecret(); return s ? Array.from(s) : null;');
+        ok('huella: la misma huella da la misma llave', !!again && again.join() === made.join());
+        void authenticatorId;
+        const G = await device(browser, 'david', { seed: false });
+        const r = await rmod(G.page, 'return rescue.restore({ passkey: new Uint8Array(a) });', again);
+        ok('volver a entrar con la huella', r === 'joined', String(r));
+        ok('con la huella llega "Solo yo"', await waitFor(G.page, "const m = await db.get('memories', 'mem-self-r').catch(() => null); return !!m?.title;"));
+        await G.ctx.close();
+      } catch (e) { ok('volver a entrar con la huella', false, e.message); }
+      for (const d of ['E']) ok(`consola limpia (${d})`, E.errors.length === 0, E.errors.slice(0, 3).join(' | '));
+      await E.ctx.close();
+    }
 
     // The server stores nothing readable.
     const leak = await A.page.evaluate(async () => {

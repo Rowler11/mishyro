@@ -5,7 +5,7 @@ import { ui, util, db, seed, security, backup, profile, router, cryptoBox, CONFI
 const plural = (n, one, many) => `${n || 0} ${n === 1 ? one : many}`;
 
 const { el, icon, ja } = util;
-const STEPS = 6;
+const STEPS = 7;
 
 export function render(ctx) {
   if (ctx.route.path === '/setup/historia') return story(ctx);
@@ -41,7 +41,7 @@ function wizard({ app }) {
     requestAnimationFrame(() => card.querySelector('h1')?.focus({ preventScroll: true }));
   };
 
-  const draw = () => [null, welcome, who, data, review, pin, finish][step]();
+  const draw = () => [null, welcome, who, data, review, pin, permissions, finish][step]();
 
   // 1. Welcome
   function welcome() {
@@ -50,7 +50,9 @@ function wizard({ app }) {
       ja('愛してる', 'aishiteru'),
       el('p', { class: 'lead' }, 'Un lugar solo de los dos.'),
       el('p', { class: 'muted' }, 'Vamos a dejarla lista en unos pasos. Todo se guarda solo en este dispositivo.')),
-    [ui.button({ label: 'Empezar', variant: 'primary', onClick: () => go(2) })], { back: false });
+    // "Ya tenemos Aishiteru" (2026-11-21): a reinstalled or new phone comes back with the fingerprint,
+    // the 12 words or a code from another device, without the data file.
+    [ui.button({ label: 'Ya tenemos Aishiteru', variant: 'ghost', href: '#/unir' }), ui.button({ label: 'Empezar', variant: 'primary', onClick: () => go(2) })], { back: false });
   }
 
   // 2. Who uses this device
@@ -240,7 +242,16 @@ function wizard({ app }) {
       } })]);
   }
 
-  // 6. Persistent storage + first backup
+  // 6. Permissions, all at once with one line on what each is for (2026-11-21)
+  async function permissions() {
+    const { panel } = await import('./permisos.js');
+    frame('Permisos', null, null, el('div', { class: 'stack' },
+      el('p', { class: 'muted' }, 'Pídelos de una vez y no te volverán a interrumpir en cada sección. Puedes saltar los que no quieras: se cambian luego en Ajustes > Privacidad > Permisos.'),
+      panel().node),
+    [ui.button({ label: 'Continuar', variant: 'primary', onClick: () => go(7) })]);
+  }
+
+  // 7. Persistent storage + first backup
   async function finish() {
     const status = el('p', { class: 'status-line', 'aria-live': 'polite' }, 'Revisando…');
     const persist = async () => {

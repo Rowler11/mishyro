@@ -2,6 +2,7 @@
 // Pairing is with a QR, without accounts; the keys travel only inside the QR or encrypted with
 // a secret that only the QR carries, so the server never sees them.
 import { ui, util, db, sync, profile, router, security } from '../core.js';
+import * as rescue from '../core/rescue.js';
 
 const { el, icon } = util;
 const put = (box, ...kids) => box.replaceChildren(...kids.flat().filter(Boolean));
@@ -337,6 +338,7 @@ function linked(box, redraw) {
 
   put(box,
     statusCard(),
+    rescueCard(),
     usageCard(),
     card('Equipos unidos', list, btnRow(ui.button({ label: 'Unir otro equipo', iconName: 'plus', variant: 'primary', onClick: () => addFlow({ onDone: () => sync.refreshDevices().then(drawDevices).catch(() => {}) }) }))),
     card('Avisos', notifyToggle, muted('Se activan por equipo. Si los bloqueaste, permítelos en los ajustes del navegador.', true)),
@@ -382,11 +384,97 @@ function joinLayer() {
     await db.setMeta({ setupStep: 4 });
     router.go('/setup', { replace: true });
   };
+  const msg = el('p', { class: 'error-text', role: 'alert' });
+  const fail = (e) => { msg.textContent = e?.message || 'No se pudo. Intenta otra vez.'; };
+  const joined = (r) => { ui.toast('¡Bienvenido de vuelta! Estamos trayendo todo…', { tone: 'success' }); util.haptic([10, 40, 10]); if (r) finish(); };
+  // 1. Fingerprint (passkey saved in the phone's password manager)
+  const finger = rescue.passkeySupported() ? ui.button({ label: 'Entrar con mi huella', iconName: 'fingerprint', variant: 'primary', onClick: async () => {
+    msg.textContent = '';
+    const done = busy(finger, 'Buscando tu respaldo…');
+    try {
+      const secret = await rescue.passkeySecret();
+      if (!secret) throw new Error('Este teléfono no pudo usar la huella para abrir el respaldo. Usa tus 12 palabras.');
+      joined(await rescue.restore({ passkey: secret }));
+    } catch (e) { done(); fail(e.name === 'NotAllowedError' ? new Error('No se usó la huella. Puedes intentar otra vez o usar tus 12 palabras.') : e); }
+  } }) : null;
+  // 2. The 12 words
+  const words = ui.textarea({ rows: 3, autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', placeholder: 'palabra1 palabra2 palabra3 …' });
+  const fWords = ui.field({ label: 'Mis 12 palabras', control: words, hint: 'En orden, separadas por espacios. Las tildes no importan.' });
+  const go = ui.button({ label: 'Entrar con mis palabras', iconName: 'key-round', onClick: async () => {
+    msg.textContent = '';
+    const c = await rescue.checkPhrase(words.value);
+    if (!c.ok) { fWords.setError(c.count !== 12 ? `Son 12 palabras; escribiste ${c.count}.` : c.bad.length ? `No reconozco la palabra ${c.bad.map((i) => i + 1).join(', ')}. Revísala.` : 'Las palabras no coinciden entre sí. Revisa el orden.'); return; }
+    fWords.setError('');
+    const done = busy(go, 'Buscando tu respaldo…');
+    try { joined(await rescue.restore({ phrase: c.words })); } catch (e) { done(); fail(e); }
+  } });
   root.append(el('div', { class: 'layer-card' },
     el('div', { class: 'layer-top' }, el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Volver', onClick: back }, icon('arrow-left'))),
-    el('div', { class: 'layer-body view-enter' },
-      el('h1', { class: 'layer-title', tabindex: '-1' }, 'Traerlos de otro equipo'),
-      el('p', { class: 'muted' }, 'Si ya usan la app en otro celular o PC, une este y llega todo: nombres, fechas, recuerdos, fotos y cartas.'),
-      btnRow(ui.button({ label: 'Unir este equipo', iconName: 'smartphone', variant: 'primary', onClick: () => joinFlow({ onJoined: finish }) })))));
+    el('div', { class: 'layer-body view-enter stack' },
+      el('h1', { class: 'layer-title', tabindex: '-1' }, 'Ya tenemos Aishiteru'),
+      el('p', { class: 'muted' }, 'Entra como antes y llega todo: nombres, fechas, recuerdos, fotos, cartas y lo tuyo de "Solo yo". No necesitas ningún archivo.'),
+      finger, el('div', { class: 'divider-text' }, el('span', {}, 'o')),
+      fWords, go, msg,
+      el('div', { class: 'divider-text' }, el('span', {}, 'o')),
+      muted('¿No activaste la huella ni la frase? Une este teléfono con el código de otro equipo que ya tenga la app.', true),
+      btnRow(ui.button({ label: 'Usar el código de otro equipo', iconName: 'smartphone', variant: 'ghost', onClick: () => joinFlow({ onJoined: finish }) })))));
   return root;
+}
+
+// ---------- recovery card (Ajustes > Tus datos > Sincronización) ----------
+function rescueCard() {
+  const box = el('div', { class: 'stack' });
+  const draw = () => {
+    const r = sync.rescueState();
+    const line = (on, label) => el('li', { class: 'rescue-line' }, icon(on ? 'circle-check' : 'clock', { size: 16 }), ` ${label}: ${on ? 'activa' : 'sin activar'}`);
+    put(box,
+      muted('Si desinstalas la app o cambias de teléfono, entras con tu huella o con 12 palabras y llega todo, también lo tuyo de "Solo yo". Sin archivos, sin correo y gratis. Todo sigue cifrado: el servidor no puede leer el respaldo.'),
+      el('ul', { class: 'bullets rescue-status' }, line(r.passkey, 'Huella'), line(r.phrase, 'Frase de 12 palabras')),
+      btnRow(ui.button({ label: r.phrase ? 'Cambiar huella y frase' : 'Activar huella y frase', iconName: 'shield-check', variant: r.phrase ? 'ghost' : 'primary', onClick: () => rescueSetup(draw) })),
+      r.at ? muted(`Actualizado ${ago(Date.parse(r.at))}.`, true) : null);
+  };
+  draw();
+  return card('Volver a entrar sin perder nada', box);
+}
+
+/** Show the 12 words, check 3 of them, save the slot; then offer the fingerprint. */
+async function rescueSetup(onDone) {
+  const phrase = await rescue.newPhrase();
+  const body = el('div', { class: 'stack' });
+  const m = ui.openModal({ title: 'Tu frase de respaldo', size: 'md', body });
+  const show = () => put(body,
+    muted(`Anota estas 12 palabras en orden y guárdalas en un lugar seguro (por ejemplo, en una nota de tu gestor de contraseñas). Son solo de ${profile.name(sync.status().me)}. Quien las tenga puede entrar como tú.`),
+    el('ol', { class: 'phrase-grid' }, phrase.map((w) => el('li', {}, w))),
+    btnRow(ui.button({ label: 'Copiar', iconName: 'copy', variant: 'ghost', onClick: async () => { try { await navigator.clipboard.writeText(phrase.join(' ')); ui.toast('Copiadas. Pégalas en un lugar seguro.'); } catch { ui.toast('No se pudo copiar.', { tone: 'error' }); } } }),
+      ui.button({ label: 'Ya las anoté', iconName: 'arrow-right', variant: 'primary', onClick: confirm })));
+  const confirm = () => {
+    const picks = [...new Set(Array.from({ length: 10 }, () => Math.floor(Math.random() * 12)))].slice(0, 3).sort((a, b) => a - b);
+    const inputs = picks.map((i) => ui.input({ autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false' }));
+    const err = el('p', { class: 'error-text', role: 'alert' });
+    const save = ui.button({ label: 'Guardar respaldo', iconName: 'check', variant: 'primary', onClick: async () => {
+      if (picks.some((i, n) => rescue.fold(inputs[n].value) !== rescue.fold(phrase[i]))) { err.textContent = 'Alguna no coincide. Revisa tus palabras.'; return; }
+      const done = busy(save, 'Guardando…');
+      try { await rescue.protect({ phrase }); fingerprint(); } catch (e) { done(); err.textContent = e.message?.startsWith('Primero') ? e.message : 'No se pudo guardar. Revisa el internet e intenta otra vez.'; }
+    } });
+    put(body, muted('Para estar seguros de que quedaron bien anotadas, escribe estas tres:'),
+      ...picks.map((i, n) => ui.field({ label: `Palabra ${i + 1}`, control: inputs[n] })), err,
+      btnRow(ui.button({ label: 'Ver otra vez', variant: 'ghost', onClick: show }), save));
+  };
+  const fingerprint = () => {
+    if (!rescue.passkeySupported()) { m.close(); ui.toast('Frase guardada.', { tone: 'success' }); onDone(); return; }
+    const err = el('p', { class: 'error-text', role: 'alert' });
+    const add = ui.button({ label: 'Guardar mi huella', iconName: 'fingerprint', variant: 'primary', onClick: async () => {
+      const done = busy(add, 'Esperando la huella…');
+      try {
+        const secret = await rescue.createPasskey(profile.name(sync.status().me));
+        if (!secret) throw new Error('Este teléfono guardó la llave pero no puede usarla para el respaldo. Te queda la frase.');
+        await rescue.protect({ passkey: secret });
+        m.close(); ui.toast('Listo: huella y frase activas.', { tone: 'success' }); util.haptic([10, 40, 10]); onDone();
+      } catch (e) { done(); err.textContent = e.name === 'NotAllowedError' ? 'No se guardó la huella. Puedes intentar otra vez.' : e.message; }
+    } });
+    put(body, el('p', { class: 'success-text' }, icon('check', { size: 18 }), ' Frase guardada.'),
+      muted('Ahora guarda tu huella: se queda en tu cuenta de Google (Gestor de contraseñas), así que también sirve en un teléfono nuevo. Al reinstalar, tocas "Entrar con mi huella" y listo.'),
+      err, btnRow(ui.button({ label: 'Solo frase', variant: 'ghost', onClick: () => { m.close(); onDone(); } }), add));
+  };
+  show();
 }

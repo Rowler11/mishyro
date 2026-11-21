@@ -1,0 +1,1 @@
+BIP-0039 Spanish wordlist, copied unchanged (as a JS array) from https://github.com/bitcoin/bips/blob/master/bip-0039/spanish.txt (BIP-0039, BSD-2-Clause per the bips repository). SHA-256 of the original file: 46846a5a0139d1e3cb77293e521c2865f7bcdb82c44e8d0a06a2cd0ecba48c0b

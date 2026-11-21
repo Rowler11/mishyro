@@ -85,6 +85,7 @@ export const SETTINGS_PAGES = [
   { id: 'sincronizar', title: 'Sincronización', icon: 'refresh-cw', phase: 'A', module: 'sync' },
   { id: 'apariencia', title: 'Apariencia', icon: 'palette', phase: '1', module: 'settings' },
   { id: 'movimiento', title: 'Movimiento y sonido', icon: 'sparkles', phase: '1', module: 'settings', hidden: true },
+  { id: 'permisos', title: 'Permisos', icon: 'shield-check', phase: 'A', module: 'permisos' },
   { id: 'terceros', title: 'Modo sin terceros', icon: 'shield', phase: '2', module: 'privacidad' },
   { id: 'legal', title: 'Legal y ayuda', icon: 'file-text', phase: '1', module: 'settings' },
   { id: 'acerca', title: 'Acerca de', icon: 'info', phase: '1', module: 'settings' },
@@ -105,7 +106,7 @@ export const HUBS = [
   { id: 'juegos', title: 'Juegos', icon: 'gamepad-2', blurb: 'Juegos en pareja y rasca y gana.', tabs: [['juegos', 'Juegos'], ['rasca', 'Rasca y gana']] },
   { id: 'alcancia', title: 'Dinero', icon: 'piggy-bank', blurb: 'Metas de ahorro y gastos compartidos.', tabs: [['alcancia', 'Alcancía'], ['gastos', 'Gastos']] },
   // Ajustes
-  { id: 'ajustes/privacidad', title: 'Privacidad', icon: 'eye-off', tabs: [['ajustes/privacidad', 'Privacidad'], ['ajustes/terceros', 'Sin terceros']] },
+  { id: 'ajustes/privacidad', title: 'Privacidad', icon: 'eye-off', tabs: [['ajustes/privacidad', 'Privacidad'], ['ajustes/permisos', 'Permisos'], ['ajustes/terceros', 'Sin terceros']] },
   { id: 'ajustes/copia', title: 'Tus datos', icon: 'hard-drive', tabs: [['ajustes/copia', 'Copia'], ['ajustes/sincronizar', 'Sincronización'], ['ajustes/papelera', 'Papelera']] },
   { id: 'ajustes/acerca', title: 'Acerca de', icon: 'info', tabs: [['ajustes/acerca', 'Acerca de'], ['ajustes/legal', 'Legal y ayuda']] },
 ];

@@ -41,6 +41,7 @@ const SEED = path.join(__dirname, '..', 'seed-privado.example.json');
       await page.getByRole('button', { name: 'Todo bien' }).click();
       await scan('setup 5');
       await page.getByRole('button', { name: 'Ahora no' }).click();
+      await page.getByRole('button', { name: 'Continuar' }).click();
       await scan('setup 6');
       await page.getByRole('button', { name: 'Terminar' }).click();
       await page.getByText('Un lugar solo de los dos').waitFor();

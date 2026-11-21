@@ -34,6 +34,11 @@ export default {
       if (parts[0] === 'pair' && ID.test(parts[1] || '') && parts.length === 2) {
         return env.MAILBOX.get(env.MAILBOX.idFromName(parts[1])).fetch(request);
       }
+      // Recovery slot (2026-11-21): an encrypted join code found by an id that only the person's phrase or
+      // passkey can derive. The server never learns the phrase, the space or the keys.
+      if (parts[0] === 'rescue' && /^[A-Za-z0-9_-]{43}$/.test(parts[1] || '') && parts.length === 2) {
+        return env.RESCUE.get(env.RESCUE.idFromName(parts[1])).fetch(request);
+      }
       if (parts[0] === 's' && ID.test(parts[1] || '')) {
         const stub = env.SPACE.get(env.SPACE.idFromName(parts[1]));
         const inner = new URL(request.url);
@@ -94,6 +99,7 @@ export class Space extends DurableObject {
       if (a === 'ops' && method === 'GET') return this.pull(url);
       if (a === 'ops' && method === 'POST') return this.push(request, dev, url);
       if (a === 'invite' && method === 'POST') return this.invite(request);
+      if (a === 'rescue' && method === 'PUT') return this.setRescue(request);
       if (a === 'blob' && ID.test(b || '') && /^\d{1,4}$/.test(c || '')) {
         if (method === 'PUT') return this.putChunk(request, b, Number(c));
         if (method === 'GET') return this.getChunk(request, b, Number(c));
@@ -152,13 +158,22 @@ export class Space extends DurableObject {
     this.sql.exec('INSERT OR REPLACE INTO invites (h, exp) VALUES (?, ?)', body.h, now + INVITE_TTL);
     return json({ ok: true, exp: now + INVITE_TTL });
   }
+  async setRescue(request) {
+    const body = await readJSON(request);
+    if (!['sofia', 'david'].includes(body.person) || !/^[0-9a-f]{64}$/.test(body.h || '')) return fail(400, 'bad rescue');
+    this.sql.exec('INSERT OR REPLACE INTO kv (k, v) VALUES (?, ?)', `rescue:${body.person}`, body.h);
+    return json({ ok: true });
+  }
   async join(request) {
     const body = await readJSON(request);
     if (!str(body.invite, 128)) return fail(400, 'bad invite');
     const h = await sha256(body.invite);
     const row = this.sql.exec('SELECT exp FROM invites WHERE h = ?', h).toArray()[0];
-    if (!row || row.exp < Date.now()) return fail(403, 'invite');
-    this.sql.exec('DELETE FROM invites WHERE h = ?', h);
+    // A recovery invite (one per person) does not expire and is not used up: it is what lets a
+    // reinstalled phone come back with the phrase or the passkey.
+    const rescue = !row && this.sql.exec("SELECT k FROM kv WHERE k LIKE 'rescue:%' AND v = ?", h).toArray()[0];
+    if (!rescue && (!row || row.exp < Date.now())) return fail(403, 'invite');
+    if (row) this.sql.exec('DELETE FROM invites WHERE h = ?', h);
     await this.register(body);
     this.broadcast({ t: 'devices' });
     return json({ ok: true });
@@ -361,6 +376,34 @@ export class MediaShard extends DurableObject {
       console.error(e?.stack || e);
       return fail(500, 'server');
     }
+  }
+}
+
+/**
+ * Recovery slot: { c: encrypted join code, a: sha256 of the slot's auth }. Writing again needs the same
+ * auth (only who knows the phrase or has the passkey); reading needs it too. Kept until replaced.
+ */
+export class Rescue extends DurableObject {
+  async fetch(request) {
+    const s = this.ctx.storage;
+    const body = request.method === 'GET' ? null : await readJSON(request, 16384).catch(() => null);
+    if (!body || !str(body.a, 128)) return fail(400, 'bad');
+    const ah = await sha256(body.a);
+    const saved = await s.get('slot');
+    if (request.method === 'PUT') {
+      if (!str(body.c, 8000)) return fail(400, 'bad');
+      if (saved && saved.ah !== ah) return fail(403, 'taken');
+      await s.put('slot', { c: body.c, ah, at: Date.now() });
+      return json({ ok: true });
+    }
+    if (request.method === 'POST') { // read (POST so the auth never sits in a URL)
+      return saved && saved.ah === ah ? json({ c: saved.c }) : fail(404, 'empty');
+    }
+    if (request.method === 'DELETE') {
+      if (saved && saved.ah !== ah) return fail(403, 'taken');
+      await s.deleteAll(); return json({ ok: true });
+    }
+    return fail(405, 'method');
   }
 }
 

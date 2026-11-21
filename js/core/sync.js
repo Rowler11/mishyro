@@ -175,7 +175,7 @@ async function opKey(store, id) { return b64u(await hmac(indexKey, `${store}:${i
 // ---------- server ----------
 const apiBase = () => new URL('api/', document.baseURI);
 async function api(path, { method = 'GET', body, raw = false, auth = true, space = cfg?.spaceId } = {}) {
-  const url = new URL(path.startsWith('pair/') ? path : `s/${space}/${path}`, apiBase());
+  const url = new URL(path.startsWith('pair/') || path.startsWith('rescue/') ? path : `s/${space}/${path}`, apiBase());
   const headers = {};
   if (auth) headers.authorization = `Bearer ${cfg.deviceId}.${cfg.token}`;
   let payload = body;
@@ -593,6 +593,9 @@ export async function createSpace() {
 export async function makeInvite(forPerson) {
   const invite = rand(16);
   await api('invite', { method: 'POST', body: { h: await sha256hex(b64u(invite)) } });
+  return inviteCode(invite, forPerson);
+}
+function inviteCode(invite, forPerson) {
   const personal = forPerson === cfg.me ? keys.get(`person:${cfg.me}`)?.raw : null;
   const flags = (personal ? 1 : 0) | (forPerson === 'david' ? 2 : 0);
   const k = (n) => keys.get(n)?.raw || new Uint8Array(32);
@@ -690,6 +693,38 @@ export async function answerPairing(req, forPerson) {
   const box = await seal(await aesKey(req.secret), te.encode(text), 'pair');
   await api(`pair/${req.pairId}`, { method: 'POST', auth: false, body: { c: b64u(box) } });
 }
+
+// ---------- recovery: passkey + 12-word phrase (decided 2026-11-21) ----------
+// Each person can leave a recovery slot on the server: a join code (like the QR one, with their personal key)
+// encrypted with a secret that only their phrase or their passkey gives back. The code carries a recovery
+// invite that does not expire, so a reinstalled phone joins again as a new device of the same person.
+// The server sees an opaque blob under a random-looking id; without the phrase or the passkey it opens nothing.
+async function slotKeys(secret) {
+  return { id: b64u(await hmac(secret, 'rescue-id')).slice(0, 43), auth: b64u(await hmac(secret, 'rescue-auth')), key: await aesKey(await hmac(secret, 'rescue-key')) };
+}
+/** The join code a recovery slot holds. Registers (or replaces) this person's recovery invite. */
+export async function rescueCode() {
+  if (!isLinked()) throw new Error('Primero une este equipo en Sincronización.');
+  await ensurePersonalKey(`person:${cfg.me}`);
+  const invite = rand(16);
+  await api('rescue', { method: 'PUT', body: { person: cfg.me, h: await sha256hex(b64u(invite)) } });
+  return inviteCode(invite, cfg.me);
+}
+/** Save the code in the slot that `secret` (32 bytes from the phrase or the passkey) opens. */
+export async function saveRescueSlot(secret, code) {
+  const s = await slotKeys(secret);
+  const box = await seal(s.key, te.encode(code), 'rescue');
+  await api(`rescue/${s.id}`, { method: 'PUT', auth: false, body: { c: b64u(box), a: s.auth } });
+}
+/** Read the code back, or null when there is no slot for that secret. */
+export async function readRescueSlot(secret) {
+  const s = await slotKeys(secret);
+  let res;
+  try { res = await api(`rescue/${s.id}`, { method: 'POST', auth: false, body: { a: s.auth } }); } catch (e) { if (e.status === 404) return null; throw e; }
+  return td.decode(await unseal(s.key, fromB64u(res.c), 'rescue'));
+}
+export async function markRescue(patch) { cfg.rescue = { ...(cfg.rescue || {}), ...patch, at: nowISO() }; await saveCfg(); emit(); }
+export const rescueState = () => cfg?.rescue || {};
 
 // ---------- caring notifications ----------
 async function notifyKey() { return (await hmac(keys.get('space').raw, 'notify')); }

@@ -19,14 +19,20 @@ export const SOURCES = [
   { id: 'mascotas', label: 'Mascotas', store: 'petRecords', where: (r) => r.type === 'moment', ids: (r) => r.mediaIds || [], title: (r) => r.data?.title || 'Momento', href: () => '#/mascotas', hrefLabel: 'Ir a Mascotas' },
   { id: 'mascotas', label: 'Mascotas', store: 'pets', ids: (r) => (r.mediaId ? [r.mediaId] : []), title: (r) => r.name, href: () => '#/mascotas', hrefLabel: 'Ir a Mascotas' },
   { id: 'recetas', label: 'Recetas', store: 'recipes', ids: (r) => (r.mediaId ? [r.mediaId] : []), title: (r) => r.name, href: () => '#/recetas', hrefLabel: 'Ir a Recetas' },
+  // Added 2026-11-21 so Galería shows everything: opened letters only (a sealed one keeps its surprise),
+  // dreams, time capsules already opened and the games' pictures (manga pages, drawings, postcards).
+  { id: 'cartas', label: 'Cartas', store: 'letters', where: (r) => r.status === 'opened' && !r.letterId, ids: (r) => (r.mediaId ? [r.mediaId] : []), title: (r) => r.condition ? `Ábreme cuando ${String(r.condition).replace(/^ábreme cuando\s*/i, '')}` : 'Carta', href: () => '#/cartas', hrefLabel: 'Ir a Cartas' },
+  { id: 'suenos', label: 'Sueños', store: 'dreams', ids: (r) => (r.mediaId ? [r.mediaId] : []), title: (r) => r.name, href: () => '#/suenos', hrefLabel: 'Ver los sueños' },
+  { id: 'capsula-tiempo', label: 'Cápsula del tiempo', store: 'timeCapsules', where: (r) => util.isValidDay(r.openAt) && r.openAt <= util.localDay(), ids: (r) => (r.mediaId ? [r.mediaId] : []), title: (r) => r.title, href: () => '#/capsula-tiempo', hrefLabel: 'Ver la cápsula' },
+  { id: 'juegos', label: 'Juegos', store: 'gameArtifacts', ids: (r) => (r.mediaId ? [r.mediaId] : []), title: (r) => r.data?.title || r.data?.word || 'De un juego', href: () => '#/juegos', hrefLabel: 'Ir a Juegos' },
   { id: 'photobooth', label: 'Photobooth', store: 'content', where: (r) => r.kind === 'purikura', ids: (r) => (r.mediaId ? [r.mediaId] : []), title: () => 'Photobooth', href: () => '#/photobooth', hrefLabel: 'Abrir Photobooth' },
 ];
 
 /** All shared photos as flat items, newest first. Used by Galería and the Álbum. */
-export async function collectPhotos({ only } = {}) {
+export async function collectPhotos({ only, exclude = [] } = {}) {
   const out = [];
   for (const s of SOURCES) {
-    if (only && !only.includes(s.id)) continue;
+    if ((only && !only.includes(s.id)) || exclude.includes(s.id)) continue;
     let recs = [];
     try { recs = await db.query(s.store); } catch { recs = []; }
     for (const r of recs) {
@@ -50,7 +56,9 @@ export const viewerItems = (list) => list.map((p) => ({
 
 export async function render() {
   const page = el('section', { class: 'page page-wide galeria' });
-  page.append(ui.pageHeader({ title: 'Galería', jp: '写真', romaji: 'shashin', back: '/mas' }));
+  page.append(ui.pageHeader({ title: 'Galería', jp: '写真', romaji: 'shashin', back: '/mas', actions: [
+    // Subir: new photos and videos become a memory in the Cápsula (so they keep a date and a story).
+    ui.button({ label: 'Subir', iconName: 'image-plus', variant: 'primary', small: true, href: `#/capsula/nuevo?fotos=1&fecha=${util.localDay()}` })] }));
   const body = el('div', { class: 'stack' }, ui.skeleton(3));
   page.append(body);
   const urls = new Set();
@@ -77,7 +85,7 @@ export async function render() {
     if (filter !== 'todas' && !present.some((s) => s.id === filter)) filter = 'todas';
     const list = filter === 'todas' ? all : all.filter((p) => p.source === filter);
     if (!all.length) {
-      body.replaceChildren(ui.emptyState({ title: 'Todavía no hay fotos', text: 'Las fotos de la Cápsula, el Diario, el Mapa, las Primeras veces, el Photobooth, Mascotas y Recetas aparecen aquí solas.', art: 'crane', action: { label: 'Guardar un recuerdo', onClick: () => { location.hash = '#/capsula/nuevo'; } } }));
+      body.replaceChildren(ui.emptyState({ title: 'Todavía no hay fotos', text: 'Todo lo que suban en la app (Cápsula, Diario, Mapa, Cartas, Sueños, Juegos, Mascotas, Recetas y más) aparece aquí solo. También pueden subir fotos desde aquí.', art: 'crane', action: { label: 'Guardar un recuerdo', onClick: () => { location.hash = '#/capsula/nuevo'; } } }));
       return;
     }
     const chips = el('div', { class: 'chip-row', role: 'group', 'aria-label': 'Filtrar por origen' },
@@ -88,7 +96,7 @@ export async function render() {
     const months = new Map();
     list.forEach((p, i) => { const k = p.date.slice(0, 7); if (!months.has(k)) months.set(k, []); months.get(k).push([p, i]); });
     body.replaceChildren(chips,
-      el('p', { class: 'muted small' }, `${list.length} ${list.length === 1 ? 'foto' : 'fotos'}. Lo marcado "Solo yo" no aparece aquí.`),
+      el('p', { class: 'muted small' }, `${list.length} ${list.length === 1 ? 'foto o video' : 'fotos y videos'}. Lo marcado "Solo yo" no aparece aquí.`),
       ...[...months].map(([k, items]) => el('section', { class: 'gallery-month' },
         el('h2', { class: 'tl-month' }, capital(fmtMonth.format(util.parseDay(`${k}-01`)))),
         el('ul', { class: 'photo-grid gallery-grid' }, items.map(([p, i]) => tile(p, i, list))))));
