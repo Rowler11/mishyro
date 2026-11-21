@@ -150,6 +150,19 @@ function updateNav(route) {
   document.documentElement.dataset.layer = route.def.layer ? 'full' : 'shell';
 }
 
+/** A small dot on the Cartas tab while letters wait to be opened (Fase 7). The label says it too. */
+let letterTimer = 0;
+function updateLetterDot() {
+  clearTimeout(letterTimer);
+  letterTimer = setTimeout(async () => {
+    const n = await load.cartas().then((m) => m.unopenedCount()).catch(() => 0);
+    document.querySelectorAll('[data-tab="cartas"]').forEach((a) => {
+      a.classList.toggle('has-dot', n > 0);
+      a.setAttribute('aria-label', n > 0 ? `Cartas, ${n === 1 ? '1 por abrir' : `${n} por abrir`}` : 'Cartas');
+    });
+  }, 400);
+}
+
 function updateProfileChips() {
   const who = profile.active();
   document.documentElement.dataset.profile = who;
@@ -195,6 +208,7 @@ async function render(route) {
   if (!shell) buildShell();
   const { main } = shell;
   updateNav(route);
+  updateLetterDot();
   const def = route.def;
   if (!app.setupDone && !def.layer) { router.go('/setup', { replace: true }); return; }
   document.title = def.neutral || !def.title ? 'Aishiteru' : `${def.title} · Aishiteru`;
@@ -238,7 +252,8 @@ function swapView(main, node) {
 /** Warm up the main sections once the app is idle, so the first switch to them has nothing to fetch. */
 function preloadSections() {
   const idle = window.requestIdleCallback || ((f) => setTimeout(f, 800));
-  idle(() => { for (const k of ['home', 'capsula', 'cupones', 'cartas', 'more', 'settings', 'buscar']) load[k]().catch(() => {}); });
+  // Wait a moment past the first paint so the warm-up never competes with what is on screen.
+  setTimeout(() => idle(() => { for (const k of ['home', 'capsula', 'cupones', 'cartas', 'more', 'settings', 'buscar']) load[k]().catch(() => {}); }), 3000);
 }
 
 // ---------- global layers ----------
@@ -285,6 +300,7 @@ function showShortcuts() {
     ['1 a 5', 'Inicio, Cápsula, Cuponera, Cartas y Más'],
     ['/', 'Buscar'],
     ['n', 'Crear algo nuevo en la sección abierta'],
+    ['← →', 'Pasar fotos, recuerdos y cartas de juego'],
     ['?', 'Ver esta lista'],
     ['Esc', 'Cerrar la ventana abierta'],
     ['Esc dos veces', 'Cubrir la app al instante (pánico)'],
@@ -424,13 +440,14 @@ async function start() {
   if (!meta.installId) await db.setMeta({ installId: util.uuid(), schemaVersion: db.SCHEMA_VERSION, createdAt: util.nowISO() });
   await seed.syncConfig(CONFIG);
   await profile.load();
-  db.onChange((store) => { if (store === 'pets') profile.load(); });
+  db.onChange((store) => { if (store === 'pets') profile.load(); if (store === 'letters' || store === 'content') updateLetterDot(); });
   await applySettings();
   ui.installRipple();
   installShortcuts();
   installVisibility();
   addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); app.deferredInstall = e; });
   profile.onProfileChange(updateProfileChips);
+  profile.onProfileChange(updateLetterDot);
   registerRoutes();
 
   const setupDone = !!meta.setupDone;

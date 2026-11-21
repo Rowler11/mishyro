@@ -1,0 +1,9 @@
+# Security headers for every file Cloudflare serves (Workers static assets read this file and never serve it).
+# The main CSP lives in index.html; this one only adds what a <meta> CSP cannot do.
+/*
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=(self), payment=(), usb=(), serial=(), bluetooth=(), browsing-topics=()

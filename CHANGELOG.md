@@ -1,5 +1,25 @@
 # Cambios
 
+## 0.9.0 (Fase 7: pulido y publicación)
+
+Detalles nuevos
+- Efecto de temporada: al abrir Inicio caen unos segundos pétalos de sakura (primavera), luciérnagas (verano), hojas de momiji (otoño) o nieve (invierno), con el calendario de Japón. Pocas partículas, no tapan nada y se apaga en Ajustes → Movimiento y sonido, donde también se puede ver al momento.
+- Hanabi: el día del aniversario y de cada cumpleaños, fuegos artificiales suaves al abrir la app, una vez ese día. El día 2 de cada mes caen pétalos de sakura en Inicio.
+- Sonidos suaves (siguen apagados por defecto): papel y sello al abrir una carta, sello al sellarla, campanilla al canjear un cupón, terminar un reto, ganar una insignia, rascar, cumplir una meta de la alcancía o abrir una cápsula del tiempo. En Ajustes se escuchan los tres antes de activarlos.
+- Cápsula: cada recuerdo lleva un sello rojo con la inicial de quien lo guardó (un corazón si es de los dos). La Cápsula vacía muestra el hilo rojo y "Su primer recuerdo".
+- Inicio: aviso discreto de "Un día como hoy" cuando hay un recuerdo compartido de esta misma fecha.
+- Un puntito en la pestaña Cartas cuando hay cartas por abrir.
+- Vibración al sellar una carta.
+- La lista de atajos (tecla ?) suma las flechas para pasar fotos, recuerdos y cartas.
+
+Rendimiento, seguridad y accesibilidad
+- La entrada con pétalos arranca mucho más rápido en el teléfono (prepara el corazón unas 10 veces más rápido).
+- La app carga su base en un solo viaje y deja para después las secciones que no se ven.
+- Ya se puede hacer zoom con dos dedos (antes estaba bloqueado).
+- Encabezados de seguridad nuevos en Cloudflare: la app no se puede meter dentro de otra página y la cámara, el micrófono y la ubicación quedan solo para ella.
+- La Política de privacidad ahora explica la sincronización cifrada y cómo borrar todo de la nube.
+- README definitivo con publicación en Cloudflare, instalación en Android y PC, sincronización y pruebas.
+
 ## 0.8.0 (Fase 6: Rincón privado)
 
 Entrada y seguridad

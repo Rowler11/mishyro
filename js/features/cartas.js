@@ -32,6 +32,14 @@ export const labelOf = (condition) => {
   return /^ábreme cuando/i.test(c) ? c : `${PREFIX} ${c}`;
 };
 
+/** Letters for this profile still sealed (the dot on the Cartas tab, Fase 7). */
+export async function unopenedCount(me = profile.active()) {
+  const [content, stored] = await Promise.all([db.query('content', { index: 'kind', range: IDBKeyRange.only('letter') }), db.query('letters')]);
+  const states = new Map(stored.filter((s) => s.letterId).map((s) => [s.letterId, s]));
+  const all = [...content.filter((c) => !c.deleted).map((c) => fromSeed(c, states.get(c.id))), ...stored.filter((s) => !s.letterId && !s.deleted).map(fromOwn)];
+  return all.filter((l) => l.to === me && l.status === 'sealed' && !l.incomplete && l.body).length;
+}
+
 // One shape for both kinds of letters.
 const fromSeed = (c, state) => ({
   id: c.id, kind: 'seed', from: c.from || AUTHOR, to: c.to || profile.partnerOf(c.from || AUTHOR),
@@ -97,9 +105,9 @@ async function flyOpen(node, letter) {
   const dy = innerHeight * 0.55 - (r.top + r.height / 2);
   const ease = 'cubic-bezier(.2,.8,.2,1)';
   await env.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${scale})` }], { duration: 420, easing: ease, fill: 'forwards' }).finished;
-  env.classList.add('is-breaking'); util.haptic(12);
+  env.classList.add('is-breaking'); util.haptic(12); util.sound('stamp');
   await util.sleep(320);
-  env.classList.add('is-flap-open');
+  env.classList.add('is-flap-open'); util.sound('paper');
   await util.sleep(300);
   env.classList.add('is-paper-out');
   await util.sleep(380);
@@ -272,6 +280,7 @@ export async function render(ctx) {
         }
       }
       await db.put('letters', rec);
+      util.haptic([12, 50, 24]); util.sound('stamp');
       ui.toast('Carta sellada.', { tone: 'success' });
       await load(); draw();
       body.querySelector(`.futo-sent[data-id="${CSS.escape(rec.id)}"] .hanko`)?.classList.add('hanko-stamp');

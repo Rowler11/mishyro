@@ -149,8 +149,12 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
   let len = 0; const lens = [0];
   for (let i = 1; i < poly.length; i++) { len += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]); lens.push(len); }
   const base = Math.max(8, Math.min(13, (S * 2.4) / 40));
-  const inner = poly.map(([x, y]) => [cx + (x - cx) * 0.84, cy + (y - cy) * 0.84]);
+  // a coarser outline is enough to test "inside" and keeps the layout fast on phones
+  const inner = heartOutline(96).map(([x, y]) => [cx + x * S * 0.84, cy + y * S * 0.84]);
   const font = (size, bold) => `${bold ? 700 : 500} ${size}px ${sans}`;
+  // text widths scale with the font size: measure each word once at 100px
+  const widthAt = (bold) => { ctx.font = font(100, bold); const m = new Map(WORDS.map((t) => [t, ctx.measureText(t).width / 100])); return (t, size) => m.get(t) * size; };
+  const wBold = widthAt(true); const wReg = widthAt(false);
   const boxes = []; const words = [];
   const fits = (b) => !boxes.some((o) => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
   // 愛してる sits in the middle of the heart, in the serif of the titles
@@ -165,7 +169,7 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
     if (acc < base * 1.3) continue; acc = 0;
     const x = cx + (tx - cx) * 0.93; const y = cy + (ty - cy) * 0.93;
     const text = WORDS[k++ % WORDS.length]; const size = base * R(0.85, 1.05);
-    ctx.font = font(size, true); const w = ctx.measureText(text).width;
+    const w = wBold(text, size);
     const b = { w: w * 0.55, h: size * 0.8 }; b.x = x - b.w / 2; b.y = y - b.h / 2;
     if (!fits(b)) continue;
     boxes.push(b); words.push({ text, x, y, size, bold: true, edge: true, u: lens[i] / len });
@@ -175,7 +179,8 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
   for (let tries = 0; tries < 5000 && words.length < edgeCount + 260; tries++) {
     const x = cx - S + Math.random() * 2 * S; const y = cy - S + Math.random() * 2 * S;
     const text = WORDS[Math.floor(Math.random() * WORDS.length)]; const size = base * R(0.55, 0.95);
-    ctx.font = font(size, false); const w = ctx.measureText(text).width;
+    if (!inside(inner, x, y)) continue;
+    const w = wReg(text, size);
     const b = { x: x - w / 2 - 1, y: y - size / 2 - 1, w: w + 2, h: size + 2 };
     const corners = [[b.x, b.y], [b.x + b.w, b.y], [b.x, b.y + b.h], [b.x + b.w, b.y + b.h], [x, b.y], [x, b.y + b.h]];
     if (!corners.every(([px, py]) => inside(inner, px, py)) || !fits(b)) continue;

@@ -152,7 +152,7 @@ async function completeSetup(page) {
     ok(`layout @${w}: no horizontal scroll on Más`, !overflow);
     // Más: shoji doors, one per group; a door opens into its cards (#/mas/<group>)
     const doors = page.locator('.door');
-    ok(`más @${w}: one door per group`, (await doors.count()) === 7 && (await doors.nth(1).getAttribute('aria-label')).startsWith('Recuerdos,'));
+    ok(`más @${w}: one door per group`, (await doors.count()) === 7 && (await doors.nth(1).innerText()).replace(/\s+/g, ' ').trim().startsWith('Recuerdos '));
     await doors.nth(1).click();
     await page.waitForFunction(() => location.hash === '#/mas/recuerdos', null, { timeout: 3000 });
     await page.waitForTimeout(250);
@@ -1832,6 +1832,106 @@ async function completeSetup(page) {
     ok('6 borrar: el Rincón se borra de este equipo con confirmación y PIN', wiped === 0, String(wiped));
     ok('fase 6: no page errors or native dialogs', errs.length === 0, errs.join(' | '));
     await ctx.close(); await b6.close();
+  }
+
+  // ---------- 13. Fase 7: pulido (season effect, hanabi, sounds, small details, headers) ----------
+  {
+    const b7 = await chromium.launch();
+    const ctx = await b7.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errs = watch(page);
+    await page.goto(BASE);
+    await completeSetup(page);
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(350); };
+    const today = await page.evaluate(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
+    const reopen = async () => { await page.evaluate(() => { location.hash = '#/inicio'; }); await page.reload(); await page.waitForSelector('.splash', { timeout: 20000 }).catch(() => {}); await page.waitForFunction(() => !document.querySelector('.splash') && location.hash.startsWith('#/inicio'), null, { timeout: 40000 }); };
+
+    // season effect: plays once Inicio is on screen, then goes away
+    await reopen();
+    const fx1 = await page.waitForSelector('.fx-canvas', { timeout: 4000 }).then(() => true).catch(() => false);
+    ok('7 temporada: las partículas salen al abrir Inicio', fx1);
+    const gone = await page.waitForSelector('.fx-canvas', { state: 'detached', timeout: 9000 }).then(() => true).catch(() => false);
+    ok('7 temporada: se van solas a los pocos segundos', gone);
+    const pe = await page.$eval('.fx-canvas', (c) => getComputedStyle(c).pointerEvents).catch(() => 'none');
+    ok('7 temporada: no bloquea toques', pe === 'none');
+    const seasons = await page.evaluate(async () => { const fx = await import('./js/core/fx.js'); return [3, 6, 9, 0].map((m) => fx.seasonOf(new Date(2026, m, 10))).join(',') + '|' + fx.seasonOf(new Date(2026, 0, 10), 'sur'); });
+    ok('7 temporada: calendario de Japón (y el sur corrido 6 meses)', seasons === 'sakura,hotaru,momiji,snow|hotaru', seasons);
+
+    // switch in Ajustes, preview, and sound previews
+    await go('/ajustes/movimiento', '.page');
+    await page.getByRole('switch', { name: 'Efecto de temporada' }).click();
+    await page.waitForTimeout(300);
+    ok('7 ajustes: el efecto de temporada se apaga', await page.evaluate(() => document.documentElement.dataset.seasonal) === 'off');
+    await page.getByRole('button', { name: 'Verlo ahora' }).click();
+    ok('7 ajustes: "Verlo ahora" lo muestra aunque esté apagado', await page.waitForSelector('.fx-canvas', { timeout: 3000 }).then(() => true).catch(() => false));
+    for (const n of ['Campanilla', 'Papel', 'Sello']) await page.getByRole('button', { name: n, exact: true }).click();
+    ok('7 ajustes: los sonidos se escuchan antes de activarlos (sin errores)', errs.length === 0, errs.join(' | '));
+    ok('7 sonido: apagado por defecto', await page.evaluate(() => document.documentElement.dataset.sound) === 'off');
+    await reopen();
+    ok('7 temporada apagada: no salen partículas al abrir Inicio', !(await page.waitForSelector('.fx-canvas', { timeout: 2500 }).then(() => true).catch(() => false)));
+
+    // hanabi on a birthday, once that day
+    await page.evaluate(async (d) => { const db = await import('./js/core/db.js'); await db.put('specialDates', { id: 't7:birth', title: 'Cumpleaños ficticio', kind: 'birthday', date: `2000-${d.slice(5)}`, recurring: 'yearly', personOrPetId: 'sofia' }); }, today);
+    await reopen();
+    const hanabi = await page.waitForSelector('.fx-canvas', { timeout: 4000 }).then(() => true).catch(() => false);
+    const key = await page.evaluate(() => localStorage.getItem('aishiteru.home.hanabiDay'));
+    ok('7 hanabi: sale el día del cumpleaños (aun con la temporada apagada)', hanabi && key === today, `${hanabi} ${key}`);
+    await page.waitForSelector('.fx-canvas', { state: 'detached', timeout: 9000 }).catch(() => {});
+    await reopen();
+    ok('7 hanabi: una sola vez ese día', !(await page.waitForSelector('.fx-canvas', { timeout: 2500 }).then(() => true).catch(() => false)));
+
+    // Un día como hoy (shared only) on Inicio; owner seal in Cápsula
+    await page.evaluate(async (d) => {
+      const db = await import('./js/core/db.js');
+      const y = String(Number(d.slice(0, 4)) - 1);
+      await db.put('memories', { id: 't7:otd', title: 'Recuerdo ficticio de hace un año', date: `${y}${d.slice(4)}`, note: '', mediaIds: [], visibility: 'shared', private: false, owner: 'sofia', tags: [] });
+      await db.put('memories', { id: 't7:otd-self', title: 'Secreto ficticio', date: `${y}${d.slice(4)}`, note: '', mediaIds: [], visibility: 'self', private: true, owner: 'sofia', tags: [] });
+    }, today);
+    await reopen();
+    await page.waitForSelector('.today-list', { timeout: 15000 }).catch(() => {});
+    const homeText = await page.locator('main').innerText();
+    ok('7 Un día como hoy: aviso en Inicio con el recuerdo compartido', /Un día como hoy: Recuerdo ficticio de hace un año/.test(homeText));
+    ok('7 Un día como hoy: lo de "Solo yo" no sale en Inicio', !/Secreto ficticio/.test(homeText));
+    await go('/capsula', '.timeline-wrap');
+    const seal = await page.locator('a[data-id="t7:otd"] .seal-initial').innerText().catch(() => '');
+    const initial = await page.evaluate(async () => { const p = await import('./js/core/profile.js'); return p.name('sofia').charAt(0).toUpperCase(); });
+    ok('7 Cápsula: sello rojo con la inicial de quien lo guardó', seal === initial && !!initial, `${seal}/${initial}`);
+    const empty = await page.evaluate(async () => { const { ui } = await import('./js/core.js'); const n = ui.emptyState({ title: 'x', art: 'thread' }); return !!n.querySelector('svg.empty-thread path'); });
+    ok('7 Cápsula vacía: ilustración del hilo rojo', empty);
+
+    // dot on the Cartas tab (one sealed letter for the active profile)
+    await page.evaluate(async () => { const db = await import('./js/core/db.js'); const p = await import('./js/core/profile.js'); const me = p.active(); await db.put('letters', { id: 't7:letter', author: p.partnerOf(me), to: me, condition: 'Ábreme cuando sea una prueba', body: 'Carta ficticia', signature: '', status: 'sealed', sealedAt: new Date().toISOString(), visibility: 'shared', private: false, owner: 'both' }); });
+    const n = await page.evaluate(async () => (await import('./js/features/cartas.js')).unopenedCount());
+    await page.waitForTimeout(600);
+    const label = await page.locator('.tabbar [data-tab="cartas"]').getAttribute('aria-label');
+    const dot = await page.locator('.tabbar [data-tab="cartas"]').evaluate((a) => a.classList.contains('has-dot'));
+    ok('7 Cartas: puntito y etiqueta con las cartas por abrir', n > 0 ? dot && label.includes(`${n === 1 ? '1 por abrir' : `${n} por abrir`}`) : !dot && label === 'Cartas', `${n} ${dot} ${label}`);
+
+    // policies, zoom, shortcuts, headers
+    const pol = await page.evaluate(async () => (await import('./js/config.js')).CONFIG.legalTexts.find((t) => t.id === 'cfg:legal:privacidad').body);
+    ok('7 privacidad: explica la sincronización cifrada y cómo borrar la nube', /extremo a extremo/.test(pol) && /Borrar todo del servidor/.test(pol));
+    const vp = await page.$eval('meta[name="viewport"]', (m) => m.content);
+    ok('7 accesibilidad: se permite el zoom', !/user-scalable=no|maximum-scale/.test(vp), vp);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.keyboard.press('?');
+    const sc = await page.locator('.overlay').innerText().catch(() => '');
+    ok('7 atajos: la lista incluye las flechas', /Pasar fotos/.test(sc));
+    await page.keyboard.press('Escape');
+    if (/:8787\//.test(BASE)) {
+      const h = await page.evaluate(async () => { const r = await fetch('./', { method: 'HEAD' }); return [r.headers.get('x-frame-options'), r.headers.get('content-security-policy'), r.headers.get('x-content-type-options')].join('|'); });
+      ok('7 encabezados de seguridad publicados', h === "DENY|frame-ancestors 'none'|nosniff", h);
+    }
+    ok('fase 7: no page errors or native dialogs', errs.length === 0, errs.join(' | '));
+
+    // reduced motion: no particles at all
+    const ctxR = await b7.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+    const pr = await ctxR.newPage();
+    await completeSetup(pr);
+    const any = await pr.waitForSelector('.fx-canvas', { timeout: 3000 }).then(() => true).catch(() => false);
+    const forced = await pr.evaluate(async () => { const fx = await import('./js/core/fx.js'); return [fx.seasonal({ force: true }), fx.hanabi()]; });
+    ok('7 movimiento reducido: sin partículas ni hanabi', !any && forced.every((x) => x === false), JSON.stringify(forced));
+    await ctxR.close();
+    await ctx.close(); await b7.close();
   }
 
   await browser.close();

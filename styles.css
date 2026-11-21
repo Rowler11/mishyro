@@ -160,7 +160,8 @@ code { font-size: .8em; color: var(--text-2); }
   position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
   min-height: 66px; text-decoration: none; color: var(--text-2); font-size: .72rem; border-radius: 33px; -webkit-tap-highlight-color: transparent;
 }
-.tab-icon { display: grid; place-items: center; width: 44px; height: 30px; border-radius: var(--radius-pill); transition: transform var(--dur-3) var(--ease-spring); }
+.tab.has-dot .tab-icon::after { content: ''; position: absolute; top: 2px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--surface); }
+.tab-icon { position: relative; display: grid; place-items: center; width: 44px; height: 30px; border-radius: var(--radius-pill); transition: transform var(--dur-3) var(--ease-spring); }
 .tab[aria-current="page"] { color: var(--accent); font-weight: 700; }
 .tabbar-link .tab-icon { transition: transform var(--dur-3) var(--ease-out), opacity var(--dur-2); }
 .tabbar-link[aria-current="page"] .tab-icon { opacity: 0; transform: translateY(-12px) scale(.6); }
@@ -216,8 +217,8 @@ code { font-size: .8em; color: var(--text-2); }
 
 /* ---------- page anatomy ---------- */
 .page { display: flex; flex-direction: column; gap: var(--space-4); }
-.page-head { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
-.page-titles { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2) var(--space-3); flex: 1; min-width: 0; }
+.page-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
+.page-titles { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2) var(--space-3); flex: 1; min-width: min-content; }
 .page-title { font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem); }
 .page-actions { display: flex; gap: var(--space-2); }
 .brush-divider { height: 10px; background: url('./icons/patterns/brush.svg') no-repeat center / 100% 100%; opacity: .55; }
@@ -770,6 +771,9 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 
 /* confetti for celebrations */
 .confetti { position: fixed; inset: 0; z-index: 80; pointer-events: none; overflow: hidden; }
+/* Fase 7: season particles and hanabi share one canvas over the page (under modals, toasts and locks). */
+.fx-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 55; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .fx-canvas { display: none; } }
 .confetti-bit { position: absolute; top: -20px; left: var(--x); width: 8px; height: 14px; border-radius: 2px; background: var(--accent); transform: scale(var(--s)); animation: confetti-fall 2.6s var(--ease-in-out) var(--d) forwards; }
 .confetti-bit.c1 { background: var(--gold); }
 .confetti-bit.c2 { background: var(--accent-2); width: 10px; height: 10px; border-radius: 50%; }
@@ -819,6 +823,16 @@ input[type="file"]:focus-visible + .dropzone { outline: 3px solid var(--focus); 
 @media (hover: hover) { .tl-shikishi:hover, .tl-ema:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); } }
 .tl-ema > :not(.tl-ema-icon) { grid-column: 2; }
 .tl-seal { position: absolute; right: 10px; top: 10px; width: 22px; height: 22px; }
+.tl-seal.has-initial { display: grid; place-items: center; }
+.seal-initial { font-family: var(--font-serif); font-weight: 700; font-size: .74rem; line-height: 1; }
+.tl-ema { position: relative; }
+.tl-ema .tl-title, .tl-shikishi .tl-title { padding-right: 26px; }
+.empty-thread { width: 160px; height: 96px; color: var(--accent); }
+.empty-thread path { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: thread-draw 1.6s var(--ease-out) .2s forwards; }
+.empty-thread circle { fill: currentColor; }
+@keyframes thread-draw { to { stroke-dashoffset: 0; } }
+:root[data-motion="off"] .empty-thread path { animation: none; stroke-dashoffset: 0; }
+@media (prefers-reduced-motion: reduce) { .empty-thread path { animation: none; stroke-dashoffset: 0; } }
 .tl-photo { position: relative; display: block; width: 56px; height: 56px; overflow: hidden; background: var(--surface-2); border-radius: var(--radius-s); }
 .tl-photo img, .tl-photo video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
 .tl-more { position: absolute; right: 3px; bottom: 3px; padding: 0 5px; border-radius: var(--radius-pill); background: rgb(0 0 0 / .6); color: #fff; font-size: .72rem; font-weight: 700; }

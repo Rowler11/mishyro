@@ -2,6 +2,7 @@
 // Centro de seguridad and Copia de seguridad live in ajustes.js.
 import { ui, util, db, theme, profile, router, CONFIG } from '../core.js';
 import { SETTINGS_PAGES } from '../routes.js';
+import * as fx from '../core/fx.js';
 
 const { el, icon, ja } = util;
 
@@ -105,7 +106,13 @@ function motion({ app } = {}) {
       ui.toggle({ label: 'Animaciones', hint: sys ? 'Tu dispositivo pide reducir el movimiento: se usan versiones sobrias.' : 'Pétalos, sellos y transiciones. Apágalas para una versión sobria y rápida.', checked: s.animations, onChange: (v) => save({ animations: v }) }),
       ui.toggle({ label: 'Vibración suave', hint: 'Un toque leve en acciones clave.', checked: s.haptics, onChange: (v) => { save({ haptics: v }); if (v) util.haptic(15); } }),
       ui.toggle({ label: 'Sonidos suaves', hint: 'Campanilla y tonos generados en el teléfono. Apagados por defecto.', checked: s.sound, onChange: (v) => { save({ sound: v }); if (v) chime(); } }),
-      ui.button({ label: 'Escuchar la campanilla', iconName: 'bell', variant: 'ghost', onClick: chime })),
+      el('div', { class: 'btn-row', role: 'group', 'aria-label': 'Escuchar los sonidos antes de activarlos' },
+        ui.button({ label: 'Campanilla', iconName: 'bell', variant: 'ghost', small: true, onClick: chime }),
+        ui.button({ label: 'Papel', iconName: 'mail', variant: 'ghost', small: true, onClick: () => util.sound('paper', { force: true }) }),
+        ui.button({ label: 'Sello', iconName: 'award', variant: 'ghost', small: true, onClick: () => util.sound('stamp', { force: true }) }))),
+    CONFIG.seasonalEffects ? el('div', { class: 'card stack' },
+      ui.toggle({ label: 'Efecto de temporada', hint: `Al abrir Inicio caen unos segundos ${fx.seasonLabel(fx.seasonOf())}, según la época del año.`, checked: s.seasonal !== false, onChange: (v) => save({ seasonal: v }) }),
+      ui.button({ label: 'Verlo ahora', iconName: 'sparkles', variant: 'ghost', onClick: () => { if (!fx.seasonal({ force: true })) ui.toast('Con las animaciones apagadas no se muestra.'); } })) : null,
     el('div', { class: 'card stack' },
       el('h2', { class: 'card-title' }, 'Entrada con corazón'),
       el('p', { class: 'muted small' }, '"Te amo" en muchos idiomas dibuja un corazón al abrir la app. Las demás veces sale la bienvenida corta.'),

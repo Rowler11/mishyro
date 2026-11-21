@@ -128,7 +128,7 @@ function entryEditor(goal, existing, { saved, onSaved, entries }) {
 }
 
 async function celebrate(goal) {
-  hanabi({ bursts: 5 }); util.haptic([20, 60, 20, 60, 40]); coins(5);
+  hanabi({ bursts: 5 }); util.haptic([20, 60, 20, 60, 40]); coins(5); util.sound('chime');
   await db.put('savingsGoals', { ...goal, status: 'done', doneAt: util.localDay() });
   import('./rasca.js').then((r) => r.earnForBoth(`goal-${goal.id}`, 'goal')).catch(() => {});
   const m = ui.openModal({

@@ -215,6 +215,7 @@ export async function render() {
       if (fresh.size) {
         ui.announce(fresh.size === 1 ? 'Nueva insignia desbloqueada' : `${fresh.size} insignias nuevas`);
         if (!util.prefersReducedMotion()) ui.confetti({ count: 28 });
+        util.sound('chime');
         await markSeen([...fresh]);
       }
     } finally { busy = false; }

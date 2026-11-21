@@ -42,6 +42,14 @@ export function onThisDay(memories, now = new Date()) {
   return list.sort((a, b) => b.date.localeCompare(a.date));
 }
 
+/** Discreet row for Inicio when a shared memory happened on a day like today (Fase 7). "Solo yo" ones stay out. */
+export async function homeRow(now = new Date()) {
+  const list = onThisDay((await db.query('memories')).filter((m) => !m.deleted && m.visibility !== 'self' && !m.private), now);
+  const [m] = list;
+  if (!m) return null;
+  return { href: `#/capsula/${encodeURIComponent(m.id)}`, icon: 'history', title: `Un día como hoy: ${titleOf(m)}`, sub: `${agoText(m.date)}${list.length > 1 ? ` · y ${plural(list.length - 1, 'recuerdo más', 'recuerdos más')}` : ''}` };
+}
+
 // ---------- object URLs (revoked when the view goes away) ----------
 function urlBag() {
   const urls = new Set();
@@ -353,6 +361,14 @@ function tags(m) {
     (pending(m.title) || pending(m.note) || isDraft(m)) ? el('span', { class: 'pending' }, 'Por completar') : null);
 }
 
+/** Small red hanko with the initial of who saved the memory (Fase 7); a heart when it belongs to both. */
+function ownerSeal(m, cls) {
+  const who = profile.PEOPLE.includes(m.owner) ? profile.name(m.owner) : '';
+  const letter = who.trim().charAt(0).toLocaleUpperCase('es-CO');
+  return el('span', { class: `seal-sq ${cls}${letter ? ' has-initial' : ''}`, 'aria-hidden': 'true', title: who ? `Lo guardó ${who}` : undefined },
+    letter ? el('span', { class: 'seal-initial' }, letter) : icon('heart', { size: 14 }));
+}
+
 function timelineItem(m, bag, { selected, fresh, index = 0 } = {}) {
   const note = pending(m.note) ? '' : m.note;
   const date = isDraft(m) ? 'Sin fecha' : fmtMonthDay.format(util.parseDay(m.date));
@@ -367,7 +383,7 @@ function timelineItem(m, bag, { selected, fresh, index = 0 } = {}) {
         el('span', { class: 'tl-title' }, titleOf(m)),
         el('span', { class: 'tl-date' }, date),
         tags(m)),
-      el('span', { class: 'seal-sq tl-seal', 'aria-hidden': 'true' }, icon('heart', { size: 14 })));
+      ownerSeal(m, 'tl-seal'));
   } else {
     const k = kindOf(m);
     link = el('a', { class: `tl-card tl-ema tone-${k.tone}`, ...attrs },
@@ -375,7 +391,8 @@ function timelineItem(m, bag, { selected, fresh, index = 0 } = {}) {
       el('span', { class: 'tl-title' }, titleOf(m)),
       el('span', { class: 'tl-date' }, date),
       note ? el('span', { class: 'tl-note' }, note) : null,
-      tags(m));
+      tags(m),
+      ownerSeal(m, 'tl-seal'));
   }
   return el('li', { class: `tl-item${fresh ? ' unroll' : ''}` }, el('span', { class: 'tl-knot', 'aria-hidden': 'true' }), link);
 }
@@ -489,7 +506,7 @@ export async function render(ctx) {
     }
     fab.hidden = false;
     if (!memories.length) {
-      body.replaceChildren(ui.emptyState({ title: 'Aún no hay recuerdos', text: 'Guarden aquí los momentos que no quieren olvidar, con fotos y una nota.', art: 'crane', action: { label: 'Agregar el primero', onClick: () => openEditor() } }));
+      body.replaceChildren(ui.emptyState({ title: 'Su primer recuerdo', text: 'El hilo rojo ya los une. Guarden aquí los momentos que no quieren olvidar, con fotos y una nota.', art: 'thread', action: { label: 'Agregar el primero', onClick: () => openEditor() } }));
       return;
     }
     const toggle = el('button', { class: 'btn btn-ghost btn-small', type: 'button' },

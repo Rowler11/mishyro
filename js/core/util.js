@@ -121,6 +121,43 @@ export function chime() {
   } catch { /* audio not available */ }
 }
 
+/**
+ * Optional soft sounds for key moments (Fase 7). Silent unless Ajustes > Sonidos suaves is on, and never
+ * the only way to tell something: each sound goes with something on screen.
+ *   chime: furin bell (badges, goals, redeemed coupons, finished challenges)
+ *   paper: a short rustle (opening or sealing a letter)
+ *   stamp: a soft thump (a hanko seal pressed)
+ *   pop:   a faint, far firework (hanabi)
+ */
+export function sound(kind = 'chime', { force = false } = {}) {
+  if (!force && document.documentElement.dataset.sound !== 'on') return;
+  if (kind === 'chime') { chime(); return; }
+  try {
+    audioCtx = audioCtx || new AudioContext();
+    const t = audioCtx.currentTime;
+    if (kind === 'paper') {
+      // filtered noise that swells and fades, like a sheet of washi
+      const len = Math.floor(audioCtx.sampleRate * 0.42);
+      const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate); const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (0.6 + 0.4 * Math.sin(i / 900));
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 0.7;
+      const g = audioCtx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+      src.connect(bp).connect(g).connect(audioCtx.destination); src.start(t); src.stop(t + 0.45);
+      return;
+    }
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    if (kind === 'stamp') {
+      o.type = 'sine'; o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(70, t + 0.16);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.14, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+    } else { // pop
+      o.type = 'triangle'; o.frequency.setValueAtTime(320 + Math.random() * 120, t); o.frequency.exponentialRampToValueAtTime(90, t + 0.3);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.035, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+    }
+    o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + 0.4);
+  } catch { /* audio not available */ }
+}
+
 export function prefersReducedMotion() {
   return document.documentElement.dataset.motion === 'off'
     || matchMedia('(prefers-reduced-motion: reduce)').matches;
