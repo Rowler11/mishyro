@@ -41,6 +41,7 @@ const SEED = path.join(__dirname, '..', 'seed-privado.example.json');
       await page.getByRole('button', { name: 'Todo bien' }).click();
       await scan('setup 5');
       await page.getByRole('button', { name: 'Ahora no' }).click();
+      await page.getByRole('button', { name: 'Continuar' }).click();
       await scan('setup 6');
       await page.getByRole('button', { name: 'Terminar' }).click();
       await page.getByText('Un lugar solo de los dos').waitFor();
@@ -49,7 +50,7 @@ const SEED = path.join(__dirname, '..', 'seed-privado.example.json');
       await page.getByRole('button', { name: 'Saltar' }).click();
       await page.waitForFunction(() => location.hash === '#/inicio');
       await page.evaluate(async (t) => { (await import('./js/core/theme.js')).apply({ theme: t }); }, theme);
-      for (const r of ['/inicio', '/capsula', '/capsula/nuevo', '/cupones', '/cartas', '/mas', '/ajustes', '/ajustes/perfil', '/ajustes/seguridad', '/ajustes/privacidad', '/ajustes/terceros', '/ajustes/copia', '/ajustes/apariencia', '/ajustes/movimiento', '/ajustes/legal', '/ajustes/legal/privacidad', '/ajustes/legal/version', '/buscar', '/ajustes/acerca', '/ajustes/guia-estilo', '/calendario', '/preguntas', '/canciones', '/diario', '/animo', '/jibun', '/retos', '/fechas', '/recordatorios', '/galeria', '/album', '/mapa', '/primeras-veces', '/photobooth', '/capsula-tiempo', '/planes', '/suenos', '/citas', '/regalos', '/encuentro', '/voz', '/lenguajes', '/gratitud', '/insignias', '/resumen', '/mascotas', '/listas', '/recetas', '/alcancia', '/gastos', '/habitos', '/rasca', '/ciclo', '/juegos', '/juegos/historial', '/juegos/ajustes', '/juegos/bancos', '/juegos/recuerdo', '/juegos/tesoro', '/juegos/cata', '/juegos/cocina', '/juegos/bingo', '/juegos/misteriosa', '/juegos/reto30', '/juegos/cine', '/juegos/origami', '/juegos/tanabata', '/juegos/kotoba', '/juegos/manga', '/juegos/postales', '/eventos', '/ajustes/papelera', '/modo-cita']) {
+      for (const r of ['/inicio', '/capsula', '/capsula/nuevo', '/cupones', '/cartas', '/mas', '/ajustes', '/ajustes/perfil', '/ajustes/seguridad', '/ajustes/privacidad', '/ajustes/terceros', '/ajustes/copia', '/ajustes/apariencia', '/ajustes/movimiento', '/ajustes/legal', '/ajustes/legal/privacidad', '/ajustes/legal/version', '/buscar', '/ajustes/acerca', '/ajustes/guia-estilo', '/calendario', '/preguntas', '/canciones', '/diario', '/animo', '/jibun', '/retos', '/fechas', '/recordatorios', '/galeria', '/album', '/mapa', '/primeras-veces', '/photobooth', '/capsula-tiempo', '/planes', '/suenos', '/citas', '/regalos', '/encuentro', '/voz', '/lenguajes', '/gratitud', '/insignias', '/resumen', '/mascotas', '/listas', '/recetas', '/alcancia', '/gastos', '/habitos', '/rasca', '/ciclo', '/juegos', '/juegos/historial', '/juegos/ajustes', '/juegos/bancos', '/juegos/recuerdo', '/juegos/tesoro', '/juegos/cata', '/juegos/cocina', '/juegos/bingo', '/juegos/misteriosa', '/juegos/reto30', '/juegos/cine', '/juegos/origami', '/juegos/tanabata', '/juegos/kotoba', '/juegos/manga', '/juegos/postales', '/eventos', '/ajustes/papelera', '/modo-cita', '/ajustes/permisos']) {
         await page.evaluate((p) => { location.hash = `#${p}`; }, r);
         await page.waitForTimeout(700);
         await scan(r);

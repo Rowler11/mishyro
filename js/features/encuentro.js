@@ -64,7 +64,7 @@ function editor(m, onSaved) {
 
 export async function render() {
   const page = el('section', { class: 'page encuentro' });
-  page.append(ui.pageHeader({ title: 'Próximo encuentro', jp: '次回', romaji: 'jikai', back: '/mas' }));
+  page.append(ui.pageHeader({ title: 'Próximo encuentro', jp: '次回', romaji: 'jikai', back: '/calendario' }));
   const body = el('div', { class: 'stack' });
   page.append(body);
   let timer = 0;

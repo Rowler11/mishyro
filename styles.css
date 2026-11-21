@@ -2784,3 +2784,53 @@ audio.rec-media { background: transparent; max-height: none; }
 .date-mode-title { margin: 0; font-family: var(--font-serif); font-size: 1.4rem; }
 .date-mode-time { font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
 .date-mode-question { margin: 0; font-family: var(--font-serif); font-size: 1.15rem; line-height: 1.45; }
+
+/* Ajustes > Apariencia: "Movimiento y sonido" lives here as its own part (2026-11-21). */
+.settings-subtitle { margin: var(--space-5, 1.5rem) 0 var(--space-2, .5rem); scroll-margin-top: 5.5rem; }
+
+/* Inicio: quick actions, favorites and "Prueben hoy" (2026-11-21) */
+.quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
+.quick-action { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: var(--space-2) 4px; border-radius: var(--radius-m);
+  color: var(--text); text-decoration: none; text-align: center; min-height: 44px; }
+.quick-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink);
+  border: 1px solid var(--border); box-shadow: var(--shadow-1); transition: transform var(--dur-2, .2s) var(--ease-spring, ease); }
+.quick-action:hover .quick-icon, .quick-action:focus-visible .quick-icon { transform: translateY(-2px); }
+.quick-label { font-size: .78rem; font-weight: 600; line-height: 1.2; }
+.fav-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.fav-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.fav-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: var(--space-2) 4px; border-radius: var(--radius-m);
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text); text-decoration: none; font: inherit; cursor: pointer; min-height: 88px; justify-content: center; }
+.fav-tile .section-icon { background: var(--surface); }
+.fav-name { font-size: .8rem; font-weight: 600; text-align: center; line-height: 1.2; overflow-wrap: anywhere; }
+.fav-add { border-style: dashed; color: var(--text-2); }
+.fav-group { border: 0; padding: 0; margin: 0; display: grid; gap: 4px; }
+.fav-option { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-1); border-radius: var(--radius-s); }
+.fav-option input { width: 20px; height: 20px; accent-color: var(--accent); }
+.discover-body { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2) var(--space-3); align-items: start; }
+.discover-body > .card-actions { grid-column: 1 / -1; }
+.discover-icon { width: 52px; height: 52px; border-radius: 16px; }
+.discover-name { font-weight: 700; margin: 0 0 2px; }
+.discover-text p { margin: 0; }
+@media (min-width: 900px) { .fav-grid { grid-template-columns: repeat(6, 1fr); } }
+
+/* Joined sections: tab strip shared by every tab of a hub (2026-11-21) */
+.hub-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin: 0 0 var(--space-3); border-radius: var(--radius-pill); background: var(--surface-2); border: 1px solid var(--border); width: fit-content; max-width: 100%; }
+.hub-tab { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--text-2); font-weight: 500; text-decoration: none; }
+.hub-tab.is-on { background: var(--surface); color: var(--text); font-weight: 700; box-shadow: var(--shadow-1); }
+.hub-tab:not(.is-on):hover { color: var(--text); }
+
+/* Permisos (setup step and Ajustes > Privacidad > Permisos) */
+.perm-row { align-items: flex-start; }
+.perm-row .list-title { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); }
+.perm-granted { background: var(--success-bg); color: var(--success); border-color: transparent; }
+.perm-denied { color: var(--danger, var(--accent)); }
+.perm-hint { margin: 4px 0 0; }
+
+/* Recovery phrase (Sincronización) */
+.phrase-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); padding: 0; margin: 0; list-style: none; counter-reset: w; }
+.phrase-grid li { counter-increment: w; padding: var(--space-2); border-radius: var(--radius-s); background: var(--surface-2); border: 1px solid var(--border); font-weight: 700; font-size: .92rem; overflow-wrap: anywhere; }
+.phrase-grid li::before { content: counter(w) ". "; color: var(--text-2); font-weight: 500; }
+.rescue-status { list-style: none; padding: 0; }
+.rescue-line .icon { vertical-align: -3px; color: var(--accent); }
+@media (max-width: 360px) { .phrase-grid { grid-template-columns: repeat(2, 1fr); } }
+.success-text { color: var(--success); font-weight: 600; display: flex; align-items: center; gap: 6px; }

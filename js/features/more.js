@@ -4,7 +4,7 @@
 // (route #/mas/<group>, so Atrás and "Volver" both go back to the doors, which slide shut).
 // What is not built yet carries a "Pronto" pill. "Moment" sections are left out: they appear on Inicio when due.
 import { ui, util, router, db } from '../core.js';
-import { GROUPS, HIDDEN } from '../routes.js';
+import { GROUPS, HIDDEN, listed, asListed } from '../routes.js';
 
 const { el, icon } = util;
 const READY = new Set(['1', '2']);
@@ -26,7 +26,7 @@ let lastOpen = null;
 const count = (n) => `${n} ${n === 1 ? 'sección' : 'secciones'}`;
 // The Rincón is hidden from Más unless the couple turns it on in its own settings (this device only).
 let showCorner = false;
-const visibleGroups = () => GROUPS.map((g) => ({ ...g, sections: [...g.sections.filter((s) => !s.moment), ...(showCorner && g.id === 'personal' ? HIDDEN.filter((h) => h.id === 'yoru') : [])] })).filter((g) => g.sections.length);
+const visibleGroups = () => GROUPS.map((g) => ({ ...g, sections: [...g.sections.filter((s) => !s.moment && listed(s.id)).map(asListed), ...(showCorner && g.id === 'personal' ? HIDDEN.filter((h) => h.id === 'yoru') : [])] })).filter((g) => g.sections.length);
 
 function card(s, i) {
   const soon = !s.module && !READY.has(String(s.phase));

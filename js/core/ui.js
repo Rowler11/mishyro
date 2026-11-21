@@ -2,6 +2,8 @@
 // toast, page header, empty state, hanko seal, ripple, share, skeleton,
 // toggles, segmented control, "Los dos / Solo yo" picker and PIN pad.
 import { el, icon, ja, haptic, prefersReducedMotion, uuid } from './util.js';
+import { previousPath, parseHash } from './router.js';
+import { GROUPS, hubOf } from '../routes.js';
 
 // ---------- live announcements ----------
 let live;
@@ -147,9 +149,30 @@ export function confirmDialog({ title = '¿Seguro?', message = '', confirmLabel 
 }
 
 // ---------- page anatomy ----------
+/** Where "back to Más" lands: the group the current section lives in, so the arrow returns there. */
+function masTarget() {
+  const id = parseHash().path.split('/')[1];
+  const g = GROUPS.find((x) => x.sections.some((s) => s.id === id));
+  return g ? `/mas/${g.id}` : '/mas';
+}
+function backLink(back) {
+  const toMas = typeof back !== 'string' || back === '/mas';
+  const path = toMas ? masTarget() : back;
+  return el('a', { class: 'icon-btn page-back', href: `#${path}`, 'aria-label': 'Volver', onClick: (e) => {
+    // Coming straight from that page (or, for a section, from Inicio or Más): step back in history,
+    // so the arrow returns where you were and the phone's back button does not loop.
+    const prev = previousPath();
+    const here = parseHash().path.slice(1);
+    const hub = hubOf(here);
+    const sibling = hub && prev && hubOf(prev.slice(1)) === hub; // tabs replace each other in history
+    const same = prev === path || (toMas && (prev === '/inicio' || prev?.startsWith('/mas'))) || sibling;
+    if (same && history.length > 1) { e.preventDefault(); history.back(); }
+  } }, icon('arrow-left'));
+}
+
 export function pageHeader({ title, jp, romaji, back, actions = [] } = {}) {
   return el('header', { class: 'page-head' },
-    back ? el('a', { class: 'icon-btn page-back', href: typeof back === 'string' ? `#${back}` : '#/mas', 'aria-label': 'Volver' }, icon('arrow-left')) : null,
+    back ? backLink(back) : null,
     el('div', { class: 'page-titles' },
       el('h1', { class: 'page-title', tabindex: '-1' }, title),
       jp ? ja(jp, romaji) : null),

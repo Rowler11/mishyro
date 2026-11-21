@@ -109,7 +109,10 @@ export async function render(ctx = {}) {
   let data;
 
   const add = (day = selected) => editor(null, { day, onSaved: async (rec) => { selected = dayOf(rec); view = new Date(Number(selected.slice(0, 4)), Number(selected.slice(5, 7)) - 1, 1); await refresh(); } });
-  page.append(ui.pageHeader({ title: 'Calendario', jp: 'カレンダー', romaji: 'karendā', back: '/mas', actions: [ui.newButton('Nueva cita', () => add())] }));
+  page.append(ui.pageHeader({ title: 'Calendario', jp: 'カレンダー', romaji: 'karendā', back: '/mas', actions: [
+    // Próximo encuentro lives here as a button since 2026-11-21 (it is no longer its own entry in Más).
+    ui.button({ label: 'Próximo encuentro', iconName: 'plane', small: true, variant: 'ghost', href: '#/encuentro' }),
+    ui.newButton('Nueva cita', () => add())] }));
   const body = el('div', { class: 'stack' }, ui.skeleton(4));
   page.append(body);
 

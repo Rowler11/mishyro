@@ -1,15 +1,15 @@
-// Ajustes: main list, Apariencia, Movimiento y sonido, Legal y ayuda and Acerca de.
+// Ajustes: main list, Apariencia (with Movimiento y sonido), Legal y ayuda and Acerca de.
 // Centro de seguridad and Copia de seguridad live in ajustes.js.
 import { ui, util, db, theme, profile, router, CONFIG } from '../core.js';
-import { SETTINGS_PAGES } from '../routes.js';
+import { SETTINGS_PAGES, HUBS, listed } from '../routes.js';
 import * as fx from '../core/fx.js';
 
 const { el, icon, ja } = util;
 
 export function render(ctx) {
   const page = ctx.def.settingsPage || (ctx.def.id === 'legal-doc' ? 'legal-doc' : 'main');
-  if (page === 'apariencia') return appearance();
-  if (page === 'movimiento') return motion(ctx);
+  // Movimiento y sonido lives inside Apariencia (2026-11-21); its old address opens that part.
+  if (page === 'apariencia' || page === 'movimiento') return appearance(ctx, { focusMotion: page === 'movimiento' });
   if (page === 'legal') return legal();
   if (page === 'legal-doc') return legalDoc(ctx.params.doc);
   if (page === 'acerca') return about(ctx);
@@ -31,7 +31,8 @@ function main({ app }) {
     onChange: (v) => { profile.setActive(v); ui.toast(`Ahora usa la app: ${profile.name(v)}`); },
   });
 
-  const rows = SETTINGS_PAGES.map((p) => el('a', { class: 'list-row card-link', href: `#/ajustes/${p.id}` },
+  // Joined pages (2026-11-21) show once, under the hub's name; their other parts are tabs inside.
+  const rows = SETTINGS_PAGES.filter((p) => !p.hidden && listed(`ajustes/${p.id}`)).map((p) => ({ ...p, ...(HUBS.find((h) => h.id === `ajustes/${p.id}`) ? { title: HUBS.find((h) => h.id === `ajustes/${p.id}`).title, icon: HUBS.find((h) => h.id === `ajustes/${p.id}`).icon } : {}) })).map((p) => el('a', { class: 'list-row card-link', href: `#/ajustes/${p.id}` },
     el('span', { class: 'list-icon' }, icon(p.icon)),
     el('span', { class: 'list-text' }, el('span', { class: 'list-title' }, p.title)),
     p.module ? icon('chevron-right', { cls: 'list-chevron' }) : el('span', { class: 'badge' }, 'Pronto')));
@@ -58,7 +59,7 @@ function main({ app }) {
 }
 
 // ---------- appearance ----------
-function appearance() {
+function appearance(ctx = {}, { focusMotion = false } = {}) {
   const wrap = el('div', { class: 'stack' });
   db.getSettings('appearance', theme.APPEARANCE_DEFAULTS).then((s) => {
     const save = async (patch) => { await db.setSettings('appearance', patch); theme.apply(patch); preview(); };
@@ -90,7 +91,10 @@ function appearance() {
         el('h2', { class: 'card-title' }, 'Japonés'),
         ui.toggle({ label: 'Mostrar textos en japonés', hint: 'Son decorativos: la app se entiende igual solo en español.', checked: s.japanese, onChange: (v) => save({ japanese: v }) })));
   });
-  return el('section', { class: 'page' }, ui.pageHeader({ title: 'Apariencia', back: '/ajustes' }), wrap);
+  const motionPart = motion(ctx);
+  if (focusMotion) motionPart.ready.then(() => requestAnimationFrame(() => motionPart.node.scrollIntoView({ block: 'start' })));
+  return el('section', { class: 'page' }, ui.pageHeader({ title: 'Apariencia', back: '/ajustes' }), wrap,
+    el('h2', { class: 'card-kicker settings-subtitle', id: 'movimiento' }, 'Movimiento y sonido'), motionPart.node);
 }
 
 // ---------- motion & sound ----------
@@ -98,8 +102,8 @@ function appearance() {
 export const chime = () => util.chime();
 
 function motion({ app } = {}) {
-  const wrap = el('div', { class: 'stack' });
-  db.getSettings('motion', theme.MOTION_DEFAULTS).then((s) => {
+  const wrap = el('div', { class: 'stack', 'aria-labelledby': 'movimiento', role: 'group' });
+  const ready = db.getSettings('motion', theme.MOTION_DEFAULTS).then((s) => {
     const save = async (patch) => { await db.setSettings('motion', patch); theme.apply(patch); };
     const sys = matchMedia('(prefers-reduced-motion: reduce)').matches;
     util.fill(wrap, el('div', { class: 'card stack' },
@@ -121,7 +125,7 @@ function motion({ app } = {}) {
       sys || !s.animations ? el('p', { class: 'muted small' }, 'Con las animaciones apagadas sale la bienvenida corta.') : null,
       ui.button({ label: 'Ver la entrada', iconName: 'heart', variant: 'ghost', onClick: () => app.playIntro?.() })));
   });
-  return el('section', { class: 'page' }, ui.pageHeader({ title: 'Movimiento y sonido', back: '/ajustes' }), wrap);
+  return { node: wrap, ready };
 }
 
 // ---------- legal ----------

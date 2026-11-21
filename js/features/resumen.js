@@ -83,7 +83,7 @@ export async function stats(p, today = util.localDay()) {
   const s = {};
   s.days = util.isValidDay(start) && start <= end ? util.daysBetween(util.parseDay(start), util.parseDay(end)) : 0;
   s.memories = (await rows('memories')).filter((r) => inP(r.date)).length;
-  const photos = (await collectPhotos().catch(() => [])).filter((x) => inP(x.date));
+  const photos = (await collectPhotos({ exclude: ['juegos'] }).catch(() => [])).filter((x) => inP(x.date));
   s.photos = photos.length; s.photoIds = photos.slice(0, 3).map((x) => x.mediaId);
   const qd = await rows('questionsDaily');
   s.answers = qd.filter((r) => r.kind === 'answer' && inP(r.date)).length;

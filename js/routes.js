@@ -84,7 +84,8 @@ export const SETTINGS_PAGES = [
   { id: 'papelera', title: 'Papelera', icon: 'trash-2', phase: '0.10', module: 'papelera' },
   { id: 'sincronizar', title: 'Sincronización', icon: 'refresh-cw', phase: 'A', module: 'sync' },
   { id: 'apariencia', title: 'Apariencia', icon: 'palette', phase: '1', module: 'settings' },
-  { id: 'movimiento', title: 'Movimiento y sonido', icon: 'sparkles', phase: '1', module: 'settings' },
+  { id: 'movimiento', title: 'Movimiento y sonido', icon: 'sparkles', phase: '1', module: 'settings', hidden: true },
+  { id: 'permisos', title: 'Permisos', icon: 'shield-check', phase: 'A', module: 'permisos' },
   { id: 'terceros', title: 'Modo sin terceros', icon: 'shield', phase: '2', module: 'privacidad' },
   { id: 'legal', title: 'Legal y ayuda', icon: 'file-text', phase: '1', module: 'settings' },
   { id: 'acerca', title: 'Acerca de', icon: 'info', phase: '1', module: 'settings' },
@@ -92,3 +93,26 @@ export const SETTINGS_PAGES = [
 
 export const allSections = () => [...GROUPS.flatMap((g) => g.sections), ...HIDDEN];
 export const sectionById = (id) => allSections().find((s) => s.id === id) || TABS.find((t) => t.id === id);
+
+// ---------- hubs (2026-11-21): related sections joined under one entry with tabs ----------
+// Each section keeps its route; Más and the favorites list only the hub (its first tab), and every
+// tab shows the same strip on top. Nothing was removed, only grouped.
+export const HUBS = [
+  { id: 'calendario', title: 'Calendario', icon: 'calendar', blurb: 'Citas, fechas especiales, avisos y el próximo encuentro.', tabs: [['calendario', 'Mes'], ['fechas', 'Fechas'], ['recordatorios', 'Avisos']], also: ['encuentro'] },
+  { id: 'galeria', title: 'Galería', icon: 'image', blurb: 'Todas sus fotos y videos, su año y el photobooth.', tabs: [['galeria', 'Todas'], ['album', 'Nuestro año'], ['photobooth', 'Photobooth']] },
+  { id: 'preguntas', title: 'Conocernos', icon: 'message-circle-question', blurb: 'La pregunta del día, el quiz y sus lenguajes del amor.', tabs: [['preguntas', 'Preguntas'], ['lenguajes', 'Lenguajes del amor']] },
+  { id: 'retos', title: 'Retos y hábitos', icon: 'flag', blurb: 'El reto de la semana y sus pequeños hábitos.', tabs: [['retos', 'Reto semanal'], ['habitos', 'Hábitos']] },
+  { id: 'planes', title: 'Planes', icon: 'list-checks', blurb: 'Lo que quieren vivir, sus sueños e ideas de citas.', tabs: [['planes', 'Lista'], ['suenos', 'Sueños y viajes'], ['citas', 'Ideas de citas']] },
+  { id: 'juegos', title: 'Juegos', icon: 'gamepad-2', blurb: 'Juegos en pareja y rasca y gana.', tabs: [['juegos', 'Juegos'], ['rasca', 'Rasca y gana']] },
+  { id: 'alcancia', title: 'Dinero', icon: 'piggy-bank', blurb: 'Metas de ahorro y gastos compartidos.', tabs: [['alcancia', 'Alcancía'], ['gastos', 'Gastos']] },
+  // Ajustes
+  { id: 'ajustes/privacidad', title: 'Privacidad', icon: 'eye-off', tabs: [['ajustes/privacidad', 'Privacidad'], ['ajustes/permisos', 'Permisos'], ['ajustes/terceros', 'Sin terceros']] },
+  { id: 'ajustes/copia', title: 'Tus datos', icon: 'hard-drive', tabs: [['ajustes/copia', 'Copia'], ['ajustes/sincronizar', 'Sincronización'], ['ajustes/papelera', 'Papelera']] },
+  { id: 'ajustes/acerca', title: 'Acerca de', icon: 'info', tabs: [['ajustes/acerca', 'Acerca de'], ['ajustes/legal', 'Legal y ayuda']] },
+];
+/** The hub a route id belongs to (as a tab or as an extra page like Próximo encuentro). */
+export const hubOf = (id) => HUBS.find((h) => h.tabs.some(([t]) => t === id) || h.also?.includes(id)) || null;
+/** Listed on its own in Más / Ajustes: not a later tab or an extra page of a hub. */
+export const listed = (id) => { const h = hubOf(id); return !h || h.id === id; };
+/** The section as Más shows it: a hub's first tab carries the hub's name, icon and description. */
+export const asListed = (s) => { const h = HUBS.find((x) => x.id === s.id); return h ? { ...s, title: h.title, icon: h.icon, blurb: h.blurb || s.blurb } : s; };

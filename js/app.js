@@ -1,7 +1,7 @@
 // App bootstrap: database, theme, profile, security layers, navigation shell,
 // router, service worker and global shortcuts.
 import { CONFIG, db, router, theme, ui, security, seed, profile, util, cryptoBox, sync } from './core.js';
-import { TABS, GROUPS, HIDDEN, SETTINGS_PAGES } from './routes.js';
+import { TABS, GROUPS, HIDDEN, SETTINGS_PAGES, HUBS } from './routes.js';
 
 const { el, icon, ja } = util;
 
@@ -18,6 +18,7 @@ export const app = {
 // ---------- route table ----------
 const load = {
   placeholder: () => import('./features/placeholder.js'),
+  permisos: () => import('./features/permisos.js'),
   listas: () => import('./features/listas.js'),
   mascotas: () => import('./features/mascotas.js'),
   recetas: () => import('./features/recetas.js'),
@@ -199,6 +200,7 @@ function onNavigate(route, prev) {
     else security.getSettings().then((s) => { if (s.lockOnLeave) cryptoBox.lock(prevScope); });
   }
   prevScope = scope;
+  if (!route.def.layer && app.setupDone) import('./features/home-accesos.js').then((m) => m.markVisited(route.def.id)).catch(() => {});
   if (prev) {
     const a = TABS.findIndex((t) => t.id === (prev.def.tab || prev.def.id));
     const b = TABS.findIndex((t) => t.id === (route.def.tab || route.def.id));
@@ -236,12 +238,26 @@ async function render(route) {
       ui.emptyState({ title: 'No pudimos abrir esta parte', text: 'No se perdió nada. Intenta de nuevo.', art: 'omamori', action: { label: 'Reintentar', onClick: () => router.refresh() } }));
   }
   clearTimeout(skeleton);
+  addHubTabs(node, route);
   const swapped = swapView(main, node);
   // Focus the new view's search box or title once it is in place.
   if (!app.firstRender) swapped.then(() => requestAnimationFrame(() => (main.querySelector('[data-autofocus]') || main.querySelector('h1') || main).focus({ preventScroll: true })));
   if (app.firstRender) preloadSections();
   app.firstRender = false;
   if (app.keepScroll != null) { const y = app.keepScroll; app.keepScroll = null; requestAnimationFrame(() => window.scrollTo({ top: y })); } else window.scrollTo({ top: 0 });
+}
+
+/** Joined sections (2026-11-21): the same tab strip on top of every tab of a hub. Tabs replace each other in history. */
+function addHubTabs(node, route) {
+  const here = route.path.slice(1);
+  const hub = HUBS.find((h) => h.tabs.some(([t]) => t === here));
+  const head = node?.querySelector?.(':scope > .page-head');
+  if (!hub || !head) return;
+  const nav = el('nav', { class: 'hub-tabs', 'aria-label': hub.title },
+    hub.tabs.map(([t, label]) => el('a', { class: `hub-tab${t === here ? ' is-on' : ''}`, href: `#/${t}`, 'aria-current': t === here ? 'page' : null,
+      onClick: (e) => { e.preventDefault(); if (t !== here) router.go(`/${t}`, { replace: true }); } }, label)));
+  head.after(nav);
+  requestAnimationFrame(() => nav.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
 }
 
 function swapView(main, node) {
@@ -269,7 +285,7 @@ function introDue(mode) {
 /** Welcome layer. `intro` forces the opening heart; otherwise it follows Ajustes > Movimiento. */
 function splash({ ready = Promise.resolve(), intro = null, mode = 'daily' } = {}) {
   return new Promise((resolve) => {
-    const who = profile.active();
+    const who = 'sofia'; // The app is a gift for her: the loading screen says "Para <her name>" on every phone (Rowler, 2026-11-21).
     const reduced = util.prefersReducedMotion();
     const full = !reduced && (intro ?? introDue(mode));
     const layer = el('div', { class: `splash${full ? ' splash-intro' : ''}`, role: 'status', 'aria-label': 'Aishiteru' },

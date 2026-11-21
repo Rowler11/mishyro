@@ -321,7 +321,7 @@ export async function render() {
   };
 
   const load = async () => {
-    photos = (await collectPhotos()).map((p) => ({ ...p }));
+    photos = (await collectPhotos({ exclude: ['juegos'] })).map((p) => ({ ...p }));
     years = relationshipYears(profile.startDay(), photos);
     if (state.year) state.year = years.find((y) => y.index === state.year.index) || null;
     await draw();

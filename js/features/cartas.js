@@ -2,7 +2,8 @@
 // "Para ti": fūtō envelopes sealed with a hanko; opening one breaks the seal and shows the
 // letter on washi paper, then it stays marked "Abierta el {fecha} a las {hora}".
 // "Escribimos": each person writes their own "Ábreme cuando..." letters (loose sheet -> envelope
-// "En camino" -> "Leídas"). A sealed letter can no longer be edited; the seal is symbolic, not encryption.
+// "En camino" -> "Leídas"). A sealed letter can still be edited until it is opened (2026-11-21): it stays
+// sealed and the partner reads the new version. The seal is symbolic, not encryption.
 // On the author's phone the seed letters show with their own, by status (decision 5).
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import { compressImage } from '../core/images.js';
@@ -129,7 +130,7 @@ async function flyOpen(node, letter) {
   };
 }
 
-async function letterModal(letter, { onShareable = true, flown = false, onDelete = null } = {}) {
+async function letterModal(letter, { onShareable = true, flown = false, onDelete = null, onEdit = null } = {}) {
   const paras = String(letter.body || '').split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   let photo = null; let url = null;
   if (letter.mediaId) {
@@ -147,12 +148,40 @@ async function letterModal(letter, { onShareable = true, flown = false, onDelete
   const actions = [{ label: 'Cerrar', variant: 'ghost' }];
   if (onShareable) actions.unshift({ label: 'Compartir el texto', onClick: () => { ui.share({ title: letter.label, text: `${letter.label}\n\n${paras.join('\n\n')}\n\n${letter.signature || profile.name(letter.from)}` }); return false; } });
   if (onDelete) actions.unshift({ label: 'Borrar', variant: 'ghost', onClick: () => { onDelete(); return true; } });
+  if (onEdit) actions.unshift({ label: 'Editar', onClick: () => { setTimeout(onEdit, 0); return true; } });
   return ui.openModal({ title: letter.label, size: 'lg', className: `washi-modal${flown ? ' is-flown' : ''}`, body, actions, onClose: () => { if (url) URL.revokeObjectURL(url); bag.forEach((u) => URL.revokeObjectURL(u)); } });
+}
+
+/** A preloaded letter (content store): only its "Ábreme cuando…" and its text. */
+function seedEditor(rec, { onSaved }) {
+  const cond = ui.input({ maxlength: 80, autocomplete: 'off', value: String(rec.label || '').replace(/^ábreme cuando\s*/i, '') });
+  const body = ui.textarea({ rows: 10, maxlength: 6000 });
+  body.value = rec.text || '';
+  const fCond = ui.field({ label: `${PREFIX}…`, control: cond });
+  const fBody = ui.field({ label: 'La carta', control: body, hint: 'Deja una línea en blanco para separar párrafos.' });
+  const formError = el('p', { class: 'field-error form-error', role: 'alert' });
+  const save = async () => {
+    const c = cond.value.trim(); const b = body.value.trim();
+    fCond.setError(c ? '' : '¿Cuándo debe abrirla? Escríbelo aquí.');
+    fBody.setError(b ? '' : 'Escribe la carta.');
+    if (!c) { cond.focus(); return false; }
+    if (!b) { body.focus(); return false; }
+    try { await db.put('content', { ...rec, label: labelOf(c), text: b }); onSaved(); return true; } catch (e) {
+      console.error(e); formError.textContent = 'No se pudo guardar la carta. Inténtalo de nuevo; lo que escribiste sigue aquí.'; return false;
+    }
+  };
+  return ui.openModal({
+    title: 'Editar carta', kind: 'sheet', size: 'lg', className: 'letter-editor',
+    body: el('form', { class: 'memory-form', novalidate: true, onSubmit: (e) => e.preventDefault() },
+      fCond, fBody, el('p', { class: 'muted small' }, `Sigue sellada y en camino: ${profile.name(rec.to || profile.partnerOf(rec.from || AUTHOR))} leerá esta versión cuando la abra.`), formError),
+    actions: [{ label: 'Cancelar', variant: 'ghost' }, { label: 'Guardar cambios', variant: 'primary', onClick: save }],
+  });
 }
 
 function editor(existing, { onSaved }) {
   const isNew = !existing;
   const l = existing || { id: util.uuid(), author: profile.active(), to: profile.partnerOf(profile.active()), status: 'draft' };
+  const sealed = l.status === 'sealed'; // editing a letter "En camino": it stays sealed and shared
   const cond = ui.input({ maxlength: 80, autocomplete: 'off', placeholder: 'me extrañes', value: String(l.condition || '').replace(/^ábreme cuando\s*/i, '') });
   const body = ui.textarea({ rows: 10, maxlength: 8000 });
   body.value = l.body || '';
@@ -194,7 +223,9 @@ function editor(existing, { onSaved }) {
     if (!c) { cond.focus(); return false; }
     if (!b) { body.focus(); return false; }
     // Drafts are "Solo yo": the other profile does not see them until they are sealed.
-    const rec = { ...l, condition: c, body: b, signature: sign.value.trim() || profile.name(l.author), status: 'draft', visibility: 'self', private: true, owner: l.author };
+    // A sealed letter keeps its seal and stays shared, so the partner opens the new version.
+    const access = sealed ? { status: 'sealed', visibility: 'shared', private: false, owner: 'both' } : { status: 'draft', visibility: 'self', private: true, owner: l.author };
+    const rec = { ...l, condition: c, body: b, signature: sign.value.trim() || profile.name(l.author), ...access };
     const created = [];
     try {
       const scope = security.policy('letters', rec) || undefined;
@@ -210,16 +241,16 @@ function editor(existing, { onSaved }) {
     } catch (e) {
       for (const id of created) await db.rawDelete('media', id).catch(() => {});
       console.error(e);
-      formError.textContent = 'No se pudo guardar el borrador. Inténtalo de nuevo; lo que escribiste sigue aquí.';
+      formError.textContent = `No se pudo guardar ${sealed ? 'la carta' : 'el borrador'}. Inténtalo de nuevo; lo que escribiste sigue aquí.`;
       return false;
     }
   };
   return ui.openModal({
-    title: isNew ? `Carta para ${profile.name(l.to)}` : 'Editar borrador', kind: 'sheet', size: 'lg', className: 'letter-editor',
+    title: isNew ? `Carta para ${profile.name(l.to)}` : sealed ? 'Editar carta' : 'Editar borrador', kind: 'sheet', size: 'lg', className: 'letter-editor',
     body: el('form', { class: 'memory-form', novalidate: true, onSubmit: (e) => e.preventDefault() },
       fCond, fBody, ui.field({ label: 'Firma', control: sign }), photoBox, voice.node,
-      el('p', { class: 'muted small' }, 'Se guarda como borrador: solo tú la ves. Cuando esté lista, séllala.'), formError),
-    actions: [{ label: 'Cancelar', variant: 'ghost' }, { label: 'Guardar borrador', variant: 'primary', onClick: save }],
+      el('p', { class: 'muted small' }, sealed ? `Sigue sellada y en camino: ${profile.name(l.to)} leerá esta versión cuando la abra.` : 'Se guarda como borrador: solo tú la ves. Cuando esté lista, séllala.'), formError),
+    actions: [{ label: 'Cancelar', variant: 'ghost' }, { label: sealed ? 'Guardar cambios' : 'Guardar borrador', variant: 'primary', onClick: save }],
     onClose: () => { if (photoUrl) URL.revokeObjectURL(photoUrl); voice.cleanup(); },
   });
 }
@@ -246,6 +277,13 @@ export async function render(ctx) {
     onSaved: async (rec, isNew) => { ui.toast(isNew ? 'Borrador guardado.' : 'Cambios guardados.', { tone: 'success' }); tab = 'write'; saveTab(tab); await load(); draw(); },
   });
 
+  // Letters "En camino" open for editing too. A preloaded letter is edited in place (as in Perfil y datos).
+  const editSealed = async (l) => {
+    if (l.kind === 'own') { openEditor(l.raw); return; }
+    const rec = await db.get('content', l.id).catch(() => null);
+    if (rec) seedEditor(rec, { onSaved: async () => { ui.toast('Cambios guardados.', { tone: 'success' }); await load(); draw(); } });
+  };
+
   const openLetter = async (letter, node) => {
     let openedAt = letter.openedAt;
     if (letter.status !== 'opened') {
@@ -265,7 +303,7 @@ export async function render(ctx) {
   };
 
   const sealLetter = async (l) => {
-    const yes = await ui.confirmDialog({ title: '¿Sellar esta carta?', message: `Ya no la podrás editar y ${profile.name(l.to)} la verá en "Para ti". El sello es simbólico: guarda la sorpresa, pero no es un candado.`, confirmLabel: 'Sellar' });
+    const yes = await ui.confirmDialog({ title: '¿Sellar esta carta?', message: `${profile.name(l.to)} la verá en "Para ti". Podrás editarla mientras no la abra. El sello es simbólico: guarda la sorpresa, pero no es un candado.`, confirmLabel: 'Sellar' });
     if (!yes) return;
     try {
       const rec = { ...l.raw, status: 'sealed', sealedAt: util.nowISO(), visibility: 'shared', private: false, owner: 'both' };
@@ -358,7 +396,7 @@ export async function render(ctx) {
         class: `futo futo-sent own-letter status-${l.status}${opened ? ' is-opened' : ''}`, type: 'button', dataset: { id: l.id },
         'aria-label': `${l.label}. Para ${partner}. ${opened ? openedText(l.openedAt) : status}.`,
         disabled: l.incomplete || !l.body ? true : null,
-        onClick: () => letterModal(l, { onDelete: l.kind === 'own' ? () => removeLetter(l) : null }),
+        onClick: () => letterModal(l, { onDelete: l.kind === 'own' ? () => removeLetter(l) : null, onEdit: l.status === 'sealed' ? () => editSealed(l) : null }),
       },
       el('span', { class: 'futo-flap', 'aria-hidden': 'true' }),
       seal(l, { size: 36 }),
@@ -371,12 +409,12 @@ export async function render(ctx) {
       el('div', { class: 'cartas-group' },
         el('h2', { class: 'card-kicker cartas-subtitle' }, 'Sobre la mesa'),
         el('p', { class: 'muted small' }, drafts.length
-          ? 'Lo que aún escribes: hojas sueltas que solo tú ves. Al meterlas al sobre ya no se editan.'
+          ? 'Lo que aún escribes: hojas sueltas que solo tú ves. Puedes editarlas hasta que las abran.'
           : empty ? `Aquí quedan las cartas "Ábreme cuando…" que le escribas a ${partner}. Empieza con "Escribir carta".` : 'No hay hojas sueltas. Para otra carta, usa "Escribir carta".'),
         drafts.length ? el('div', { class: 'draft-grid' }, drafts.map(sheet)) : null),
       onTheWay.length ? el('div', { class: 'cartas-group' },
         el('h2', { class: 'card-kicker cartas-subtitle' }, 'En camino'),
-        el('p', { class: 'muted small' }, onTheWay.length === 1 ? `Sellada, esperando a que ${partner} la abra.` : `Selladas, esperando a que ${partner} las abra.`),
+        el('p', { class: 'muted small' }, onTheWay.length === 1 ? `Sellada, esperando a que ${partner} la abra. Tócala para leerla o editarla.` : `Selladas, esperando a que ${partner} las abra. Toca una para leerla o editarla.`),
         el('div', { class: 'sent-grid' }, onTheWay.map(sent))) : null,
       read.length ? el('div', { class: 'cartas-group' },
         el('h2', { class: 'card-kicker cartas-subtitle' }, 'Leídas'),
@@ -414,10 +452,14 @@ export async function render(ctx) {
     body.replaceChildren(ui.emptyState({ title: 'No pudimos abrir las cartas', text: 'Cierra y vuelve a abrir la app; tus datos siguen en el teléfono.', art: 'wave' }));
     return page;
   }
+  // Inicio's quick action "Escribir carta" opens the editor right away.
+  const write = !!ctx.query?.escribir;
+  if (write) history.replaceState(history.state, '', '#/cartas');
   // A link to one letter (#/cartas/:id) opens it on top of the list.
   const linked = ctx.params?.a ? letters.find((l) => l.id === ctx.params.a && l.to === profile.active() && l.status !== 'draft') : null;
   if (linked) { tab = 'mine'; }
   draw();
+  if (write) requestAnimationFrame(() => openEditor());
   if (linked) {
     history.replaceState(history.state, '', '#/cartas');
     requestAnimationFrame(() => openLetter(linked, body.querySelector(`.futo[data-id="${CSS.escape(linked.id)}"]`)));
