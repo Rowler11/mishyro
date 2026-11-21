@@ -285,7 +285,7 @@ function introDue(mode) {
 /** Welcome layer. `intro` forces the opening heart; otherwise it follows Ajustes > Movimiento. */
 function splash({ ready = Promise.resolve(), intro = null, mode = 'daily' } = {}) {
   return new Promise((resolve) => {
-    const who = profile.active();
+    const who = 'sofia'; // The app is a gift for her: the loading screen says "Para <her name>" on every phone (Rowler, 2026-11-21).
     const reduced = util.prefersReducedMotion();
     const full = !reduced && (intro ?? introDue(mode));
     const layer = el('div', { class: `splash${full ? ' splash-intro' : ''}`, role: 'status', 'aria-label': 'Aishiteru' },
