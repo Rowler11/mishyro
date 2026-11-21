@@ -12,7 +12,7 @@ import { JAPANESE_WORDS } from './config-japones.js';
 
 export const CONFIG = {
   // Versión visible de la app (Ajustes > Acerca de). Súbela junto con CACHE_VERSION en sw.js.
-  appVersion: '0.9.0',
+  appVersion: '0.10.0',
   // Prefijo de la base de datos y de las 2 preferencias en localStorage (tema y perfil activo).
   // Si lo cambias, también en theme-boot.js. Cambiarlo "empieza de cero" en cada dispositivo.
   storageKey: 'aishiteru',
@@ -32,6 +32,25 @@ export const CONFIG = {
     { id: 'cfg:milestone:500', days: 500, message: '500 días. Y todavía me sorprendes.' },
     { id: 'cfg:milestone:730', days: 730, message: 'Dos años juntos. Lo mejor sigue siendo contigo.' },
     { id: 'cfg:milestone:1000', days: 1000, message: '¡Mil días! Mil razones para seguir.' },
+  ],
+
+  // Frase del día en la pantalla del PIN de la app (una distinta cada día). Sin nombres ni nada
+  // personal: esa pantalla la ve cualquiera que tome el teléfono.
+  lockPhrases: [
+    'Qué bueno que volviste.',
+    'Hoy también es un buen día para quererse.',
+    'Un ratito juntos vale mucho.',
+    'Respira. Aquí todo es suave.',
+    'Lo bonito se cuida todos los días.',
+    'Pasa, que aquí te esperaban.',
+    'Un abrazo antes de seguir.',
+    'Lo mejor del día cabe en un recuerdo.',
+    'Despacio, que no hay prisa.',
+    'Hoy puede ser un día para contar.',
+    'Aquí se guarda lo que importa.',
+    'Una sonrisa también cuenta como plan.',
+    'Aquí también es casa.',
+    'El corazón ya sabe la clave.',
   ],
 
   // Quién escribe la pregunta propia del día y cuántos caracteres puede tener.

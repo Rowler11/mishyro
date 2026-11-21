@@ -6,6 +6,7 @@
 // leaves the app unless "Exportar audio" is chosen (with sync, it travels encrypted to their phones).
 import { ui, util, db, profile, security, CONFIG } from '../core.js';
 import { isQuotaError } from '../core/images.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -143,8 +144,8 @@ export async function render() {
         el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-pressed': String(!!n.favorite), 'aria-label': n.favorite ? 'Quitar de favoritas' : 'Marcar como favorita', onClick: async () => { await db.put('voiceNotes', { ...n, favorite: !n.favorite }); draw(); } }, icon(n.favorite ? 'heart' : 'star', { size: 18 })),
         el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': 'Exportar audio', onClick: async () => { const b = await db.getMedia(n.mediaId).catch(() => null); if (!b) return; const u = URL.createObjectURL(b); const a = el('a', { href: u, download: `nota-de-voz-${n.at.slice(0, 10)}.${b.type.includes('mp4') ? 'm4a' : 'webm'}` }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); } }, icon('download', { size: 18 })),
         n.by === me ? el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': 'Borrar', onClick: async () => {
-          if (!(await ui.confirmDialog({ title: '¿Borrar esta nota?', message: 'Se borra el audio en todos sus equipos.', confirmLabel: 'Borrar', danger: true }))) return;
-          await db.rawDelete('media', n.mediaId).catch(() => {}); await db.purge('voiceNotes', n.id); draw();
+          if (!(await ui.confirmDialog({ title: '¿Borrar esta nota?', message: `Se borra el audio. ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true }))) return;
+          await toTrash('voiceNotes', n.id, { label: n.title || '', what: 'Nota borrada', extraMedia: [n.mediaId], onRestored: draw }); draw();
         } }, icon('trash-2', { size: 18 })) : null)))),
     list.length ? null : el('p', { class: 'muted' }, 'Nada con este filtro.')].filter(Boolean));
   };

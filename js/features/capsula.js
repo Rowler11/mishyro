@@ -6,6 +6,7 @@ import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
 import { voiceAttach, saveAttached, player as voicePlayer } from './voz.js';
 import { compressImage, isQuotaError, MAX_PHOTOS, readVideo, isVideoFile, MAX_VIDEO_SECONDS, lightenVideo, canLightenVideo } from '../core/images.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const WIDE = '(min-width: 1100px)';
@@ -477,11 +478,10 @@ export async function render(ctx) {
   });
 
   const remove = async (m) => {
-    const yes = await ui.confirmDialog({ title: '¿Borrar este recuerdo?', message: `"${titleOf(m)}" y sus fotos se borran de este teléfono. No se puede deshacer.`, confirmLabel: 'Borrar', danger: true });
+    const yes = await ui.confirmDialog({ title: '¿Borrar este recuerdo?', message: `"${titleOf(m)}" y sus fotos. ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true });
     if (!yes) return;
     try {
-      await db.purge('memories', m.id);
-      ui.toast('Recuerdo borrado.');
+      await toTrash('memories', m.id, { label: titleOf(m), what: 'Recuerdo borrado', extraMedia: m.mediaIds || [], onRestored: () => load().then(draw) });
       selectedId = null;
       await load();
       if (routeId) { location.hash = '#/capsula'; return; }

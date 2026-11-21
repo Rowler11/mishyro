@@ -69,6 +69,9 @@ export function el(tag, attrs = {}, ...children) {
   return node;
 }
 
+/** replaceChildren that skips null/undefined/false (the native one prints them as text). */
+export function fill(node, ...children) { node.replaceChildren(); append(node, children); return node; }
+
 function append(node, children) {
   for (const c of children.flat(Infinity)) {
     if (c === null || c === undefined || c === false) continue;

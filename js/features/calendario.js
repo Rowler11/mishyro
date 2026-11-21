@@ -9,6 +9,7 @@ import * as dates from '../core/dates.js';
 import * as ics from '../core/ics.js';
 import { MOODS } from './animo.js';
 import * as ciclo from './ciclo.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const fmtMonthName = new Intl.DateTimeFormat('es-CO', { month: 'long' });
@@ -122,8 +123,8 @@ export async function render(ctx = {}) {
     ui.toast('Archivo listo. Ábrelo y elige tu calendario.', { tone: 'success' });
   };
   const remove = async (ev) => {
-    if (!(await ui.confirmDialog({ title: '¿Borrar esta cita?', message: 'Si la agregaste al calendario del teléfono, bórrala también allá.', confirmLabel: 'Borrar', danger: true }))) return;
-    await db.purge('events', ev.id); ui.toast('Cita borrada.'); await refresh();
+    if (!(await ui.confirmDialog({ title: '¿Borrar esta cita?', message: `Si la agregaste al calendario del teléfono, bórrala también allá. ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true }))) return;
+    await toTrash('events', ev.id, { label: ev.title, what: 'Cita borrada', onRestored: refresh }); await refresh();
   };
   const memoryHref = (ev) => `#/capsula/nuevo?${new URLSearchParams({ titulo: ev.title, fecha: dayOf(ev), nota: ev.place ? `En ${ev.place}.` : '' })}`;
 

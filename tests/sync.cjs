@@ -100,6 +100,14 @@ const waitFor = async (page, src, arg, ms = 8000) => {
     ok('ciclo: lo no marcado y la capa privada no llegan a David', !(await mod(B.page, "return !!(await db.rawGet('cycleDays', 'cycle:2026-11-01')) || !!(await db.rawGet('intimateLog', 'il-1'));")));
     await mod(A.page, "await db.purge('cycleDays', 'cycle:2026-11-02:v'); await db.put('cycleDays', { id: 'cycle:2026-11-02', date: '2026-11-02', period: true, flow: 'light', owner: 'sofia', visibility: 'self', visibleToPartner: false, private: true });");
     ok('ciclo: al desmarcarlo se borra del equipo de David', await waitFor(B.page, "return !(await db.rawGet('cycleDays', 'cycle:2026-11-02:v'));"));
+    // Papelera (v0.10.0): a deletion travels; bringing it back from the Papelera travels again, photo included.
+    await mod(A.page, "const mid = await db.putMedia(new Blob([new Uint8Array([9, 8, 7])], { type: 'image/jpeg' }), { ownerStore: 'memories', ownerId: 'mem-tr' }); await db.put('memories', { id: 'mem-tr', date: '2026-03-03', title: 'Recuerdo ficticio a la papelera', note: '', mediaIds: [mid] });");
+    ok('papelera: el recuerdo con foto llega a David', await waitFor(B.page, "const m = await db.rawGet('memories', 'mem-tr'); return !!m && !!(await db.getMedia(m.mediaIds[0]));", null, 12000));
+    const tid = await mod(A.page, "return db.trash('memories', 'mem-tr', { label: 'x' });");
+    ok('papelera: al borrarlo se va también del equipo de David', await waitFor(B.page, "return !(await db.rawGet('memories', 'mem-tr'));", null, 12000));
+    await mod(A.page, 'return db.restore(a);', tid);
+    ok('papelera: al recuperarlo vuelve a David con su foto', await waitFor(B.page, "const m = await db.rawGet('memories', 'mem-tr'); return !!m && !!(await db.getMedia(m.mediaIds[0]));", null, 15000), JSON.stringify(await mod(B.page, "const m = await db.rawGet('memories', 'mem-tr'); return { m: !!m, raw: m ? !!(await db.rawGet('media', m.mediaIds[0])) : null };")));
+    ok('papelera: la Papelera no viaja (David no la tiene)', (await mod(B.page, "return (await db.rawAll('trash')).length;")) === 0);
     // C: Sofía's PC joins with the "mine" code and gets her "Solo yo".
     const C = await device(browser, 'sofia', { seed: false });
     const codeC = await mod(A.page, "return sync.makeInvite('sofia');");

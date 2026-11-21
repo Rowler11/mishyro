@@ -49,7 +49,7 @@ function editor(existing, { onSaved, kind: startKind = 'note' }) {
   const grid = el('div', { class: 'photo-grid' });
   const file = el('input', { type: 'file', accept: 'image/*', multiple: true, class: 'sr-only', id: `jp-${x.id.slice(0, 8)}` });
   const paintPhotos = () => {
-    grid.replaceChildren(...photos.map((p, i) => el('div', { class: 'photo-tile' }, el('img', { src: p.url, alt: `Foto ${i + 1}` }),
+    util.fill(grid, ...photos.map((p, i) => el('div', { class: 'photo-tile' }, el('img', { src: p.url, alt: `Foto ${i + 1}` }),
       el('button', { class: 'icon-btn photo-remove', type: 'button', 'aria-label': `Quitar la foto ${i + 1}`, onClick: () => { photos.splice(i, 1); paintPhotos(); } }, icon('x', { size: 18 })))),
     photos.length < MAX_PHOTOS ? el('label', { class: 'photo-add', for: file.id, 'aria-label': 'Agregar fotos' }, icon('image-plus', { size: 24 })) : null, file);
   };

@@ -7,6 +7,7 @@
 import { ui, util, db, profile, security, sync } from '../core.js';
 import { compressImage, isQuotaError, MAX_PHOTOS } from '../core/images.js';
 import { openViewer } from '../core/viewer.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -223,9 +224,8 @@ export async function render(ctx) {
   const openEditor = (p, at) => placeEditor(p, { at, onSaved: (rec, isNew) => { ui.toast(isNew ? 'Lugar guardado.' : 'Cambios guardados.', { tone: 'success' }); load(); } });
 
   const remove = async (p) => {
-    if (!(await ui.confirmDialog({ title: '¿Borrar este lugar?', message: `"${p.name}" y sus fotos se borran de los dos teléfonos.`, confirmLabel: 'Borrar', danger: true }))) return;
-    for (const id of p.mediaIds || []) await db.rawDelete('media', id).catch(() => {});
-    await db.purge('places', p.id); ui.toast('Lugar borrado.'); load();
+    if (!(await ui.confirmDialog({ title: '¿Borrar este lugar?', message: `"${p.name}" y sus fotos. ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true }))) return;
+    await toTrash('places', p.id, { label: p.name, what: 'Lugar borrado', extraMedia: p.mediaIds || [], onRestored: load }); load();
   };
 
   const photosOf = (p) => (p.mediaIds || []).map((mediaId, i) => ({ mediaId, alt: `${p.name}, foto ${i + 1}`, caption: p.name, sub: p.date ? fmtDay.format(util.parseDay(p.date)) : '' }));
@@ -332,7 +332,7 @@ export async function render(ctx) {
     const counter = el('p', { class: 'place-count' }, el('strong', {}, String(visited)), ` ${visited === 1 ? 'lugar guardado' : 'lugares guardados'}`);
     if (tab === 'mapa') {
       const m = await drawMap();
-      body.replaceChildren(tabs, await snapshotCard(), counter, m, m.classList.contains('map-off') ? list : null);
+      util.fill(body, tabs, await snapshotCard(), counter, m, m.classList.contains('map-off') ? list : null);
       if (m.classList.contains('map-off')) { map?.remove(); map = null; }
     } else {
       map?.remove(); map = null;

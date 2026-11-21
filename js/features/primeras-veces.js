@@ -5,6 +5,7 @@
 import { ui, util, db, profile, CONFIG } from '../core.js';
 import { compressImage, isQuotaError } from '../core/images.js';
 import { openViewer } from '../core/viewer.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -100,9 +101,8 @@ export async function render() {
     load();
   };
   const removeOwn = async (p) => {
-    if (!(await ui.confirmDialog({ title: '¿Borrar esta página?', message: 'Se borra con su foto en los dos teléfonos.', confirmLabel: 'Borrar', danger: true }))) return;
-    if (p.mediaId) await db.rawDelete('media', p.mediaId).catch(() => {});
-    await db.purge('firsts', p.id); load();
+    if (!(await ui.confirmDialog({ title: '¿Borrar esta página?', message: `Se borra con su foto. ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true }))) return;
+    await toTrash('firsts', p.id, { label: p.title, what: 'Página borrada', extraMedia: [p.mediaId], onRestored: load }); load();
   };
   const clearPage = async (p) => {
     if (!(await ui.confirmDialog({ title: '¿Dejar la página en blanco?', message: 'Se borran la fecha, la foto y la nota de esta página.', confirmLabel: 'Dejar en blanco', danger: true }))) return;

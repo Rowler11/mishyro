@@ -1,8 +1,8 @@
 // Data layer over IndexedDB (docs/08). The ONLY place that opens IndexedDB.
-import { nowISO, uuid } from './util.js';
+import { nowISO, uuid, toLocalISO } from './util.js';
 import * as cryptoBox from './crypto.js';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 // [store, indexes] — indexes: name -> keyPath (string or array)
 export const STORES = [
@@ -66,9 +66,11 @@ export const STORES = [
   // Fase A (schema 2): what this device already sent, and received changes waiting for a key.
   ['syncState', {}],
   ['syncInbox', {}],
+  // 3: Papelera. What was deleted on this device, kept 30 days to bring it back (never synced or backed up).
+  ['trash', { deletedAt: 'deletedAt' }],
 ];
 /** Stores that only ever describe this device: never synced nor backed up. */
-export const LOCAL_ONLY = ['meta', 'settings', 'errors', 'syncState', 'syncInbox'];
+export const LOCAL_ONLY = ['meta', 'settings', 'errors', 'syncState', 'syncInbox', 'trash'];
 export const STORE_NAMES = STORES.map(([n]) => n);
 
 // Fields every record has (docs/08 §2). They stay in clear text even when encrypted.
@@ -86,6 +88,8 @@ const migrations = {
   } },
   // 2 (Fase A): new stores only; `1` already creates any store that is missing.
   2: { structure(idb) { migrations[1].structure(idb); } },
+  // 3 (Papelera): one new store.
+  3: { structure(idb) { migrations[1].structure(idb); } },
 };
 
 let idb = null;
@@ -237,6 +241,60 @@ export async function purge(store, id) {
   const meta = (await rawGet('meta', 'meta')) || { id: 'meta' };
   meta.tombstones = { ...(meta.tombstones || {}), [`${store}:${id}`]: nowISO() };
   await rawPut('meta', meta);
+}
+
+// ---------- Papelera (trash) ----------
+// A user-facing delete moves the record and its photos here, then purges them as before (tombstone,
+// sync deletion). Restoring writes them back with a fresh updatedAt, so they travel again.
+// The record is kept as stored: an encrypted one stays encrypted and its title is never copied in clear.
+export const TRASH_DAYS = 30;
+export async function trash(store, id, { label = '', section = '', extraMedia = [] } = {}) {
+  const rec = await rawGet(store, id);
+  if (!rec) return null;
+  const owned = await reqP(tx('media').objectStore('media').index('owner').getAll([store, id]));
+  const ids = new Set(owned.map((m) => m.id));
+  const media = [...owned];
+  for (const mid of extraMedia.filter(Boolean)) {
+    if (ids.has(mid)) continue;
+    const m = await rawGet('media', mid);
+    if (m) { media.push(m); ids.add(mid); }
+  }
+  const now = new Date();
+  const entry = {
+    id: uuid(), store, recId: id, rec, media, section,
+    label: rec.enc || rec.visibility === 'self' ? '' : String(label || '').slice(0, 120),
+    owner: rec.owner || 'both', visibility: rec.visibility || 'shared', by: activeProfile(),
+    deletedAt: nowISO(), expiresAt: toLocalISO(new Date(now.getTime() + TRASH_DAYS * 86400000)),
+  };
+  await rawPut('trash', entry);
+  for (const m of media) await rawDelete('media', m.id);
+  await purge(store, id);
+  return entry.id;
+}
+/** What the active person can see in the Papelera, newest first ("Solo yo" of the other one never shows). */
+export async function trashList() {
+  const all = await rawAll('trash');
+  return all.filter((t) => t.visibility !== 'self' || t.owner === activeProfile()).sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+}
+export async function restore(trashId) {
+  const t = await rawGet('trash', trashId);
+  if (!t) return false;
+  // updatedAt keeps whole seconds; one second ahead makes sure it is newer than the deletion the sync
+  // already sent (that one is stamped to the millisecond), even when "Deshacer" is tapped right away.
+  const now = toLocalISO(new Date(Date.now() + 1000));
+  for (const m of t.media || []) await rawPut('media', { ...m, deleted: false, updatedAt: now });
+  await rawPut(t.store, { ...t.rec, deleted: false, updatedAt: now });
+  const meta = (await rawGet('meta', 'meta')) || { id: 'meta' };
+  if (meta.tombstones) { delete meta.tombstones[`${t.store}:${t.recId}`]; await rawPut('meta', meta); }
+  await rawDelete('trash', trashId);
+  return true;
+}
+export const forget = (trashId) => rawDelete('trash', trashId);
+/** Drop what has been in the Papelera longer than TRASH_DAYS (run at start). */
+export async function emptyExpiredTrash(now = nowISO()) {
+  let n = 0;
+  for (const t of await rawAll('trash')) if (t.expiresAt && t.expiresAt < now) { await rawDelete('trash', t.id); n++; }
+  return n;
 }
 
 // ---------- media ----------

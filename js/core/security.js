@@ -10,7 +10,7 @@ export const SECURITY_DEFAULTS = {
   wipeAfterFailures: false, wipeThreshold: 10, attempts: {},
 };
 export const SENSITIVE = ['cycle', 'vault', 'person:sofia', 'person:david'];
-const NEVER_ENCRYPT = ['meta', 'settings', 'errors', 'profile', 'content', 'syncState', 'syncInbox'];
+const NEVER_ENCRYPT = ['meta', 'settings', 'errors', 'profile', 'content', 'syncState', 'syncInbox', 'trash'];
 
 let scopesWithKeys = new Set();
 let uiUnlocked = false; // app interface unlocked (PIN, or fingerprint without PRF)
@@ -165,6 +165,15 @@ export function formatWait(ms) {
  * Full-screen lock (app) or in-page lock (section). Resolves when unlocked.
  * neutralName keeps sensitive sections discreet ("Rincón", "Calendario").
  */
+/** One caring line a day on the app lock (CONFIG.lockPhrases), the same all day on every device. */
+let lockPhrases = [];
+export function setLockPhrases(list) { lockPhrases = Array.isArray(list) ? list.filter(Boolean) : []; }
+export function lockPhrase(day = new Date()) {
+  if (!lockPhrases.length) return '';
+  const n = Math.round(Date.UTC(day.getFullYear(), day.getMonth(), day.getDate()) / 86400000);
+  return lockPhrases[((n % lockPhrases.length) + lockPhrases.length) % lockPhrases.length];
+}
+
 export async function lockScreen({ scope, neutralName = 'Aishiteru', inline = false, mount } = {}) {
   // Keys made before PIN length was stored (or of different lengths) get a 4-6 pad without auto-submit.
   const digits = [...new Set((await keyRecords(scope)).map((r) => r.digits))];
@@ -197,6 +206,7 @@ export async function lockScreen({ scope, neutralName = 'Aishiteru', inline = fa
       el('div', { class: 'lock-card' },
         logo({ size: 72 }),
         el('h1', { class: 'lock-title', tabindex: '-1' }, neutralName),
+        scope === 'app' && lockPhrase() ? el('p', { class: 'lock-phrase' }, lockPhrase()) : null,
         el('p', { class: 'lock-sub' }, 'Escribe tu PIN para entrar.'),
         pad, waitNote));
     keyRecords(scope).then((recs) => {

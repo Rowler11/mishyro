@@ -8,6 +8,7 @@ import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import { compressImage } from '../core/images.js';
 import { layer as stickerLayer, decorate, loadAlbum, albumView } from './stickers.js';
 import { voiceAttach, saveAttached, player as voicePlayer } from './voz.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -300,10 +301,9 @@ export async function render(ctx) {
   };
 
   const removeLetter = async (l) => {
-    const yes = await ui.confirmDialog({ title: '¿Borrar esta carta?', message: `“${l.label}” se borra de este teléfono. No se puede deshacer.`, confirmLabel: 'Borrar', danger: true });
+    const yes = await ui.confirmDialog({ title: '¿Borrar esta carta?', message: `“${l.label}”. ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true });
     if (!yes) return;
-    await db.purge('letters', l.id);
-    ui.toast('Carta borrada.');
+    await toTrash('letters', l.id, { label: l.label, what: 'Carta borrada', extraMedia: [l.raw?.mediaId], onRestored: () => load().then(draw) });
     await load(); draw();
   };
 

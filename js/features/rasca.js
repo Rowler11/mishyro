@@ -166,7 +166,7 @@ export async function render() {
     const toScratch = mine.filter((c) => !c.scratchedAt).sort((a, b) => (a.openOn || '').localeCompare(b.openOn || ''));
     const history = mine.filter((c) => c.scratchedAt).sort((a, b) => b.scratchedAt.localeCompare(a.scratchedAt));
     const sent = cards.filter((c) => c.from === me && c.to !== me && !c.scratchedAt);
-    body.replaceChildren(
+    util.fill(body,
       el('section', { class: 'stack' }, el('h2', { class: 'section-title' }, 'Para raspar'),
         toScratch.length ? el('ul', { class: 'scratch-grid' }, toScratch.map((c) => {
           const locked = !!(c.openOn && c.openOn > today);

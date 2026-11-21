@@ -7,6 +7,7 @@
 import { ui, util, db, profile, security } from '../core.js';
 import { compressImage, isQuotaError } from '../core/images.js';
 import { loadLeaflet, pinIcon } from './mapa.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -186,9 +187,8 @@ export async function render() {
           el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': `Editar ${d.name}`, onClick: () => editor(d, { onSaved: () => load() }) }, icon('pencil', { size: 18 })),
           done ? null : el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': `Volver plan "${d.name}"`, onClick: () => toPlan(d) }, icon('list-checks', { size: 18 })),
           el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': `Borrar ${d.name}`, onClick: async () => {
-            if (!(await ui.confirmDialog({ title: '¿Borrar este sueño?', message: `"${d.name}" se borra en los dos teléfonos.`, confirmLabel: 'Borrar', danger: true }))) return;
-            if (d.mediaId) await db.rawDelete('media', d.mediaId).catch(() => {});
-            await db.purge('dreams', d.id); load();
+            if (!(await ui.confirmDialog({ title: '¿Borrar este sueño?', message: `"${d.name}". ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true }))) return;
+            await toTrash('dreams', d.id, { label: d.name, what: 'Sueño borrado', extraMedia: [d.mediaId], onRestored: load }); load();
           } }, icon('trash-2', { size: 18 })))));
   };
   const load = async () => {

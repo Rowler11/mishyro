@@ -188,7 +188,7 @@ export async function render() {
       const on = r.badges.filter((b) => b.unlockedAt).sort((a, b) => b.unlockedAt.localeCompare(a.unlockedAt));
       const off = r.badges.filter((b) => !b.unlockedAt).sort((a, b) => b.progress.value / b.progress.min - a.progress.value / a.progress.min);
       const partner = profile.name(profile.partnerOf(profile.active()));
-      body.replaceChildren(
+      util.fill(body,
         el('section', { class: 'card paper-card streak-card' },
           el('div', { class: 'streak-head' },
             el('span', { class: `streak-flame${streak.current ? ' is-lit' : ''}`, 'aria-hidden': 'true' }, icon('flame', { size: 34 })),

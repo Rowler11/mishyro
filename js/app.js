@@ -38,6 +38,8 @@ const load = {
   perfil: () => import('./features/perfil.js'),
   privacidad: () => import('./features/privacidad.js'),
   buscar: () => import('./features/buscar.js'),
+  papelera: () => import('./features/papelera.js'),
+  'modo-cita': () => import('./features/modo-cita.js'),
   styleguide: () => import('./features/styleguide.js'),
   setup: () => import('./features/setup.js'),
   sync: () => import('./features/sync.js'),
@@ -433,12 +435,14 @@ async function start() {
   theme.setStorageKey(CONFIG.storageKey);
   profile.init(CONFIG);
   installErrorHandler();
+  security.setLockPhrases(CONFIG.lockPhrases);
   readShareTarget();
   try { await db.open(CONFIG.storageKey); } catch (e) { fatal(e?.message || 'Error de almacenamiento.'); return; }
   await security.init({ wipe: wipeEverything, unlocked: () => router.refresh(), vaultWipe: async () => (await import('./core/vault.js')).wipeLocal() });
   const meta = await db.getMeta();
   if (!meta.installId) await db.setMeta({ installId: util.uuid(), schemaVersion: db.SCHEMA_VERSION, createdAt: util.nowISO() });
   await seed.syncConfig(CONFIG);
+  db.emptyExpiredTrash().catch(() => {}); // Papelera: what is older than 30 days goes for good
   await profile.load();
   db.onChange((store) => { if (store === 'pets') profile.load(); if (store === 'letters' || store === 'content') updateLetterDot(); });
   await applySettings();

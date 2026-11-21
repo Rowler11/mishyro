@@ -1,7 +1,7 @@
 // Full-screen photo and video viewer (docs/05 Más §1): swipe or arrows to move, Esc, the close
 // button or a swipe down to close. Items load lazily from the media store and their object URLs
 // are revoked when the viewer closes. Shared by Galería, Mapa, Primeras veces and Álbum.
-import { el, icon, prefersReducedMotion } from './util.js';
+import { el, icon, fill, prefersReducedMotion } from './util.js';
 import * as db from './db.js';
 import { openModal } from './ui.js';
 
@@ -39,7 +39,7 @@ export function openViewer(items, start = 0) {
   const paint = () => {
     counter.textContent = n > 1 ? `${index + 1} de ${n}` : '';
     const it = items[index] || {};
-    caption.replaceChildren(
+    fill(caption,
       it.caption ? el('p', { class: 'viewer-title' }, it.caption) : null,
       it.sub ? el('p', { class: 'viewer-sub' }, it.sub) : null,
       it.href ? el('a', { class: 'btn btn-secondary btn-small viewer-link', href: it.href, onClick: () => api.close(undefined, { silent: true }) }, icon('arrow-up-right', { size: 18 }), it.hrefLabel || 'Ver dónde está') : null);

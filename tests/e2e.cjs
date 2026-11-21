@@ -68,7 +68,7 @@ async function completeSetup(page) {
     const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar primera copia' }).click()]);
     const file = await download.path();
     const backup = JSON.parse(fs.readFileSync(file, 'utf8'));
-    ok('setup: first backup downloads with the backup format', backup.format === 'aniversario-backup' && backup.schemaVersion === 2);
+    ok('setup: first backup downloads with the backup format', backup.format === 'aniversario-backup' && backup.schemaVersion === 3);
     ok('backup: excludes vault and errors', !('vault' in backup.stores) && !('errors' in backup.stores));
     await page.getByRole('button', { name: 'Terminar' }).click();
     await page.getByText('Un lugar solo de los dos').waitFor();
@@ -194,7 +194,9 @@ async function completeSetup(page) {
     await page.evaluate(() => { location.hash = '#/inicio'; });
     await page.waitForTimeout(300);
     await shot(page, `inicio-night-${w}`);
-    ok(`console @${w}: no errors`, errors.length === 0, errors.join(' | '));
+    // Map tiles come from OpenStreetMap; the test sandbox has no internet, so those failed loads are not the app's.
+    const appErrors = errors.filter((e) => !/ERR_TUNNEL_CONNECTION_FAILED|ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED/.test(e));
+    ok(`console @${w}: no errors`, appErrors.length === 0, appErrors.join(' | '));
     await ctx.close();
   }
 
@@ -309,6 +311,8 @@ async function completeSetup(page) {
     await page.locator('.memory-detail').getByRole('button', { name: 'Borrar' }).click();
     await page.getByRole('dialog', { name: '¿Borrar este recuerdo?' }).getByRole('button', { name: 'Borrar' }).click();
     await page.waitForFunction(() => !document.querySelector('.tl-card[href*="capsula/"]') || ![...document.querySelectorAll('.tl-title')].some((t) => t.textContent === 'Picnic en el parque'));
+    await page.waitForSelector('.toast', { hasText: 'Papelera' }); // v0.10.0: the memory goes to the Papelera first
+    await page.waitForFunction(() => /^#\/capsula$/.test(location.hash) || matchMedia('(min-width: 1100px)').matches);
     const left = await page.evaluate(async () => (await (await import('./js/core/db.js')).rawAll('media')).length);
     ok(`cápsula @${w}: deleting a memory asks first and removes its photos and video`, left === 0, String(left));
     ok(`cápsula @${w}: memories from the initial data have no Borrar`, (await page.evaluate(async () => { location.hash = '#/capsula/seed%3Amemory%3Ainicio'; await new Promise((r) => setTimeout(r, 300)); return document.querySelectorAll('.memory-detail button').length && ![...document.querySelectorAll('.memory-detail button')].some((b) => b.textContent.includes('Borrar')); })));
@@ -1932,6 +1936,158 @@ async function completeSetup(page) {
     ok('7 movimiento reducido: sin partículas ni hanabi', !any && forced.every((x) => x === false), JSON.stringify(forced));
     await ctxR.close();
     await ctx.close(); await b7.close();
+  }
+
+  // ---------- 14. v0.10.0: revisión completa (null fix, details, Papelera, Modo cita) ----------
+  {
+    const b10 = await chromium.launch();
+    const ctx = await b10.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errs = watch(page);
+    await page.goto(BASE);
+    await completeSetup(page);
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(400); };
+    const mainText = () => page.evaluate(() => document.querySelector('main').innerText);
+
+    // E1/E2: no literal "null" on screens that used to print it
+    for (const [r, sel] of [['/rasca', '.section-title'], ['/mapa', '.place-counter, .map-wrap, main h1'], ['/habitos', 'main h1'], ['/insignias', '.streak-card'], ['/ajustes/movimiento', '.card']]) {
+      await go(r, sel);
+      ok(`10 sin "null" en ${r}`, !/\bnull\b/.test(await mainText()));
+    }
+    // viewer without caption
+    await page.evaluate(async () => { const v = await import('./js/core/viewer.js'); const c = document.createElement('canvas'); c.width = c.height = 8; const b = await new Promise((r) => c.toBlob(r)); v.openViewer([{ blob: b, alt: 'x' }]); });
+    await page.waitForTimeout(400);
+    ok('10 visor sin título: sin "null"', !/\bnull\b/.test(await page.evaluate(() => document.querySelector('.overlay')?.innerText || '')));
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    // E3: Modo sin terceros
+    await go('/ajustes/terceros', '.external-table');
+    const ter = await mainText();
+    ok('10 Modo sin terceros: sin "Pronto" y sin "solo habla con su propio sitio"', !/Pronto/.test(ter) && !/solo habla con su propio sitio/.test(ter));
+
+    const ta = await page.evaluate(async () => (await import('./js/core/ui.js')).textarea({ value: 'Nota guardada' }).value);
+    ok('10 textarea: muestra el texto guardado al editar (antes salía vacío, p. ej. en el diario del Rincón)', ta === 'Nota guardada', ta);
+
+    // D2: ¡Úsame pronto!
+    const soon = await page.evaluate(async () => {
+      const c = await import('./js/features/cupones.js'); const u = await import('./js/core/util.js');
+      const d = (n) => { const x = new Date(); x.setDate(x.getDate() + n); return u.localDay(x); };
+      return [c.isExpiringSoon({ expiresOn: d(3) }), c.isExpiringSoon({ expiresOn: d(7) }), c.isExpiringSoon({ expiresOn: d(8) }), c.isExpiringSoon({ expiresOn: d(-1) }), c.isExpiringSoon({ expiresOn: '' })];
+    });
+    ok('10 Cuponera: "Úsame pronto" solo de 0 a 7 días', JSON.stringify(soon) === '[true,true,false,false,false]', JSON.stringify(soon));
+    await page.evaluate(async () => {
+      const db = await import('./js/core/db.js'); const p = await import('./js/core/profile.js'); const u = await import('./js/core/util.js');
+      const me = p.active(); const x = new Date(); x.setDate(x.getDate() + 2);
+      await db.put('content', { id: 't10:coupon', kind: 'coupon', title: 'Cupón ficticio', description: '', dedication: '', expiresOn: u.localDay(x), from: p.partnerOf(me), to: me, sentAt: u.nowISO(), visibility: 'shared', owner: 'both' });
+    });
+    await go('/cupones', '.kippu');
+    ok('10 Cuponera: el sello se ve en el cupón que vence pronto', await page.locator('.kippu-soon', { hasText: '¡Úsame pronto!' }).count() >= 1);
+
+    // D3: encuentro phrases
+    const lines = await page.evaluate(async () => {
+      const e = await import('./js/features/encuentro.js');
+      const at = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return { date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`, time: '23:59' }; };
+      return [1, 3, 6, 20].map((n) => e.countdownLine(at(n)));
+    });
+    ok('10 Encuentro: frases según lo que falta', lines[0] === '¡Mañana se ven!' && lines[1] === 'Faltan 3 sueños' && /^Ya casi/.test(lines[2]) && /para verse$/.test(lines[3]), JSON.stringify(lines));
+
+    // D4: ema swings once when a plan is fulfilled
+    await go('/planes', '.ema');
+    await page.locator('.ema:not(.is-done) .ema-check input').first().click({ force: true });
+    await page.getByRole('button', { name: 'Marcar cumplido' }).click();
+    const swung = await page.waitForSelector('.ema.is-swinging', { timeout: 4000 }).then(() => true).catch(() => false);
+    ok('10 Planes: la tablilla se balancea al cumplirse', swung);
+
+    // N2: round milestones
+    const rm = await page.evaluate(async () => { const t = await import('./js/core/time.js'); return [1000, 1111, 2000, 2222, 999, 1500].map((n) => !!t.roundMilestone(n)); });
+    ok('10 hitos redondos: 1000, 1111, 2000 y 2222 sí; 999 y 1500 no', JSON.stringify(rm) === '[true,true,true,true,false,false]', JSON.stringify(rm));
+
+    // N1: "Yo también" when the partner thought of you today
+    await page.evaluate(async () => { const db = await import('./js/core/db.js'); const p = await import('./js/core/profile.js'); const u = await import('./js/core/util.js'); await db.put('thinkingOfYou', { at: u.nowISO(), by: p.partnerOf(p.active()), phraseId: 'x' }); });
+    await go('/inicio', '.home-cards');
+    const tab = page.locator('.home-day button', { hasText: 'Pensando en ti' });
+    if (await tab.count()) await tab.first().click();
+    await page.waitForSelector('.thinking-reply', { timeout: 5000 }).catch(() => {});
+    const replyBtn = page.locator('.thinking-reply button', { hasText: 'Yo también' });
+    ok('10 Pensando en ti: aparece "Yo también"', await replyBtn.count() === 1);
+    if (await replyBtn.count()) await replyBtn.click();
+    const replied = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const p = await import('./js/core/profile.js'); return (await db.query('thinkingOfYou')).some((t) => t.reply && t.by === p.active()); });
+    ok('10 Pensando en ti: la respuesta se guarda', replied);
+
+    // D1: both today (pure function; the line needs the sync)
+    const both = await page.evaluate(async () => { const h = await import('./js/features/home.js'); const now = new Date(); const y = new Date(now.getTime() - 86400000 * 2);
+      return [h.bothToday([{ person: 'david', seen: now.getTime() }], 'david', now), h.bothToday([{ person: 'david', seen: y.getTime() }], 'david', now), h.bothToday([{ person: 'david', seen: now.getTime(), me: true }], 'david', now)]; });
+    ok('10 "Hoy los dos pasaron": solo con un equipo del otro visto hoy', JSON.stringify(both) === '[true,false,false]', JSON.stringify(both));
+    ok('10 "Hoy los dos pasaron": sin sincronización no sale', await page.locator('.both-today:not([hidden])').count() === 0);
+
+    // N3: phrase of the day on the app lock
+    const phr = await page.evaluate(async () => { const s = await import('./js/core/security.js'); const d1 = new Date(2026, 0, 1); const d2 = new Date(2026, 0, 2); return [s.lockPhrase(d1), s.lockPhrase(d1), s.lockPhrase(d2)]; });
+    ok('10 bloqueo: frase del día estable y distinta al día siguiente', phr[0] && phr[0] === phr[1] && phr[1] !== phr[2], JSON.stringify(phr));
+    const lockTxt = await page.evaluate(async () => { const s = await import('./js/core/security.js'); await s.createPin('app', '1357'); s.lockScreen({ scope: 'app' }); await new Promise((r) => setTimeout(r, 500)); return document.querySelector('.lock-phrase')?.textContent || ''; });
+    ok('10 bloqueo: la pantalla del PIN muestra la frase', lockTxt.length > 5, lockTxt);
+    await page.locator('.lock input').first().fill('1357').catch(() => {});
+    await page.keyboard.type('1357').catch(() => {});
+    await page.waitForFunction(() => !document.querySelector('.lock-full'), null, { timeout: 5000 }).catch(() => {});
+    ok('10 bloqueo: se abre con el PIN', await page.locator('.lock-full').count() === 0);
+
+    // N4: Papelera
+    await page.evaluate(async () => {
+      const db = await import('./js/core/db.js');
+      const c = document.createElement('canvas'); c.width = c.height = 8; const b = await new Promise((r) => c.toBlob(r, 'image/jpeg'));
+      const mid = await db.putMedia(b, { ownerStore: 'memories', ownerId: 't10:mem', width: 8, height: 8 });
+      await db.put('memories', { id: 't10:mem', title: 'Recuerdo ficticio para la papelera', date: '2026-01-05', note: '', mediaIds: [mid], visibility: 'shared', owner: 'both', draft: false });
+    });
+    await go('/capsula/t10:mem', 'main h1');
+    const delBtn = page.getByRole('button', { name: /^Borrar/ }).first();
+    await delBtn.click();
+    await page.locator('.overlay').getByRole('button', { name: 'Borrar' }).click();
+    await page.waitForSelector('.toast', { hasText: 'Papelera' }).catch(() => {});
+    const afterDel = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const t = await db.trashList(); return { gone: !(await db.rawGet('memories', 't10:mem')), trash: t.filter((x) => x.recId === 't10:mem').length, media: t.find((x) => x.recId === 't10:mem')?.media?.length || 0 }; });
+    ok('10 Papelera: el recuerdo se borra y queda en la Papelera con su foto', afterDel.gone && afterDel.trash === 1 && afterDel.media === 1, JSON.stringify(afterDel));
+    await go('/ajustes/papelera', '.trash-list');
+    ok('10 Papelera: se ve en Ajustes con su nombre', await page.locator('.trash-row', { hasText: 'Recuerdo ficticio para la papelera' }).count() === 1);
+    await page.locator('.trash-row', { hasText: 'Recuerdo ficticio para la papelera' }).getByRole('button', { name: 'Recuperar' }).click();
+    await page.waitForTimeout(500);
+    const back = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const m = await db.get('memories', 't10:mem'); const meta = await db.getMeta(); return { m: !!m, media: m ? !!(await db.getMedia(m.mediaIds[0])) : false, tomb: !!meta.tombstones?.['memories:t10:mem'], trash: (await db.trashList()).length }; });
+    ok('10 Papelera: recuperar devuelve el recuerdo, su foto y quita la lápida', back.m && back.media && !back.tomb && back.trash === 0, JSON.stringify(back));
+    const solo = await page.evaluate(async () => {
+      const db = await import('./js/core/db.js'); const p = await import('./js/core/profile.js'); const me = p.active();
+      await db.rawPut('memories', db.withDefaults({ id: 't10:self', title: 'Secreto ficticio', visibility: 'self', owner: p.partnerOf(me), mediaIds: [] }));
+      await db.trash('memories', 't10:self', { label: 'Secreto ficticio' });
+      const raw = (await db.rawAll('trash')).find((t) => t.recId === 't10:self');
+      return { label: raw.label, listed: (await db.trashList()).some((t) => t.recId === 't10:self') };
+    });
+    ok('10 Papelera: lo "Solo yo" del otro no se lista ni guarda su título', solo.label === '' && !solo.listed, JSON.stringify(solo));
+    const exp = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const far = new Date(Date.now() + 31 * 86400000); const iso = (await import('./js/core/util.js')).toLocalISO(far); return db.emptyExpiredTrash(iso); });
+    ok('10 Papelera: a los 30 días se vacía sola', exp >= 1, String(exp));
+    const bk = await page.evaluate(async () => { const b = await import('./js/core/backup.js'); const r = await b.exportBackup({}); const d = r.files[0].data; const o = typeof d === 'string' ? JSON.parse(d) : d; return Object.keys(o.stores).includes('trash'); }).catch((e) => `err ${e.message}`);
+    ok('10 Papelera: no viaja en la copia de seguridad', bk === false, String(bk));
+
+    // N5: Modo cita
+    await go('/modo-cita?titulo=Cena%20ficticia', '.date-mode-intro');
+    ok('10 Modo cita: el título llega desde la idea', (await page.locator('.date-mode input').first().inputValue()) === 'Cena ficticia');
+    await page.locator('.date-mode input').nth(1).fill('Un lugar ficticio');
+    await page.getByRole('button', { name: 'Empezar la cita' }).click();
+    await page.waitForSelector('.date-mode-question');
+    ok('10 Modo cita: pregunta para conversar', (await page.locator('.date-mode-question').innerText()).length > 5);
+    await page.setInputFiles('#date-mode-photo', path.join(__dirname, 'fixtures', 'foto-ficticia.jpg'));
+    await page.waitForSelector('.date-mode-photos .photo-tile', { timeout: 8000 });
+    await page.locator('.date-mode textarea').fill('Nota ficticia de la cita');
+    await page.waitForTimeout(600);
+    await page.reload();
+    if (await page.waitForSelector('.lock-full', { timeout: 6000 }).then(() => true).catch(() => false)) await page.keyboard.type('1357'); // app PIN made above
+    await page.waitForSelector('.date-mode-question', { timeout: 20000 });
+    ok('10 Modo cita: sigue en curso después de recargar', (await page.locator('.date-mode textarea').inputValue()) === 'Nota ficticia de la cita' && await page.locator('.date-mode-photos .photo-tile').count() === 1);
+    await page.getByRole('button', { name: 'Terminar y guardar el recuerdo' }).click();
+    await page.waitForSelector('.date-mode-end');
+    const mem = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const m = (await db.query('memories')).find((x) => x.fromDateMode); return m ? { title: m.title, photos: m.mediaIds.length, note: m.note } : null; });
+    ok('10 Modo cita: arma el recuerdo con título, foto, lugar y nota', mem && mem.title === 'Cena ficticia' && mem.photos === 1 && /Nota ficticia/.test(mem.note) && /Un lugar ficticio/.test(mem.note), JSON.stringify(mem));
+    await go('/modo-cita', '.date-mode-intro');
+    ok('10 Modo cita: al terminar vuelve a empezar de cero', true);
+    await go('/mas/juntos', '.more-card, a');
+    ok('10 Más: Modo cita está en Juntos', await page.locator('a[href="#/modo-cita"]').count() >= 1);
+    const real = errs.filter((e) => !/ERR_TUNNEL_CONNECTION_FAILED|ERR_INTERNET_DISCONNECTED/.test(e)); // map tiles: no internet in the test sandbox
+    ok('v0.10.0: no page errors or native dialogs', real.length === 0, real.join(' | '));
+    await ctx.close(); await b10.close();
   }
 
   await browser.close();

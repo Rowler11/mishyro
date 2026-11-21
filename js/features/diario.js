@@ -6,6 +6,7 @@
 import { ui, util, db, profile, security, CONFIG } from '../core.js';
 import { compressImage, isQuotaError } from '../core/images.js';
 import { MOODS, moodPicker, saveMood } from './animo.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -118,8 +119,8 @@ export async function render() {
   };
 
   const remove = async (x) => {
-    if (!(await ui.confirmDialog({ title: '¿Borrar esta página?', message: 'Se borra con su foto.', confirmLabel: 'Borrar', danger: true }))) return;
-    await db.purge('diary', x.id); draw();
+    if (!(await ui.confirmDialog({ title: '¿Borrar esta página?', message: `Se borra con su foto. ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true }))) return;
+    await toTrash('diary', x.id, { label: (x.text || '').slice(0, 60), what: 'Página borrada', extraMedia: [x.mediaId], onRestored: draw }); draw();
   };
 
   const page1 = async (x) => {

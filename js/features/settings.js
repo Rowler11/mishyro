@@ -102,7 +102,7 @@ function motion({ app } = {}) {
   db.getSettings('motion', theme.MOTION_DEFAULTS).then((s) => {
     const save = async (patch) => { await db.setSettings('motion', patch); theme.apply(patch); };
     const sys = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    wrap.append(el('div', { class: 'card stack' },
+    util.fill(wrap, el('div', { class: 'card stack' },
       ui.toggle({ label: 'Animaciones', hint: sys ? 'Tu dispositivo pide reducir el movimiento: se usan versiones sobrias.' : 'Pétalos, sellos y transiciones. Apágalas para una versión sobria y rápida.', checked: s.animations, onChange: (v) => save({ animations: v }) }),
       ui.toggle({ label: 'Vibración suave', hint: 'Un toque leve en acciones clave.', checked: s.haptics, onChange: (v) => { save({ haptics: v }); if (v) util.haptic(15); } }),
       ui.toggle({ label: 'Sonidos suaves', hint: 'Campanilla y tonos generados en el teléfono. Apagados por defecto.', checked: s.sound, onChange: (v) => { save({ sound: v }); if (v) chime(); } }),

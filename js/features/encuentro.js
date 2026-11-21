@@ -28,7 +28,9 @@ export function countdownLine(m, now = new Date()) {
   if (c.today) return m.time && !c.past && (c.hours || c.minutes) ? `Hoy se ven, en ${c.hours ? `${c.hours} h ` : ''}${c.minutes} min` : '¡Hoy se ven!';
   if (c.past) return '';
   if (c.days === 0) return `Se ven en ${c.hours} h ${c.minutes} min`;
-  if (c.days === 1) return 'Se ven mañana';
+  if (c.days === 1) return '¡Mañana se ven!';
+  if (c.days <= 3) return `Faltan ${c.days} sueños`;
+  if (c.days <= 7) return `Ya casi: faltan ${c.days} días`;
   return `Faltan ${c.days} días para verse`;
 }
 

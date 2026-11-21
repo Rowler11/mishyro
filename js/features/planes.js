@@ -2,6 +2,7 @@
 // written on it). Seeded from CONFIG.bucketList; add, mark as done with its date, delete, and turn a
 // plan into a dream (Sueños y viajes) when it grows. "X de Y cumplidos" with a progress bar.
 import { ui, util, db, profile } from '../core.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -22,6 +23,8 @@ function planEditor(existing, { onSaved }) {
   });
 }
 
+let justDone = ''; // the ema that swings once on its hook right after it is fulfilled
+
 function doneDialog(plan, { onSaved }) {
   const date = ui.input({ type: 'date', value: util.localDay(), max: util.localDay() });
   const f = ui.field({ label: '¿Cuándo lo cumplieron?', control: date });
@@ -29,7 +32,7 @@ function doneDialog(plan, { onSaved }) {
     title: '¡Cumplido!', size: 'sm', body: el('div', { class: 'stack' }, el('p', { class: 'ema-dialog-title' }, plan.title), f),
     actions: [{ label: 'Cancelar', variant: 'ghost' }, { label: 'Marcar cumplido', variant: 'primary', onClick: async () => {
       if (!util.isValidDay(date.value) || date.value > util.localDay()) { f.setError('Elige una fecha de hoy o de antes.'); return false; }
-      await db.put('bucketList', { ...plan, done: true, doneAt: date.value }); util.haptic([10, 30, 10]); ui.confetti({ count: 28 }); onSaved(); return true;
+      await db.put('bucketList', { ...plan, done: true, doneAt: date.value }); justDone = plan.id; util.haptic([10, 30, 10]); util.sound('chime'); ui.confetti({ count: 28 }); onSaved(); return true;
     } }],
   });
 }
@@ -48,7 +51,7 @@ export async function render() {
     ui.toast('Ahora está en Sueños y viajes.', { tone: 'success', action: { label: 'Ver', onClick: () => { location.hash = '#/suenos'; } } });
     load();
   };
-  const ema = (p) => el('li', { class: `ema${p.done ? ' is-done' : ''}` },
+  const ema = (p) => el('li', { class: `ema${p.done ? ' is-done' : ''}${p.id === justDone ? ' is-swinging' : ''}`, onAnimationend: (e) => { if (e.animationName === 'ema-swing') { e.currentTarget.classList.remove('is-swinging'); justDone = ''; } } },
     el('span', { class: 'ema-cord', 'aria-hidden': 'true' }),
     el('label', { class: 'ema-check' },
       el('input', { type: 'checkbox', checked: p.done, onChange: async (e) => {
@@ -61,8 +64,8 @@ export async function render() {
       p.done ? null : el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': `Convertir "${p.title}" en sueño`, onClick: () => toDream(p) }, icon('moon-star', { size: 16 })),
       el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': `Editar "${p.title}"`, onClick: () => planEditor(p, { onSaved: load }) }, icon('pencil', { size: 16 })),
       el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': `Borrar "${p.title}"`, onClick: async () => {
-        if (!(await ui.confirmDialog({ title: '¿Borrar este plan?', message: `"${p.title}" se borra en los dos teléfonos.`, confirmLabel: 'Borrar', danger: true }))) return;
-        await db.purge('bucketList', p.id); load();
+        if (!(await ui.confirmDialog({ title: '¿Borrar este plan?', message: `"${p.title}". ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true }))) return;
+        await toTrash('bucketList', p.id, { label: p.title, what: 'Plan borrado', onRestored: load }); load();
       } }, icon('trash-2', { size: 16 }))));
 
   const load = async () => {
