@@ -1,7 +1,7 @@
 // Ajustes: main list, Apariencia (with Movimiento y sonido), Legal y ayuda and Acerca de.
 // Centro de seguridad and Copia de seguridad live in ajustes.js.
 import { ui, util, db, theme, profile, router, CONFIG } from '../core.js';
-import { SETTINGS_PAGES } from '../routes.js';
+import { SETTINGS_PAGES, HUBS, listed } from '../routes.js';
 import * as fx from '../core/fx.js';
 
 const { el, icon, ja } = util;
@@ -31,7 +31,8 @@ function main({ app }) {
     onChange: (v) => { profile.setActive(v); ui.toast(`Ahora usa la app: ${profile.name(v)}`); },
   });
 
-  const rows = SETTINGS_PAGES.filter((p) => !p.hidden).map((p) => el('a', { class: 'list-row card-link', href: `#/ajustes/${p.id}` },
+  // Joined pages (2026-11-21) show once, under the hub's name; their other parts are tabs inside.
+  const rows = SETTINGS_PAGES.filter((p) => !p.hidden && listed(`ajustes/${p.id}`)).map((p) => ({ ...p, ...(HUBS.find((h) => h.id === `ajustes/${p.id}`) ? { title: HUBS.find((h) => h.id === `ajustes/${p.id}`).title, icon: HUBS.find((h) => h.id === `ajustes/${p.id}`).icon } : {}) })).map((p) => el('a', { class: 'list-row card-link', href: `#/ajustes/${p.id}` },
     el('span', { class: 'list-icon' }, icon(p.icon)),
     el('span', { class: 'list-text' }, el('span', { class: 'list-title' }, p.title)),
     p.module ? icon('chevron-right', { cls: 'list-chevron' }) : el('span', { class: 'badge' }, 'Pronto')));

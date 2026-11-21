@@ -2,7 +2,7 @@
 // what can be done: a row of quick actions, six favorite sections each person picks (per device) and a
 // daily "Prueben hoy" card that suggests a section not opened yet on this device.
 import { ui, util, db, CONFIG } from '../core.js';
-import { GROUPS } from '../routes.js';
+import { GROUPS, listed, asListed } from '../routes.js';
 
 const { el, icon } = util;
 const FAV_ID = 'homeFavorites';
@@ -19,7 +19,7 @@ export const QUICK = [
 
 /** Sections a person can pin or be suggested: listed in Más, not "moments", not Ajustes. */
 export function pickable() {
-  return GROUPS.filter((g) => g.id !== 'sistema').flatMap((g) => g.sections.filter((s) => !s.moment && s.module && !s.lock));
+  return GROUPS.filter((g) => g.id !== 'sistema').flatMap((g) => g.sections.filter((s) => !s.moment && s.module && !s.lock && listed(s.id)).map(asListed));
 }
 const byId = (id) => pickable().find((s) => s.id === id);
 
@@ -74,7 +74,8 @@ export async function favoritesCard() {
     const boxes = [];
     const paintNote = () => { note.textContent = `${chosen.size} de ${FAV_MAX} elegidos.`; boxes.forEach((b) => { b.disabled = !b.checked && chosen.size >= FAV_MAX; }); };
     const groups = GROUPS.filter((g) => g.id !== 'sistema').map((g) => {
-      const items = g.sections.filter((s) => pickable().includes(s));
+      const ids = new Set(pickable().map((s) => s.id));
+      const items = g.sections.filter((s) => ids.has(s.id)).map(asListed);
       if (!items.length) return null;
       return el('fieldset', { class: 'fav-group' }, el('legend', { class: 'card-kicker' }, g.title),
         items.map((s) => {

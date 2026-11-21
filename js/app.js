@@ -1,7 +1,7 @@
 // App bootstrap: database, theme, profile, security layers, navigation shell,
 // router, service worker and global shortcuts.
 import { CONFIG, db, router, theme, ui, security, seed, profile, util, cryptoBox, sync } from './core.js';
-import { TABS, GROUPS, HIDDEN, SETTINGS_PAGES } from './routes.js';
+import { TABS, GROUPS, HIDDEN, SETTINGS_PAGES, HUBS } from './routes.js';
 
 const { el, icon, ja } = util;
 
@@ -237,12 +237,26 @@ async function render(route) {
       ui.emptyState({ title: 'No pudimos abrir esta parte', text: 'No se perdió nada. Intenta de nuevo.', art: 'omamori', action: { label: 'Reintentar', onClick: () => router.refresh() } }));
   }
   clearTimeout(skeleton);
+  addHubTabs(node, route);
   const swapped = swapView(main, node);
   // Focus the new view's search box or title once it is in place.
   if (!app.firstRender) swapped.then(() => requestAnimationFrame(() => (main.querySelector('[data-autofocus]') || main.querySelector('h1') || main).focus({ preventScroll: true })));
   if (app.firstRender) preloadSections();
   app.firstRender = false;
   if (app.keepScroll != null) { const y = app.keepScroll; app.keepScroll = null; requestAnimationFrame(() => window.scrollTo({ top: y })); } else window.scrollTo({ top: 0 });
+}
+
+/** Joined sections (2026-11-21): the same tab strip on top of every tab of a hub. Tabs replace each other in history. */
+function addHubTabs(node, route) {
+  const here = route.path.slice(1);
+  const hub = HUBS.find((h) => h.tabs.some(([t]) => t === here));
+  const head = node?.querySelector?.(':scope > .page-head');
+  if (!hub || !head) return;
+  const nav = el('nav', { class: 'hub-tabs', 'aria-label': hub.title },
+    hub.tabs.map(([t, label]) => el('a', { class: `hub-tab${t === here ? ' is-on' : ''}`, href: `#/${t}`, 'aria-current': t === here ? 'page' : null,
+      onClick: (e) => { e.preventDefault(); if (t !== here) router.go(`/${t}`, { replace: true }); } }, label)));
+  head.after(nav);
+  requestAnimationFrame(() => nav.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
 }
 
 function swapView(main, node) {

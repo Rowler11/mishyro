@@ -3,7 +3,7 @@
 // toggles, segmented control, "Los dos / Solo yo" picker and PIN pad.
 import { el, icon, ja, haptic, prefersReducedMotion, uuid } from './util.js';
 import { previousPath, parseHash } from './router.js';
-import { GROUPS } from '../routes.js';
+import { GROUPS, hubOf } from '../routes.js';
 
 // ---------- live announcements ----------
 let live;
@@ -162,7 +162,10 @@ function backLink(back) {
     // Coming straight from that page (or, for a section, from Inicio or Más): step back in history,
     // so the arrow returns where you were and the phone's back button does not loop.
     const prev = previousPath();
-    const same = prev === path || (toMas && (prev === '/inicio' || prev?.startsWith('/mas')));
+    const here = parseHash().path.slice(1);
+    const hub = hubOf(here);
+    const sibling = hub && prev && hubOf(prev.slice(1)) === hub; // tabs replace each other in history
+    const same = prev === path || (toMas && (prev === '/inicio' || prev?.startsWith('/mas'))) || sibling;
     if (same && history.length > 1) { e.preventDefault(); history.back(); }
   } }, icon('arrow-left'));
 }
