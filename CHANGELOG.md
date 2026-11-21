@@ -1,5 +1,30 @@
 # Cambios
 
+## 0.7.0 (Fase 5B: los 13 juegos que faltaban)
+
+En casa
+- Adivina el recuerdo: una foto de la Cápsula se revela poco a poco (pixelada o por piezas); quien adivine primero suma más puntos.
+- Cata a ciegas: uno prepara las muestras con letras y quien prueba califica sabor, textura y aroma con estrellas y adivina qué es. Gana la mejor muestra y el mejor paladar.
+- Reto de cocina: ruleta de recetas sencillas (onigiri, tamagoyaki, okonomiyaki, arepas y más, junto con las suyas de Recetas), ingredientes a la lista de compras, temporizador y votación en duelo o juntos.
+- Búsqueda del tesoro: uno escribe pistas, notas de dónde esconderlas, ayuditas y un premio; al otro le llegan selladas a su teléfono y se abren una por una con tiempo. También se puede jugar pasando el mismo teléfono.
+- Cita misteriosa: sobres con instrucciones que se abren a su hora o al terminar el anterior; le llegan sellados al otro.
+
+Planes
+- Bingo de citas: un cartón de 16 planes por mes. Una línea completa da una tarjeta de Rasca y gana a cada uno; el cartón lleno, otra. Se pueden cambiar planes y ver los meses anteriores.
+- Desafío de 30 días: un mini reto diario en persona, con calendario de avance; si se les pasa un día, lo pueden hacer después. Al completar los 30, Rasca y gana para cada uno.
+- Noche de cine: películas, series, anime y doramas por ver, ruleta para escoger, episodios vistos y una reseña con estrellas de cada uno.
+
+Japón
+- Origami: guías paso a paso con dobleces animados (grulla, corazón, rana saltarina y tulipán) y el contador de senbazuru hacia las mil grullas, con su deseo.
+- Tanabata: del 1 al 7 de julio cada uno cuelga hasta 3 deseos en el bambú; el resto del año se ven los de cada año.
+- Palabra del día: 137 palabras básicas para el viaje (en japonés, romaji y significado), con "Escuchar", repaso con tarjetas y un quiz entre los dos.
+- Nuestro manga: páginas de 2, 3 o 4 viñetas con sus fotos, globos de diálogo y onomatopeyas; se guardan como imagen o se imprimen.
+- Postales para imprimir: 6 diseños, en formato postal (frente y reverso) o carta, para entregar en mano.
+
+También
+- La sala ya no tiene juegos con "Pronto": los 25 están listos.
+- Bancos editables nuevos: recetas del reto, planes del bingo, retos de 30 días, onomatopeyas y palabras del día.
+
 ## 0.6.0 (Fase 5A: juegos en pareja y eventos de temporada)
 
 Juegos

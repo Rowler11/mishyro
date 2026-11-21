@@ -30,7 +30,7 @@ const prizesList = async () => {
 };
 
 /**
- * Create a card for `to`. origin: 'gift' | 'goal' | 'habit' | 'badge'. originKey avoids giving the
+ * Create a card for `to`. origin: 'gift' | 'goal' | 'habit' | 'badge' | 'bingo' | 'reto30'. originKey avoids giving the
  * same milestone card twice (also across the two phones, since the id is deterministic).
  */
 export async function createCard({ to, from = null, origin = 'gift', originKey = '', openOn = '', note = '' }) {
@@ -157,7 +157,7 @@ export async function render() {
   page.append(ui.pageHeader({ title: 'Rasca y gana', jp: '当たり', romaji: 'atari', back: '/mas', actions: [ui.newButton('Regalar', () => giftDialog({ onSaved: load }), 'gift')] }));
   const body = el('div', { class: 'stack' }, ui.skeleton(3));
   page.append(body);
-  const ORIGIN = { gift: 'Regalo', goal: 'Meta cumplida', habit: 'Racha de un hábito', badge: 'Insignia' };
+  const ORIGIN = { gift: 'Regalo', goal: 'Meta cumplida', habit: 'Racha de un hábito', badge: 'Insignia', bingo: 'Bingo de citas', reto30: 'Desafío de 30 días' };
 
   const load = async () => {
     const cards = (await db.query('scratchCards')).filter((c) => !c.deleted);

@@ -269,6 +269,65 @@ export const GAMES = {
       'La carta llevaba cien años perdida, y decía…', 'Esa mañana, el café sabía a aventura…', 'El mapa del tesoro estaba dibujado en una servilleta…',
     ]),
 
+    // ---------- Fase 5B ----------
+    // Reto de cocina: recetas sencillas. cat: etiquetas separadas por ";" (rapido, japones, dulce, salado);
+    // mins: minutos; ing y steps: separados por ";". También salen las recetas propias de Recetas.
+    cocina: list('cocina', [
+      { text: 'Onigiri', cat: 'japones; salado', mins: 30, ing: '2 tazas de arroz de grano corto; Agua; Sal; Atún en lata o pollo desmechado; 1 cucharada de mayonesa; Hojas de alga nori (opcional)', steps: 'Cocina el arroz y déjalo entibiar; Mezcla el atún con la mayonesa; Mójate las manos y ponles un poco de sal; Toma un puñado de arroz, pon el relleno en el centro y ciérralo; Dale forma de triángulo apretando suave; Envuélvelo con una tira de nori' },
+      { text: 'Tamagoyaki', cat: 'japones; rapido; salado', mins: 15, ing: '3 huevos; 1 cucharadita de azúcar; 1 cucharadita de salsa de soya; Una pizca de sal; Aceite', steps: 'Bate los huevos con el azúcar, la soya y la sal; Calienta una sartén con poco aceite a fuego medio bajo; Vierte una capa fina y, cuando cuaje, enróllala hacia un lado; Vierte otra capa debajo del rollo y vuelve a enrollar; Repite hasta acabar la mezcla; Deja reposar un minuto y corta en rodajas' },
+      { text: 'Okonomiyaki casero', cat: 'japones; salado', mins: 35, ing: '1 taza de harina de trigo; 2/3 de taza de agua; 2 huevos; 1/4 de repollo picado fino; Tocineta o pollo en trocitos; Salsa BBQ o salsa de soya; Mayonesa', steps: 'Mezcla la harina con el agua y los huevos; Agrega el repollo y revuelve; Dora la tocineta en la sartén; Vierte la mezcla encima formando una tortilla gruesa; Cocina 5 minutos por lado a fuego medio; Sirve con salsa y líneas de mayonesa' },
+      { text: 'Yakisoba sencillo', cat: 'japones; salado', mins: 25, ing: '200 g de pasta tipo espagueti o fideos; 1 zanahoria en tiras; 1/4 de repollo; 1 cebolla; Pollo en tiras; 3 cucharadas de salsa de soya; 1 cucharada de azúcar', steps: 'Cocina la pasta y escúrrela; Saltea el pollo hasta dorarlo; Agrega la cebolla, la zanahoria y el repollo; Suma la pasta, la soya y el azúcar; Saltea todo dos minutos más' },
+      { text: 'Pollo teriyaki', cat: 'japones; salado', mins: 30, ing: '2 pechugas o muslos de pollo; 4 cucharadas de salsa de soya; 2 cucharadas de azúcar o miel; 1 cucharada de vinagre; 1 diente de ajo; Arroz para acompañar', steps: 'Corta el pollo en trozos; Mezcla la soya, el azúcar, el vinagre y el ajo; Dora el pollo en la sartén; Agrega la salsa y deja que espese a fuego bajo; Sirve sobre arroz' },
+      { text: 'Dorayaki', cat: 'japones; dulce', mins: 30, ing: '2 huevos; 1/2 taza de azúcar; 1 taza de harina; 1 cucharadita de polvo de hornear; 1 cucharada de miel; Agua; Arequipe o Nutella para el relleno', steps: 'Bate los huevos con el azúcar y la miel; Agrega la harina y el polvo de hornear; Añade agua de a poquitos hasta que quede como masa de pancakes; Haz pancakes pequeños en sartén sin aceite a fuego bajo; Une dos con relleno en el medio' },
+      { text: 'Sopa de miso', cat: 'japones; rapido; salado', mins: 15, ing: '3 tazas de agua; 2 cucharadas de pasta de miso; Tofu en cubitos; Cebollín picado; Alga wakame (opcional)', steps: 'Calienta el agua sin que hierva fuerte; Disuelve el miso en un poco del agua aparte; Agrega el tofu y el alga; Suma el miso disuelto y apaga antes de que hierva; Sirve con cebollín' },
+      { text: 'Arepas rellenas', cat: 'salado', mins: 30, ing: '2 tazas de harina de maíz precocida; Agua tibia; Sal; Queso; Mantequilla; Relleno al gusto (huevo, pollo, aguacate)', steps: 'Mezcla la harina con agua tibia y sal hasta tener una masa suave; Forma bolitas y aplánalas; Ásalas en sartén 5 minutos por lado; Ábrelas y rellénalas' },
+      { text: 'Patacones con hogao', cat: 'salado', mins: 30, ing: '2 plátanos verdes; Aceite; Sal; 2 tomates; 1 cebolla larga', steps: 'Pela y corta el plátano en trozos; Fríelos hasta que estén suaves; Aplánalos y vuelve a freírlos hasta que doren; Para el hogao, sofríe el tomate y la cebolla picados con sal; Sirve los patacones con el hogao encima' },
+      { text: 'Huevos pericos con arepa', cat: 'rapido; salado', mins: 15, ing: '4 huevos; 1 tomate; 1 cebolla larga; Sal; Arepas', steps: 'Pica el tomate y la cebolla; Sofríelos un par de minutos; Agrega los huevos batidos con sal; Revuelve hasta que cuajen; Sirve con arepa caliente' },
+      { text: 'Pasta al ajo y aceite', cat: 'rapido; salado', mins: 20, ing: '200 g de espagueti; 3 dientes de ajo; Aceite de oliva; Perejil; Sal; Queso rallado', steps: 'Cocina la pasta en agua con sal; Dora el ajo en láminas en aceite a fuego bajo; Mezcla la pasta con el aceite de ajo; Agrega perejil y queso' },
+      { text: 'Quesadillas', cat: 'rapido; salado', mins: 15, ing: 'Tortillas de harina; Queso mozzarella; Pollo desmechado o jamón; Pico de gallo', steps: 'Pon queso y relleno en media tortilla; Dóblala; Dórala en sartén por ambos lados hasta que el queso se derrita; Corta en triángulos y sirve con pico de gallo' },
+      { text: 'Crepes', cat: 'dulce', mins: 25, ing: '1 taza de harina; 2 huevos; 1 1/2 tazas de leche; 1 cucharada de azúcar; Mantequilla; Fruta y arequipe para rellenar', steps: 'Licúa la harina, los huevos, la leche y el azúcar; Unta la sartén con poca mantequilla; Vierte una capa delgada y gira la sartén; Voltéala cuando se suelte; Rellena y dobla' },
+      { text: 'Brownie en taza', cat: 'rapido; dulce', mins: 5, ing: '4 cucharadas de harina; 4 cucharadas de azúcar; 2 cucharadas de cacao; 3 cucharadas de leche; 2 cucharadas de aceite; Chispas de chocolate', steps: 'Mezcla todo en una taza grande; Mete al microondas 1 minuto y 15 segundos; Deja reposar un minuto antes de comer' },
+      { text: 'Ensalada de frutas', cat: 'rapido; dulce', mins: 15, ing: 'Fresas; Banano; Mango; Uvas; Crema de leche o yogur; Queso rallado (opcional)', steps: 'Lava y corta la fruta en cubitos; Mézclala en un tazón; Agrega crema o yogur; Termina con queso rallado si les gusta' },
+      { text: 'Pancakes de banano', cat: 'rapido; dulce', mins: 20, ing: '2 bananos maduros; 2 huevos; 4 cucharadas de avena; Canela; Miel', steps: 'Aplasta los bananos con un tenedor; Mezcla con los huevos, la avena y la canela; Cocina pancakes pequeños a fuego bajo; Sirve con miel' },
+      { text: 'Arroz frito', cat: 'japones; salado', mins: 20, ing: '2 tazas de arroz cocido del día anterior; 2 huevos; 1 zanahoria picada; Arvejas; Cebollín; Salsa de soya', steps: 'Revuelve los huevos en la sartén y sácalos; Saltea la zanahoria y las arvejas; Agrega el arroz y la soya; Vuelve a poner el huevo y el cebollín; Mezcla bien' },
+      { text: 'Mug cake de vainilla', cat: 'rapido; dulce', mins: 5, ing: '4 cucharadas de harina; 3 cucharadas de azúcar; 1 huevo; 3 cucharadas de leche; 2 cucharadas de aceite; Esencia de vainilla', steps: 'Mezcla el huevo, la leche, el aceite y la vainilla en una taza; Agrega la harina y el azúcar; Microondas 1 minuto y 30 segundos' },
+    ]),
+
+    // Bingo de citas: planes en persona para el cartón del mes (16 por cartón).
+    bingo: list('bingo', [
+      'Desayunar juntos sin teléfonos', 'Caminar por un parque que no conozcan', 'Cocinar algo que nunca hayan hecho', 'Ver juntos el atardecer', 'Hacer un picnic (en casa también vale)',
+      'Noche de juegos de mesa', 'Probar un café nuevo', 'Bailar una canción en la sala', 'Escribirse una carta a mano', 'Ver una película de anime',
+      'Ir a un museo o una exposición', 'Tomarse una foto bonita de los dos', 'Probar una comida que nunca han comido', 'Armar un rompecabezas', 'Subir a un mirador',
+      'Hacer ejercicio juntos', 'Leer algo en voz alta el uno al otro', 'Ir a un mercado o una plaza', 'Salir en bicicleta', 'Hacer un postre juntos',
+      'Una cena con velas', 'Plantar algo', 'Ver algo en vivo: teatro, concierto o partido', 'Hacer la lista de sueños del año', 'Una tarde de spa en casa',
+      'Ver fotos viejas juntos', 'Visitar una librería y regalarse un libro', 'Doblar origami', 'Mirar las estrellas', 'Comer en un restaurante japonés',
+      'Aprender cinco palabras en japonés', 'Hacer el aseo con música', 'Sorprender al otro con un detalle', 'Una hora en Modo juntos', 'Un paseo de noche',
+      'Planear el próximo viaje', 'Ir a comer helado', 'Preparar el desayuno del otro', 'Jugar en la sala de juegos de la app', 'Ir a un lugar donde fueron en sus primeras citas',
+      'Hacer un video corto de un día juntos', 'Tomar onces o un chocolate caliente', 'Ver una serie desde el primer capítulo', 'Hacer una Búsqueda del tesoro', 'Darse un masaje de 10 minutos',
+    ]),
+
+    // Desafío de 30 días: un mini reto diario, en persona y corto.
+    reto30: list('reto30', [
+      'Abrácense 30 segundos al saludarse hoy.', 'Díganse tres cosas que admiran del otro.', 'Preparen juntos el desayuno o la comida.', 'Caminen 15 minutos sin teléfonos.',
+      'Cuéntense el mejor momento de su semana.', 'Bailen una canción lenta.', 'Prepárale al otro su bebida favorita.', 'Escribe una nota cariñosa y escóndela para que la encuentre.',
+      'Tómense una foto de los dos haciendo una cara chistosa.', 'Pregúntense algo que nunca se hayan preguntado.', 'Den un beso de 10 segundos sin prisa.', 'Recuerden juntos cómo se conocieron.',
+      'Hagan algo del otro sin que lo pida.', 'Vean el cielo de noche cinco minutos.', 'Cocinen algo con lo que haya en la nevera.', 'Díganse un "gracias" por algo pequeño de hoy.',
+      'Lean en voz alta una página de algo que les guste.', 'Hagan una pausa de 20 minutos en Modo juntos.', 'Cuéntense un sueño que tengan para este año.', 'Tómense de la mano en todo el camino.',
+      'Jueguen una partida rápida en la sala de juegos.', 'Hagan un plan para el fin de semana.', 'Escuchen juntos la canción de su historia.', 'Dense un masaje de hombros de 5 minutos.',
+      'Hagan una lista de 5 lugares a los que quieren ir.', 'Cuéntense algo que los hizo reír hoy.', 'Desayunen o cenen con velas.', 'Aprendan juntos una palabra en japonés.',
+      'Díganse qué fue lo primero que les gustó del otro.', 'Hagan algo nuevo juntos, aunque sea pequeño.', 'Escríbanse un deseo para el próximo mes.', 'Miren fotos de cuando empezaron.',
+      'Arreglen juntos un rincón de la casa.', 'Planeen una cita sorpresa para el otro.', 'Duerman un rato de siesta abrazados.', 'Cuéntense qué les gustaría aprender juntos.',
+    ]),
+
+    // Nuestro manga: onomatopeyas. text: en letras latinas; jp: en japonés (se usa si está).
+    'manga-sfx': list('manga-sfx', [
+      { text: 'doki doki', jp: 'ドキドキ' }, { text: 'kira kira', jp: 'キラキラ' }, { text: 'waku waku', jp: 'ワクワク' }, { text: 'niko niko', jp: 'ニコニコ' },
+      { text: 'gogogo', jp: 'ゴゴゴ' }, { text: 'dōn', jp: 'ドーン' }, { text: 'gān', jp: 'ガーン' }, { text: 'shīn', jp: 'シーン' },
+      { text: 'pachi pachi', jp: 'パチパチ' }, { text: 'mogu mogu', jp: 'モグモグ' }, { text: 'poka poka', jp: 'ポカポカ' }, { text: 'jī', jp: 'ジーッ' },
+      { text: 'zukyūn', jp: 'ズキューン' }, { text: 'fuwa fuwa', jp: 'フワフワ' }, { text: 'ira ira', jp: 'イライラ' }, { text: 'kya', jp: 'キャー' },
+      { text: '¡Muak!' }, { text: '¡Ñam!' }, { text: '¡Pum!' }, { text: '¡Ja, ja!' }, { text: '¡Zas!' }, { text: '¡Uy!' },
+    ]),
+
     // ---------- Liga de pareja: juegos reales que se anotan ----------
     liga: list('liga', ['Cartas', 'Parqués', 'Dominó', 'UNO', 'Ajedrez', 'Videojuego', 'Piedra, papel o tijera', 'Billar', 'Bolos', 'Ping-pong', 'Rompecabezas contrarreloj', 'Jenga']),
   },
