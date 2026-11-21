@@ -58,6 +58,10 @@ export async function syncConfig(CONFIG) {
   for (const [key, kind] of Object.entries(CONTENT_KINDS)) {
     for (const item of CONFIG[key] || []) content.push({ ...item, kind });
   }
+  // Fase 5: the game banks live under CONFIG.games.banks; each bank is the kind "game:<bank>".
+  for (const [bank, items] of Object.entries(CONFIG.games?.banks || {})) {
+    for (const item of items) content.push({ ...item, kind: `game:${bank}` });
+  }
   const out = { content: await upsertSeeded('content', content, 'config', tombstones) };
   for (const [key, store] of Object.entries(STORE_SEEDS)) {
     if ((CONFIG[key] || []).length) out[store] = await upsertSeeded(store, CONFIG[key], 'config', tombstones);
@@ -69,8 +73,9 @@ export async function syncConfig(CONFIG) {
 /** "Restablecer desde CONFIG" for one content kind: undo edits, hiding and deletion. */
 export async function resetKind(CONFIG, kind) {
   const key = Object.keys(CONTENT_KINDS).find((k) => CONTENT_KINDS[k] === kind);
-  if (!key) throw new Error(`Unknown kind ${kind}`);
-  const ids = new Set((CONFIG[key] || []).map((i) => i.id));
+  const gameBank = kind.startsWith('game:') ? CONFIG.games?.banks?.[kind.slice(5)] : null;
+  if (!key && !gameBank) throw new Error(`Unknown kind ${kind}`);
+  const ids = new Set((gameBank || CONFIG[key] || []).map((i) => i.id));
   const recs = (await db.rawAll('content')).filter((r) => ids.has(r.id));
   await db.rawPutMany('content', recs.map((r) => ({ ...r, userEdited: false, deleted: false, hidden: false })));
   return syncConfig(CONFIG);

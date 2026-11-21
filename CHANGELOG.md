@@ -1,5 +1,24 @@
 # Cambios
 
+## 0.6.0 (Fase 5A: juegos en pareja y eventos de temporada)
+
+Juegos
+- Sala de juegos: eligen cómo están (tranquilos, risas, competencia o algo diferente), cuánto tiempo y el nivel de los castigos, y la sala sugiere "Para ahora". También "Sorpréndannos", el campeón del mes, historial y ajustes.
+- Un solo teléfono que se pasan: lo secreto queda tras "Mantén presionado para ver".
+- Pases y castigos: un pase libre por partida (editable); después cada salto saca una carta de castigo suave, divertido o intenso. "Parar" o "Cambiar" solo cuesta 1 punto: nadie hace algo que no quiera.
+- Modo con bebida: apagado de fábrica, máximo 3 por persona, recordatorio de agua, aviso de no conducir y siempre una opción sin alcohol.
+- 12 juegos: Ruleta de la noche, Mímica, ¿Quién es más probable…?, Esto o aquello, Yo nunca, Dibuja y adivina (los dibujos se guardan), Memoria de nosotros (con sus fotos), Trivia de nosotros (con sus fechas, lugares y canciones), Adivina la canción, Cuentos a dos voces, Liga de pareja (marcador de sus juegos reales, con corona y rachas) y Modo juntos (teléfonos boca abajo, tiempo de verdad).
+- Bancos de contenido editables (mímica, dibujos, preguntas, castigos y más) con "Restaurar"; las cartas no se repiten hasta acabar el banco.
+- Los otros 13 juegos salen con "Pronto" y llegan en la 5B.
+
+Eventos de temporada
+- Aviso en Inicio solo el día que toca (San Valentín, Amor y Amistad, Halloween, Navidad, Año nuevo, cumpleaños, aniversario, mesiversario y más), con decoración suave, mensaje y actividades para marcar. El mesiversario trae un reto distinto cada mes. Desde el aviso se ven los anteriores y lo que viene.
+
+Conectado con lo anterior
+- Insignias nuevas: primer juego, 10 partidas, liga de 10 y tiempo juntos (60 y 600 minutos).
+- Resumen y Wrapped: partidas jugadas y minutos sin teléfonos.
+- Controles de opciones un poco más anchos para tocarlos mejor.
+
 ## 0.5.0 (Fase 4B: hogar, bienestar y finanzas)
 
 Hogar

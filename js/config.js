@@ -7,9 +7,11 @@
 // - Los ids ("cfg:...") no se cambian nunca: así la app sabe qué es cada cosa.
 // - Los bancos que se usan en fases posteriores se completan en su fase (van vacíos).
 
+import { GAMES } from './config-juegos.js';
+
 export const CONFIG = {
   // Versión visible de la app (Ajustes > Acerca de). Súbela junto con CACHE_VERSION en sw.js.
-  appVersion: '0.5.0',
+  appVersion: '0.6.0',
   // Prefijo de la base de datos y de las 2 preferencias en localStorage (tema y perfil activo).
   // Si lo cambias, también en theme-boot.js. Cambiarlo "empieza de cero" en cada dispositivo.
   storageKey: 'aishiteru',
@@ -173,25 +175,56 @@ export const CONFIG = {
     { id: 'cfg:badge:primer-momento-mascota', name: 'Familia peluda', description: 'Guardaron el primer momento con su mascota.', icon: 'paw-print', condition: { type: 'count', store: 'petRecords', where: { type: 'moment' }, min: 1 } },
     { id: 'cfg:badge:cuentas-claras', name: 'Cuentas claras', description: 'Quedaron parejos por primera vez en Gastos.', icon: 'wallet', condition: { type: 'count', store: 'expenses', where: { category: 'saldo' }, min: 1 } },
     { id: 'cfg:badge:primer-rasca', name: 'Primer premio', description: 'Rasparon su primera tarjeta.', icon: 'wand-sparkles', condition: { type: 'count', store: 'scratchCards', has: ['scratchedAt'], min: 1 } },
+    { id: 'cfg:badge:primer-juego', name: 'A jugar', description: 'Jugaron su primera partida en Juegos.', icon: 'gamepad-2', condition: { type: 'count', store: 'games', min: 1 } },
+    { id: 'cfg:badge:10-juegos', name: 'Noche de juegos', description: 'Jugaron 10 partidas juntos.', icon: 'trophy', condition: { type: 'count', store: 'games', min: 10 } },
+    { id: 'cfg:badge:liga-10', name: 'Liga en marcha', description: 'Anotaron 10 partidas en la Liga de pareja.', icon: 'medal', condition: { type: 'count', store: 'games', where: { gameId: 'liga' }, min: 10 } },
+    { id: 'cfg:badge:juntos-60', name: 'Una hora de verdad', description: 'Sumaron 60 minutos en Modo juntos.', icon: 'leaf', condition: { type: 'sum', store: 'games', field: 'minutes', where: { gameId: 'juntos' }, min: 60 } },
+    { id: 'cfg:badge:juntos-600', name: 'Desconectados juntos', description: 'Sumaron 10 horas en Modo juntos.', icon: 'leaf', condition: { type: 'sum', store: 'games', field: 'minutes', where: { gameId: 'juntos' }, min: 600 } },
     { id: 'cfg:badge:100-dias', name: '100 días juntos', description: 'Cumplieron 100 días.', icon: 'heart', condition: { type: 'daysTogether', min: 100 } },
     { id: 'cfg:badge:365-dias', name: 'Un año juntos', description: 'Cumplieron 365 días.', icon: 'heart', condition: { type: 'daysTogether', min: 365 } },
   ],
 
-  // Eventos de temporada. rule: fecha fija (month/day), "nth" (n-ésimo día de la semana del mes),
-  // monthly (cada mes) o una fecha del perfil. La decoración, el mensaje y las
-  // actividades se completan en la Fase 5.
+  // Eventos de temporada (Fase 5). rule: fecha fija (month/day), "range" (del día "from" al "to"),
+  // "nth" (n-ésimo día de la semana del mes; weekday 0 = domingo, 6 = sábado), "monthly" (cada mes)
+  // o una fecha del perfil ("startDate" = aniversario, "birth" = cumpleaños de cada uno).
+  // decoration: hearts, sakura, hanabi, lanterns, candles, lights o petals. El mensaje sale como
+  // aviso en Inicio ese día y las actividades se marcan en Eventos. {apodo} = apodo de quien lee.
   seasonalEvents: [
-    { id: 'cfg:event:sanvalentin', name: 'San Valentín', rule: { type: 'fixed', month: 2, day: 14 }, decoration: 'hearts' },
-    { id: 'cfg:event:hanami', name: 'Temporada de hanami', rule: { type: 'range', from: { month: 3, day: 20 }, to: { month: 4, day: 30 } }, decoration: 'sakura' },
-    { id: 'cfg:event:aniversario', name: 'Nuestro aniversario', rule: { type: 'profile', field: 'startDate' }, decoration: 'hanabi' },
-    { id: 'cfg:event:tanabata', name: 'Tanabata', rule: { type: 'fixed', month: 7, day: 7 }, decoration: 'lanterns' },
-    { id: 'cfg:event:amoryamistad', name: 'Amor y Amistad', rule: { type: 'nth', month: 9, weekday: 6, n: 3 }, decoration: 'hearts' },
-    { id: 'cfg:event:halloween', name: 'Halloween', rule: { type: 'fixed', month: 10, day: 31 }, decoration: 'lanterns' },
-    { id: 'cfg:event:velitas', name: 'Noche de velitas', rule: { type: 'fixed', month: 12, day: 7 }, decoration: 'candles' },
-    { id: 'cfg:event:novenas', name: 'Novenas', rule: { type: 'range', from: { month: 12, day: 16 }, to: { month: 12, day: 24 } }, decoration: 'lights' },
-    { id: 'cfg:event:navidad', name: 'Navidad', rule: { type: 'fixed', month: 12, day: 25 }, decoration: 'lights' },
-    { id: 'cfg:event:mesiversario', name: 'Mesiversario', rule: { type: 'monthly', day: 2 }, decoration: 'petals' },
-    { id: 'cfg:event:cumpleanos', name: 'Cumpleaños', rule: { type: 'profile', field: 'birth' }, decoration: 'hanabi' },
+    { id: 'cfg:event:sanvalentin', name: 'San Valentín', rule: { type: 'fixed', month: 2, day: 14 }, decoration: 'hearts', icon: 'heart',
+      message: 'Feliz San Valentín. Hoy toca consentirse un poquito más.',
+      activities: ['Escribirse una carta corta y leerla en voz alta', 'Cocinar juntos la cena', 'Ver una película romántica abrazados', 'Regalarse un cupón de la Cuponera'] },
+    { id: 'cfg:event:hanami', name: 'Temporada de hanami', rule: { type: 'range', from: { month: 3, day: 20 }, to: { month: 4, day: 30 } }, decoration: 'sakura', icon: 'jp-sakura',
+      message: 'Es temporada de hanami: mirar las flores juntos, sin afán.',
+      activities: ['Hacer un picnic bajo un árbol florecido', 'Tomarse una foto con flores', 'Preparar onigiri para el paseo', 'Caminar sin rumbo una tarde'] },
+    { id: 'cfg:event:aniversario', name: 'Nuestro aniversario', rule: { type: 'profile', field: 'startDate' }, decoration: 'hanabi', icon: 'party-popper',
+      message: 'Feliz aniversario. Gracias por otro año eligiéndonos.',
+      activities: ['Ver juntos el Resumen del año', 'Abrir una cápsula del tiempo o crear una nueva', 'Volver al lugar de una primera vez', 'Escribirse lo que más agradecen de este año'] },
+    { id: 'cfg:event:tanabata', name: 'Tanabata', rule: { type: 'fixed', month: 7, day: 7 }, decoration: 'lanterns', icon: 'sparkles',
+      message: 'Hoy es Tanabata: la noche de los deseos.',
+      activities: ['Escribir cada uno un deseo en papel y colgarlo', 'Mirar las estrellas un rato', 'Contarse un sueño para este año', 'Agregar un sueño en Sueños y viajes'] },
+    { id: 'cfg:event:amoryamistad', name: 'Amor y Amistad', rule: { type: 'nth', month: 9, weekday: 6, n: 3 }, decoration: 'hearts', icon: 'heart-handshake',
+      message: 'Feliz Amor y Amistad: la mejor amistad también es la de ustedes.',
+      activities: ['Darse un detalle hecho a mano', 'Invitar a alguien querido a compartir', 'Jugar una partida en Juegos', 'Escribir tres razones por las que son buen equipo'] },
+    { id: 'cfg:event:halloween', name: 'Halloween', rule: { type: 'fixed', month: 10, day: 31 }, decoration: 'lanterns', icon: 'ghost',
+      message: 'Feliz Halloween: noche de disfraces, dulces y sustos suaves.',
+      activities: ['Disfrazarse con lo que haya en casa', 'Ver una película de terror suave', 'Tallar o pintar una calabaza', 'Hacer dulces caseros'] },
+    { id: 'cfg:event:velitas', name: 'Noche de velitas', rule: { type: 'fixed', month: 12, day: 7 }, decoration: 'candles', icon: 'flame',
+      message: 'Noche de velitas: una luz por cada cosa bonita del año.',
+      activities: ['Prender velitas y pedir un deseo cada uno', 'Tomar chocolate caliente juntos', 'Contar lo mejor del año', 'Tomarse una foto con las velitas'] },
+    { id: 'cfg:event:novenas', name: 'Novenas', rule: { type: 'range', from: { month: 12, day: 16 }, to: { month: 12, day: 24 } }, decoration: 'lights', icon: 'star',
+      message: 'Tiempo de novenas: buñuelos, natilla y villancicos.',
+      activities: ['Hacer buñuelos o natilla', 'Rezar o cantar una novena en familia', 'Armar el pesebre o un rincón navideño', 'Escribir la carta del niño Dios para el otro'] },
+    { id: 'cfg:event:navidad', name: 'Navidad', rule: { type: 'fixed', month: 12, day: 25 }, decoration: 'lights', icon: 'tree-pine',
+      message: 'Feliz Navidad. El mejor regalo es estar juntos.',
+      activities: ['Abrir los regalos con calma', 'Dar un paseo para ver las luces', 'Ver una película navideña', 'Llamar juntos a alguien que quieren'] },
+    { id: 'cfg:event:mesiversario', name: 'Mesiversario', rule: { type: 'monthly', day: 2 }, decoration: 'petals', icon: 'heart',
+      message: 'Feliz mesiversario. Un mes más de nosotros.',
+      activities: ['Decirse una cosa que aprendieron del otro este mes', 'Tomarse la foto del mes'],
+      // Un reto especial por mes (va rotando).
+      retos: ['Recrear su primera cita', 'Cocinar el plato favorito del otro', 'Hacer una caminata y no mirar el teléfono', 'Escribir una carta para abrir en un año', 'Bailar en la sala su canción', 'Probar un restaurante nuevo', 'Hacer un picnic en casa', 'Planear el próximo viaje con mapa en mano', 'Dibujarse uno al otro', 'Ver el atardecer juntos', 'Armar un álbum del mes con 5 fotos', 'Hacer algo nuevo por primera vez'] },
+    { id: 'cfg:event:cumpleanos', name: 'Cumpleaños', rule: { type: 'profile', field: 'birth' }, decoration: 'hanabi', icon: 'cake',
+      message: '¡Feliz cumpleaños! Hoy se celebra a una persona muy querida.',
+      activities: ['Desayuno sorpresa', 'Una carta de cumpleaños', 'El plan favorito de quien cumple', 'Una canción dedicada'] },
   ],
 
   // Textos de "Legal y ayuda" (Ajustes). Valores iniciales editables en la app.
@@ -398,7 +431,8 @@ export const CONFIG = {
   drinkIdeas: [{"id": "cfg:drink:limonada", "name": "Limonada de coco", "alcohol": false}, {"id": "cfg:drink:te", "name": "Té verde frío con miel", "alcohol": false}, {"id": "cfg:drink:aromatica", "name": "Aromática de frutos rojos", "alcohol": false}, {"id": "cfg:drink:soda", "name": "Soda con fresa y menta", "alcohol": false}, {"id": "cfg:drink:chocolate", "name": "Chocolate caliente", "alcohol": false}, {"id": "cfg:drink:vino", "name": "Copa de vino tinto", "alcohol": true}, {"id": "cfg:drink:sake", "name": "Sake", "alcohol": true}, {"id": "cfg:drink:sangria", "name": "Sangría", "alcohol": true}],
   dateMenuIdeas: [], // Fase 4B
   japaneseWords: [], // Fase 5
-  games: {}, // Fase 5
+  // Juegos en pareja (Fase 5): ajustes iniciales y bancos editables, en js/config-juegos.js.
+  games: GAMES,
   vault: {}, // Fase 6 (solo configuración; el contenido nunca va aquí)
 
   // Frases del botón "Pensando en ti" (docs/11 §1). {apodo} = apodo de quien recibe.

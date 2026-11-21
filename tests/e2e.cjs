@@ -1378,6 +1378,88 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 10. Fase 5A: juegos y eventos de temporada (fictitious data) ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errs = watch(page);
+    await page.goto(BASE);
+    await completeSetup(page);
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 15000 }); await page.waitForTimeout(300); };
+    const L = await page.evaluate(async () => {
+      const K = await import('./js/features/juegos-kit.js');
+      const M = await import('./js/features/juegos-mesa.js');
+      const E = await import('./js/features/eventos.js');
+      const { CONFIG } = await import('./js/config.js');
+      const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+      let used = []; const seen = [];
+      for (let i = 0; i < 3; i++) { const r = K.nextFromBank(items, used); used = r.used; seen.push(r.item.id); }
+      const wrap = K.nextFromBank(items, used);
+      const wheelOk = [3, 6, 8, 12].every((n) => Array.from({ length: n }, (_, i) => K.wheelIndexAt(n, K.wheelTarget(n, i, 123)) === i && K.wheelTarget(n, i, 123) - 123 >= 5 * 360).every(Boolean));
+      const ev = CONFIG.seasonalEvents;
+      const amor = E.activeEvents(ev, new Date(2026, 8, 19)).map((a) => a.event.id);
+      const amorWrong = E.activeEvents(ev, new Date(2026, 8, 12)).map((a) => a.event.id);
+      const ctxE = { startDay: '2026-05-02' };
+      const mes = E.activeEvents(ev, new Date(2026, 10, 2), ctxE).map((a) => a.period);
+      const aniv = E.activeEvents(ev, new Date(2027, 4, 2), ctxE).map((a) => a.event.id);
+      const mesEv = ev.find((e) => e.rule.type === 'monthly');
+      const ch = [E.monthlyChallenge(mesEv, '2026-11'), E.monthlyChallenge(mesEv, '2026-12')];
+      const trivia = M.buildTrivia({ start: '2026-05-02', people: { sofia: 'Ana', david: 'Leo' }, places: [{ name: 'Lugar A', date: '2026-06-01' }, { name: 'Lugar B', date: '2026-07-10' }] }, () => 0.3);
+      const liga = M.ligaStats([
+        { gameId: 'liga', winner: 'david', date: '2026-11-01', ligaType: 'Parqués' },
+        { gameId: 'liga', winner: 'sofia', date: '2026-11-02', ligaType: 'Parqués' },
+        { gameId: 'liga', winner: 'sofia', date: '2026-11-03', ligaType: 'UNO' },
+        { gameId: 'liga', winner: 'sofia', date: '2026-10-03', ligaType: 'UNO', deleted: true }], '2026-11-20');
+      return {
+        noRepeat: new Set(seen).size === 3, wrapReset: wrap.reset && wrap.used.length === 1, wheelOk,
+        pass: [K.passOutcome(0, 1), K.passOutcome(1, 1)].join(','), drink: [K.drinkAllowed({ drink: true, drinks: 2 }), K.drinkAllowed({ drink: true, drinks: 3 }), K.drinkAllowed({ drink: false })].join(','),
+        adults: [K.adultsStatus(['1990-01-01', '1992-02-02']), K.adultsStatus(['1990-01-01', '']), K.adultsStatus(['1990-01-01', '2015-01-01'])].join(','),
+        amor: amor.includes('cfg:event:amoryamistad') && !amorWrong.includes('cfg:event:amoryamistad'),
+        mes, anivHasMes: aniv.some((id) => ev.find((e) => e.id === id)?.rule.type === 'monthly'), ch: !!ch[0] && ch[0] !== ch[1],
+        trivia: trivia.length >= 3 && trivia.every((t) => t.options.includes(t.answer) && new Set(t.options).size === t.options.length),
+        liga: `${liga.total}:${liga.wins.sofia}-${liga.wins.david}:${liga.crown}:${liga.streak.who}${liga.streak.n}`,
+        noKanjiTiles: K.GAME_LIST.every((g) => !/[぀-ヿ一-鿿]/.test(g.title + g.blurb)),
+        ready: K.GAME_LIST.filter((g) => g.ready).length,
+      };
+    });
+    ok('5A bancos: no repeats until the bank runs out, then resets', L.noRepeat && L.wrapReset);
+    ok('5A ruleta: the wheel always stops on the drawn segment', L.wheelOk);
+    ok('5A pases: free while there are passes, then penalty', L.pass === 'free,penalty', L.pass);
+    ok('5A bebida: off unless on, capped at 3', L.drink === 'true,false,false', L.drink);
+    ok('5A bebida: adults check (yes / unknown / no)', L.adults === 'yes,unknown,no', L.adults);
+    ok('5A eventos: Amor y Amistad is the 3rd Saturday of September', L.amor);
+    ok('5A eventos: mesiversario monthly, not on the anniversary', L.mes.includes('2026-11') && !L.anivHasMes, JSON.stringify(L.mes));
+    ok('5A eventos: mesiversario challenge rotates by month', L.ch);
+    ok('5A trivia: questions with the answer among unique options', L.trivia);
+    ok('5A liga: wins, month crown and streak (deleted ignored)', L.liga === '3:2-1:sofia:sofia2', L.liga);
+    ok('5A sala: 12 games ready and no Japanese letters on tiles', L.ready === 12 && L.noKanjiTiles, String(L.ready));
+
+    await go('/juegos', '.page.juegos');
+    const room = await page.locator('.page.juegos').innerText();
+    ok('5A sala: room renders without stray "null"', !/\bnull\b/.test(room) && (await page.locator('.soon-pill').count()) === 13);
+    // Esto o aquello: one full round saved to history
+    await go('/juegos/estooaquello', '.page');
+    await page.getByRole('button', { name: 'Empezar' }).click(); await page.waitForTimeout(500);
+    const both = page.getByRole('button', { name: /^Los dos:/ }).first();
+    if (await both.count()) await both.click();
+    await page.getByRole('button', { name: 'Terminar' }).click(); await page.waitForTimeout(400);
+    const confirm = page.getByRole('button', { name: /^(Terminar|Sí, terminar)$/ }).last();
+    if (await confirm.isVisible().catch(() => false)) await confirm.click();
+    await page.waitForTimeout(600);
+    const saved = await page.evaluate(async () => (await (await import('./js/core/db.js')).query('games')).filter((g) => g.gameId === 'estooaquello').length);
+    ok('5A esto o aquello: a played game is saved to history', saved >= 1, String(saved));
+    // Juntos: record minutes, counts in Resumen
+    await page.evaluate(async () => { const db = await import('./js/core/db.js'); await db.put('games', { id: 'e2e-juntos', gameId: 'juntos', minutes: 20, date: '2026-11-10', visibility: 'shared', owner: 'both', createdAt: '2026-11-10T00:00:00Z' }); });
+    const st = await page.evaluate(async () => { const r = await import('./js/features/resumen.js'); return r.stats({ from: '2026-11-01', to: '2026-11-30', kind: 'month' }); });
+    ok('5A resumen: together minutes counted apart from games', st.togetherMin >= 20, JSON.stringify({ g: st.games, t: st.togetherMin }));
+    await go('/juegos/historial', '.page'); await go('/juegos/ajustes', '.page'); await go('/juegos/bancos', '.page');
+    ok('5A bancos: editor lists the banks', (await page.locator('.page').innerText()).includes('Mímica'));
+    await go('/eventos', '.page.eventos');
+    ok('5A eventos: page renders with "Lo que viene"', /Lo que viene/.test(await page.locator('.page.eventos').innerText()));
+    ok('fase 5A: no page errors or native dialogs', errs.length === 0, errs.join(' | '));
+    await ctx.close();
+  }
+
   await browser.close();
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed`);

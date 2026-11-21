@@ -44,9 +44,9 @@ export const GROUPS = [
     { id: 'regalos', title: 'Regalos secretos', jp: '贈り物', romaji: 'okurimono', icon: 'gift', phase: '4A', module: 'regalos', blurb: 'Ideas de regalo que el otro no ve.' },
   ] },
   { id: 'jugar', title: 'Jugar', jp: '遊び', romaji: 'asobi', sections: [
-    { id: 'juegos', title: 'Juegos', jp: '遊び', romaji: 'asobi', icon: 'gamepad-2', phase: '5', blurb: 'Juegos en pareja, en persona.' },
+    { id: 'juegos', title: 'Juegos', jp: '遊び', romaji: 'asobi', icon: 'gamepad-2', phase: '5', module: 'juegos', blurb: 'Juegos en pareja, en persona.' },
     { id: 'rasca', title: 'Rasca y gana', jp: '当たり', romaji: 'atari', icon: 'wand-sparkles', phase: '4B', module: 'rasca', blurb: 'Premios pequeños para raspar.' },
-    { id: 'eventos', title: 'Eventos de temporada', jp: '季節', romaji: 'kisetsu', icon: 'party-popper', phase: '5', moment: true, blurb: 'Fechas del año con su decoración.' },
+    { id: 'eventos', title: 'Eventos de temporada', jp: '季節', romaji: 'kisetsu', icon: 'party-popper', phase: '5', module: 'eventos', moment: true, blurb: 'Fechas del año con su decoración.' },
   ] },
   { id: 'hogar', title: 'Hogar', sections: [
     { id: 'mascotas', title: 'Mascotas', jp: 'ペット', romaji: 'petto', icon: 'paw-print', phase: '4B', module: 'mascotas', blurb: 'Perfil, salud y fotos de cada mascota.' },
