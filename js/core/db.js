@@ -73,7 +73,7 @@ export const STORE_NAMES = STORES.map(([n]) => n);
 
 // Fields every record has (docs/08 §2). They stay in clear text even when encrypted.
 export const COMMON = ['id', 'createdAt', 'updatedAt', 'deleted', 'origin', 'userEdited', 'hidden',
-  'owner', 'visibility', 'private', 'visibleToPartner', 'enc'];
+  'owner', 'visibility', 'private', 'visibleToPartner', 'enc', 'localOnly'];
 
 // Migrations: structure changes run in onupgradeneeded; data changes after open.
 const migrations = {

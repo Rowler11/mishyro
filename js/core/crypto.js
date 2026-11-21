@@ -14,6 +14,9 @@ export const PBKDF2_ITERATIONS = 600000;
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 const keys = new Map(); // scope -> { primary: kid, map: Map(kid -> CryptoKey) }
+const stamps = new Map(); // scope -> number that changes on every fresh unlock (consent screens use it)
+let stampSeq = 0;
+export const unlockStamp = (scope) => stamps.get(scope) || 0;
 
 const rand = (n) => crypto.getRandomValues(new Uint8Array(n));
 const newKid = () => bufToB64(rand(9)).replace(/[+/=]/g, (c) => ({ '+': '-', '/': '_', '=': '' }[c]));
@@ -44,6 +47,7 @@ async function aesDecrypt(key, box) {
 const importDek = (raw) => crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
 
 function remember(scope, kid, cryptoKey, makePrimary) {
+  if (!keys.has(scope)) stamps.set(scope, ++stampSeq);
   const entry = keys.get(scope) || { primary: kid, map: new Map() };
   entry.map.set(kid, cryptoKey);
   if (makePrimary || !entry.primary) entry.primary = kid;
@@ -101,8 +105,8 @@ export function nextDelayMs(failures) {
 
 export const isUnlocked = (scope) => (keys.get(scope)?.map.size || 0) > 0;
 export const canOpen = (box) => !!(box && keys.get(box.keyRef)?.map.has(box.kid || keys.get(box.keyRef)?.primary));
-export const lock = (scope) => keys.delete(scope);
-export const lockAll = (except = []) => { for (const k of [...keys.keys()]) if (!except.includes(k)) keys.delete(k); };
+export const lock = (scope) => { stamps.delete(scope); return keys.delete(scope); };
+export const lockAll = (except = []) => { for (const k of [...keys.keys()]) if (!except.includes(k)) { keys.delete(k); stamps.delete(k); } };
 export const unlockedScopes = () => [...keys.keys()];
 
 function keyFor(scope) {

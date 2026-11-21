@@ -2647,3 +2647,96 @@ a.game-tile:active { transform: scale(.98); }
 @media (prefers-reduced-motion: reduce) { .sealed-seal, .tanzaku, .ori-paper, .ori-fold, .ori-arrow, .bingo-stamp { animation: none !important; } .ori-arrow { stroke-dashoffset: 0; } }
 :root[data-motion="off"] .sealed-seal, :root[data-motion="off"] .tanzaku, :root[data-motion="off"] .ori-paper, :root[data-motion="off"] .ori-arrow { animation: none !important; }
 :root[data-motion="off"] .ori-arrow { stroke-dashoffset: 0; }
+
+/* ===================== Fase 6: Rincón privado ===================== */
+.plain-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.section-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.yoru-page .lead { font-family: var(--font-serif); font-size: 1.15rem; line-height: 1.5; }
+.yoru-hero { width: 96px; height: 96px; margin: var(--space-3) auto 0; display: grid; place-items: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent); animation: bloom var(--dur-5) var(--ease-out); }
+.yoru-first, .yoru-consent { max-width: 560px; margin-inline: auto; width: 100%; }
+.yoru-notice summary { display: flex; align-items: center; gap: var(--space-2); font-weight: 700; cursor: pointer; min-height: var(--tap); }
+.yoru-notice-list { margin: var(--space-2) 0 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: var(--space-2); color: var(--text-2); }
+.yoru-warn { display: flex; gap: var(--space-2); align-items: flex-start; padding: var(--space-3); border-radius: var(--radius-m); background: var(--danger-bg); color: var(--text); margin: 0; }
+.yoru-warn .icon { color: var(--danger); flex: none; margin-top: 2px; }
+.yoru-pin { padding-block: var(--space-5); }
+.consent-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.consent-btn { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-4) var(--space-3); min-height: 150px; border-radius: var(--radius-l); border: 2px dashed var(--border-strong); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; transition: border-color var(--dur-2), background var(--dur-2), transform var(--dur-2) var(--ease-out); }
+.consent-btn:active { transform: scale(.98); }
+.consent-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.consent-btn[aria-pressed="true"] { border-style: solid; border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.consent-avatar { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font: 700 1.5rem var(--font-serif); }
+.consent-text { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.consent-text span { color: var(--text-2); font-size: .9rem; }
+.consent-check { position: absolute; top: var(--space-2); right: var(--space-2); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); transform: scale(0); transition: transform var(--dur-3) var(--ease-out); }
+.consent-btn[aria-pressed="true"] .consent-check { transform: scale(1); }
+.yoru-level { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; color: var(--text); }
+.yoru-level-num { flex: none; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font: 700 1.6rem var(--font-serif); }
+.yoru-level .stack-tight { flex: 1; min-width: 0; }
+.yoru-today { margin: 0; padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--surface-2); font-weight: 700; font-size: .9rem; align-self: center; text-align: center; }
+.yoru-turn { margin: 0; text-align: center; font: 700 1.15rem var(--font-serif); }
+.yoru-progress { margin: 0; min-height: 1.2em; }
+.yoru-area { min-height: 320px; }
+.yoru-face { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); height: 100%; justify-content: center; text-align: center; overflow: auto; }
+.yoru-face-kicker { font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
+.yoru-face-title { font: 700 1.2rem var(--font-serif); }
+.yoru-face-text { margin: 0; font: 500 1.15rem/1.5 var(--font-serif); overflow-wrap: anywhere; }
+.yoru-result .yoru-face { padding: var(--space-2); }
+.yoru-game .gcard-stage { aspect-ratio: 4 / 5; max-height: 380px; }
+/* always-visible bar: Pausa, Cambiar, Parar */
+.yoru-bar { position: sticky; z-index: 25; bottom: calc(env(safe-area-inset-bottom) + 84px); display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); padding: var(--space-2); border-radius: var(--radius-l); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1); }
+@media (min-width: 768px) { .yoru-bar { bottom: var(--space-4); } }
+.yoru-bar-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; border: 0; border-radius: var(--radius-m); background: var(--surface-2); color: var(--text); font: 700 .85rem var(--font-ui); cursor: pointer; }
+.yoru-bar-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.yoru-bar-btn.is-stop { background: var(--danger-bg); color: var(--danger); }
+.yoru-game { position: relative; }
+.yoru-pause { position: absolute; inset: 0; z-index: 26; display: grid; place-items: center; padding: var(--space-4); border-radius: var(--radius-l); background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(6px); }
+/* breathing circle: 4 s in, 4 s out */
+.yoru-breath { position: relative; width: 120px; height: 120px; display: grid; place-items: center; margin-inline: auto; }
+.yoru-breath-ring { position: absolute; inset: 18px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--accent) 35%, transparent), color-mix(in srgb, var(--accent) 8%, transparent)); animation: yoru-breathe 8s ease-in-out infinite; }
+@keyframes yoru-breathe { 0%, 100% { transform: scale(.7); } 50% { transform: scale(1.25); } }
+@media (prefers-reduced-motion: reduce) { .yoru-breath-ring { animation: none; } }
+:root[data-motion="reduced"] .yoru-breath-ring { animation: none; }
+.yoru-care li { display: flex; gap: var(--space-2); align-items: flex-start; }
+.yoru-care .icon { color: var(--accent); flex: none; margin-top: 2px; }
+.yoru-rest, .yoru-end { padding-block: var(--space-5); }
+.yoru-end .field { width: 100%; }
+/* dice */
+.yoru-dice { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.yoru-dice-2 { grid-template-columns: 1fr 1fr; max-width: 280px; margin-inline: auto; width: 100%; }
+.yoru-die { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-1); min-height: 112px; padding: var(--space-2); border-radius: var(--radius-m); border: 2px solid var(--accent); background: var(--surface); text-align: center; }
+.yoru-die-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); }
+.yoru-die-value { font: 700 1rem/1.3 var(--font-serif); overflow-wrap: anywhere; }
+.yoru-dice-2 .yoru-die-value { font-size: 2rem; }
+.yoru-die.is-rolling { animation: yoru-roll .18s linear infinite; }
+@keyframes yoru-roll { 0% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) scale(1.03); } 100% { transform: rotate(-4deg); } }
+/* hidden card and chain */
+.yoru-options { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: var(--space-2); text-align: left; }
+.yoru-reveal { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.yoru-reveal-card { padding: var(--space-4); border-radius: var(--radius-l); background: var(--accent); color: var(--accent-ink); text-align: center; transform: rotateY(90deg); transition: transform var(--dur-4) var(--ease-out); }
+.yoru-reveal-card .yoru-face-kicker { color: inherit; opacity: .85; }
+.yoru-reveal-card p { margin: var(--space-1) 0 0; font: 700 1.4rem var(--font-serif); }
+.yoru-reveal.is-in .yoru-reveal-card { transform: none; }
+.yoru-chain { display: flex; justify-content: center; gap: var(--space-2); }
+.yoru-chain-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--surface-2); border: 2px solid var(--border-strong); }
+.yoru-chain-dot.done { background: var(--accent); border-color: var(--accent); }
+.yoru-chain-dot.now { border-color: var(--accent); transform: scale(1.25); }
+.yoru-date-pick { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; font: inherit; color: var(--text); cursor: pointer; }
+.yoru-step .yoru-face-text { text-align: left; }
+/* yes / no / maybe */
+.ynm-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.ynm-row { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-m); background: var(--surface); border: 1px solid var(--border); }
+.ynm-row p { margin: 0; }
+.ynm-matches { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.ynm-matches li { display: flex; gap: var(--space-2); align-items: flex-start; }
+.ynm-actions { position: sticky; bottom: calc(env(safe-area-inset-bottom) + 84px); padding: var(--space-2); background: var(--bg); }
+@media (min-width: 768px) { .ynm-actions { bottom: 0; } }
+/* recordings */
+.rec-indicator { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill); background: var(--danger-bg); color: var(--danger); }
+.rec-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--danger); animation: beat 1s infinite; }
+.rec-time { font-variant-numeric: tabular-nums; font-weight: 700; }
+.rec-preview, .rec-media { width: 100%; max-height: 360px; border-radius: var(--radius-m); background: #000; }
+audio.rec-media { background: transparent; max-height: none; }
+:root.is-recording::after { content: ''; position: fixed; top: calc(env(safe-area-inset-top) + 8px); right: 8px; z-index: 90; width: 14px; height: 14px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 0 4px var(--danger-bg); animation: beat 1s infinite; pointer-events: none; }
+.yoru-errors { border-color: var(--danger); }
+.yoru-errors ul { margin: 0; padding-left: 1.2rem; }
+.yoru-log-item p { margin: 0; }

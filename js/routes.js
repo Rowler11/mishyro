@@ -69,7 +69,7 @@ export const GROUPS = [
 
 /** Hidden section: not listed in "Más"; opened with the secret gesture. Neutral name only. */
 export const HIDDEN = [
-  { id: 'yoru', title: 'Rincón', jp: '夜', romaji: 'yoru', icon: 'moon', phase: '6', lock: 'vault', blurb: '' },
+  { id: 'yoru', title: 'Rincón', jp: '夜', romaji: 'yoru', icon: 'moon', phase: '6', module: 'yoru', lock: 'vault', blurb: 'Solo para los dos, con su PIN.' },
   { id: 'ciclo', title: 'Mi calendario', icon: 'calendar', phase: '4B', module: 'ciclo', lock: 'cycle', blurb: '' },
   { id: 'buscar', title: 'Buscar', icon: 'search', phase: '2', module: 'buscar', blurb: 'Busca en todo lo que no es privado.' },
 ];

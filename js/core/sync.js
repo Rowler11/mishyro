@@ -208,6 +208,14 @@ function schedulePush(delay = 400) {
 }
 const queue = (fn) => { running = running.then(fn).catch((e) => { lastError = e?.message || String(e); console.warn('sync', e); if (lastError === 'storage_full') refreshUsage({ force: true }).catch(() => {}); emit(); }); return running; };
 
+/** Run fn (local deletions) without sending those keys to the other devices (Rincón wiped on one device only). */
+export async function withoutPush(keyList, fn) {
+  for (const k of keyList) applying.add(k);
+  try { await fn(); } finally {
+    for (const k of keyList) { applying.delete(k); dirty.delete(k); if (state.has(k)) await setState(k, { gone: true }); }
+  }
+}
+
 function onLocalChange(store, id) {
   if (!isLinked() || db.LOCAL_ONLY.includes(store)) return;
   if (id == null) scanNeeded = true;
@@ -252,6 +260,8 @@ async function flushPush() {
     const store = key.slice(0, cut); const id = key.slice(cut + 1);
     const prev = state.get(key);
     const rec = await db.rawGet(store, id);
+    // Rincón recordings stay on the device that made them (decided 2026-11-21).
+    if (rec?.localOnly) { dirty.delete(key); continue; }
     let r; let ts;
     if (!rec) {
       if (!prev || prev.gone) { dirty.delete(key); continue; }

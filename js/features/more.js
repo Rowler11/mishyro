@@ -3,8 +3,8 @@
 // doors, two per row. Tapping one slides its paper panels apart and opens the group's cards
 // (route #/mas/<group>, so Atrás and "Volver" both go back to the doors, which slide shut).
 // What is not built yet carries a "Pronto" pill. "Moment" sections are left out: they appear on Inicio when due.
-import { ui, util, router } from '../core.js';
-import { GROUPS } from '../routes.js';
+import { ui, util, router, db } from '../core.js';
+import { GROUPS, HIDDEN } from '../routes.js';
 
 const { el, icon } = util;
 const READY = new Set(['1', '2']);
@@ -24,7 +24,9 @@ const GROUP_ICON = { nosotros: 'heart', recuerdos: 'image', juntos: 'heart-hands
 let lastOpen = null;
 
 const count = (n) => `${n} ${n === 1 ? 'sección' : 'secciones'}`;
-const visibleGroups = () => GROUPS.map((g) => ({ ...g, sections: g.sections.filter((s) => !s.moment) })).filter((g) => g.sections.length);
+// The Rincón is hidden from Más unless the couple turns it on in its own settings (this device only).
+let showCorner = false;
+const visibleGroups = () => GROUPS.map((g) => ({ ...g, sections: [...g.sections.filter((s) => !s.moment), ...(showCorner && g.id === 'personal' ? HIDDEN.filter((h) => h.id === 'yoru') : [])] })).filter((g) => g.sections.length);
 
 function card(s, i) {
   const soon = !s.module && !READY.has(String(s.phase));
@@ -84,7 +86,8 @@ function groupView(g) {
     el('div', { class: 'section-cards more-cards' }, g.sections.map(card)));
 }
 
-export function render({ params } = {}) {
+export async function render({ params } = {}) {
+  showCorner = !!(await db.getSettings('vaultLocal', {}).catch(() => ({}))).showInMore;
   const g = params?.a ? visibleGroups().find((x) => x.id === params.a) : null;
   return el('section', { class: 'page page-wide more' },
     ui.pageHeader({ title: 'Más', jp: 'もっと', romaji: 'motto' }),

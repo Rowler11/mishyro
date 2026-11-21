@@ -59,6 +59,44 @@ const SEED = path.join(__dirname, '..', 'seed-privado.example.json');
       await page.getByRole('button', { name: 'Modal', exact: true }).click();
       await page.waitForTimeout(500);
       await scan('modal');
+      await page.keyboard.press('Escape');
+      // Fase 6: Rincón (fictitious birthdays and content only)
+      await page.evaluate(async () => {
+        const db = await import('./js/core/db.js');
+        for (const [p, d] of [['sofia', '1995-01-01'], ['david', '1994-02-02']]) await db.put('specialDates', { id: `a11y:birth:${p}`, title: 'Cumpleaños ficticio', kind: 'birthday', date: d, recurring: 'yearly', personOrPetId: p });
+      });
+      const hash = async (p, sel) => { await page.evaluate((h) => { location.hash = `#${h}`; }, p); if (sel) await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(700); };
+      const pin = async () => { await page.locator('.pin-input').last().fill('246810'); await page.waitForTimeout(250); };
+      await hash('/yoru', '.yoru-first');
+      await scan('/yoru primera entrada');
+      await page.getByRole('button', { name: 'Crear el PIN de 6' }).click();
+      await page.waitForSelector('.pin-input');
+      await scan('/yoru crear PIN');
+      await pin(); await pin();
+      await page.waitForSelector('.consent-btn', { timeout: 30000 });
+      await scan('/yoru consentimiento');
+      await page.locator('.consent-btn').nth(0).click(); await page.locator('.consent-btn').nth(1).click();
+      await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+      await page.waitForSelector('.yoru-level');
+      await page.evaluate(async () => {
+        const V = await import('./js/core/vault.js');
+        const txt = ['pregunta | 0 | Frase ficticia uno', 'pregunta | 1 | Frase ficticia dos', 'reto | 1 | Reto ficticio | | 20', 'idea | 1 | Idea ficticia A', 'idea | 1 | Idea ficticia B', 'mimos | 1 | Mimo ficticio'].join('\n');
+        await V.addPack(V.parseContent(txt, 'ficticio.txt').pack);
+      });
+      await hash('/yoru', '.yoru-level');
+      await scan('/yoru inicio');
+      for (const r of ['/yoru/ajustes', '/yoru/diario', '/yoru/grabaciones', '/yoru/contenido', '/yoru/si-no-quiza']) { await hash(r, '.page'); await scan(r); }
+      await hash('/yoru/juego/preguntas', '.consent-btn');
+      await scan('/yoru juego: consentimiento');
+      await page.locator('.consent-btn').nth(0).click(); await page.locator('.consent-btn').nth(1).click();
+      await page.getByRole('button', { name: 'Empezar', exact: true }).click();
+      await page.waitForSelector('.yoru-bar'); await page.waitForTimeout(700);
+      await scan('/yoru juego: carta');
+      await page.getByRole('button', { name: 'Pausa' }).click(); await page.waitForSelector('.yoru-pause');
+      await scan('/yoru juego: pausa');
+      await page.locator('.yoru-pause').getByRole('button', { name: 'Parar' }).click();
+      await page.waitForTimeout(900);
+      await scan('/yoru juego: descanso');
       await ctx.close();
     }
   }

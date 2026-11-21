@@ -31,6 +31,49 @@ async function setup(page) {
   await page.waitForFunction(() => location.hash === '#/inicio');
 }
 
+// Fase 6: the Rincón behind its PIN and consent (fictitious birthdays and content only).
+// SHOTS=dir also saves a few screenshots of it.
+async function auditYoru(page, width, all) {
+  const SHOTS = process.env.SHOTS || '';
+  const hash = async (p, sel) => { await page.evaluate((h) => { location.hash = `#${h}`; }, p); if (sel) await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(500); };
+  const pin = async () => { await page.locator('.pin-input').last().fill('246810'); await page.waitForTimeout(250); };
+  const both = async (label) => { await page.locator('.consent-btn').nth(0).click(); await page.locator('.consent-btn').nth(1).click(); await page.getByRole('button', { name: label, exact: true }).click(); };
+  const check = async (label, theme) => {
+    for (const f of await page.evaluate(audit, width >= 1280 ? 24 : 44)) {
+      const key = `${label} :: ${f}`;
+      if (!all.has(key)) all.set(key, new Set());
+      all.get(key).add(`${width}`);
+    }
+    if (SHOTS && (width === 390 || label === '/yoru')) await page.screenshot({ path: path.join(SHOTS, `v0.8.0-${label.replace(/\W+/g, '-').replace(/^-|-$/g, '')}-${width}-${theme}.png`), scale: 'device' });
+  };
+  await page.evaluate(async () => {
+    const db = await import('./js/core/db.js');
+    for (const [p, d] of [['sofia', '1995-01-01'], ['david', '1994-02-02']]) await db.put('specialDates', { id: `audit:birth:${p}`, title: 'Cumpleaños ficticio', kind: 'birthday', date: d, recurring: 'yearly', personOrPetId: p });
+  });
+  await hash('/yoru', '.yoru-first');
+  await page.getByRole('button', { name: 'Crear el PIN de 6' }).click();
+  await pin(); await pin();
+  await page.waitForSelector('.consent-btn', { timeout: 30000 });
+  await both('Entrar');
+  await page.waitForSelector('.yoru-level');
+  await page.evaluate(async () => {
+    const V = await import('./js/core/vault.js');
+    const txt = ['pregunta | 0 | Frase ficticia uno', 'pregunta | 1 | Frase ficticia dos', 'reto | 1 | Reto ficticio | | 20', 'idea | 1 | Idea ficticia A', 'idea | 1 | Idea ficticia B', 'mimos | 1 | Mimo ficticio', 'sintocar | 1 | Sin tocar ficticio', 'prenda | 1 | Prenda ficticia'].join('\n');
+    await V.addPack(V.parseContent(txt, 'ficticio.txt').pack);
+  });
+  for (const theme of ['day', 'night']) {
+    await page.evaluate(async (t) => { (await import('./js/core/theme.js')).apply({ theme: t }); }, theme);
+    for (const r of ['/yoru', '/yoru/ajustes', '/yoru/diario', '/yoru/grabaciones', '/yoru/contenido', '/yoru/si-no-quiza']) { await hash(r, '.page'); await check(r, theme); }
+    await hash('/yoru/juego/preguntas', '.consent-btn');
+    await check('/yoru/juego consentimiento', theme);
+    await both('Empezar');
+    await page.waitForSelector('.yoru-bar'); await page.waitForTimeout(600);
+    await check('/yoru/juego carta', theme);
+    await page.getByRole('button', { name: 'Parar' }).first().click(); await page.waitForTimeout(800);
+    await check('/yoru/juego descanso', theme);
+  }
+}
+
 // Runs in the page. Returns a list of findings for the current screen.
 function audit(MIN) {
   const out = [];
@@ -116,6 +159,7 @@ function audit(MIN) {
         await page.waitForTimeout(250);
       }
     }
+    if (!ONLY || ONLY.includes('/yoru')) await auditYoru(page, width, all);
     await ctx.close();
   }
   await browser.close();

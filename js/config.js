@@ -12,7 +12,7 @@ import { JAPANESE_WORDS } from './config-japones.js';
 
 export const CONFIG = {
   // Versión visible de la app (Ajustes > Acerca de). Súbela junto con CACHE_VERSION en sw.js.
-  appVersion: '0.7.0',
+  appVersion: '0.8.0',
   // Prefijo de la base de datos y de las 2 preferencias en localStorage (tema y perfil activo).
   // Si lo cambias, también en theme-boot.js. Cambiarlo "empieza de cero" en cada dispositivo.
   storageKey: 'aishiteru',
@@ -435,7 +435,26 @@ export const CONFIG = {
   japaneseWords: JAPANESE_WORDS,
   // Juegos en pareja (Fase 5): ajustes iniciales y bancos editables, en js/config-juegos.js.
   games: GAMES,
-  vault: {}, // Fase 6 (solo configuración; el contenido nunca va aquí)
+  // Rincón privado (Fase 6): solo configuración. El contenido NUNCA va aquí ni en el repositorio:
+  // se carga dentro del Rincón desde un archivo propio y queda cifrado.
+  vault: {
+    levels: [
+      { n: 0, label: 'Calma', hint: 'Cariño, conversación y mimos.' },
+      { n: 1, label: 'Coqueteo', hint: 'Miradas, juego y piropos.' },
+      { n: 2, label: 'Sensual', hint: 'Cercanía, caricias y susurros.' },
+      { n: 3, label: 'Atrevido', hint: 'Más confianza y más juego.' },
+      { n: 4, label: 'Picante', hint: 'Muy subido de tono en intención, sin ser explícito.' },
+      { n: 5, label: 'Contenido propio', hint: 'Solo lo que ustedes carguen.' },
+    ],
+    // Temas que cada uno puede marcar como límite (se suman a las etiquetas del contenido cargado).
+    limitTags: [
+      { id: 'besos', label: 'Besos' }, { id: 'masajes', label: 'Masajes' }, { id: 'cosquillas', label: 'Cosquillas' },
+      { id: 'ropa', label: 'Ropa y prendas' }, { id: 'vendas', label: 'Ojos vendados' }, { id: 'frio-calor', label: 'Frío y calor' },
+      { id: 'comida', label: 'Comida y sabores' }, { id: 'bebida', label: 'Bebida con alcohol' }, { id: 'baile', label: 'Bailar' },
+      { id: 'rol', label: 'Juego de roles' }, { id: 'susurros', label: 'Hablar al oído' }, { id: 'fuera', label: 'Fuera de la habitación' },
+      { id: 'fotos', label: 'Fotos o grabaciones' }, { id: 'pasado', label: 'Temas del pasado' },
+    ],
+  },
 
   // Frases del botón "Pensando en ti" (docs/11 §1). {apodo} = apodo de quien recibe.
   thinkingOfYouPhrases: [

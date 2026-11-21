@@ -66,6 +66,7 @@ const load = {
   resumen: () => import('./features/resumen.js'),
   lenguajes: () => import('./features/lenguajes.js'),
   gratitud: () => import('./features/gratitud.js'),
+  yoru: () => import('./features/yoru.js'),
 };
 
 function registerSection(base, def) {
@@ -179,7 +180,8 @@ function onNavigate(route, prev) {
   ui.closeAllModals();
   const scope = lockScope(route.def);
   if (prevScope && prevScope !== scope && prevScope !== 'app') {
-    security.getSettings().then((s) => { if (s.lockOnLeave) cryptoBox.lock(prevScope); });
+    if (security.ALWAYS_LOCK.includes(prevScope)) cryptoBox.lock(prevScope);
+    else security.getSettings().then((s) => { if (s.lockOnLeave) cryptoBox.lock(prevScope); });
   }
   prevScope = scope;
   if (prev) {
@@ -312,6 +314,7 @@ function installShortcuts() {
 
 function installVisibility() {
   const hide = async () => {
+    security.lockAlways();
     const s = await security.getSettings();
     if (s.curtain) security.showCurtain();
     if (s.lockOnLeave) security.lockSensitive();
@@ -416,7 +419,7 @@ async function start() {
   installErrorHandler();
   readShareTarget();
   try { await db.open(CONFIG.storageKey); } catch (e) { fatal(e?.message || 'Error de almacenamiento.'); return; }
-  await security.init({ wipe: wipeEverything, unlocked: () => router.refresh() });
+  await security.init({ wipe: wipeEverything, unlocked: () => router.refresh(), vaultWipe: async () => (await import('./core/vault.js')).wipeLocal() });
   const meta = await db.getMeta();
   if (!meta.installId) await db.setMeta({ installId: util.uuid(), schemaVersion: db.SCHEMA_VERSION, createdAt: util.nowISO() });
   await seed.syncConfig(CONFIG);
