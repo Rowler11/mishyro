@@ -4,7 +4,7 @@
 // only so theme-boot.js can paint the right theme before the database opens.
 
 export const APPEARANCE_DEFAULTS = { theme: 'auto', highContrast: false, textScale: 100, legibleFont: false, japanese: true };
-export const MOTION_DEFAULTS = { animations: true, haptics: true, sound: false, intro: 'daily' }; // intro: 'daily' | 'always' (opening heart)
+export const MOTION_DEFAULTS = { animations: true, haptics: true, sound: false, intro: 'daily', seasonal: true }; // intro: 'daily' | 'always' (opening heart)
 export const DAY_START = 6; export const NIGHT_START = 18;
 const THEME_COLORS = { day: '#FBF4F3', night: '#161214' };
 
@@ -35,6 +35,7 @@ export function apply(next = {}) {
   root.dataset.motion = prefs.animations ? 'on' : 'off';
   root.dataset.haptics = prefs.haptics ? 'on' : 'off';
   root.dataset.sound = prefs.sound ? 'on' : 'off';
+  root.dataset.seasonal = prefs.seasonal === false ? 'off' : 'on';
   root.style.fontSize = `${Math.min(200, Math.max(85, Number(prefs.textScale) || 100))}%`;
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', prefs.highContrast ? (theme === 'day' ? '#FFFFFF' : '#000000') : THEME_COLORS[theme]);
   try {

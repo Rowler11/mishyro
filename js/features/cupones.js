@@ -183,7 +183,7 @@ export async function render() {
       await db.put('couponState', { id: c.id, couponId: c.id, redeemedAt: util.nowISO(), redeemedBy: profile.active() });
       justRedeemed = c.id;
       await load(); draw();
-      ui.confetti(); util.haptic([10, 40, 20]);
+      ui.confetti(); util.haptic([10, 40, 20]); util.sound('chime');
       ui.announce(`Cupón canjeado: ${c.title}.`);
     } catch (e) { console.error(e); ui.toast('No se pudo canjear. Inténtalo de nuevo.', { tone: 'error' }); }
   };

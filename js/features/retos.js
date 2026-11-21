@@ -75,7 +75,7 @@ export async function render() {
     note.addEventListener('change', () => save({ note: note.value.trim() }));
     const complete = async () => {
       await save({ note: note.value.trim(), doneAt: util.nowISO(), doneBy: profile.active(), steps: steps.map(() => true) });
-      ui.confetti(); util.haptic([10, 40, 20]); ui.announce('Reto cumplido.');
+      ui.confetti(); util.haptic([10, 40, 20]); util.sound('chime'); ui.announce('Reto cumplido.');
       draw({ stamp: true });
     };
     const undo = async () => { await save({ doneAt: null, doneBy: null }); draw(); };

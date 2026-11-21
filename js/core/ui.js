@@ -160,9 +160,22 @@ const ART = {
   sakura: 'jp-sakura', torii: 'jp-torii', lantern: 'jp-chochin', fan: 'jp-sensu', crane: 'jp-tsuru',
   omamori: 'jp-omamori', moon: 'jp-moon', wave: 'jp-wave', envelope: 'jp-futo', ticket: 'jp-ticket',
 };
+/** The red thread (akai ito) that ties two little knots, drawn once (empty Cápsula, Fase 7). */
+function redThread() {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 160 96'); svg.setAttribute('class', 'empty-thread'); svg.setAttribute('aria-hidden', 'true');
+  const path = document.createElementNS(NS, 'path');
+  path.setAttribute('pathLength', '1');
+  path.setAttribute('d', 'M14 70C34 70 40 30 62 34C82 38 70 66 84 62C100 58 92 26 112 28C130 30 128 66 146 64');
+  svg.append(path);
+  for (const [cx, cy] of [[14, 70], [146, 64]]) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', '4.5'); svg.append(c); }
+  return svg;
+}
 export function emptyState({ title, text, art = 'sakura', action } = {}) {
   return el('div', { class: 'empty' },
-    el('div', { class: 'empty-art', 'aria-hidden': 'true' }, icon(ART[art] || art, { size: 96, cls: 'empty-icon' }), el('span', { class: 'empty-ring' })),
+    art === 'thread' ? el('div', { class: 'empty-art', 'aria-hidden': 'true' }, redThread())
+      : el('div', { class: 'empty-art', 'aria-hidden': 'true' }, icon(ART[art] || art, { size: 96, cls: 'empty-icon' }), el('span', { class: 'empty-ring' })),
     el('h2', { class: 'empty-title' }, title),
     text ? el('p', { class: 'empty-text' }, text) : null,
     action ? el('button', { class: 'btn btn-primary', type: 'button', onClick: action.onClick }, action.label) : null);

@@ -41,13 +41,13 @@ function card(s, i) {
 }
 
 function door(g, { open }) {
-  const b = el('button', { class: `door${open ? ' is-open' : ''}`, type: 'button', 'data-group': g.id, 'aria-label': `${g.title}, ${count(g.sections.length)}` },
+  const b = el('button', { class: `door${open ? ' is-open' : ''}`, type: 'button', 'data-group': g.id },
     el('span', { class: 'door-frame', 'aria-hidden': 'true' },
       el('span', { class: 'door-inside' }, icon(GROUP_ICON[g.id] || 'layout-grid', { size: 30 })),
       el('span', { class: 'door-panel door-panel-l' }),
       el('span', { class: 'door-panel door-panel-r' })),
     el('span', { class: 'door-icon', 'aria-hidden': 'true' }, icon(GROUP_ICON[g.id] || 'layout-grid', { size: 20 })),
-    el('span', { class: 'door-label', 'aria-hidden': 'true' },
+    el('span', { class: 'door-label' }, // its text is the button's name (axe: label-content-name-mismatch)
       el('span', { class: 'door-name' }, g.title),
       el('span', { class: 'door-count' }, count(g.sections.length)),
       el('span', { class: 'door-peek' }, g.sections.slice(0, 3).map((s) => icon(s.icon, { size: 14 })))));

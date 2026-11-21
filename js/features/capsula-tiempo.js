@@ -112,7 +112,7 @@ async function openCapsule(c, me) {
     actions: [{ label: 'Cerrar', variant: 'primary' }],
     onClose: () => { if (url) URL.revokeObjectURL(url); },
   });
-  if (first) { ui.confetti({ count: 30 }); util.haptic([10, 30, 10]); }
+  if (first) { ui.confetti({ count: 30 }); util.haptic([10, 30, 10]); util.sound('chime'); }
 }
 
 export async function render() {

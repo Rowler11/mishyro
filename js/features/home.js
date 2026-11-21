@@ -11,8 +11,10 @@
 import { ui, util, db, profile, seed, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
 import * as dates from '../core/dates.js';
+import * as fx from '../core/fx.js';
 
 const { el, icon } = util;
+let seasonShown = false; // the season effect plays the first time Inicio opens in each session
 const fmtLong = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
@@ -325,6 +327,7 @@ async function todayCard() {
   const [badgeRow, summaryRow, eventRow] = await Promise.all([
     import('./insignias.js').then((m) => m.homeRow()).catch(() => null), import('./resumen.js').then((m) => m.homeRow()).catch(() => null),
     import('./eventos.js').then((m) => m.homeRow()).catch(() => null)]);
+  const otdRow = await import('./capsula.js').then((m) => m.homeRow()).catch(() => null);
   const me = profile.active();
   const [pending, week, hint, mine, soon, capsules] = await Promise.all([
     qa.pendingToday().catch(() => null), retos.ensureWeek().catch(() => null), animo.partnerLowHint().catch(() => null), animo.getMood(util.localDay(), me).catch(() => null),
@@ -338,6 +341,8 @@ async function todayCard() {
   if (capsules.length) rows.push({ href: '#/capsula-tiempo', icon: 'lock-open', title: capsules.length === 1 ? 'Hoy se abre una cápsula del tiempo' : `Hay ${capsules.length} cápsulas del tiempo para abrir`, sub: capsules[0].title });
   // Recordatorios suaves (§41): mesiversario, the weekly date and their own, when they are close.
   for (const r of soon.slice(0, 2)) rows.push(r);
+  // Un día como hoy (Fase 7): a quiet row when a shared memory has this same day in an earlier month or year.
+  if (otdRow) rows.push(otdRow);
   if (badgeRow) rows.push(badgeRow);
   if (spaceRow) rows.push(spaceRow);
   if (hint) rows.push({ href: '#/animo', icon: 'heart', title: `Hoy a ${hint.name} podría venirle bien un abrazo`, sub: 'Un detalle pequeño hace la diferencia.' });
@@ -422,7 +427,18 @@ export async function render() {
 
     // First visit of a new day: petals over the counter; on a milestone day, confetti once.
     if (counter && recall('petalDay') !== util.localDay()) { remember('petalDay', util.localDay()); playPetals(counter.petals); }
-    if (events.some((e) => e.confetti || e.kind === 'anniversary' || e.kind === 'birthday') && celebrateOnce('confetti')) ui.confetti();
+    // Fase 7: hanabi once on the anniversary and the birthdays, sakura petals over Inicio on the mesiversario,
+    // otherwise the season's particles for a few seconds the first time Inicio opens in this session.
+    const big = events.some((e) => e.kind === 'anniversary' || e.kind === 'birthday');
+    if (events.some((e) => e.confetti) && !big && celebrateOnce('confetti')) ui.confetti();
+    if (!seasonShown) {
+      const monthly = events.some((e) => e.kind === 'monthly');
+      const play = big && recall('hanabiDay') !== util.localDay() ? () => { remember('hanabiDay', util.localDay()); fx.hanabi(); }
+        : monthly && recall('mesDay') !== util.localDay() ? () => { remember('mesDay', util.localDay()); fx.seasonal({ kind: 'sakura', count: 22, force: true }); }
+        : () => fx.seasonal();
+      // Inicio can be drawn twice while the app starts: whichever is on screen when the welcome goes plays it once.
+      fx.whenClear().then((ok) => { if (ok && !seasonShown && /^#\/inicio\b/.test(location.hash)) { seasonShown = true; play(); } });
+    }
 
     // Lucky cat: a little hello after a few days away (per device).
     const lastOpen = recall('lastOpen');
@@ -432,5 +448,5 @@ export async function render() {
 
   await build();
   const offProfile = profile.onProfileChange(() => build());
-  return { node: page, cleanup: () => { cleanupAll(); offProfile(); } };
+  return { node: page, cleanup: () => { cleanupAll(); offProfile(); fx.stopAll(); } };
 }

@@ -77,7 +77,7 @@ function scratchSurface(card, { onReveal }) {
   const reveal = () => {
     if (done) return; done = true;
     canvas.classList.add('is-gone'); prize.removeAttribute('aria-hidden');
-    util.haptic([15, 40, 15]); ui.confetti({ count: 20 });
+    util.haptic([15, 40, 15]); ui.confetti({ count: 20 }); util.sound('chime');
     onReveal();
   };
   const pt = (e) => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) * canvas._dpr, (e.clientY - r.top) * canvas._dpr]; };
