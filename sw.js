@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.7.0';
+const CACHE_VERSION = 'aishiteru-v0.8.0';
 const SHELL = [
   './',
   './styles.css',
@@ -34,6 +34,7 @@ const SHELL = [
   './js/features/planes.js', './js/features/suenos.js', './js/features/citas.js', './js/features/regalos.js', './js/features/encuentro.js', './js/features/voz.js', './js/features/lenguajes.js', './js/features/gratitud.js', './js/features/insignias.js', './js/features/resumen.js',
   './js/features/hogar-kit.js', './js/features/listas.js', './js/features/mascotas.js', './js/features/recetas.js', './js/features/alcancia.js', './js/features/gastos.js', './js/features/habitos.js', './js/features/rasca.js', './js/features/ciclo.js',
   './js/config-juegos.js', './js/features/juegos.js', './js/features/juegos-kit.js', './js/features/juegos-cartas.js', './js/features/juegos-mesa.js', './js/features/juegos-casa.js', './js/features/juegos-planes.js', './js/features/juegos-japon.js', './js/config-japones.js', './js/features/eventos.js',
+  './js/core/vault.js', './js/features/yoru.js', './js/features/yoru-juegos.js',
   './js/features/cartas.js', './js/features/stickers.js', './js/features/sticker-maker.js', './js/features/bg-remove.js',
   './js/features/ajustes.js',
   './js/features/perfil.js',
@@ -115,6 +116,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   if (url.origin !== self.location.origin) return; // external resources are never cached
   if (url.pathname.includes('/api/')) return; // sync server: always live, never cached
+  if (/vault-content|rincon/i.test(url.pathname)) return; // the private corner's files never go to a cache
   if (/\/vendor\/(ort|u2netp|leaflet)\//.test(url.pathname)) {
     event.respondWith(caches.open(MODELS).then(async (c) => {
       const hit = await c.match(req);

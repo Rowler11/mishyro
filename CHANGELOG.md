@@ -1,5 +1,34 @@
 # Cambios
 
+## 0.8.0 (Fase 6: Rincón privado)
+
+Entrada y seguridad
+- El Rincón sigue escondido: se abre con 7 toques en el sello de Ajustes (en Ajustes del Rincón se puede mostrar en "Más"). Solo abre si los dos tienen 18 años o más según su fecha de nacimiento.
+- La primera vez muestra los avisos, crea un PIN propio de 6 dígitos (se escribe dos veces y no se puede recuperar) y ofrece entrar con la huella.
+- Al entrar y antes de cada juego, los dos tocan "Quiero estar aquí".
+- Se cierra solo al salir de la sección, al cambiar de app y tras unos minutos sin uso. Doble toque en la esquina de arriba a la derecha lo tapa todo al instante.
+- Opcional: borrar el Rincón de este equipo tras 10 PIN incorrectos.
+- Todo queda cifrado: nada se lee en el almacenamiento del teléfono, ni en la copia general, ni en la caché, ni en la dirección de la página.
+
+Niveles y límites
+- Niveles del 0 al 5. Cada uno elige hasta dónde llega hoy, sin ver el del otro, y manda el menor. El nivel 5 es solo para contenido que ustedes carguen.
+- Límites duros por etiquetas o palabras, que solo ve quien los puso: lo marcado por cualquiera no sale nunca.
+- "Subir poco a poco": un nivel por tramo, con un descanso entre tramos (respirar, agua y cómo se sienten).
+
+Juegos (15)
+- Preguntas, Retos, Verdad o reto, Cartas boca abajo, Sin tocar, Mimos con tiempo, Hablemos, Juego de rol, Cita guiada, Dados, Dados con castigo, Ruleta, Carta oculta, Cadena y Prendas.
+- Pausa, Cambiar y Parar siempre a la vista. Parar lleva a un cierre tranquilo.
+- Las cartas no se repiten hasta acabar el mazo, y el generador combina piezas para que siempre haya algo nuevo.
+- Favoritas, "no repetir nunca" y mazos por tema.
+
+Lo demás
+- Sí, no o quizá: cada uno marca en privado y solo se ven las coincidencias.
+- Diario: juego, nivel, estrellas, ánimo y una nota, todo opcional.
+- Grabaciones de audio o video: solo si los dos marcan la casilla, con un aviso visible mientras graba. Quedan cifradas y solo en el equipo donde se grabaron.
+- Contenido: el contenido se importa dentro del Rincón (.txt, .csv o .json, o el archivo cifrado con la herramienta local), con vista previa antes de guardar. No viene dentro de la app. La sincronización lo lleva al otro teléfono.
+- Copia de seguridad propia del Rincón, cifrada con una frase. Solo se restaura con esa frase.
+- Borrar el Rincón de este equipo o su contenido en todos los equipos, con confirmación y PIN.
+
 ## 0.7.0 (Fase 5B: los 13 juegos que faltaban)
 
 En casa

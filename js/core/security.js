@@ -15,6 +15,7 @@ const NEVER_ENCRYPT = ['meta', 'settings', 'errors', 'profile', 'content', 'sync
 let scopesWithKeys = new Set();
 let uiUnlocked = false; // app interface unlocked (PIN, or fingerprint without PRF)
 let onWipe = async () => {};
+let onVaultWipe = async () => {};
 let afterUnlock = () => {};
 
 /** "Modo sin terceros": false when the couple turned off every optional external request. */
@@ -47,8 +48,9 @@ export function policy(store, rec) {
   return null;
 }
 
-export function init({ wipe, unlocked } = {}) {
+export function init({ wipe, unlocked, vaultWipe } = {}) {
   if (wipe) onWipe = wipe;
+  if (vaultWipe) onVaultWipe = vaultWipe;
   if (unlocked) afterUnlock = unlocked;
   db.setEncryptionPolicy(policy);
   return refreshKeys();
@@ -110,6 +112,7 @@ export async function verifyPin(scope, pin) {
     const delay = cryptoBox.nextDelayMs(failures);
     await saveAttempts(s, scope, { failures, nextTryAt: delay ? Date.now() + delay : 0 });
     if (scope === 'app' && s.wipeAfterFailures && failures >= (s.wipeThreshold || 10)) { await onWipe(); return { error: 'Se borraron los datos por demasiados intentos.' }; }
+    if (scope === 'vault' && failures >= 10 && (await db.getSettings('vaultLocal', {})).wipeAfterFailures) { await onVaultWipe(); return { error: 'Se borró el Rincón de este equipo por demasiados intentos.', wiped: true }; }
     return { error: delay ? `PIN incorrecto. Espera ${formatWait(delay)} para volver a intentar.` : 'PIN incorrecto. Inténtalo de nuevo.' };
   }
 }
@@ -234,6 +237,9 @@ export function hideCurtain() { curtain?.remove(); curtain = null; }
 
 /** Lock every sensitive scope (leaving a section, app hidden). */
 export function lockSensitive() { for (const s of SENSITIVE) cryptoBox.lock(s); }
+/** The private corner locks on every leave, whatever the settings say (docs/05 §33 f: it cannot be turned off). */
+export const ALWAYS_LOCK = ['vault'];
+export function lockAlways() { for (const s of ALWAYS_LOCK) cryptoBox.lock(s); }
 
 let panicLayer = null;
 /** Cover everything at once, lock all keys and require unlock to come back. */

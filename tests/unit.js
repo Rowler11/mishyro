@@ -5,6 +5,7 @@ import * as db from '../js/core/db.js';
 import * as cryptoBox from '../js/core/crypto.js';
 import * as backup from '../js/core/backup.js';
 import * as seed from '../js/core/seed.js';
+import * as V from '../js/core/vault.js';
 
 const KEY = 'unittest';
 const results = [];
@@ -191,6 +192,51 @@ await test('needsCompletion detects placeholders', () => {
   ok(seed.needsCompletion('Hola [completa: algo]'));
   ok(seed.needsCompletion('[POR COMPLETAR]'));
   ok(!seed.needsCompletion('Texto listo'));
+});
+
+// ---------- Rincón privado (Fase 6), fictitious texts ----------
+await test('vault: active level is the lower one both accepted', () => {
+  eq(V.activeLevel({ sofia: 3, david: 1 }), 1);
+  eq(V.activeLevel({ sofia: 4, david: 4 }), 4);
+  eq(V.activeLevel({ sofia: 2 }), 0, 'missing person counts as 0');
+  eq(V.maxLevel({ levels: { sofia: 4, david: 4 }, own: { sofia: true, david: false } }), 4, 'level 5 needs both');
+  eq(V.maxLevel({ levels: { sofia: 4, david: 4 }, own: { sofia: true, david: true } }), 5);
+});
+await test('vault: hard limits of either person filter by tag and word', () => {
+  const m = V.mergeLimits({ sofia: { tags: ['t1'], words: [] }, david: { tags: [], words: ['Pálabra'] } });
+  const items = [{ id: 'a', kind: 'reto', level: 1, text: 'Uno', tags: ['t1'] }, { id: 'b', kind: 'reto', level: 1, text: 'Con palabra', tags: [] }, { id: 'c', kind: 'reto', level: 1, text: 'Libre', tags: [] }];
+  eq(V.pool(items, { kind: 'reto', merged: m }).map((i) => i.id), ['c']);
+  eq(V.pool(items, { kind: 'reto', merged: m, band: [2, 3] }).length, 0, 'band');
+  eq(V.pool(items, { kind: 'reto', never: ['c'] }).map((i) => i.id), ['a', 'b'], 'never again');
+});
+await test('vault: draws do not repeat until the pool is exhausted', () => {
+  const list = [1, 2, 3, 4].map((n) => ({ id: `x${n}` }));
+  let used = []; const seen = new Set();
+  for (let i = 0; i < 4; i++) { const r = V.pickUnused(list, used); ok(!r.reset); seen.add(r.item.id); used = r.used; }
+  eq(seen.size, 4);
+  const r = V.pickUnused(list, used); ok(r.reset, 'reset after exhausting'); eq(r.used.length, 1);
+});
+await test('vault: parser accepts txt, csv and json and reports bad lines', () => {
+  const t = V.parseContent('# c\nreto | 2 | Texto ficticio A | t1 | 30\nmalo | 1 | x\npregunta | 9 | x', 'a.txt');
+  eq(t.count, 1); eq(t.pack.items[0].secs, 30); eq(t.pack.items[0].tags, ['t1']); eq(t.errorCount, 2);
+  const c = V.parseContent('modo,nivel,texto\npreguntas,1,"Texto, ficticio B"', 'b.csv');
+  eq(c.pack.items[0].kind, 'pregunta'); eq(c.pack.items[0].text, 'Texto, ficticio B');
+  const j = V.parseContent(JSON.stringify([{ modo: 'idea', nivel: 0, texto: 'Ficticio C' }]), 'c.json');
+  eq(j.pack.items[0].kind, 'idea');
+  ok(!V.parseContent('{ roto', 'd.json').pack, 'broken json');
+  ok(V.parseContent(JSON.stringify({ format: 'aishiteru-rincon-enc' }), 'e.json').encrypted, 'encrypted file detected');
+});
+await test('vault: generator makes many combinations and respects level and limits', () => {
+  const gen = { templates: [{ id: 't', text: '{accion} {lugar} durante {duracion}' }], parts: {
+    accion: [{ id: 'a1', text: 'a1', level: 0, tags: [] }, { id: 'a2', text: 'a2', level: 3, tags: ['t1'] }],
+    lugar: [{ id: 'l1', text: 'l1', level: 0, tags: [] }, { id: 'l2', text: 'l2', level: 1, tags: [] }],
+    duracion: [{ id: 'd1', text: 'd1', level: 0, tags: [], secs: 30 }] } };
+  eq(V.generatorSize(gen, [0, 4]), 4); eq(V.generatorSize(gen, [0, 1]), 2);
+  eq(V.generatorSize(gen, [0, 4], V.mergeLimits({ sofia: { tags: ['t1'] } })), 2);
+  const g = V.generate(gen, { band: [0, 0] }); eq(g.item.text, 'A1 l1 durante d1'); eq(g.item.secs, 30);
+});
+await test('vault: only matches in yes or maybe are revealed', () => {
+  eq(V.matches({ a: 'si', b: 'no', c: 'quiza', d: 'si' }, { a: 'si', b: 'si', c: 'si', d: 'no' }), [{ id: 'a', both: 'si' }, { id: 'c', both: 'quiza' }]);
 });
 
 db.close();

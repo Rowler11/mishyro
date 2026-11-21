@@ -1661,6 +1661,179 @@ async function completeSetup(page) {
     await ctx.close();
   }
 
+  // ---------- 12. Fase 6: Rincón privado (fictitious texts only) ----------
+  {
+    const b6 = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
+    const ctx = await b6.newContext({ viewport: { width: 390, height: 844 }, acceptDownloads: true, permissions: ['microphone', 'camera'] });
+    const page = await ctx.newPage();
+    const errs = watch(page);
+    await page.goto(BASE);
+    await completeSetup(page);
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(350); };
+    const btn = (name) => page.getByRole('button', { name, exact: true });
+    const PIN = '246810';
+    const FAKE = ['# contenido ficticio de prueba', 'pregunta | 0 | Frase ficticia zeta cero', 'pregunta | 1 | Frase ficticia zeta uno', 'pregunta | 3 | Frase ficticia zeta tres',
+      'reto | 1 | Reto ficticio zeta uno | t-limite | 20', 'reto | 1 | Reto ficticio zeta dos | | 20', 'mimos | 1 | Mimo ficticio zeta', 'sintocar | 1 | Sin tocar ficticio zeta',
+      'idea | 0 | Idea ficticia zeta A', 'idea | 1 | Idea ficticia zeta B', 'idea | 1 | Idea ficticia zeta C', 'prenda | 1 | Prenda ficticia zeta', 'cita | 1 | Cita ficticia zeta / Paso ficticio uno / Paso ficticio dos'].join('\n');
+    const fakeFile = { name: 'ficticio.txt', mimeType: 'text/plain', buffer: Buffer.from(FAKE) };
+    const birth = async (sofia, david) => page.evaluate(async ([a, b]) => {
+      const db = await import('./js/core/db.js');
+      for (const [p, d] of [['sofia', a], ['david', b]]) await db.put('specialDates', { id: `t6:birth:${p}`, title: 'Cumpleaños ficticio', kind: 'birthday', date: d, recurring: 'yearly', personOrPetId: p });
+    }, [sofia, david]);
+    const enterPin = async (pin) => { await page.locator('.pin-input').last().fill(pin); await page.waitForTimeout(200); };
+    const unlock = async () => { await page.waitForSelector('.lock .pin-input'); await enterPin(PIN); await page.waitForSelector('.consent-btn', { timeout: 20000 }); };
+    const consentBoth = async (label = 'Entrar') => { await page.locator('.consent-btn').nth(0).click(); await page.locator('.consent-btn').nth(1).click(); await btn(label).click(); };
+
+    // age gate: missing date, under 18, then adults
+    await go('/yoru', '.page');
+    ok('6 edad: no abre si falta una fecha de nacimiento', /Falta un dato/.test(await page.locator('main').innerText()));
+    await birth('1995-01-01', '2012-05-05');
+    await go('/inicio', '.page'); await go('/yoru', '.page');
+    ok('6 edad: no abre si alguien es menor de 18', /no está disponible/.test(await page.locator('main').innerText()));
+    await birth('1995-01-01', '1994-02-02');
+    await go('/inicio', '.page'); await go('/yoru', '.yoru-first');
+    ok('6 primera entrada: avisos y advertencia de PIN sin recuperación', /no se puede recuperar/.test(await page.locator('main').innerText()) && (await page.locator('.yoru-notice').count()) === 1);
+    await btn('Crear el PIN de 6').click();
+    await enterPin(PIN); await enterPin('111111');
+    ok('6 PIN: si no coinciden, empieza otra vez', /No coinciden/.test(await page.locator('main').innerText()));
+    await page.waitForTimeout(1100);
+    await enterPin(PIN); await enterPin(PIN);
+    await page.waitForSelector('.consent-btn', { timeout: 30000 });
+    const keyRec = await page.evaluate(async () => (await (await import('./js/core/db.js')).rawAll('settings')).filter((r) => r.id.startsWith('key:vault:')).map((r) => r.digits));
+    ok('6 PIN: llave de 6 dígitos creada', keyRec.length === 1 && keyRec[0] === 6, JSON.stringify(keyRec));
+    ok('6 consentimiento: no entra hasta que los dos tocan', (await btn('Entrar').count()) === 0);
+    await consentBoth();
+    await page.waitForSelector('.yoru-level');
+    ok('6 título de la pestaña neutro', (await page.title()) === 'Aishiteru', await page.title());
+    ok('6 sin contenido: invita a cargar', /Todavía no hay cartas/.test(await page.locator('main').innerText()));
+
+    // import: invalid then valid; stored encrypted
+    await go('/yoru/contenido', '#yoru-file');
+    await page.setInputFiles('#yoru-file', { name: 'malo.txt', mimeType: 'text/plain', buffer: Buffer.from('esto no sirve\nmodo raro | 7 | x') });
+    await page.waitForSelector('.yoru-errors');
+    ok('6 importador: archivo inválido se rechaza con mensaje claro', /No se pudo cargar/.test(await page.locator('.yoru-errors').innerText()));
+    await page.setInputFiles('#yoru-file', fakeFile);
+    await page.waitForSelector('text=Vista previa');
+    ok('6 importador: vista previa con conteo', /12 elementos listos/.test(await page.locator('main').innerText()));
+    await btn('Guardar cifrado').click(); await page.waitForTimeout(800);
+    const raw = await page.evaluate(async () => { const db = await import('./js/core/db.js'); return JSON.stringify(await db.rawAll('vault')); });
+    ok('6 cifrado: ningún texto del Rincón legible en IndexedDB', raw.length > 200 && !/zeta|ficticia|ficticio/i.test(raw));
+
+    // levels: each sets their own, the lower one rules; limits filter
+    await page.evaluate(async () => { const V = await import('./js/core/vault.js'); const s = await V.getSettings(); s.levels = { sofia: 3, david: 1 }; s.ramp = false; s.limits.david.tags = ['t-limite']; await V.setSettings(s); });
+    await go('/yoru', '.yoru-level');
+    ok('6 niveles: manda el menor aceptado', /Nivel 1/.test(await page.locator('.yoru-level').innerText()));
+    const lim = await page.evaluate(async () => { const V = await import('./js/core/vault.js'); const s = await V.getSettings(); const lib = await V.library(); return V.pool(lib.items, { kind: 'reto', band: [0, V.maxLevel(s)], merged: V.mergeLimits(s.limits) }).map((i) => i.text).join('|'); });
+    ok('6 límites duros: filtran lo marcado por cualquiera', lim === 'Reto ficticio zeta dos', lim);
+    await go('/yoru/ajustes', '.page');
+    ok('6 ajustes: no muestra los límites del otro', !(await page.locator('main').innerText()).includes('t-limite'));
+
+    // a game: consent, bar always visible, no repeats, Parar -> rest screen -> diary
+    await go('/yoru/juego/preguntas', '.consent-btn');
+    ok('6 juego: pide el consentimiento de los dos', (await btn('Empezar').count()) === 0);
+    await consentBoth('Empezar');
+    await page.waitForSelector('.yoru-bar');
+    const bar = await page.locator('.yoru-bar').innerText();
+    ok('6 juego: Pausa, Cambiar y Parar siempre visibles', /Pausa/.test(bar) && /Cambiar/.test(bar) && /Parar/.test(bar));
+    const seen = [];
+    for (let i = 0; i < 2; i++) { seen.push(await page.locator('.gcard').last().innerText()); await btn('Siguiente').click(); await page.waitForTimeout(500); }
+    ok('6 generador: no repite hasta agotar el mazo', seen[0] !== seen[1] && !/zeta tres/.test(seen.join()), seen.join(' / '));
+    await page.locator('.yoru-bar-btn', { hasText: 'Pausa' }).click();
+    ok('6 pausa: pantalla de pausa', await page.locator('.yoru-pause').isVisible());
+    await page.locator('.yoru-pause').getByRole('button', { name: 'Seguir' }).click();
+    await page.locator('.yoru-bar-btn', { hasText: 'Parar' }).click();
+    await page.waitForSelector('.yoru-end');
+    await shot(page, '6-fin-390');
+    ok('6 parar: pasa al descanso con preguntas de cuidado', /Paramos aquí/.test(await page.locator('.yoru-end').innerText()) && /Cómo se sintieron/.test(await page.locator('.yoru-end').innerText()));
+    await page.locator('.yoru-end .star-btn').nth(3).click();
+    await btn('Guardar en el diario').click(); await page.waitForSelector('.yoru-level');
+    await go('/yoru/diario', '.yoru-log');
+    ok('6 diario: guarda juego y valoración', /Preguntas/.test(await page.locator('.yoru-log').innerText()) && /★★★★/.test(await page.locator('.yoru-log').innerText()));
+
+    // yes / no / maybe: only matches
+    await go('/yoru/si-no-quiza', '.ynm-person');
+    const answer = async (who, vals) => { await page.locator('.ynm-person').nth(who).getByRole('button').click(); for (let i = 0; i < vals.length; i++) await page.locator('.ynm-row').nth(i).locator('label', { hasText: vals[i] }).click(); await btn('Guardar y tapar').click(); await page.waitForTimeout(300); };
+    await answer(0, ['Sí', 'No', 'Quizá']); await answer(1, ['Sí', 'Sí', 'Sí']);
+    const ynm = await page.locator('main').innerText();
+    ok('6 sí/no/quizá: solo coincidencias, nunca lo rechazado', /Coinciden en 2/.test(ynm) && !/zeta B/.test(ynm) && /zeta A/.test(ynm), ynm.slice(0, 200));
+
+    // recording: needs the agreement box, visible indicator, stays encrypted and local
+    await go('/yoru/grabaciones', '.page');
+    await btn('Nueva grabación').click();
+    ok('6 grabación: no arranca sin la casilla de los dos', await btn('Pedir permiso y grabar').isDisabled());
+    await page.locator('#rec-agree').check();
+    await btn('Pedir permiso y grabar').click();
+    await page.waitForSelector('.rec-indicator');
+    ok('6 grabación: indicador visible mientras graba', await page.locator('.rec-indicator').isVisible() && await page.evaluate(() => document.documentElement.classList.contains('is-recording')));
+    await page.waitForTimeout(1500);
+    await btn('Detener y guardar').click(); await page.waitForSelector('.yoru-recs .card', { timeout: 15000 });
+    const media = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const m = (await db.rawAll('media')).filter((x) => x.ownerStore === 'vault'); return m.map((x) => `${!!x.enc}:${x.blob === null}:${x.localOnly}`).join(); });
+    ok('6 grabación: se guarda cifrada y solo en este equipo', media === 'true:true:true', media);
+
+    // leave locks; panic corner
+    await go('/inicio', '.page'); await go('/yoru', '.lock');
+    ok('6 bloqueo: al salir de la sección pide el PIN de nuevo', await page.locator('.lock .pin-input').isVisible());
+    await enterPin('000000');
+    ok('6 bloqueo: PIN incorrecto se rechaza', /incorrecto/i.test(await page.locator('.lock').innerText()));
+    await unlock(); await consentBoth(); await page.waitForSelector('.yoru-level');
+    await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' }); document.dispatchEvent(new Event('visibilitychange')); });
+    const lockedHidden = await page.evaluate(async () => !(await import('./js/core/crypto.js')).isUnlocked('vault'));
+    await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' }); document.dispatchEvent(new Event('visibilitychange')); });
+    ok('6 bloqueo: al ocultar la app (otra app o minimizar)', lockedHidden);
+    await unlock(); await consentBoth(); await page.waitForSelector('.yoru-level');
+    await page.mouse.click(385, 20); await page.mouse.click(385, 20);
+    await page.waitForSelector('.panic');
+    ok('6 pánico: doble toque en la esquina cubre todo y cierra el Rincón', await page.evaluate(async () => !(await import('./js/core/crypto.js')).isUnlocked('vault')));
+    await page.locator('.panic-back').click();
+
+    // never in the general backup, caches, URL or search
+    const leak = await page.evaluate(async () => {
+      const b = await import('./js/core/backup.js');
+      const out = JSON.stringify(await b.exportBackup({ appVersion: '0.8.0' }));
+      let cache = '';
+      for (const k of await caches.keys()) for (const r of await (await caches.open(k)).keys()) cache += r.url;
+      return { backup: /zeta|v:pack/.test(out), cache: /vault-content|rincon|zeta/i.test(cache), url: location.href.includes('zeta') };
+    });
+    ok('6 fuera de la copia general, cachés y URL', !leak.backup && !leak.cache && !leak.url, JSON.stringify(leak));
+
+    // own encrypted backup: restore elsewhere only with the right phrase
+    await go('/yoru', '.lock'); await unlock(); await consentBoth(); await page.waitForSelector('.yoru-level');
+    await go('/yoru/ajustes', '.page');
+    await btn('Crear copia cifrada').click();
+    await page.locator('.overlay input').nth(0).fill('frase ficticia larga'); await page.locator('.overlay input').nth(1).fill('frase ficticia larga');
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('.overlay').getByRole('button', { name: 'Seguir' }).click()]);
+    const file = await dl.path();
+    const vb = JSON.parse(fs.readFileSync(file, 'utf8'));
+    ok('6 copia propia: cifrada y con su formato', vb.format === 'aniversario-vault-backup' && !/zeta/.test(JSON.stringify(vb)));
+    const ctx2 = await b6.newContext({ viewport: { width: 1440, height: 900 } });
+    const p2 = await ctx2.newPage();
+    const errs2 = watch(p2);
+    await completeSetup(p2);
+    const res2 = await p2.evaluate(async ([bk, pin]) => {
+      const db = await import('./js/core/db.js');
+      for (const [p, d] of [['sofia', '1995-01-01'], ['david', '1994-02-02']]) await db.put('specialDates', { id: `t6:birth:${p}`, title: 'x', kind: 'birthday', date: d, recurring: 'yearly', personOrPetId: p });
+      const security = await import('./js/core/security.js'); const V = await import('./js/core/vault.js');
+      await security.createPin('vault', pin);
+      let wrong = 'ok'; try { await V.importBackup(bk, 'otra frase cualquiera'); } catch (e) { wrong = e.code; }
+      const n = await V.importBackup(bk, 'frase ficticia larga');
+      const lib = await V.library();
+      return { wrong, n, items: lib.items.length, logs: (await V.logs()).length };
+    }, [vb, PIN]);
+    ok('6 copia propia: se restaura en otro navegador solo con la frase correcta', res2.wrong === 'PHRASE' && res2.items === 12 && res2.logs === 1, JSON.stringify(res2));
+    ok('6 otro navegador: sin errores', errs2.length === 0, errs2.join(' | '));
+    await ctx2.close();
+
+    // wipe this device only
+    await go('/yoru/ajustes', '.page');
+    await btn('Borrar el Rincón de este equipo').click(); await page.locator('.overlay').getByRole('button', { name: 'Seguir' }).click();
+    await page.waitForSelector('.overlay .pin-input'); await page.locator('.overlay .pin-input').fill(PIN);
+    await page.waitForFunction(() => location.hash === '#/ajustes', null, { timeout: 20000 });
+    const wiped = await page.evaluate(async () => { const db = await import('./js/core/db.js'); return (await db.rawAll('vault')).length + (await db.rawAll('settings')).filter((r) => r.id.startsWith('key:vault:')).length + (await db.rawAll('media')).filter((m) => m.ownerStore === 'vault').length; });
+    ok('6 borrar: el Rincón se borra de este equipo con confirmación y PIN', wiped === 0, String(wiped));
+    ok('fase 6: no page errors or native dialogs', errs.length === 0, errs.join(' | '));
+    await ctx.close(); await b6.close();
+  }
+
   await browser.close();
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed`);

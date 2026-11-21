@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Herramienta local: sin red. Ningún archivo ni frase sale de este equipo. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Cifrar contenido</title>
+<style>
+  :root { --bg: #FBF4F3; --surface: #fff; --text: #2A1E22; --text-2: #6E5860; --accent: #C2405F; --ink: #fff; --border: #EFD9DC; --ok: #3F6B3A; --bad: #A8321F; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #161214; --surface: #201B1E; --text: #F5EEF1; --text-2: #BFB0B7; --accent: #E893AE; --ink: #161214; --border: #3A3136; --ok: #9ED6A0; --bad: #FF8A7A; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 16px; }
+  h1 { margin: 0; font-size: 1.5rem; }
+  section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  h2 { margin: 0; font-size: 1.1rem; }
+  label { font-weight: 600; display: flex; flex-direction: column; gap: 4px; }
+  input[type=password], input[type=file] { font: inherit; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); min-height: 44px; }
+  button { font: 600 1rem system-ui, sans-serif; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 0; background: var(--accent); color: var(--ink); cursor: pointer; align-self: flex-start; }
+  button:disabled { opacity: .5; cursor: default; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .muted { color: var(--text-2); font-size: .92rem; margin: 0; }
+  .msg { margin: 0; font-weight: 600; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); }
+  pre { white-space: pre-wrap; max-height: 260px; overflow: auto; background: var(--bg); padding: 10px; border-radius: 10px; font-size: .85rem; margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Cifrar el contenido del Rincón</h1>
+  <p class="muted">Funciona sin internet y no envía nada. Cifra su archivo (.txt, .csv o .json) con una frase propia (AES-GCM, clave PBKDF2 de 600 000 iteraciones). El archivo cifrado se carga en la app en Rincón, Contenido. Si olvidan la frase, el archivo cifrado no se puede abrir.</p>
+
+  <section aria-labelledby="h-enc">
+    <h2 id="h-enc">Cifrar</h2>
+    <label>Archivo con el contenido <input id="file" type="file" accept=".txt,.csv,.json,text/plain,text/csv,application/json"></label>
+    <label>Frase (mínimo 8 caracteres) <input id="p1" type="password" autocomplete="off"></label>
+    <label>Repite la frase <input id="p2" type="password" autocomplete="off"></label>
+    <button id="go" type="button">Cifrar y descargar</button>
+    <p id="msg" class="msg" role="status" aria-live="polite"></p>
+  </section>
+
+  <section aria-labelledby="h-dec">
+    <h2 id="h-dec">Revisar un archivo cifrado</h2>
+    <p class="muted">Para comprobar que la frase abre el archivo. El texto se muestra solo aquí y no se guarda.</p>
+    <label>Archivo .enc.json <input id="efile" type="file" accept=".json,application/json"></label>
+    <label>Frase <input id="ep" type="password" autocomplete="off"></label>
+    <button id="check" type="button">Abrir</button>
+    <p id="emsg" class="msg" role="status" aria-live="polite"></p>
+    <pre id="out" hidden></pre>
+  </section>
+</main>
+<script>
+(() => {
+  'use strict';
+  const ITER = 600000;
+  const enc = new TextEncoder(); const dec = new TextDecoder();
+  const $ = (id) => document.getElementById(id);
+  const b64 = (buf) => { const b = new Uint8Array(buf); let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000)); return btoa(s); };
+  const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  async function kek(phrase, salt, iter) {
+    const base = await crypto.subtle.importKey('raw', enc.encode(phrase), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  }
+  const say = (el, text, ok) => { el.textContent = text; el.className = `msg ${ok ? 'ok' : 'bad'}`; };
+
+  $('go').addEventListener('click', async () => {
+    const f = $('file').files[0]; const p1 = $('p1').value; const p2 = $('p2').value; const msg = $('msg');
+    if (!f) return say(msg, 'Elige el archivo.', false);
+    if (p1.length < 8) return say(msg, 'La frase debe tener al menos 8 caracteres.', false);
+    if (p1 !== p2) return say(msg, 'Las frases no coinciden.', false);
+    if (f.size > 4 * 1024 * 1024) return say(msg, 'El archivo es muy grande (máximo 4 MB).', false);
+    $('go').disabled = true; say(msg, 'Cifrando…', true);
+    try {
+      const text = await f.text();
+      const salt = crypto.getRandomValues(new Uint8Array(16)); const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await kek(p1, salt, ITER);
+      const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify({ name: f.name, text })));
+      const out = { format: 'aishiteru-rincon-enc', version: 1, salt: b64(salt), iter: ITER, iv: b64(iv), data: b64(data) };
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], { type: 'application/json' }));
+      a.download = `${f.name.replace(/\.[^.]+$/, '')}.enc.json`;
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      $('p1').value = ''; $('p2').value = '';
+      say(msg, 'Listo: se descargó el archivo cifrado. Pueden borrar el archivo sin cifrar.', true);
+    } catch { say(msg, 'No se pudo cifrar.', false); }
+    $('go').disabled = false;
+  });
+
+  $('check').addEventListener('click', async () => {
+    const f = $('efile').files[0]; const p = $('ep').value; const msg = $('emsg'); const out = $('out');
+    out.hidden = true; out.textContent = '';
+    if (!f) return say(msg, 'Elige el archivo cifrado.', false);
+    try {
+      const box = JSON.parse(await f.text());
+      if (box.format !== 'aishiteru-rincon-enc') return say(msg, 'Este archivo no es del Rincón.', false);
+      const key = await kek(p, unb64(box.salt), box.iter || ITER);
+      const plain = JSON.parse(dec.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(box.iv) }, key, unb64(box.data))));
+      say(msg, `La frase es correcta (${plain.name}).`, true);
+      out.textContent = String(plain.text).slice(0, 4000); out.hidden = false;
+    } catch { say(msg, 'La frase no abre este archivo.', false); }
+  });
+})();
+</script>
+</body>
+</html>
