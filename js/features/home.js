@@ -440,16 +440,21 @@ export async function render() {
     const meeting = await import('./encuentro.js').then((m) => m.homeCard()).catch(() => null);
     const weekend = await import('./citas.js').then((m) => m.weekendCard()).catch(() => null);
     const pet = await import('./mascotas.js').then((m) => m.homeCard({ onChange: build })).catch(() => null);
+    const acc = await import('./home-accesos.js');
+    const favs = await acc.favoritesCard().catch((e) => { console.error(e); return null; });
     const both = bothLine(recv);
     cleanups.push(both.cleanup);
     body.replaceChildren(...[
       counter ? counter.card : noStartCard(),
       both.node,
+      acc.quickActions(),
       celebrationCard(events),
       meeting,
       slides.length ? daySwitcher(slides) : null,
+      favs,
       comingCard(data, start),
       today,
+      acc.discoverCard(),
       weekend,
       pet,
       backupCard(data.meta),

@@ -452,10 +452,14 @@ export async function render(ctx) {
     body.replaceChildren(ui.emptyState({ title: 'No pudimos abrir las cartas', text: 'Cierra y vuelve a abrir la app; tus datos siguen en el teléfono.', art: 'wave' }));
     return page;
   }
+  // Inicio's quick action "Escribir carta" opens the editor right away.
+  const write = !!ctx.query?.escribir;
+  if (write) history.replaceState(history.state, '', '#/cartas');
   // A link to one letter (#/cartas/:id) opens it on top of the list.
   const linked = ctx.params?.a ? letters.find((l) => l.id === ctx.params.a && l.to === profile.active() && l.status !== 'draft') : null;
   if (linked) { tab = 'mine'; }
   draw();
+  if (write) requestAnimationFrame(() => openEditor());
   if (linked) {
     history.replaceState(history.state, '', '#/cartas');
     requestAnimationFrame(() => openLetter(linked, body.querySelector(`.futo[data-id="${CSS.escape(linked.id)}"]`)));

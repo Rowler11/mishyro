@@ -2787,3 +2787,28 @@ audio.rec-media { background: transparent; max-height: none; }
 
 /* Ajustes > Apariencia: "Movimiento y sonido" lives here as its own part (2026-11-21). */
 .settings-subtitle { margin: var(--space-5, 1.5rem) 0 var(--space-2, .5rem); scroll-margin-top: 5.5rem; }
+
+/* Inicio: quick actions, favorites and "Prueben hoy" (2026-11-21) */
+.quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
+.quick-action { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: var(--space-2) 4px; border-radius: var(--radius-m);
+  color: var(--text); text-decoration: none; text-align: center; min-height: 44px; }
+.quick-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink);
+  border: 1px solid var(--border); box-shadow: var(--shadow-1); transition: transform var(--dur-2, .2s) var(--ease-spring, ease); }
+.quick-action:hover .quick-icon, .quick-action:focus-visible .quick-icon { transform: translateY(-2px); }
+.quick-label { font-size: .78rem; font-weight: 600; line-height: 1.2; }
+.fav-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.fav-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.fav-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: var(--space-2) 4px; border-radius: var(--radius-m);
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text); text-decoration: none; font: inherit; cursor: pointer; min-height: 88px; justify-content: center; }
+.fav-tile .section-icon { background: var(--surface); }
+.fav-name { font-size: .8rem; font-weight: 600; text-align: center; line-height: 1.2; overflow-wrap: anywhere; }
+.fav-add { border-style: dashed; color: var(--text-2); }
+.fav-group { border: 0; padding: 0; margin: 0; display: grid; gap: 4px; }
+.fav-option { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-1); border-radius: var(--radius-s); }
+.fav-option input { width: 20px; height: 20px; accent-color: var(--accent); }
+.discover-body { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2) var(--space-3); align-items: start; }
+.discover-body > .card-actions { grid-column: 1 / -1; }
+.discover-icon { width: 52px; height: 52px; border-radius: 16px; }
+.discover-name { font-weight: 700; margin: 0 0 2px; }
+.discover-text p { margin: 0; }
+@media (min-width: 900px) { .fav-grid { grid-template-columns: repeat(6, 1fr); } }
