@@ -1432,11 +1432,11 @@ async function completeSetup(page) {
     ok('5A eventos: mesiversario challenge rotates by month', L.ch);
     ok('5A trivia: questions with the answer among unique options', L.trivia);
     ok('5A liga: wins, month crown and streak (deleted ignored)', L.liga === '3:2-1:sofia:sofia2', L.liga);
-    ok('5A sala: 12 games ready and no Japanese letters on tiles', L.ready === 12 && L.noKanjiTiles, String(L.ready));
+    ok('5A sala: games ready and no Japanese letters on tiles', L.ready >= 12 && L.noKanjiTiles, String(L.ready));
 
     await go('/juegos', '.page.juegos');
     const room = await page.locator('.page.juegos').innerText();
-    ok('5A sala: room renders without stray "null"', !/\bnull\b/.test(room) && (await page.locator('.soon-pill').count()) === 13);
+    ok('5A sala: room renders without stray "null"', !/\bnull\b/.test(room));
     // Esto o aquello: one full round saved to history
     await go('/juegos/estooaquello', '.page');
     await page.getByRole('button', { name: 'Empezar' }).click(); await page.waitForTimeout(500);
@@ -1457,6 +1457,207 @@ async function completeSetup(page) {
     await go('/eventos', '.page.eventos');
     ok('5A eventos: page renders with "Lo que viene"', /Lo que viene/.test(await page.locator('.page.eventos').innerText()));
     ok('fase 5A: no page errors or native dialogs', errs.length === 0, errs.join(' | '));
+    await ctx.close();
+  }
+
+  // ---------- 11. Fase 5B: los 13 juegos que faltaban (fictitious data) ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errs = watch(page);
+    await page.addInitScript(() => { window.print = () => {}; });
+    await page.goto(BASE);
+    await completeSetup(page);
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 15000 }); await page.waitForTimeout(350); };
+    const btn = (name) => page.getByRole('button', { name, exact: true });
+    const sheetBtn = (name) => page.locator('.overlay').last().getByRole('button', { name, exact: true });
+    const as = async (who) => { await page.evaluate((w) => { localStorage.setItem('aishiteru.activeProfile', w); }, who); await page.reload(); await page.waitForSelector('.page', { timeout: 15000 }); };
+    // pure helpers
+    const L = await page.evaluate(async () => {
+      const K = await import('./js/features/juegos-kit.js');
+      const P = await import('./js/features/juegos-planes.js');
+      const C = await import('./js/features/juegos-casa.js');
+      const J = await import('./js/features/juegos-japon.js');
+      const { CONFIG } = await import('./js/config.js');
+      const g = (on) => Array.from({ length: 16 }, (_, i) => on.includes(i));
+      const row = P.bingoLines(g([4, 5, 6, 7])); const col = P.bingoLines(g([1, 5, 9, 13])); const dia = P.bingoLines(g([0, 5, 10, 15])); const anti = P.bingoLines(g([3, 6, 9, 12]));
+      const none = P.bingoLines(g([0, 1, 2, 4])); const full = P.bingoLines(g(Array.from({ length: 16 }, (_, i) => i)));
+      const st = P.challengeStates('2026-11-01', { 1: { at: '2026-11-01' } }, '2026-11-03');
+      const env = [{ unlock: 'time', at: '19:00' }, { unlock: 'step' }, { unlock: 'step' }];
+      const e1 = C.envelopeStates(env, { date: '2026-11-21', now: new Date(2026, 10, 21, 18, 0) }).join();
+      const e2 = C.envelopeStates(env, { date: '2026-11-21', now: new Date(2026, 10, 21, 19, 1) }).join();
+      const e3 = C.envelopeStates(env, { date: '2026-11-21', opened: { 0: 'x' }, done: { 0: 'x' }, now: new Date(2026, 10, 21, 20, 0) }).join();
+      const e4 = C.envelopeStates(env, { date: '2026-11-21', opened: { 0: 'x' }, now: new Date(2026, 10, 21, 20, 0) }).join();
+      const words = CONFIG.japaneseWords;
+      const days = Array.from({ length: words.length }, (_, i) => { const d = new Date(2026, 0, 1); d.setDate(d.getDate() + i); return J.wordOfDay(words, `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`).id; });
+      const rank = C.cataRanking([{ name: 'A', ratings: { sofia: { sabor: 2, textura: 2, aroma: 2 } } }, { name: 'B', ratings: { sofia: { sabor: 5, textura: 4, aroma: 5 } } }]);
+      const ids = Object.values(CONFIG.games.banks).flat().map((x) => x.id).concat(words.map((w) => w.id));
+      return {
+        bingo: [row.count, col.count, dia.count, anti.count, none.count, full.full, full.count, row.full].join(','),
+        reto: `${P.challengeDay('2026-11-01', '2026-11-03')}:${st.slice(0, 4).join('/')}`,
+        env: [e1, e2, e3, e4].join(' | '),
+        tana: [J.tanabataOpen('2026-07-01'), J.tanabataOpen('2026-07-07'), J.tanabataOpen('2026-07-08'), J.tanabataOpen('2026-06-30'), J.daysToTanabata('2026-06-30'), J.daysToTanabata('2026-07-08') > 300].join(','),
+        wordsN: words.length, noRepeat: new Set(days).size === words.length, stable: J.wordOfDay(words, '2026-11-21').id === J.wordOfDay(words, '2026-11-21').id,
+        wordsOk: words.every((w) => w.jp && w.romaji && w.es && w.cat),
+        cata: `${rank[0].name}:${rank[0].avg}`, guess: [C.guessMatches('chocolate negro', 'Chocolate'), C.guessMatches('Maní', 'mani'), C.guessMatches('', 'x'), C.guessMatches('papas', 'galletas')].join(','),
+        pts: [0, 2, 3, 4, 5, 6].map(C.recuerdoPoints).join(''), px: [C.pixelSize(0), C.pixelSize(6)].join(','),
+        avg: P.avgStars({ sofia: { stars: 4 }, david: { stars: 5 } }),
+        uniqueIds: new Set(ids).size === ids.length, ready: K.GAME_LIST.filter((x) => x.ready).length,
+        seeded: K.seeded('x')() === K.seeded('x')(),
+        banks: ['cocina', 'bingo', 'reto30', 'manga-sfx'].map((b) => CONFIG.games.banks[b].length).join(','),
+        noKanjiTiles: K.GAME_LIST.every((x) => !/[぀-ヿ一-鿿]/.test(x.title + x.blurb)),
+      };
+    });
+    ok('5B bingo: rows, columns, both diagonals and full card', L.bingo === '1,1,1,1,0,true,10,false', L.bingo);
+    ok('5B 30 días: day number and day states', L.reto === '3:done/missed/today/future', L.reto);
+    ok('5B cita misteriosa: envelopes open by time and by step', L.env === 'locked,locked,locked | ready,locked,locked | open,ready,locked | open,locked,locked', L.env);
+    ok('5B tanabata: wishes from July 1 to 7 only', L.tana === 'true,true,false,false,1,true', L.tana);
+    ok('5B palabra del día: no repeats until the list runs out, stable per day', L.noRepeat && L.stable && L.wordsOk && L.wordsN >= 120, String(L.wordsN));
+    ok('5B cata: ranking by stars and forgiving guesses', L.cata === 'B:4.7' && L.guess === 'true,true,false,false', `${L.cata} ${L.guess}`);
+    ok('5B recuerdo: earlier guesses score more; pixels shrink to sharp', L.pts === '332211' && L.px === '56,1', `${L.pts} ${L.px}`);
+    ok('5B cine: average of the reviews', L.avg === 4.5, String(L.avg));
+    ok('5B bancos: every bank id is unique and banks are filled', L.uniqueIds && L.banks === '18,45,36,22', L.banks);
+    ok('5B sala: all 25 games ready, no Japanese letters on tiles', L.ready === 25 && L.noKanjiTiles, String(L.ready));
+
+    await go('/juegos', '.page.juegos');
+    ok('5B sala: no "Pronto" left in the room', (await page.locator('.soon-pill').count()) === 0);
+
+    // Bingo: a full row gives a Rasca y gana card to each one
+    await go('/juegos/bingo', '.bingo-grid');
+    for (let i = 0; i < 4; i++) { await page.locator('.bingo-cell').nth(i).click(); await sheetBtn('Lo hicimos').click(); await page.waitForTimeout(450); }
+    const bingo = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const cards = (await db.query('scratchCards')).filter((c) => c.origin === 'bingo'); const done = (await db.query('gameArtifacts')).find((a) => a.type === 'bingoCard').data.cells.filter((c) => c.doneAt).length; return `${cards.length}:${done}`; });
+    ok('5B bingo: marking a row saves it and gives two scratch cards', bingo === '2:4', bingo);
+    await shot(page, '5b-bingo-390');
+
+    // Desafío de 30 días
+    await go('/juegos/reto30', '.page');
+    await btn('Empezar el desafío').click(); await page.waitForSelector('.reto-grid');
+    const before = await page.locator('.reto-text').innerText();
+    await btn('Cambiar reto').click(); await page.waitForTimeout(300);
+    const after = await page.locator('.reto-text').innerText();
+    await btn('Lo hicimos').click(); await page.waitForTimeout(400);
+    ok('5B 30 días: start, swap today and mark it done', before !== after && (await page.locator('.reto-day.is-done').count()) === 1);
+
+    // Noche de cine
+    await go('/juegos/cine', '.page');
+    for (const t of ['Película ficticia uno', 'Serie ficticia dos']) {
+      await btn('Agregar').click(); await page.locator('.overlay input').first().fill(t);
+      if (t.startsWith('Serie')) await page.locator('.overlay label[for$="-serie"]').click();
+      await sheetBtn('Guardar').click(); await page.waitForTimeout(300);
+    }
+    await btn('¿Qué vemos hoy?').click(); await sheetBtn('Girar').click(); await page.waitForTimeout(5200);
+    await sheetBtn('¡Esa!').click(); await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'Ya la vimos' }).first().click();
+    await page.locator('.overlay .star-btn').nth(3).click(); await sheetBtn('Guardar').click(); await page.waitForTimeout(400);
+    const cine = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const m = (await db.query('gameArtifacts')).filter((a) => a.type === 'movie'); return `${m.length}:${m.filter((x) => x.data.status === 'vista' && x.data.reviews?.sofia?.stars === 4).length}`; });
+    ok('5B cine: add, spin the wheel and review with stars', cine === '2:1', cine);
+
+    // Adivina el recuerdo with two fictitious photo memories
+    await page.evaluate(async () => {
+      const db = await import('./js/core/db.js');
+      const blob = await (await fetch('./tests/fixtures/foto-ficticia.jpg')).blob();
+      for (const [i, title] of [[1, 'Recuerdo ficticio uno'], [2, 'Recuerdo ficticio dos']]) {
+        const id = `e2e-mem-${i}`; const mediaId = await db.putMedia(blob, { ownerStore: 'memories', ownerId: id });
+        await db.put('memories', { id, title, date: `2026-0${i + 5}-10`, note: '', mediaIds: [mediaId], visibility: 'shared', owner: 'both' });
+      }
+    });
+    await go('/juegos/recuerdo', '.page'); await btn('Empezar').click(); await page.waitForSelector('.reveal-canvas');
+    await page.waitForTimeout(400);
+    await page.getByRole('button', { name: /^¡Adivinó / }).first().click(); await btn('Siguiente foto').click();
+    await btn('Nadie').click(); await btn('Ver resultado').click(); await page.waitForSelector('.game-result');
+    await shot(page, '5b-recuerdo-390');
+    const rec = await page.evaluate(async () => (await (await import('./js/core/db.js')).query('games')).filter((g) => g.gameId === 'recuerdo').map((g) => Object.values(g.score).join('-')).join());
+    ok('5B recuerdo: a round scores and the game is saved', /3-0|0-3/.test(rec), rec);
+
+    // Cata a ciegas
+    await go('/juegos/cata', '.page');
+    await page.locator('.segmented').nth(2).locator('label[for$="-2"]').click();
+    await btn('Preparar las muestras').click();
+    await page.locator('.page input.input').nth(0).fill('Chocolate'); await page.locator('.page input.input').nth(1).fill('Maní');
+    await btn('Listo, a probar').click();
+    for (const guess of ['chocolate', 'galleta']) { await page.locator('.star-btn').nth(4).click(); await page.locator('.page input.input').fill(guess); await btn('Siguiente').click(); await page.waitForTimeout(200); }
+    await page.waitForSelector('.cata-rank');
+    ok('5B cata: tasting, ranking and guesses', /adivinó 1 de 2/.test(await page.locator('.game-result').innerText()));
+
+    // Reto de cocina (duelo)
+    await go('/juegos/cocina', '.page'); await btn('Empezar').click(); await page.waitForSelector('.wheel');
+    await btn('Girar').click(); await page.waitForTimeout(5000);
+    await btn('Ver la receta').click(); await btn('Empezar a cocinar').click(); await btn('Terminamos').click();
+    for (let k = 0; k < 2; k++) { await page.locator('.star-btn').nth(k === 0 ? 4 : 2).click(); await btn('Listo').click(); await page.waitForTimeout(200); }
+    await page.waitForSelector('.game-result');
+    await shot(page, '5b-cocina-390');
+    ok('5B cocina: spin, cook, vote and a winner', /Ganó/.test(await page.locator('.game-result').innerText()));
+
+    // Búsqueda del tesoro: made by Sofía, played by David on his phone
+    await go('/juegos/tesoro', '.page'); await btn('Armar una búsqueda').click();
+    const ta = page.locator('.overlay textarea');
+    await ta.nth(0).fill('Pista ficticia uno'); await ta.nth(1).fill('Pista ficticia dos');
+    await page.locator('.overlay input[placeholder^="Ej.: un beso"]').fill('Premio ficticio');
+    await sheetBtn('Guardar').click(); await page.waitForTimeout(400);
+    await as('david'); await go('/juegos/tesoro', '.sealed-card');
+    await page.locator('.sealed-card').getByRole('button', { name: 'Empezar' }).click();
+    await btn('¡La encontré!').click(); await page.waitForTimeout(250); await btn('¡La encontré!').click(); await page.waitForSelector('.tesoro-prize');
+    ok('5B tesoro: clues one by one on the other phone, then the prize', (await page.locator('.tesoro-prize').innerText()) === 'Premio ficticio');
+
+    // Cita misteriosa: made by David for Sofía; first envelope by time (already passed), second by step
+    await go('/juegos/misteriosa', '.page'); await btn('Armar una cita').click();
+    const tx = page.locator('.overlay textarea'); await tx.nth(0).fill('Sobre ficticio uno'); await tx.nth(1).fill('Sobre ficticio dos');
+    await page.locator('.overlay input[type=time]').first().fill('00:00');
+    await page.locator('.overlay .tesoro-row').nth(2).getByRole('button', { name: 'Quitar sobre' }).click();
+    await sheetBtn('Guardar').click(); await page.waitForTimeout(400);
+    await as('sofia'); await go('/juegos/misteriosa', '.sealed-card');
+    await page.locator('.sealed-card').getByRole('button', { name: 'Abrir' }).click(); await page.waitForSelector('.envelopes');
+    const locked = await page.locator('.envelope.is-locked').count();
+    await btn('Abrir el sobre').click(); await btn('Hecho, el siguiente').click(); await btn('Abrir el sobre').click(); await btn('¡Terminamos!').click();
+    await page.waitForTimeout(400);
+    await shot(page, '5b-misteriosa-390');
+    const mist = await page.evaluate(async () => (await (await import('./js/core/db.js')).query('gameArtifacts')).find((a) => a.type === 'mysteryDate').data.status);
+    ok('5B cita misteriosa: sealed envelopes open in order and the date ends', locked === 1 && mist === 'done', `${locked} ${mist}`);
+
+    // Origami: a whole guide and the senbazuru counter
+    await go('/juegos/origami', '.page');
+    await btn('Doblé una').click(); await page.waitForTimeout(300);
+    await page.getByRole('button', { name: /Corazón/ }).click();
+    for (let i = 0; i < 6; i++) { await btn('Siguiente').click(); await page.waitForTimeout(120); }
+    await shot(page, '5b-origami-390');
+    await btn('Terminé').click(); await page.waitForTimeout(300);
+    ok('5B origami: guide to the end and a crane counted', /\b1\b de 1000/.test(await page.locator('.senbazuru-total').innerText()));
+
+    // Tanabata renders the bamboo
+    await go('/juegos/tanabata', '.bamboo');
+    ok('5B tanabata: bamboo and the July window', /julio/.test(await page.locator('.page').innerText()));
+
+    // Palabra del día: Japanese writing, review and quiz
+    await go('/juegos/kotoba', '.kotoba-today');
+    const jp = await page.locator('.kotoba-today .kotoba-jp').innerText();
+    await btn('Repasar').click(); await btn('Ver significado').click(); await btn('La sabía').click(); await page.waitForTimeout(500); await ((await btn('Volver').count()) ? btn('Volver') : btn('Terminar')).click();
+    await btn('Quiz entre los dos').click(); await page.locator('.trivia-opt').first().click(); await btn('Siguiente').click();
+    await shot(page, '5b-kotoba-390');
+    ok('5B palabra del día: word in Japanese, review and quiz', /[぀-ヿ一-鿿]/.test(jp) && (await page.locator('.trivia-opt').count()) === 4, jp);
+    await btn('Terminar').click();
+
+    // Nuestro manga: photo, bubble and sound effect, saved as an image
+    await go('/juegos/manga', '.page'); await btn('Nueva página').click(); await page.waitForSelector('.manga-page');
+    await page.locator('.manga-panel').first().click(); await page.locator('.manga-pick-btn').first().click();
+    await page.getByRole('button', { name: 'Globo' }).click(); await page.locator('.overlay input').first().fill('Texto ficticio'); await sheetBtn('Agregar').click();
+    await page.getByRole('button', { name: 'Onomatopeya' }).click(); await page.locator('.overlay .manga-sfx-chip').first().click();
+    await page.waitForTimeout(300);
+    await shot(page, '5b-manga-390');
+    await btn('Guardar').click(); await page.waitForTimeout(1200);
+    const manga = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const m = (await db.query('gameArtifacts')).find((a) => a.type === 'manga'); const b = m?.mediaId ? await db.getMedia(m.mediaId) : null; return `${m?.data.items.length}:${b?.type}:${m?.data.panels[0]?.mediaId ? 'photo' : 'none'}`; });
+    ok('5B manga: page with photo, bubble and sound effect exported as PNG', manga === '2:image/png:photo', manga);
+
+    // Postales: design, message and saved
+    await go('/juegos/postales', '.pc-preview');
+    await page.locator('.pc-design').nth(2).click(); await page.locator('textarea').fill('Mensaje ficticio');
+    await btn('Imprimir').click(); await page.waitForTimeout(300);
+    await shot(page, '5b-postales-390');
+    const pc = await page.evaluate(async () => (await (await import('./js/core/db.js')).query('gameArtifacts')).filter((a) => a.type === 'postcard').map((a) => a.data.design + ':' + a.data.message).join());
+    ok('5B postales: design and message saved for printing', pc === 'ola:Mensaje ficticio', pc);
+    await page.locator('.pc-preview').evaluate(() => {});
+    await go('/juegos/historial', '.page');
+    ok('5B historial: the new games show in the history', /Tesoro encontrado|Búsqueda del tesoro/.test(await page.locator('.page').innerText()));
+    ok('fase 5B: no page errors or native dialogs', errs.length === 0, errs.join(' | '));
     await ctx.close();
   }
 

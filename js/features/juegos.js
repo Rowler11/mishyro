@@ -18,6 +18,11 @@ const loaders = {
   yonunca: () => import('./juegos-cartas.js'), cancion: () => import('./juegos-cartas.js'), cuentos: () => import('./juegos-cartas.js'),
   ruleta: () => import('./juegos-mesa.js'), dibujo: () => import('./juegos-mesa.js'), memoria: () => import('./juegos-mesa.js'),
   trivia: () => import('./juegos-mesa.js'), liga: () => import('./juegos-mesa.js'), juntos: () => import('./juegos-mesa.js'),
+  recuerdo: () => import('./juegos-casa.js'), cata: () => import('./juegos-casa.js'), cocina: () => import('./juegos-casa.js'),
+  tesoro: () => import('./juegos-casa.js'), misteriosa: () => import('./juegos-casa.js'),
+  bingo: () => import('./juegos-planes.js'), reto30: () => import('./juegos-planes.js'), cine: () => import('./juegos-planes.js'),
+  origami: () => import('./juegos-japon.js'), tanabata: () => import('./juegos-japon.js'), kotoba: () => import('./juegos-japon.js'),
+  manga: () => import('./juegos-japon.js'), postales: () => import('./juegos-japon.js'),
 };
 
 // Banks shown in the editor: [bank, title, fields]
@@ -36,7 +41,15 @@ export const BANKS = [
   ['cuentos', 'Cuentos: palabras', [['text', 'Palabra']]],
   ['cuentos-inicio', 'Cuentos: comienzos', [['text', 'Comienzo']]],
   ['liga', 'Liga: juegos', [['text', 'Juego']]],
+  ['cocina', 'Reto de cocina: recetas', [['text', 'Receta'], ['cat', 'Etiquetas (rapido; japones; dulce; salado)'], ['mins', 'Minutos'], ['ing', 'Ingredientes (separados por ;)'], ['steps', 'Pasos (separados por ;)']]],
+  ['bingo', 'Bingo de citas', [['text', 'Plan']]],
+  ['reto30', 'Desafío de 30 días', [['text', 'Reto']]],
+  ['manga-sfx', 'Manga: onomatopeyas', [['text', 'En letras latinas'], ['jp', 'En japonés (opcional)']]],
+  ['__words', 'Palabra del día', [['jp', 'En japonés'], ['romaji', 'Romaji'], ['es', 'Significado'], ['cat', 'Tema']]],
 ];
+
+/** Content kind of a bank (the daily words have their own kind, shared with CONFIG.japaneseWords). */
+const kindOf = (bank) => (bank === '__words' ? 'japaneseWord' : `game:${bank}`);
 
 // ---------- room ----------
 function gameTile(g, query = '') {
@@ -172,11 +185,12 @@ async function history(page) {
       const detail = r.gameId === 'liga' ? `${r.ligaType || 'Juego'} · ${r.winner ? `ganó ${profile.name(r.winner)}` : 'empate'}`
         : r.gameId === 'juntos' ? `${r.minutes || 0} min sin teléfonos`
           : r.gameId === 'ruleta' ? (r.result ? `Salió: ${r.result}` : 'Ruleta')
-            : r.score ? `${profile.PEOPLE.map((p) => `${profile.name(p)} ${r.score[p] ?? 0}`).join(' · ')}${r.winner ? ` · ganó ${profile.name(r.winner)}` : ''}` : '';
+            : r.score ? `${profile.PEOPLE.map((p) => `${profile.name(p)} ${r.score[p] ?? 0}`).join(' · ')}${r.winner ? ` · ganó ${profile.name(r.winner)}` : ''}${r.result ? ` · ${r.result}` : ''}`
+              : r.result || '';
       const pens = (r.penalties || []).filter((x) => x.outcome === 'done' || x.outcome === 'alt').length;
       return el('li', { class: 'pet-row' }, el('span', { class: 'section-icon' }, icon(g?.icon || 'gamepad-2', { size: 18 })),
         el('div', { class: 'grow' }, el('strong', {}, g?.title || r.gameId), el('p', { class: 'muted small' }, [detail, pens ? `${pens} ${pens === 1 ? 'castigo' : 'castigos'}` : '', when ? util.formatDay(when) : ''].filter(Boolean).join(' · '))),
-        g?.ready && r.gameId !== 'liga' ? el('a', { class: 'btn btn-ghost btn-small', href: `#/juegos/${r.gameId}`, 'aria-label': `Revancha de ${g.title}` }, icon('swords', { size: 18 }), el('span', {}, 'Revancha')) : null);
+        g?.ready && r.score && r.gameId !== 'liga' ? el('a', { class: 'btn btn-ghost btn-small', href: `#/juegos/${r.gameId}`, 'aria-label': `Revancha de ${g.title}` }, icon('swords', { size: 18 }), el('span', {}, 'Revancha')) : null);
     })));
 }
 
@@ -206,13 +220,13 @@ async function banksPage(page) {
     el('p', { class: 'muted small' }, 'Lo que agreguen o cambien aquí sale en los juegos. Ocultar saca un elemento sin borrarlo.'), box));
   const draw = async () => {
     const [bank, title, fields] = BANKS.find((b) => b[0] === select.value);
-    const kind = `game:${bank}`;
+    const kind = kindOf(bank);
     const all = (await db.query('content', { index: 'kind', range: IDBKeyRange.only(kind), includeHidden: true })).filter((r) => !r.deleted)
       .sort((a, b) => (a.origin === 'user') - (b.origin === 'user') || String(a.id).localeCompare(String(b.id)));
     let showAll = all.length <= 15;
     const ul = el('ul', { class: 'edit-list' });
     const rows = () => put(ul, ...(showAll ? all : all.slice(0, 15)).map((r) => el('li', { class: `edit-row${r.hidden ? ' is-hidden' : ''}` },
-      el('div', { class: 'edit-text' }, el('p', { class: 'edit-title clamp-2' }, fields[0][0] === 'a' ? `${r.a} · ${r.b}` : r[fields[0][0]] || ''),
+      el('div', { class: 'edit-text' }, el('p', { class: 'edit-title clamp-2' }, fields[0][0] === 'a' ? `${r.a} · ${r.b}` : bank === '__words' ? `${r.jp || ''} · ${r.romaji || ''}` : r[fields[0][0]] || ''),
         fields[1] && fields[0][0] !== 'a' && r[fields[1][0]] ? el('p', { class: 'muted small clamp-2' }, r[fields[1][0]]) : null,
         r.hidden ? el('span', { class: 'badge' }, 'Oculto') : r.origin === 'user' ? el('span', { class: 'badge badge-ok' }, 'Agregado') : r.userEdited ? el('span', { class: 'badge' }, 'Editado') : null),
       el('div', { class: 'edit-actions' },
@@ -235,14 +249,14 @@ async function banksPage(page) {
 }
 
 function editor(bank, fields, rec, done) {
-  const controls = fields.map(([key, label]) => { const c = ui.input({ maxlength: '200' }); c.value = rec?.[key] || ''; return { key, c, f: ui.field({ label, control: c }) }; });
+  const controls = fields.map(([key, label]) => { const c = ui.input({ maxlength: key === 'ing' || key === 'steps' ? '1200' : '200' }); c.value = rec?.[key] || ''; return { key, c, f: ui.field({ label, control: c }) }; });
   ui.openModal({
     title: rec ? 'Editar' : 'Agregar', kind: 'sheet', body: el('div', { class: 'stack' }, controls.map((x) => x.f)),
     actions: [{ label: 'Cancelar', variant: 'ghost' }, { label: 'Guardar', variant: 'primary', onClick: async () => {
       if (!controls[0].c.value.trim()) { controls[0].f.setError('Escribe el texto.'); return false; }
       const patch = Object.fromEntries(controls.map(({ key, c }) => [key, c.value.trim()]));
       if (bank === 'estooaquello') patch.text = `${patch.a} o ${patch.b}`;
-      await db.put('content', rec ? { ...rec, ...patch } : { id: `user:game:${bank}:${util.uuid().slice(0, 8)}`, kind: `game:${bank}`, ...patch });
+      await db.put('content', rec ? { ...rec, ...patch } : { id: `user:${kindOf(bank)}:${util.uuid().slice(0, 8)}`, kind: kindOf(bank), ...patch });
       ui.toast('Guardado.', { tone: 'success' }); done(); return true;
     } }],
   });

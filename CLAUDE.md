@@ -25,7 +25,7 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 ## Decisiones de diseño ya tomadas
 - Logo: flor de sakura con corazón (`icons/icon.svg`); nada de logos que sean solo una letra o un kanji.
 - Encabezado: flor suelta sin cuadro (`ui.flower`, símbolo `brand-sakura`) con el color del tema, nombre en color de acento y avatar redondo con la inicial. El logo con cuadro queda para el ícono de la app, la bienvenida, el bloqueo y Acerca de.
-- Letras japonesas solo en el título de cada pantalla (única excepción, decidida el 2026-11-19: "愛してる · te amo" bajo el nombre en Acerca de); nunca en las pestañas de abajo, tarjetas, listas, grupos, botones ni modales.
+- Letras japonesas solo en el título de cada pantalla (excepciones: "愛してる · te amo" bajo el nombre en Acerca de, decidida el 2026-11-19; y, si el usuario lo confirma en la Fase 5B, las palabras de Palabra del día y las onomatopeyas del manga, marcadas con `data-jp-ok`); nunca en las pestañas de abajo, tarjetas, listas, grupos, botones ni modales.
 - "Más": grupos plegables, uno abierto a la vez, con tarjetas de 2 por fila (nombre corto y una línea de descripción); lo que no existe aún lleva "Pronto", no "Fase N".
 - PIN de la app y personal: 4 dígitos con envío automático. Rincón: 6 (docs/05 §33).
 - Tema claro: paleta "Sakura" (fondo #FBF4F3, acento #C2405F). Tema oscuro: "Sakura suave" (fondo #161214, acento #E893AE, sin brillo). Al usuario no le gustan los tintes que se sienten como un filtro encima.
@@ -44,4 +44,4 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 - Commits pequeños por fase, con un mensaje claro en español.
 
 ## Estado
-Actualiza esta línea al cerrar cada fase: **Fase actual: 5A entregada (v0.6.0, esperando aprobación). Fase 4B aprobada el 2026-11-20 (v0.5.0 en main); Fase 4A aprobada el 2026-11-20; Fase 3 aprobada el 2026-11-20; Fase A aprobada el 2026-11-20; Fase 2 sin aprobar formalmente; Fase 1 aprobada el 2026-11-19. Siguiente: Fase 5B (13 juegos que faltan).**
+Actualiza esta línea al cerrar cada fase: **Fase actual: 5B aprobada el 2026-11-21 (v0.7.0 en main). Fase 5A aprobada el 2026-11-21 (v0.6.0 en main); Fase 4B aprobada el 2026-11-20; Fase 4A aprobada el 2026-11-20; Fase 3 aprobada el 2026-11-20; Fase A aprobada el 2026-11-20; Fase 2 sin aprobar formalmente; Fase 1 aprobada el 2026-11-19. Siguiente: Fase 6.**
