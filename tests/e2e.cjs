@@ -458,8 +458,14 @@ async function completeSetup(page) {
     ok('cartas: a sealed letter goes "En camino" as an envelope and can no longer be edited', (await page.locator('.cartas-group', { hasText: 'En camino' }).locator('.futo-sent', { hasText: 'veas la luna llena' }).count()) === 1 && (await page.locator('.draft-sheet').count()) === 0);
     await page.locator('.futo-sent', { hasText: 'veas la luna llena' }).click();
     const sentDlg = page.getByRole('dialog', { name: 'Ábreme cuando veas la luna llena' });
-    ok('cartas: tapping a sent envelope shows the letter, with no way to edit it', /Yo también la estoy viendo/.test(await sentDlg.textContent()) && (await sentDlg.getByRole('button', { name: /Editar|Seguir/ }).count()) === 0);
-    await page.keyboard.press('Escape');
+    // Since v0.11.0 a letter "En camino" can still be edited until it is opened; it stays sealed.
+    ok('cartas: tapping a sent envelope shows the letter, with "Editar" while unopened', /Yo también la estoy viendo/.test(await sentDlg.textContent()) && (await sentDlg.getByRole('button', { name: 'Editar', exact: true }).count()) === 1);
+    await sentDlg.getByRole('button', { name: 'Editar', exact: true }).click();
+    const sealedEd = page.getByRole('dialog', { name: 'Editar carta' });
+    await sealedEd.getByLabel('La carta').fill('Yo también la estoy viendo, editada.');
+    await sealedEd.getByRole('button', { name: 'Guardar cambios' }).click();
+    await page.waitForTimeout(500);
+    ok('cartas: editing a sealed letter keeps it sealed with the new text', (await page.evaluate(async () => { const db = await import('./js/core/db.js'); const l = (await db.rawAll('letters')).find((x) => /editada/.test(x.body || '')); return l?.status === 'sealed' && l.visibility === 'shared'; })));
     await page.waitForTimeout(300);
     await page.evaluate(async () => (await import('./js/core/profile.js')).setActive('david'));
     await page.waitForTimeout(400);
@@ -931,7 +937,8 @@ async function completeSetup(page) {
       for (const d of '2468') await page.locator('.pin-key', { hasText: d }).click();
       await page.waitForTimeout(pass ? 2500 : 400);
     }
-    await page.getByRole('button', { name: 'Terminar' }).waitFor({ timeout: 15000 });
+    await page.getByRole('button', { name: 'Continuar' }).waitFor({ timeout: 15000 });
+    await page.getByRole('button', { name: 'Continuar' }).click();
     await page.getByRole('button', { name: 'Terminar' }).click();
     await page.getByRole('button', { name: 'Saltar' }).click();
     await page.waitForFunction(() => location.hash === '#/inicio');
@@ -2090,6 +2097,94 @@ async function completeSetup(page) {
     const real = errs.filter((e) => !/ERR_TUNNEL_CONNECTION_FAILED|ERR_INTERNET_DISCONNECTED/.test(e)); // map tiles: no internet in the test sandbox
     ok('v0.10.0: no page errors or native dialogs', real.length === 0, real.join(' | '));
     await ctx.close(); await b10.close();
+  }
+
+  // ---------- 15. v0.11.0: Inicio accesos, secciones juntas, Galería, permisos, atrás ----------
+  {
+    const b11 = await chromium.launch();
+    const ctx = await b11.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errs = watch(page);
+    await page.goto(BASE);
+    await page.getByRole('link', { name: 'Ya tenemos Aishiteru' }).waitFor();
+    ok('11 bienvenida: "Ya tenemos Aishiteru" junto a Empezar', true);
+    await page.getByRole('link', { name: 'Ya tenemos Aishiteru' }).click();
+    await page.getByText('Mis 12 palabras').waitFor();
+    await page.getByLabel('Mis 12 palabras').fill('una dos tres');
+    await page.getByRole('button', { name: 'Entrar con mis palabras' }).click();
+    ok('11 volver a entrar: pide 12 palabras', await page.locator('.field-error', { hasText: 'Son 12 palabras' }).waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
+    ok('11 volver a entrar: también ofrece el código de otro equipo', (await page.getByRole('button', { name: 'Usar el código de otro equipo' }).count()) === 1);
+    await page.getByRole('button', { name: 'Volver' }).click();
+    // Setup until the permissions step
+    await page.getByRole('button', { name: 'Empezar' }).click();
+    await page.getByRole('button', { name: /Sofía/ }).click();
+    await page.setInputFiles('#seed-file', SEED);
+    await page.getByRole('button', { name: 'Importar' }).click();
+    await page.getByRole('button', { name: 'Todo bien' }).click();
+    await page.getByRole('button', { name: 'Ahora no' }).click();
+    await page.getByText('Pídelos de una vez').waitFor();
+    ok('11 permisos: un paso con los 4 y "Permitir todo"', (await page.locator('.perm-row').count()) === 4 && (await page.getByRole('button', { name: 'Permitir todo' }).count()) === 1);
+    await page.getByRole('button', { name: 'Continuar' }).click();
+    await page.getByRole('button', { name: 'Terminar' }).click();
+    await page.getByRole('button', { name: 'Saltar' }).click();
+    await page.waitForFunction(() => location.hash === '#/inicio');
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(400); };
+    await go('/inicio', '.quick-actions');
+    ok('11 Inicio: 4 accesos rápidos', (await page.locator('.quick-action').count()) === 4);
+    ok('11 Inicio: 6 favoritos y "Prueben hoy"', (await page.locator('.fav-tile:not(.fav-add)').count()) === 6 && (await page.locator('.discover-card').count()) === 1);
+    ok('11 Inicio: sin "null"', !/\bnull\b/.test(await page.locator('main').innerText()));
+    await page.locator('.fav-card').getByRole('button', { name: 'Editar' }).click();
+    const favDlg = page.getByRole('dialog', { name: 'Sus favoritos' });
+    await favDlg.getByLabel('Calendario').uncheck();
+    await favDlg.getByRole('button', { name: 'Guardar' }).click();
+    await page.waitForTimeout(400);
+    ok('11 Inicio: quitar un favorito deja "Agregar"', (await page.locator('.fav-tile:not(.fav-add)').count()) === 5 && (await page.locator('.fav-add').count()) === 1);
+    await page.locator('.quick-action', { hasText: 'Escribir carta' }).click();
+    await page.getByRole('dialog', { name: /Carta para/ }).waitFor();
+    ok('11 Inicio: "Escribir carta" abre el editor', true);
+    await page.keyboard.press('Escape');
+    // Más and hubs
+    await go('/mas/nosotros', '.section-card');
+    const nos = await page.locator('.section-card-name').allInnerTexts();
+    ok('11 Más: Nosotros sin Fechas, Recordatorios ni Encuentro sueltos', nos.join('|') === 'Calendario|Insignias|Ánimo', nos.join('|'));
+    const total = await page.evaluate(async () => { const r = await import('./js/routes.js'); return r.GROUPS.flatMap((g) => g.sections.filter((s) => !s.moment && r.listed(s.id))).length; });
+    ok('11 Más: 23 secciones', total === 23, String(total));
+    await page.locator('a[href="#/calendario"]').click();
+    await page.waitForSelector('.hub-tabs');
+    ok('11 Calendario: pestañas Mes, Fechas, Avisos y botón Próximo encuentro', (await page.locator('.hub-tab').allInnerTexts()).join('|') === 'Mes|Fechas|Avisos' && (await page.locator('a[href="#/encuentro"]').count()) >= 1);
+    await page.locator('.hub-tab', { hasText: 'Fechas' }).click();
+    await page.waitForFunction(() => location.hash === '#/fechas');
+    await page.locator('.page-back').click();
+    await page.waitForFunction(() => location.hash === '#/mas/nosotros');
+    ok('11 atrás: desde una pestaña vuelve al grupo de Más', true);
+    await go('/ajustes', '.list-row');
+    ok('11 Ajustes: 6 entradas', (await page.locator('nav.list .list-row').count()) === 6);
+    await go('/ajustes/movimiento', '#movimiento');
+    ok('11 Apariencia: incluye Movimiento y sonido', (await page.locator('.page-title').innerText()) === 'Apariencia' && (await page.getByText('Vibración suave').count()) === 1);
+    await go('/ajustes/permisos', '.perm-row');
+    ok('11 Ajustes: Permisos dentro de Privacidad', (await page.locator('.hub-tab.is-on').innerText()) === 'Permisos');
+    await go('/ajustes/sincronizar', '.settings-page');
+    ok('11 Tus datos: Copia, Sincronización y Papelera', (await page.locator('.hub-tab').allInnerTexts()).join('|') === 'Copia|Sincronización|Papelera');
+    // Galería: new sources and Subir
+    await page.evaluate(async () => {
+      const db = await import('./js/core/db.js');
+      const blob = await (await fetch('tests/fixtures/foto-ficticia.jpg')).blob();
+      const m1 = await db.putMedia(blob, { ownerStore: 'dreams', ownerId: 'd-f' });
+      await db.put('dreams', { id: 'd-f', name: 'Sueño ficticio', mediaId: m1, visibility: 'shared', owner: 'both', date: '2026-05-05' });
+      const m2 = await db.putMedia(blob, { ownerStore: 'letters', ownerId: 'l-f' });
+      await db.put('letters', { id: 'l-f', author: 'david', to: 'sofia', condition: 'te rías', body: 'x', status: 'sealed', mediaId: m2, visibility: 'shared', owner: 'both' });
+    });
+    await go('/galeria', '.chip-row');
+    const chips = await page.locator('.chip').allInnerTexts();
+    ok('11 Galería: suma Sueños', chips.some((c) => c.startsWith('Sueños')));
+    ok('11 Galería: una carta sellada no muestra su foto', !chips.some((c) => c.startsWith('Cartas')));
+    await page.getByRole('link', { name: 'Subir' }).click();
+    await page.getByRole('dialog').waitFor();
+    ok('11 Galería: Subir abre un recuerdo nuevo', /capsula/.test(page.url()));
+    await page.keyboard.press('Escape');
+    const real = errs.filter((e) => !/ERR_TUNNEL_CONNECTION_FAILED|ERR_INTERNET_DISCONNECTED/.test(e));
+    ok('v0.11.0: no page errors or native dialogs', real.length === 0, real.join(' | '));
+    await ctx.close(); await b11.close();
   }
 
   await browser.close();

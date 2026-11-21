@@ -200,7 +200,7 @@ function onNavigate(route, prev) {
     else security.getSettings().then((s) => { if (s.lockOnLeave) cryptoBox.lock(prevScope); });
   }
   prevScope = scope;
-  import('./features/home-accesos.js').then((m) => m.markVisited(route.def.id)).catch(() => {});
+  if (!route.def.layer && app.setupDone) import('./features/home-accesos.js').then((m) => m.markVisited(route.def.id)).catch(() => {});
   if (prev) {
     const a = TABS.findIndex((t) => t.id === (prev.def.tab || prev.def.id));
     const b = TABS.findIndex((t) => t.id === (route.def.tab || route.def.id));
