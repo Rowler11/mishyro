@@ -15,6 +15,7 @@ Más ordenado (nada se quitó, solo se juntó)
 Arreglos
 - La flecha de atrás vuelve al grupo de Más donde estabas (o a Inicio si viniste de ahí), no al principio.
 - Las cartas "En camino" se pueden abrir y editar mientras no las abran; siguen selladas.
+- La pantalla de carga dice "Para" y el nombre de ella en los dos teléfonos, porque la app es para ella.
 
 ## 0.10.0 (revisión completa: arreglos, detalles, Papelera y Modo cita)
 
