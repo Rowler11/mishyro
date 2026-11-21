@@ -8,10 +8,11 @@
 // - Los bancos que se usan en fases posteriores se completan en su fase (van vacíos).
 
 import { GAMES } from './config-juegos.js';
+import { JAPANESE_WORDS } from './config-japones.js';
 
 export const CONFIG = {
   // Versión visible de la app (Ajustes > Acerca de). Súbela junto con CACHE_VERSION en sw.js.
-  appVersion: '0.6.0',
+  appVersion: '0.7.0',
   // Prefijo de la base de datos y de las 2 preferencias en localStorage (tema y perfil activo).
   // Si lo cambias, también en theme-boot.js. Cambiarlo "empieza de cero" en cada dispositivo.
   storageKey: 'aishiteru',
@@ -430,7 +431,8 @@ export const CONFIG = {
   // Bebidas sugeridas para el menú en casa; las de alcohol solo salen si lo activan.
   drinkIdeas: [{"id": "cfg:drink:limonada", "name": "Limonada de coco", "alcohol": false}, {"id": "cfg:drink:te", "name": "Té verde frío con miel", "alcohol": false}, {"id": "cfg:drink:aromatica", "name": "Aromática de frutos rojos", "alcohol": false}, {"id": "cfg:drink:soda", "name": "Soda con fresa y menta", "alcohol": false}, {"id": "cfg:drink:chocolate", "name": "Chocolate caliente", "alcohol": false}, {"id": "cfg:drink:vino", "name": "Copa de vino tinto", "alcohol": true}, {"id": "cfg:drink:sake", "name": "Sake", "alcohol": true}, {"id": "cfg:drink:sangria", "name": "Sangría", "alcohol": true}],
   dateMenuIdeas: [], // Fase 4B
-  japaneseWords: [], // Fase 5
+  // Palabra del día (Fase 5B): palabras japonesas básicas, en js/config-japones.js.
+  japaneseWords: JAPANESE_WORDS,
   // Juegos en pareja (Fase 5): ajustes iniciales y bancos editables, en js/config-juegos.js.
   games: GAMES,
   vault: {}, // Fase 6 (solo configuración; el contenido nunca va aquí)

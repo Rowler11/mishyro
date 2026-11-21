@@ -21,7 +21,7 @@ export const MOODS = [
 export const DURATIONS = [5, 15, 30];
 export const LEVELS = [{ value: 'suave', label: 'Suave' }, { value: 'divertido', label: 'Divertido' }, { value: 'intenso', label: 'Intenso' }];
 
-// ready: built in Fase 5A. The rest show "Pronto" in the game room (Fase 5B).
+// ready: playable (12 built in Fase 5A, 13 in Fase 5B).
 export const GAME_LIST = [
   { id: 'ruleta', title: 'Ruleta de la noche', icon: 'loader-pinwheel', moods: ['tranquilos', 'diferente'], mins: [5], blurb: 'Decide la cena, el plan o quién elige.', ready: true },
   { id: 'mimica', title: 'Mímica', icon: 'drama', moods: ['risas', 'competencia'], mins: [5, 15, 30], blurb: 'Actúa la palabra sin hablar.', ready: true },
@@ -35,19 +35,19 @@ export const GAME_LIST = [
   { id: 'cuentos', title: 'Cuentos a dos voces', icon: 'book-text', moods: ['tranquilos', 'diferente'], mins: [5, 15], blurb: 'Una historia inventada por turnos.', ready: true },
   { id: 'liga', title: 'Liga de pareja', icon: 'trophy', moods: ['competencia'], mins: [5, 15, 30], blurb: 'El marcador de sus juegos reales.', ready: true },
   { id: 'juntos', title: 'Modo juntos', icon: 'leaf', moods: ['tranquilos', 'diferente'], mins: [15, 30], blurb: 'Teléfonos boca abajo, tiempo de verdad.', ready: true },
-  { id: 'recuerdo', title: 'Adivina el recuerdo', icon: 'image', moods: ['tranquilos', 'competencia'], mins: [5, 15], blurb: 'Una foto que se revela poco a poco.' },
-  { id: 'tesoro', title: 'Búsqueda del tesoro', icon: 'map', moods: ['diferente'], mins: [30], blurb: 'Pistas escondidas en casa.' },
-  { id: 'cata', title: 'Cata a ciegas', icon: 'candy', moods: ['diferente', 'risas'], mins: [15, 30], blurb: 'Snacks y bebidas con puntaje.' },
-  { id: 'cocina', title: 'Reto de cocina', icon: 'chef-hat', moods: ['diferente', 'competencia'], mins: [30], blurb: 'Ruleta de recetas y votación.' },
-  { id: 'bingo', title: 'Bingo de citas', icon: 'grid-3x3', moods: ['diferente'], mins: [30], blurb: 'Un cartón de planes para el mes.' },
-  { id: 'misteriosa', title: 'Cita misteriosa', icon: 'mail', moods: ['diferente'], mins: [30], blurb: 'Sobres que se abren paso a paso.' },
-  { id: 'reto30', title: 'Desafío de 30 días', icon: 'calendar', moods: ['tranquilos'], mins: [5], blurb: 'Un mini reto de pareja al día.' },
-  { id: 'cine', title: 'Noche de cine', icon: 'film', moods: ['tranquilos'], mins: [5], blurb: 'Lo que quieren ver juntos.' },
-  { id: 'origami', title: 'Origami', icon: 'jp-tsuru', moods: ['tranquilos', 'diferente'], mins: [15, 30], blurb: 'Grullas, corazones y senbazuru.' },
-  { id: 'tanabata', title: 'Tanabata', icon: 'sparkles', moods: ['tranquilos'], mins: [5, 15], blurb: 'Deseos colgados en el bambú.' },
-  { id: 'kotoba', title: 'Palabra del día', icon: 'languages', moods: ['tranquilos'], mins: [5], blurb: 'Japonés para el viaje.' },
-  { id: 'manga', title: 'Nuestro manga', icon: 'book-open', moods: ['diferente'], mins: [30], blurb: 'Viñetas con sus fotos.' },
-  { id: 'postales', title: 'Postales para imprimir', icon: 'printer', moods: ['diferente'], mins: [15], blurb: 'Para entregar en mano.' },
+  { id: 'recuerdo', title: 'Adivina el recuerdo', icon: 'image', moods: ['tranquilos', 'competencia'], mins: [5, 15], blurb: 'Una foto que se revela poco a poco.', ready: true },
+  { id: 'tesoro', title: 'Búsqueda del tesoro', icon: 'map', moods: ['diferente'], mins: [30], blurb: 'Pistas escondidas en casa.', ready: true },
+  { id: 'cata', title: 'Cata a ciegas', icon: 'candy', moods: ['diferente', 'risas'], mins: [15, 30], blurb: 'Snacks y bebidas con puntaje.', ready: true },
+  { id: 'cocina', title: 'Reto de cocina', icon: 'chef-hat', moods: ['diferente', 'competencia'], mins: [30], blurb: 'Ruleta de recetas y votación.', ready: true },
+  { id: 'bingo', title: 'Bingo de citas', icon: 'grid-3x3', moods: ['diferente'], mins: [30], blurb: 'Un cartón de planes para el mes.', ready: true },
+  { id: 'misteriosa', title: 'Cita misteriosa', icon: 'mail', moods: ['diferente'], mins: [30], blurb: 'Sobres que se abren paso a paso.', ready: true },
+  { id: 'reto30', title: 'Desafío de 30 días', icon: 'calendar', moods: ['tranquilos'], mins: [5], blurb: 'Un mini reto de pareja al día.', ready: true },
+  { id: 'cine', title: 'Noche de cine', icon: 'film', moods: ['tranquilos'], mins: [5], blurb: 'Lo que quieren ver juntos.', ready: true },
+  { id: 'origami', title: 'Origami', icon: 'jp-tsuru', moods: ['tranquilos', 'diferente'], mins: [15, 30], blurb: 'Grullas, corazones y senbazuru.', ready: true },
+  { id: 'tanabata', title: 'Tanabata', icon: 'sparkles', moods: ['tranquilos'], mins: [5, 15], blurb: 'Deseos colgados en el bambú.', ready: true },
+  { id: 'kotoba', title: 'Palabra del día', icon: 'languages', moods: ['tranquilos'], mins: [5], blurb: 'Japonés para el viaje.', ready: true },
+  { id: 'manga', title: 'Nuestro manga', icon: 'book-open', moods: ['diferente'], mins: [30], blurb: 'Viñetas con sus fotos.', ready: true },
+  { id: 'postales', title: 'Postales para imprimir', icon: 'printer', moods: ['diferente'], mins: [15], blurb: 'Para entregar en mano.', ready: true },
 ];
 export const gameById = (id) => GAME_LIST.find((g) => g.id === id);
 
@@ -466,7 +466,7 @@ export function firstPicker(value, onChange) {
 /** "Pasar" button that shows the free passes left of whoever has the turn. */
 export function passButton(s, onDone, { who = () => s.turn(), before } = {}) {
   const b = ui.button({ label: 'Pasar', iconName: 'skip-forward', variant: 'ghost', onClick: async () => { b.disabled = true; before?.(); const r = await s.pass(who()); b.disabled = false; onDone?.(r); } });
-  const paint = () => { const left = s.freeLeft(who()); b.querySelector('span:last-child').textContent = left ? `Pasar (${left} libre)` : 'Pasar (con castigo)'; };
+  const paint = () => { const left = s.freeLeft(who()); b.querySelector(':scope > span:not(.ripple-dot)').textContent = left ? `Pasar (${left} libre)` : 'Pasar (con castigo)'; };
   paint(); s.onChange(paint);
   return b;
 }
@@ -494,3 +494,36 @@ export function resultView(s, { lines = [], onRematch, extra = null, scored = tr
 
 /** Prompt before leaving a game in progress. */
 export const confirmQuit = () => ui.confirmDialog({ title: '¿Terminar la partida?', message: 'Se guarda el marcador hasta aquí.', confirmLabel: 'Terminar' });
+
+// ---------- Fase 5B helpers ----------
+/** Star rating (1-5). Returns { node, value }. */
+export function stars({ value = 0, label = 'Calificación', onChange } = {}) {
+  let v = value;
+  const node = el('div', { class: 'stars', role: 'radiogroup', 'aria-label': label });
+  const paint = () => put(node, ...[1, 2, 3, 4, 5].map((n) => el('button', { type: 'button', class: `star-btn${n <= v ? ' on' : ''}`, role: 'radio', 'aria-checked': String(n === v), 'aria-label': `${n} de 5`, onClick: () => { v = n; paint(); onChange?.(n); } }, icon('star', { size: 24 }))));
+  paint();
+  return { node, get value() { return v; } };
+}
+export const starsText = (n) => `${'★'.repeat(n || 0)}${'☆'.repeat(5 - (n || 0))}`;
+
+/** Live artifacts of a game (gameArtifacts store), newest first. */
+export async function artifacts(gameId, type) {
+  return (await db.query('gameArtifacts', { index: 'gameId', range: IDBKeyRange.only(gameId) }).catch(() => []))
+    .filter((a) => !a.deleted && (!type || a.type === type))
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+}
+export const putArtifact = (rec) => db.put('gameArtifacts', { visibility: 'shared', owner: 'both', by: profile.active(), ...rec });
+
+/** A history record for games played outside a session (deterministic id avoids duplicates across phones). */
+export async function logGame(gameId, extra = {}, id = util.uuid()) {
+  await db.put('games', { id, gameId, endedAt: util.nowISO(), players: [...profile.PEOPLE], visibility: 'shared', owner: 'both', by: profile.active(), ...extra });
+  import('./insignias.js').then((m) => m.evaluate?.()).catch(() => {});
+}
+
+/** Deterministic pseudo random generator (mulberry32) from a string seed. */
+export function seeded(seed) {
+  let h = 1779033703 ^ String(seed).length;
+  for (const ch of String(seed)) { h = Math.imul(h ^ ch.charCodeAt(0), 3432918353); h = (h << 13) | (h >>> 19); }
+  let a = h >>> 0;
+  return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
