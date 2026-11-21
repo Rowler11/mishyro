@@ -84,7 +84,7 @@ export const SETTINGS_PAGES = [
   { id: 'papelera', title: 'Papelera', icon: 'trash-2', phase: '0.10', module: 'papelera' },
   { id: 'sincronizar', title: 'Sincronización', icon: 'refresh-cw', phase: 'A', module: 'sync' },
   { id: 'apariencia', title: 'Apariencia', icon: 'palette', phase: '1', module: 'settings' },
-  { id: 'movimiento', title: 'Movimiento y sonido', icon: 'sparkles', phase: '1', module: 'settings' },
+  { id: 'movimiento', title: 'Movimiento y sonido', icon: 'sparkles', phase: '1', module: 'settings', hidden: true },
   { id: 'terceros', title: 'Modo sin terceros', icon: 'shield', phase: '2', module: 'privacidad' },
   { id: 'legal', title: 'Legal y ayuda', icon: 'file-text', phase: '1', module: 'settings' },
   { id: 'acerca', title: 'Acerca de', icon: 'info', phase: '1', module: 'settings' },

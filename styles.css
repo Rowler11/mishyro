@@ -2784,3 +2784,6 @@ audio.rec-media { background: transparent; max-height: none; }
 .date-mode-title { margin: 0; font-family: var(--font-serif); font-size: 1.4rem; }
 .date-mode-time { font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
 .date-mode-question { margin: 0; font-family: var(--font-serif); font-size: 1.15rem; line-height: 1.45; }
+
+/* Ajustes > Apariencia: "Movimiento y sonido" lives here as its own part (2026-11-21). */
+.settings-subtitle { margin: var(--space-5, 1.5rem) 0 var(--space-2, .5rem); scroll-margin-top: 5.5rem; }

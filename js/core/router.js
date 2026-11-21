@@ -8,6 +8,7 @@ let guard = null; // () => Promise<boolean> (true = allow leaving)
 let onNavigate = () => {};
 let renderView = async () => {};
 let lastPath = null;
+let prevPath = null; // the route before the current one (page back arrows reuse it with history.back)
 
 function compile(pattern) {
   const keys = [];
@@ -38,6 +39,7 @@ export function match(path) {
 }
 
 export const currentRoute = () => current;
+export const previousPath = () => prevPath;
 export const setGuard = (fn) => { guard = fn; };
 export const clearGuard = () => { guard = null; };
 
@@ -65,6 +67,7 @@ async function resolve() {
   const prev = current;
   try { prev?.cleanup?.(); } catch (e) { console.error(e); }
   current = { path, query, def: found.def, params: found.params, pattern: found.pattern, cleanup: null };
+  if (path !== lastPath) prevPath = lastPath;
   lastPath = path;
   onNavigate(current, prev);
   await renderView(current, prev);
