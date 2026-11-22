@@ -1620,7 +1620,7 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .viewer-track:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
 .viewer-slide { flex: 0 0 100%; scroll-snap-align: center; display: grid; place-items: center; margin: 0; padding: var(--space-6) var(--space-2) var(--space-2); }
 .viewer-media { max-width: 100%; max-height: calc(100dvh - 170px); object-fit: contain; border-radius: 6px; user-select: none; -webkit-user-drag: none; }
-.viewer-loading { width: 40px; height: 40px; border-radius: 50%; border: 3px solid rgb(255 255 255 / .2); border-top-color: var(--viewer-accent); animation: spin 900ms linear infinite; }
+.viewer-loading { width: 56px; height: 56px; color: var(--viewer-accent); }
 .viewer-bar { padding: var(--space-2) var(--space-5) calc(var(--space-4) + env(safe-area-inset-bottom)); display: grid; gap: var(--space-1); justify-items: center; text-align: center; }
 .viewer-count { font-size: .85rem; color: var(--viewer-ink-2); min-height: 1.2em; }
 .viewer-caption { display: grid; gap: 2px; justify-items: center; }
@@ -2834,3 +2834,49 @@ audio.rec-media { background: transparent; max-height: none; }
 .rescue-line .icon { vertical-align: -3px; color: var(--accent); }
 @media (max-width: 360px) { .phrase-grid { grid-template-columns: repeat(2, 1fr); } }
 .success-text { color: var(--success); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+/* ===================== v0.12.0: más vida en Inicio ===================== */
+/* Inicio's living background: a canvas behind the cards (fx.ambient), never over text */
+.ambient-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .ambient-canvas { display: none; } }
+:root[data-motion="off"] .ambient-canvas { display: none; }
+
+/* the branch (by day) or two hanging chōchin (at night) in Inicio's corner; tap to shake it */
+.home-corner { position: absolute; top: -14px; right: calc(var(--space-3) * -1); z-index: 2; width: 128px; height: 84px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transform-origin: 96% 6%; }
+.home-corner svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.home-corner[data-kind="night"] { transform-origin: 60% 0; }
+.home > .page-head { padding-right: 120px; }
+@media (min-width: 820px) { .home-corner { width: 170px; height: 112px; right: 0; top: -18px; } .home > .page-head { padding-right: 170px; } }
+:root[data-motion="on"] .home-corner .corner-swing { transform-origin: 100% 0; animation: corner-sway 6s ease-in-out infinite; }
+:root[data-motion="on"] .home-corner[data-kind="night"] .corner-swing { transform-origin: 50% 0; transform-box: fill-box; animation-duration: 4.6s; }
+:root[data-motion="on"] .home-corner[data-kind="night"] .corner-swing.is-second { animation-delay: -1.7s; }
+:root[data-motion="on"] .home-corner.is-shaking { animation: corner-shake .9s var(--ease-spring); }
+@keyframes corner-sway { 0%, 100% { transform: rotate(0deg); } 35% { transform: rotate(2.2deg); } 70% { transform: rotate(-1.2deg); } }
+@keyframes corner-shake { 15% { transform: rotate(6deg); } 35% { transform: rotate(-4deg); } 55% { transform: rotate(3deg); } 75% { transform: rotate(-1.5deg); } 100% { transform: rotate(0); } }
+:root[data-seasonal="off"] .home-corner .corner-swing { animation: none !important; }
+
+/* screen titles: the Japanese word is painted with the brush, then a short stroke is drawn under it */
+.page-head .ja { position: relative; display: inline-block; }
+.page-head .ja::after { content: ''; position: absolute; left: -6px; right: -8px; bottom: -6px; height: 6px; background: var(--accent); opacity: .5;
+  -webkit-mask: url('./icons/patterns/brush.svg') no-repeat 0 0 / 100% 100%; mask: url('./icons/patterns/brush.svg') no-repeat 0 0 / 100% 100%; }
+:root[data-motion="on"] .page-head .ja { animation: ja-paint .9s var(--ease-out) .1s backwards; }
+:root[data-motion="on"] .page-head .ja::after { clip-path: inset(0 100% 0 0); animation: ja-stroke .6s var(--ease-out) .75s forwards; }
+@keyframes ja-paint {
+  from { -webkit-mask: linear-gradient(90deg, #000 40%, transparent 60%) 100% 0 / 260% 100% no-repeat; mask: linear-gradient(90deg, #000 40%, transparent 60%) 100% 0 / 260% 100% no-repeat; }
+  to { -webkit-mask: linear-gradient(90deg, #000 40%, transparent 60%) 0 0 / 260% 100% no-repeat; mask: linear-gradient(90deg, #000 40%, transparent 60%) 0 0 / 260% 100% no-repeat; } }
+@keyframes ja-stroke { to { clip-path: inset(0 0 0 0); } }
+
+/* loading: an ensō painted with the brush instead of a spinning circle (appears after a beat, so quick loads don't flash) */
+.enso-loader { display: block; width: 44px; height: 44px; margin: 0 auto; color: var(--accent); animation: enso-appear .3s ease .25s both; }
+@keyframes enso-appear { from { opacity: 0; } }
+.enso-loader path { fill: none; stroke: currentColor; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.enso-loader .enso-stroke { stroke-width: 7; } .enso-loader .enso-tail { stroke-width: 3; opacity: .5; }
+:root[data-motion="on"] .enso-loader path { stroke-dashoffset: 1; animation: enso-draw 1.6s var(--ease-in-out) infinite; }
+.viewer-loading .enso-loader { width: 56px; height: 56px; color: inherit; }
+@keyframes enso-draw { 0% { stroke-dashoffset: 1; opacity: 1; } 70% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+.skeleton .skeleton-line { animation: none; opacity: .6; }
+@media (prefers-reduced-motion: reduce) {
+  .home-corner .corner-swing, .home-corner.is-shaking, .page-head .ja, .page-head .ja::after, .enso-loader path { animation: none !important; }
+  .page-head .ja::after { clip-path: none; } .enso-loader path { stroke-dashoffset: 0; }
+}

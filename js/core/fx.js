@@ -180,3 +180,177 @@ export function whenClear(maxMs = 30000) {
     }, 250);
   });
 }
+
+// ---------- Inicio's living background (v0.12.0, decided 2026-11-21) ----------
+// A few of the season's particles fall all the time while Inicio is open, BEHIND the cards (never over text).
+// At night (Sakura suave) they turn into fireflies with two paper chōchin rising slowly. Scrolling blows a little
+// wind through them, and the branch (or the hanging chōchin at night) in the corner shakes and lets go of a few
+// more when tapped. ~30 fps, paused while the app is hidden, off with reduced motion or the Apariencia switch.
+
+function lantern(ctx, s, t, ph) { // a red paper chōchin with its warm light that breathes (never a flash)
+  const breath = 0.86 + 0.14 * Math.sin(t / 900 + ph) * Math.sin(t / 2300 + ph * 2);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 1.5);
+  g.addColorStop(0, `rgba(255,176,96,${0.3 * breath})`); g.addColorStop(1, 'rgba(255,150,80,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, s * 1.5, 0, 6.29); ctx.fill();
+  const b = ctx.createRadialGradient(-s * 0.1, -s * 0.08, s * 0.05, 0, 0, s * 0.55);
+  b.addColorStop(0, '#FFD9A0'); b.addColorStop(0.45, '#F08A4B'); b.addColorStop(1, '#B8322A');
+  ctx.globalAlpha *= breath; ctx.fillStyle = b; ctx.beginPath(); ctx.ellipse(0, 0, s * 0.36, s * 0.46, 0, 0, 6.29); ctx.fill();
+  ctx.strokeStyle = 'rgba(90,24,16,.35)'; ctx.lineWidth = 0.8;
+  for (const k of [-0.27, -0.09, 0.09, 0.27]) {
+    const hw = s * 0.36 * Math.sqrt(1 - (k / 0.46) ** 2);
+    ctx.beginPath(); ctx.moveTo(-hw, k * s); ctx.quadraticCurveTo(0, k * s + s * 0.04, hw, k * s); ctx.stroke();
+  }
+  ctx.fillStyle = '#2A1E22'; ctx.fillRect(-s * 0.17, -s * 0.52, s * 0.34, s * 0.09); ctx.fillRect(-s * 0.17, s * 0.43, s * 0.34, s * 0.09);
+  ctx.strokeStyle = '#B8322A'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(0, s * 0.52); ctx.lineTo(0, s * 0.7); ctx.stroke();
+}
+
+const COLORS = (kind, night, gold) => ({
+  sakura: night ? ['#F2B8C9', '#E893AE', '#F7D3DE'] : ['#F4B6C6', '#EFA0B6', '#F9D2DC'],
+  momiji: night ? ['#E0705A', '#D9923F', '#C95049'] : ['#C9462F', '#D9772B', '#B23A3A'],
+  snow: night ? ['#F4F1F2', '#E3DEE4'] : ['#B9C6D6', '#CBD5E1', '#A9B8CB'],
+  hotaru: night ? ['#E8F59A', '#D6EF7E'] : [gold, '#B9A24C'],
+}[kind]);
+
+/** What Inicio shows right now: the season by day, 'night' (fireflies and chōchin) with the night theme. */
+export function ambientKind() { return document.documentElement.dataset.theme === 'night' ? 'night' : seasonOf(); }
+
+const ambientOn = () => !prefersReducedMotion() && CONFIG.seasonalEffects && document.documentElement.dataset.seasonal !== 'off';
+
+/**
+ * Starts Inicio's background inside `host` (a canvas placed behind the cards). Returns { stop, burst(x, y) }:
+ * burst lets a few more particles go from a point of the screen (the branch being shaken). Never throws.
+ */
+export function ambient(host) {
+  const none = { stop() {}, burst() {} };
+  if (!host || !ambientOn()) return none;
+  const c = document.createElement('canvas');
+  c.className = 'ambient-canvas'; c.setAttribute('aria-hidden', 'true');
+  host.prepend(c);
+  const ctx = c.getContext('2d');
+  if (!ctx) { c.remove(); return none; }
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  let W = 0; let H = 0;
+  const size = () => { W = innerWidth; H = innerHeight; c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); };
+  size();
+  let kind = ambientKind(); let night = kind === 'night'; let pal = COLORS(night ? 'hotaru' : kind, night, tokens().gold);
+  const n = innerWidth > 1100 ? 8 : 7; // few, decided with the user
+  const make = (k, { top = true, at = null, extra = false } = {}) => {
+    const now = performance.now();
+    if (k === 'lantern') return { k, x: R(0.1, 0.9) * W, y: top ? H + R(40, 320) : R(0.35, 1) * H, s: R(26, 38) * (W > 1100 ? 1.15 : 1), v: R(-0.011, -0.007), ph: R(0, 6.28), born: now };
+    return {
+      k, extra, born: now,
+      x: at ? at.x + R(-24, 24) : R(-0.05, 1.05) * W,
+      y: at ? at.y + R(-12, 12) : k === 'hotaru' ? R(0.1, 0.95) * H : top ? R(-70, -10) : R(0, H),
+      s: k === 'snow' ? R(2, 4.5) : k === 'hotaru' ? R(2, 3.2) : k === 'momiji' ? R(7, 11) : R(5, 8.5),
+      v: k === 'hotaru' ? R(-0.006, 0.006) : k === 'snow' ? R(0.022, 0.04) : R(0.03, 0.055),
+      drift: k === 'hotaru' ? R(-0.006, 0.006) : R(-0.018, 0.004),
+      ph: R(0, 6.28), spin: R(-0.002, 0.002), flip: R(400, 900), pulse: R(1600, 2800),
+      life: k === 'hotaru' ? R(7000, 12000) : 0, color: pal[Math.floor(Math.random() * pal.length)],
+    };
+  };
+  const particle = () => (night ? 'hotaru' : kind);
+  let bits = [];
+  const reset = () => {
+    kind = ambientKind(); night = kind === 'night'; pal = COLORS(night ? 'hotaru' : kind, night, tokens().gold);
+    bits = Array.from({ length: n }, () => make(particle(), { top: false }));
+    if (night) bits.push(make('lantern', { top: false }), make('lantern'));
+  };
+  reset();
+  let wind = 0; let lastY = null;
+  const onScroll = (e) => {
+    const t = e.target === document ? document.scrollingElement : e.target;
+    const y = t?.scrollTop ?? scrollY;
+    if (lastY !== null) wind = Math.max(-1.5, Math.min(1.5, wind + (y - lastY) * 0.03));
+    lastY = y;
+  };
+  let raf = 0; let stopped = false; let prev = 0;
+  const frame = (now) => {
+    if (stopped) return;
+    raf = requestAnimationFrame(frame);
+    if (now - prev < 32) return; // ~30 fps is plenty for slow leaves and saves battery
+    const dt = Math.min(64, now - (prev || now)); prev = now;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    wind *= 0.9;
+    for (let i = bits.length - 1; i >= 0; i--) {
+      const b = bits[i]; const t = now - b.born;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (b.k === 'lantern') {
+        b.y += b.v * dt;
+        if (b.y < -70) { bits[i] = make('lantern'); continue; }
+        const x = b.x + Math.sin(t / 2600 + b.ph) * 10 + wind * 6;
+        ctx.translate(x, b.y); ctx.rotate(Math.sin(t / 2600 + b.ph) * 0.06);
+        ctx.globalAlpha = Math.min(1, t / 1500) * Math.min(1, (b.y + 70) / 170) * 0.85;
+        lantern(ctx, b.s, t, b.ph); continue;
+      }
+      if (b.k === 'hotaru') { b.x += (b.drift + wind * 0.02) * dt + Math.sin(t / 1200 + b.ph) * 0.15; b.y += b.v * dt + Math.cos(t / 1500 + b.ph) * 0.12; }
+      else { b.x += (b.drift + wind * 0.04) * dt + Math.sin(t / 900 + b.ph) * 0.25; b.y += b.v * dt; }
+      const gone = b.k === 'hotaru' ? t > b.life : b.y > H + 24 || b.x < -48 || b.x > W + 48;
+      if (gone) { if (b.extra) bits.splice(i, 1); else bits[i] = make(b.k); continue; }
+      const fadeIn = Math.min(1, t / 900); const fadeOut = b.k === 'hotaru' ? Math.min(1, (b.life - t) / 1200) : 1;
+      ctx.translate(b.x, b.y);
+      if (b.k === 'hotaru') { // slow glow, about one breath every two seconds
+        const glow = 0.35 + 0.65 * (0.5 - Math.cos((t / b.pulse) * Math.PI * 2 + b.ph) / 2);
+        ctx.globalAlpha = fadeIn * fadeOut * glow * (night ? 0.9 : 0.7);
+        const g = ctx.createRadialGradient(0, 0, 0, 0, 0, b.s * 4); g.addColorStop(0, b.color); g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, b.s * 4, 0, 6.29); ctx.fill(); continue;
+      }
+      ctx.globalAlpha = fadeIn * (b.k === 'snow' ? 0.85 : 0.75);
+      if (b.k === 'snow') { ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(0, 0, b.s, 0, 6.29); ctx.fill(); continue; }
+      ctx.rotate(b.ph + b.spin * t + wind * 0.3); ctx.scale(Math.max(0.15, Math.abs(Math.cos(t / b.flip + b.ph))), 1);
+      if (b.k === 'momiji') leaf(ctx, b.s, b.color); else petal(ctx, b.s, b.color);
+    }
+  };
+  const play = () => { if (!stopped && !raf) { prev = 0; raf = requestAnimationFrame(frame); } };
+  const pause = () => { cancelAnimationFrame(raf); raf = 0; };
+  const onVis = () => (document.visibilityState === 'hidden' ? pause() : play());
+  const mo = new MutationObserver(() => {
+    if (!ambientOn()) { api.stop(); return; }
+    if (ambientKind() !== kind) reset();
+  });
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-seasonal', 'data-motion'] });
+  addEventListener('resize', size);
+  addEventListener('scroll', onScroll, { passive: true, capture: true });
+  document.addEventListener('visibilitychange', onVis);
+  play();
+  const api = {
+    stop() {
+      if (stopped) return; stopped = true; pause(); mo.disconnect();
+      removeEventListener('resize', size); removeEventListener('scroll', onScroll, { capture: true }); document.removeEventListener('visibilitychange', onVis);
+      c.remove();
+    },
+    burst(x, y) {
+      if (stopped) return;
+      const extras = bits.filter((b) => b.extra).length;
+      for (let i = 0; i < Math.min(5, 10 - extras); i++) bits.push(make(night ? 'hotaru' : kind, { at: { x: x + R(-50, 50), y: y + R(-20, 30) }, extra: true }));
+    },
+  };
+  return api;
+}
+
+/** The branch (by day, it changes with the season) or two hanging chōchin (at night) for Inicio's corner. */
+export function cornerArt(kind = ambientKind()) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 170 120'); svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
+  const night = kind === 'night';
+  if (night) {
+    const lantern = (x, y, s, id) => {
+      const ribs = [-0.27, -0.09, 0.09, 0.27].map((k) => { const hw = s * 0.36 * Math.sqrt(1 - (k / 0.46) ** 2); return `<path d="M${-hw} ${k * s} Q0 ${k * s + s * 0.04} ${hw} ${k * s}" stroke="rgba(90,24,16,.35)" stroke-width=".8" fill="none"/>`; }).join('');
+      return `<g class="corner-swing${id === 2 ? ' is-second' : ''}"><line x1="${x}" y1="0" x2="${x}" y2="${y - s * 0.5}" stroke="#8A6F66" stroke-width="1.2"/><g transform="translate(${x} ${y})"><circle r="${s * 1.2}" fill="url(#cl-g${id})"/><ellipse rx="${s * 0.36}" ry="${s * 0.46}" fill="url(#cl-b${id})"/>${ribs}<rect x="${-s * 0.17}" y="${-s * 0.52}" width="${s * 0.34}" height="${s * 0.09}" fill="#2A1E22"/><rect x="${-s * 0.17}" y="${s * 0.43}" width="${s * 0.34}" height="${s * 0.09}" fill="#2A1E22"/><line x1="0" y1="${s * 0.52}" x2="0" y2="${s * 0.72}" stroke="#B8322A" stroke-width="1.4"/></g></g>`;
+    };
+    const defs = [1, 2].map((id) => `<radialGradient id="cl-g${id}"><stop offset="0" stop-color="#FFB060" stop-opacity=".4"/><stop offset="1" stop-color="#FF9650" stop-opacity="0"/></radialGradient><radialGradient id="cl-b${id}" cx=".42" cy=".42" r=".6"><stop offset="0" stop-color="#FFD9A0"/><stop offset=".45" stop-color="#F08A4B"/><stop offset="1" stop-color="#B8322A"/></radialGradient>`).join('');
+    svg.innerHTML = `<defs>${defs}</defs>${lantern(78, 64, 44, 1)}${lantern(128, 46, 34, 2)}`;
+    return svg;
+  }
+  const pal = COLORS(kind, false, '#C9A46A') || COLORS('sakura', false);
+  const spots = [[30, 70], [52, 58], [74, 44], [96, 36], [118, 26], [62, 80], [40, 92], [88, 62], [108, 50], [136, 18]];
+  const tips = spots.map(([x, y], i) => {
+    const col = pal[i % pal.length];
+    if (kind === 'momiji') return `<path transform="translate(${x} ${y}) rotate(${i * 37}) scale(.8)" fill="${col}" d="M0-9 2-3 8-5 4 0 7 6 1 3 0 9-1 3-7 6-4 0-8-5-2-3Z"/>`;
+    if (kind === 'snow') return `<circle cx="${x}" cy="${y - 3}" r="${3 + (i % 3)}" fill="#FFFFFF" stroke="${pal[0]}" stroke-width=".8"/>`;
+    if (kind === 'hotaru') return `<ellipse cx="${x}" cy="${y}" rx="5" ry="2.6" transform="rotate(${-20 - i * 9} ${x} ${y})" fill="#7C9461"/>`;
+    return `<g transform="translate(${x} ${y}) scale(.55)">${[0, 72, 144, 216, 288].map((r) => `<ellipse cx="0" cy="-6" rx="4.4" ry="6.4" fill="${col}" transform="rotate(${r})"/>`).join('')}<circle r="2" fill="#C9A46A"/></g>`;
+  }).join('');
+  svg.innerHTML = `<g class="corner-swing"><path d="M170 4C140 14 110 28 84 44 60 58 40 72 18 96" fill="none" stroke="#6B4A3E" stroke-width="5" stroke-linecap="round"/><path d="M98 36C110 46 116 58 118 70M60 60C58 72 62 84 70 94M130 18C140 30 146 40 150 52" fill="none" stroke="#6B4A3E" stroke-width="2.6" stroke-linecap="round"/>${tips}</g>`;
+  return svg;
+}

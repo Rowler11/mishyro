@@ -3,7 +3,7 @@
 // are revoked when the viewer closes. Shared by Galería, Mapa, Primeras veces and Álbum.
 import { el, icon, fill, prefersReducedMotion } from './util.js';
 import * as db from './db.js';
-import { openModal } from './ui.js';
+import { openModal, enso } from './ui.js';
 
 /**
  * items: [{ mediaId, alt, caption, sub, href, hrefLabel }]. start: index to open on.
@@ -18,7 +18,7 @@ export function openViewer(items, start = 0) {
   const caption = el('div', { class: 'viewer-caption' });
   const slides = items.map((it, i) => {
     const fig = el('figure', { class: 'viewer-slide', role: 'group', 'aria-roledescription': 'foto', 'aria-label': `${i + 1} de ${n}` },
-      el('div', { class: 'viewer-loading', 'aria-hidden': 'true' }));
+      el('div', { class: 'viewer-loading', 'aria-hidden': 'true' }, enso({ cls: 'enso-loader is-light' })));
     fig.dataset.i = String(i);
     return fig;
   });

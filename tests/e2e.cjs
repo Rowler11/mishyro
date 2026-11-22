@@ -1859,29 +1859,43 @@ async function completeSetup(page) {
     const today = await page.evaluate(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
     const reopen = async () => { await page.evaluate(() => { location.hash = '#/inicio'; }); await page.reload(); await page.waitForSelector('.splash', { timeout: 20000 }).catch(() => {}); await page.waitForFunction(() => !document.querySelector('.splash') && location.hash.startsWith('#/inicio'), null, { timeout: 40000 }); };
 
-    // season effect: plays once Inicio is on screen, then goes away
+    // v0.12.0: the season lives behind Inicio's cards all the time (fx.ambient), with the branch in the corner
     await reopen();
-    const fx1 = await page.waitForSelector('.fx-canvas', { timeout: 4000 }).then(() => true).catch(() => false);
-    ok('7 temporada: las partículas salen al abrir Inicio', fx1);
-    const gone = await page.waitForSelector('.fx-canvas', { state: 'detached', timeout: 9000 }).then(() => true).catch(() => false);
-    ok('7 temporada: se van solas a los pocos segundos', gone);
-    const pe = await page.$eval('.fx-canvas', (c) => getComputedStyle(c).pointerEvents).catch(() => 'none');
-    ok('7 temporada: no bloquea toques', pe === 'none');
+    ok('12 hojas: el fondo vivo está en Inicio', await page.waitForSelector('.home .ambient-canvas', { timeout: 4000 }).then(() => true).catch(() => false));
+    await page.waitForTimeout(8000);
+    ok('12 hojas: sigue ahí después de unos segundos (siempre presentes)', await page.$('.home .ambient-canvas') !== null);
+    const layer = await page.evaluate(() => { const c = document.querySelector('.ambient-canvas'); const card = document.querySelector('.home-cards'); const cs = getComputedStyle(c); return [cs.pointerEvents, cs.zIndex, getComputedStyle(card).zIndex].join(','); });
+    ok('12 hojas: detrás de las tarjetas y sin bloquear toques', layer === 'none,0,1', layer);
+    ok('12 hojas: no sale encima de todo como antes', await page.$('.fx-canvas') === null);
+    const painted = await page.evaluate(() => { const c = document.querySelector('.ambient-canvas'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n; });
+    ok('12 hojas: se dibujan partículas', painted > 50, String(painted));
+    const kinds = await page.evaluate(async () => { const fx = await import('./js/core/fx.js'); const r = document.documentElement; const was = r.dataset.theme; r.dataset.theme = 'day'; const day = fx.ambientKind(); r.dataset.theme = 'night'; const night = fx.ambientKind(); r.dataset.theme = was; return `${day === fx.seasonOf()}|${night}`; });
+    ok('12 hojas: de día la estación, de noche luciérnagas y chōchin', kinds === 'true|night', kinds);
+    const corner = await page.evaluate(async () => { const c = document.querySelector('.home-corner'); const was = document.documentElement.dataset.theme; document.documentElement.dataset.theme = 'day'; await new Promise((r) => setTimeout(r, 120)); const before = c.dataset.kind; document.documentElement.dataset.theme = 'night'; await new Promise((r) => setTimeout(r, 120)); const n = [c.dataset.kind, c.querySelectorAll('ellipse').length >= 2]; document.documentElement.dataset.theme = was; return [before, ...n].join(','); });
+    ok('12 rama: de día rama de la estación, de noche dos chōchin colgados', /^(sakura|momiji|snow|hotaru),night,true$/.test(corner), corner);
+    await page.locator('.home-corner').click();
+    ok('12 rama: al tocarla se sacude', await page.locator('.home-corner').evaluate((c) => c.classList.contains('is-shaking')));
+    ok('12 rama: es decorativa para lectores de pantalla', await page.locator('.home-corner').getAttribute('aria-hidden') === 'true');
+    const ja = await page.evaluate(() => getComputedStyle(document.querySelector('.page-head .ja')).animationName);
+    ok('12 título a pincel: el japonés del título se pinta', /ja-paint/.test(ja), ja);
+    const enso = await page.evaluate(async () => { const { ui } = await import('./js/core.js'); const n = ui.skeleton(2); return !!n.querySelector('svg.enso-loader .enso-stroke') && n.getAttribute('role') === 'status'; });
+    ok('12 carga: ensō a pincel en vez del círculo que gira', enso);
     const seasons = await page.evaluate(async () => { const fx = await import('./js/core/fx.js'); return [3, 6, 9, 0].map((m) => fx.seasonOf(new Date(2026, m, 10))).join(',') + '|' + fx.seasonOf(new Date(2026, 0, 10), 'sur'); });
     ok('7 temporada: calendario de Japón (y el sur corrido 6 meses)', seasons === 'sakura,hotaru,momiji,snow|hotaru', seasons);
+    await go('/mas', '.page');
+    ok('12 hojas: solo en Inicio (se van al salir)', await page.$('.ambient-canvas') === null);
 
-    // switch in Ajustes, preview, and sound previews
+    // switch in Ajustes and sound previews
     await go('/ajustes/movimiento', '.page');
-    await page.getByRole('switch', { name: 'Efecto de temporada' }).click();
+    await page.getByRole('switch', { name: 'Hojas de Inicio' }).click();
     await page.waitForTimeout(300);
-    ok('7 ajustes: el efecto de temporada se apaga', await page.evaluate(() => document.documentElement.dataset.seasonal) === 'off');
-    await page.getByRole('button', { name: 'Verlo ahora' }).click();
-    ok('7 ajustes: "Verlo ahora" lo muestra aunque esté apagado', await page.waitForSelector('.fx-canvas', { timeout: 3000 }).then(() => true).catch(() => false));
+    ok('7 ajustes: las hojas de Inicio se apagan', await page.evaluate(() => document.documentElement.dataset.seasonal) === 'off');
     for (const n of ['Campanilla', 'Papel', 'Sello']) await page.getByRole('button', { name: n, exact: true }).click();
     ok('7 ajustes: los sonidos se escuchan antes de activarlos (sin errores)', errs.length === 0, errs.join(' | '));
     ok('7 sonido: apagado por defecto', await page.evaluate(() => document.documentElement.dataset.sound) === 'off');
     await reopen();
-    ok('7 temporada apagada: no salen partículas al abrir Inicio', !(await page.waitForSelector('.fx-canvas', { timeout: 2500 }).then(() => true).catch(() => false)));
+    await page.waitForTimeout(1500);
+    ok('12 hojas apagadas: Inicio queda sin fondo vivo', await page.$('.ambient-canvas') === null && await page.$('.fx-canvas') === null);
 
     // hanabi on a birthday, once that day
     await page.evaluate(async (d) => { const db = await import('./js/core/db.js'); await db.put('specialDates', { id: 't7:birth', title: 'Cumpleaños ficticio', kind: 'birthday', date: `2000-${d.slice(5)}`, recurring: 'yearly', personOrPetId: 'sofia' }); }, today);
@@ -1940,7 +1954,7 @@ async function completeSetup(page) {
     const ctxR = await b7.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
     const pr = await ctxR.newPage();
     await completeSetup(pr);
-    const any = await pr.waitForSelector('.fx-canvas', { timeout: 3000 }).then(() => true).catch(() => false);
+    const any = await pr.waitForSelector('.fx-canvas, .ambient-canvas', { timeout: 3000 }).then(() => true).catch(() => false);
     const forced = await pr.evaluate(async () => { const fx = await import('./js/core/fx.js'); return [fx.seasonal({ force: true }), fx.hanabi()]; });
     ok('7 movimiento reducido: sin partículas ni hanabi', !any && forced.every((x) => x === false), JSON.stringify(forced));
     await ctxR.close();

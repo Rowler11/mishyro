@@ -414,6 +414,25 @@ export async function render() {
   const header = ui.pageHeader({ title: `Para ${profile.nick(profile.active()) || 'ti'}`, jp: '今', romaji: 'ima' });
   const body = el('div', { class: 'home-cards' }, ui.skeleton(4));
   page.append(header, body);
+  // v0.12.0: the season's leaves (fireflies and chōchin at night) fall behind the cards all the time, and a
+  // branch (two hanging chōchin at night) in the corner shakes and lets a few more go when tapped.
+  let amb = fx.ambient(page);
+  const corner = el('div', { class: 'home-corner', 'aria-hidden': 'true' });
+  const drawCorner = () => { corner.dataset.kind = fx.ambientKind(); corner.replaceChildren(fx.cornerArt(corner.dataset.kind)); };
+  drawCorner();
+  corner.addEventListener('click', () => {
+    if (util.prefersReducedMotion()) return;
+    corner.classList.remove('is-shaking'); void corner.offsetWidth; corner.classList.add('is-shaking');
+    util.haptic?.(12);
+    const r = corner.getBoundingClientRect(); amb.burst(r.left + r.width * 0.55, r.top + r.height * 0.55);
+  });
+  corner.addEventListener('animationend', (e) => { if (e.animationName === 'corner-shake') corner.classList.remove('is-shaking'); });
+  page.prepend(corner);
+  const cornerWatch = new MutationObserver(() => {
+    if (corner.dataset.kind !== fx.ambientKind()) drawCorner();
+    if (document.documentElement.dataset.seasonal !== 'off' && !page.querySelector('.ambient-canvas')) amb = fx.ambient(page); // switched back on
+  });
+  cornerWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-seasonal'] });
   let cleanups = [];
   const cleanupAll = () => { cleanups.forEach((fn) => fn()); cleanups = []; };
 
@@ -474,7 +493,7 @@ export async function render() {
       const monthly = events.some((e) => e.kind === 'monthly');
       const play = big && recall('hanabiDay') !== util.localDay() ? () => { remember('hanabiDay', util.localDay()); fx.hanabi(); }
         : monthly && recall('mesDay') !== util.localDay() ? () => { remember('mesDay', util.localDay()); fx.seasonal({ kind: 'sakura', count: 22, force: true }); }
-        : () => fx.seasonal();
+        : () => {}; // the everyday season effect now lives behind the cards (fx.ambient)
       // Inicio can be drawn twice while the app starts: whichever is on screen when the welcome goes plays it once.
       fx.whenClear().then((ok) => { if (ok && !seasonShown && /^#\/inicio\b/.test(location.hash)) { seasonShown = true; play(); } });
     }
@@ -487,5 +506,5 @@ export async function render() {
 
   await build();
   const offProfile = profile.onProfileChange(() => build());
-  return { node: page, cleanup: () => { cleanupAll(); offProfile(); fx.stopAll(); } };
+  return { node: page, cleanup: () => { cleanupAll(); offProfile(); fx.stopAll(); amb.stop(); cornerWatch.disconnect(); } };
 }

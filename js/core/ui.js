@@ -205,8 +205,19 @@ export function emptyState({ title, text, art = 'sakura', action } = {}) {
 }
 
 export function skeleton(lines = 3) {
-  return el('div', { class: 'skeleton', role: 'status', 'aria-busy': 'true', 'aria-label': 'Cargando' },
+  const box = el('div', { class: 'skeleton', role: 'status', 'aria-busy': 'true', 'aria-label': 'Cargando' },
     Array.from({ length: lines }, (_, i) => el('span', { class: 'skeleton-line', dataset: { i: String(i) } })));
+  box.prepend(enso());
+  return box;
+}
+
+/** v0.12.0: while something loads, an ensō is painted with the brush instead of a spinning circle. */
+export function enso({ cls = 'enso-loader' } = {}) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 100 100'); svg.setAttribute('class', cls); svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
+  svg.innerHTML = '<path class="enso-stroke" pathLength="1" d="M62 14C30 8 10 34 16 60 22 84 56 94 78 76 94 62 92 36 74 22"/><path class="enso-tail" pathLength="1" d="M74 22C70 19 66 16 60 15"/>';
+  return svg;
 }
 
 /** The app logo (sakura with a heart), same file as the installed icon. */
