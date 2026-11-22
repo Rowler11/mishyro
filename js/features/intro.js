@@ -197,12 +197,15 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
   branch.pt = (t) => [branch.x0 + (branch.x1 - branch.x0) * t, branch.y0 + (branch.y1 - branch.y0) * t + Math.sin(t * Math.PI) * -18];
   const flowers = (n, sMin, sMax, buds) => Array.from({ length: n }, () => ({ s: R(0.35, 1), off: R(-7, 7), size: R(sMin, sMax), rot: R(0, 6.28), bud: Math.random() < buds }));
   const limb = (u, ang, l, bend, w, fl, kids = []) => ({ u, ang, len: l, bend, w, seed: R(0, 6.28), flowers: fl, kids });
-  branch.kids = [0.14, 0.26, 0.38, 0.5, 0.62, 0.74, 0.86].map((u, i) => {
-    const up = i % 2 ? -1 : 1;
-    return limb(u, up * R(0.6, 1), R(30, 52), -up * R(0.2, 0.5), R(2.4, 3.4), flowers(4, 6, 9, 0.2),
-      [limb(R(0.4, 0.7), -up * R(0.5, 0.9), R(14, 22), up * 0.3, 1.4, flowers(3, 5, 8, 0.25))]);
+  // v0.12.1 (asked 2026-11-22): leafier, with more limbs and twigs and fuller clusters of flowers
+  branch.kids = [0.08, 0.16, 0.24, 0.32, 0.41, 0.5, 0.58, 0.66, 0.74, 0.82, 0.9].map((u, i) => {
+    const up = i % 2 ? -1 : 1; const big = i % 3 !== 2;
+    return limb(u, up * R(0.55, 1.05), big ? R(38, 62) : R(24, 36), -up * R(0.2, 0.5), big ? R(2.6, 3.6) : R(1.8, 2.4), flowers(big ? 6 : 4, 6, 10, 0.18), [
+      limb(R(0.3, 0.5), -up * R(0.5, 0.9), R(16, 26), up * 0.3, 1.5, flowers(4, 5, 8, 0.22)),
+      ...(big ? [limb(R(0.6, 0.85), up * R(0.4, 0.8), R(12, 20), -up * 0.3, 1.2, flowers(3, 5, 8, 0.25))] : []),
+    ]);
   });
-  branch.main = [0.2, 0.35, 0.5, 0.66, 0.8, 0.93, 1].flatMap((u) => [0, 1].map(() => ({ u, off: R(-9, 9), size: R(6, 9), rot: R(0, 6.28), bud: Math.random() < 0.15 })));
+  branch.main = [0.12, 0.22, 0.32, 0.42, 0.52, 0.62, 0.72, 0.82, 0.91, 1].flatMap((u) => [0, 1, 2].map(() => ({ u, off: R(-11, 11), size: R(6, 10), rot: R(0, 6.28), bud: Math.random() < 0.15 })));
 
   // each petal leaves the branch (or rides the wind from the right edge) and curls into place
   for (const w of words) {

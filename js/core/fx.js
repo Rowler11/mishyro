@@ -342,15 +342,47 @@ export function cornerArt(kind = ambientKind()) {
     svg.innerHTML = `<defs>${defs}</defs>${lantern(78, 64, 44, 1)}${lantern(128, 46, 34, 2)}`;
     return svg;
   }
+  // v0.12.1: a fuller branch that comes in from the screen's top right edge, with limbs and twigs
+  // (seeded, so it looks the same every time) and the season's blossoms in clusters at their tips.
   const pal = COLORS(kind, false, '#C9A46A') || COLORS('sakura', false);
-  const spots = [[30, 70], [52, 58], [74, 44], [96, 36], [118, 26], [62, 80], [40, 92], [88, 62], [108, 50], [136, 18]];
-  const tips = spots.map(([x, y], i) => {
+  let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  const wood = '#6B4A3E';
+  const f = (n) => n.toFixed(1);
+  let wood_ = ''; const spots = [];
+  const limb = (x, y, ang, len, w, depth) => {
+    const bend = (rnd() - 0.5) * 0.5;
+    const mx = x + Math.cos(ang) * len * 0.5 + Math.cos(ang + Math.PI / 2) * len * bend * 0.3;
+    const my = y + Math.sin(ang) * len * 0.5 + Math.sin(ang + Math.PI / 2) * len * bend * 0.3;
+    const ex = x + Math.cos(ang + bend) * len; const ey = y + Math.sin(ang + bend) * len;
+    wood_ += `<path d="M${f(x)} ${f(y)}Q${f(mx)} ${f(my)} ${f(ex)} ${f(ey)}" stroke-width="${f(w)}"/>`;
+    spots.push([ex, ey, depth + 1]); // blossoms at the tip
+    if (depth < 3) {
+      const kids = depth === 1 ? 2 : 1 + (rnd() < 0.5 ? 1 : 0);
+      for (let i = 0; i < kids; i++) {
+        const u = 0.45 + rnd() * 0.45; const side = i % 2 ? -1 : 1;
+        const kx = x + (ex - x) * u; const ky = y + (ey - y) * u;
+        limb(kx, ky, ang + side * (0.5 + rnd() * 0.5), len * (0.45 + rnd() * 0.2), Math.max(1, w * 0.55), depth + 1);
+      }
+    }
+  };
+  // the main limb: from beyond the top right corner down and to the left
+  const trunk = [[176, -6], [140, 14], [104, 34], [66, 56], [30, 82]];
+  wood_ += `<path d="M176 -6C150 6 122 22 104 34S56 64 28 84" stroke-width="5.5"/><path d="M176 -6C150 6 122 22 104 34S56 64 28 84" stroke-width="1.4" stroke="#9A7A6C" transform="translate(-.8 -1.4)"/>`;
+  // side limbs: some droop down and to the left, others reach up-left, so it reads as a real branch
+  [[150, 9, 1.75, 42], [128, 20, 3.55, 36], [106, 33, 2.05, 40], [90, 42, 3.75, 32], [70, 53, 1.9, 30], [50, 66, 3.6, 24]].forEach(([x, y, a, l], i) => limb(x, y, a, l, i < 2 ? 3.2 : 2.6, 1));
+  for (const [x, y] of [trunk[4]]) spots.push([x, y, 2]);
+  const bloom = (x, y, i, sc) => {
     const col = pal[i % pal.length];
-    if (kind === 'momiji') return `<path transform="translate(${x} ${y}) rotate(${i * 37}) scale(.8)" fill="${col}" d="M0-9 2-3 8-5 4 0 7 6 1 3 0 9-1 3-7 6-4 0-8-5-2-3Z"/>`;
-    if (kind === 'snow') return `<circle cx="${x}" cy="${y - 3}" r="${3 + (i % 3)}" fill="#FFFFFF" stroke="${pal[0]}" stroke-width=".8"/>`;
-    if (kind === 'hotaru') return `<ellipse cx="${x}" cy="${y}" rx="5" ry="2.6" transform="rotate(${-20 - i * 9} ${x} ${y})" fill="#7C9461"/>`;
-    return `<g transform="translate(${x} ${y}) scale(.55)">${[0, 72, 144, 216, 288].map((r) => `<ellipse cx="0" cy="-6" rx="4.4" ry="6.4" fill="${col}" transform="rotate(${r})"/>`).join('')}<circle r="2" fill="#C9A46A"/></g>`;
-  }).join('');
-  svg.innerHTML = `<g class="corner-swing"><path d="M170 4C140 14 110 28 84 44 60 58 40 72 18 96" fill="none" stroke="#6B4A3E" stroke-width="5" stroke-linecap="round"/><path d="M98 36C110 46 116 58 118 70M60 60C58 72 62 84 70 94M130 18C140 30 146 40 150 52" fill="none" stroke="#6B4A3E" stroke-width="2.6" stroke-linecap="round"/>${tips}</g>`;
+    if (kind === 'momiji') return `<path transform="translate(${f(x)} ${f(y)}) rotate(${(i * 47) % 360}) scale(${sc})" fill="${col}" d="M0-9 2-3 8-5 4 0 7 6 1 3 0 9-1 3-7 6-4 0-8-5-2-3Z"/>`;
+    if (kind === 'snow') return `<circle cx="${f(x)}" cy="${f(y - 2)}" r="${f(2.4 + sc * 2)}" fill="#FFFFFF" stroke="${pal[0]}" stroke-width=".7"/>`;
+    if (kind === 'hotaru') return `<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(4 + sc * 2)}" ry="2.4" transform="rotate(${-20 - (i * 23) % 70} ${f(x)} ${f(y)})" fill="${i % 3 ? '#7C9461' : '#93AA74'}"/>`;
+    return `<g transform="translate(${f(x)} ${f(y)}) scale(${f(sc * 0.6)})">${[0, 72, 144, 216, 288].map((r) => `<ellipse cx="0" cy="-6" rx="4.4" ry="6.4" fill="${col}" transform="rotate(${r + i * 11})"/>`).join('')}<circle r="2" fill="#C9A46A"/></g>`;
+  };
+  let tips = '';
+  spots.forEach(([x, y, d], i) => {
+    const n = d >= 3 ? 3 : 2; // clusters at the tips, so the wood still shows between them
+    for (let k = 0; k < n; k++) tips += bloom(x + (rnd() - 0.5) * 10, y + (rnd() - 0.5) * 8, i * 3 + k, (kind === 'momiji' ? 0.5 : 0.55) + rnd() * 0.3);
+  });
+  svg.innerHTML = `<g class="corner-swing"><g fill="none" stroke="${wood}" stroke-linecap="round">${wood_}</g>${tips}</g>`;
   return svg;
 }

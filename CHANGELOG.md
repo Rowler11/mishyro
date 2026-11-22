@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.12.1 (ramas más frondosas)
+
+- La entrada con el corazón tiene una rama de sakura más frondosa: más ramas, ramitas y racimos de flores.
+- La rama de Inicio ahora sale desde el borde de la pantalla, con más ramas y ramitas, y flores (u hojas, según la estación) en racimos.
+
 ## 0.12.0 (más vida en Inicio)
 
 Nuevo
