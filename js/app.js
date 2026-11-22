@@ -481,6 +481,7 @@ async function start() {
   await seed.syncConfig(CONFIG);
   db.emptyExpiredTrash().catch(() => {}); // Papelera: what is older than 30 days goes for good
   await profile.load();
+  await import('./core/pets.js').then((m) => m.load()).catch(() => {});
   db.onChange((store) => { if (store === 'pets') profile.load(); if (store === 'letters' || store === 'content') updateLetterDot(); });
   await applySettings();
   ui.installRipple();

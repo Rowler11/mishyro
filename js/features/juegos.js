@@ -5,6 +5,7 @@
 import { ui, util, db, profile, CONFIG, seed } from '../core.js';
 import * as K from './juegos-kit.js';
 import { draw } from '../core/art.js';
+import { wire as wirePet } from '../core/pets.js';
 
 const { el, icon } = util;
 /** replaceChildren that skips null/false (native replaceChildren would print "null"). */
@@ -121,7 +122,7 @@ async function room(page) {
   } });
   const champ = await monthChampion();
   const hero = el('section', { class: 'game-hero', 'aria-labelledby': 'game-hero-title' },
-    el('span', { class: 'game-hero-fox', 'aria-hidden': 'true' }, draw('fox')),
+    wirePet(el('span', { class: 'game-hero-fox' }, draw('fox')), 'fox'),
     el('span', { class: 'game-hero-dice', 'aria-hidden': 'true' }, draw('dice')),
     el('div', { class: 'game-hero-text' },
       el('h2', { class: 'game-hero-title', id: 'game-hero-title' }, '¿Qué jugamos?'), summary, surprise));

@@ -3,6 +3,7 @@
 import { ui, util, db, theme, profile, router, CONFIG } from '../core.js';
 import { SETTINGS_PAGES, HUBS, listed } from '../routes.js';
 import * as fx from '../core/fx.js';
+import { draw } from '../core/art.js';
 
 const { el, icon, ja } = util;
 
@@ -122,9 +123,27 @@ function motion({ app } = {}) {
       ui.segmented({ label: 'Cuándo sale', value: s.intro === 'always' ? 'always' : 'daily', onChange: (v) => save({ intro: v }), options: [
         { value: 'daily', label: 'Una vez al día' }, { value: 'always', label: 'Siempre' }] }),
       sys || !s.animations ? el('p', { class: 'muted small' }, 'Con las animaciones apagadas sale la bienvenida corta.') : null,
-      ui.button({ label: 'Ver la entrada', iconName: 'heart', variant: 'ghost', onClick: () => app.playIntro?.() })));
+      ui.button({ label: 'Ver la entrada', iconName: 'heart', variant: 'ghost', onClick: () => app.playIntro?.() })),
+    petsCard());
   });
   return { node: wrap, ready };
+}
+
+/** Mascotas de papel (v0.14.0): rename the origami creatures; their personality stays. */
+function petsCard() {
+  const box = el('div', { class: 'card stack' }, el('h2', { class: 'card-title' }, 'Mascotas de papel'),
+    el('p', { class: 'muted small' }, 'Viven en las secciones. Tócalas y te dicen algo. Ponles el nombre que quieran.'));
+  import('../core/pets.js').then(async (pets) => {
+    await pets.load();
+    box.append(el('ul', { class: 'pet-names' }, Object.entries(pets.PETS).map(([id, p]) => {
+      const input = el('input', { class: 'input', id: `pet-name-${id}`, value: pets.nameOf(id), maxlength: '20', autocomplete: 'off' });
+      input.addEventListener('change', async () => { const v = input.value.trim() || p.name; input.value = v; await pets.saveNames({ [id]: v }); ui.toast(`Ahora se llama ${v}.`); });
+      return el('li', { class: 'pet-name-row' },
+        el('span', { class: 'pet-name-art', 'aria-hidden': 'true' }, draw(id === 'crane' ? 'crane' : id)),
+        el('div', { class: 'grow stack-tight' }, el('label', { class: 'field-label', for: `pet-name-${id}` }, `Nombre de ${p.kind}`), input, el('span', { class: 'muted small' }, p.trait)));
+    })));
+  }).catch(() => {});
+  return box;
 }
 
 // ---------- legal ----------

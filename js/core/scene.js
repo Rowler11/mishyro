@@ -3,16 +3,17 @@
 // Sofía. Purely decorative (aria-hidden), no text, the same scene for every tab of a hub.
 import { draw } from './art.js';
 import { hubOf } from '../routes.js';
+import { wire } from './pets.js';
 
 // [creatures left→right, crane colors, lily?, tone]
 const SCENES = {
-  calendario: [['rabbit'], ['#C9B8E8'], false, 'lilac'],
+  calendario: [['panda', 'rabbit'], ['#C9B8E8'], false, 'lilac'],
   galeria: [['cat', 'fox'], ['#F3B7C5'], true, 'pink'],
   'primeras-veces': [['rabbit', 'cat'], [], true, 'pink'],
   diario: [['cat'], ['#F3B7C5'], true, 'cream'],
   voz: [['rabbit'], ['#C9B8E8'], false, 'lilac'],
   preguntas: [['fox', 'rabbit'], [], false, 'cream'],
-  gratitud: [['tanuki'], ['#F3B7C5'], true, 'pink'],
+  gratitud: [['panda'], ['#F3B7C5'], true, 'pink'],
   retos: [['fox', 'tanuki'], ['#C9B8E8'], false, 'green'],
   canciones: [['cat'], ['#F3B7C5', '#C9B8E8'], false, 'lilac'],
   planes: [['fox', 'rabbit'], ['#F3B7C5', '#C9B8E8'], true, 'pink'],
@@ -20,8 +21,8 @@ const SCENES = {
   regalos: [['tanuki'], ['#C9B8E8'], true, 'cream'],
   insignias: [['tanuki', 'fox'], [], false, 'cream'],
   animo: [['rabbit'], [], true, 'lilac'],
-  mascotas: [['cat'], [], false, 'cream'],
-  alcancia: [['tanuki'], ['#F3B7C5'], false, 'green'],
+  mascotas: [['cat', 'panda'], [], false, 'cream'],
+  alcancia: [['panda', 'tanuki'], ['#F3B7C5'], false, 'green'],
   listas: [['rabbit', 'tanuki'], [], false, 'cream'],
   recetas: [['fox'], ['#F3B7C5'], false, 'cream'],
   jibun: [['cat'], ['#C9B8E8'], true, 'lilac'],
@@ -36,10 +37,20 @@ export function scene(id) {
   const [creatures, cranes, lily, tone] = s;
   const band = document.createElement('div');
   band.className = `paper-scene tone-${tone}`;
-  band.setAttribute('aria-hidden', 'true');
-  creatures.forEach((c, i) => { const w = document.createElement('span'); w.className = `ps-creature ps-c${i}`; w.append(draw(c)); band.append(w); });
-  cranes.forEach((col, i) => { const w = document.createElement('span'); w.className = `ps-crane ps-k${i}`; w.append(draw('crane', col)); band.append(w); });
-  if (lily) { const w = document.createElement('span'); w.className = 'ps-lily'; w.append(draw('lily')); band.append(w); }
-  for (let i = 0; i < 5; i++) { const p = document.createElement('span'); p.className = `ps-petal ps-p${i}`; band.append(p); }
+  band.dataset.bubbleRoot = '';
+  // The drawings sit on a clipped stage; the band itself lets the speech bubbles rise above it.
+  const stage = document.createElement('div'); stage.className = 'ps-stage'; band.append(stage);
+  // v0.14.0: the creatures are virtual pets with a name; tap one and it moves and talks (pets.js).
+  const hosts = [];
+  const friendOf = (me) => () => hosts.find((h) => h.host !== me) || null;
+  creatures.forEach((c, i) => {
+    const w = document.createElement('span'); w.className = `ps-creature ps-c${i}`; w.append(draw(c)); stage.append(w);
+    hosts.push({ host: w, id: c });
+    wire(w, c, { partners: [friendOf(w)] });
+  });
+  const deco = (w) => { w.setAttribute('aria-hidden', 'true'); stage.append(w); };
+  cranes.forEach((col, i) => { const w = document.createElement('span'); w.className = `ps-crane ps-k${i}`; w.append(draw('crane', col)); deco(w); });
+  if (lily) { const w = document.createElement('span'); w.className = 'ps-lily'; w.append(draw('lily')); deco(w); }
+  for (let i = 0; i < 5; i++) { const p = document.createElement('span'); p.className = `ps-petal ps-p${i}`; deco(p); }
   return band;
 }
