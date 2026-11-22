@@ -12,7 +12,7 @@ const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
 const fmtMonth = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' });
 const TAB_KEY = `${CONFIG.storageKey}.diario.tab`;
-const readTab = () => { try { return localStorage.getItem(TAB_KEY) === 'fotos' ? 'fotos' : 'paginas'; } catch { return 'paginas'; } };
+const readTab = () => 'paginas';
 const saveTab = (v) => { try { localStorage.setItem(TAB_KEY, v); } catch { /* private mode */ } };
 const capital = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const moodOf = (level) => MOODS.find((m) => m.level === level) || null;

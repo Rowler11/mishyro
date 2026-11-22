@@ -51,13 +51,15 @@ function door(g, { open }) {
       el('span', { class: 'door-name' }, g.title),
       el('span', { class: 'door-count' }, count(g.sections.length)),
       el('span', { class: 'door-peek' }, g.sections.slice(0, 3).map((s) => icon(s.icon, { size: 14 })))));
+  // A group with only one section (Jugar, Mi espacio) opens it directly: no second tap (Rowler, 2026-11-22).
+  const target = g.sections.length === 1 ? `/${g.sections[0].id}` : `/mas/${g.id}`;
   b.addEventListener('click', () => {
     if (b.classList.contains('is-open')) return;
     lastOpen = g.id;
-    if (util.prefersReducedMotion()) { router.go(`/mas/${g.id}`); return; }
+    if (util.prefersReducedMotion()) { router.go(target); return; }
     b.classList.add('is-open');
     util.haptic(8);
-    setTimeout(() => router.go(`/mas/${g.id}`), OPEN_MS);
+    setTimeout(() => router.go(target), OPEN_MS);
   });
   return b;
 }

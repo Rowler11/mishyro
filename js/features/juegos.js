@@ -92,18 +92,24 @@ async function room(page) {
   const q = () => `?min=${c.mins}&nivel=${c.level}`;
   const summary = el('p', { class: 'game-hero-sub' });
   const shelves = el('div', { class: 'game-shelves' });
+  // Options only change the picks and the links' query: the shelves are built once and the picks are
+  // rebuilt only when the list really changes, so the screen doesn't flash (Rowler, 2026-11-22).
+  let pickIds = '';
+  const seen = new Set(SHELVES.flatMap(([, ids]) => ids));
+  const extra = K.GAME_LIST.filter((g) => !seen.has(g.id)).map((g) => g.id);
+  put(shelves, ...[...SHELVES, ...(extra.length ? [['Más juegos', extra]] : [])].map(([title, ids]) => el('section', { class: 'game-shelf' },
+    el('h3', { class: 'game-shelf-title' }, title, el('span', { class: 'muted small' }, ` · ${ids.length}`)),
+    el('ul', { class: 'game-row' }, ids.map((id) => K.gameById(id)).filter(Boolean).map((g) => gameTile(g, q(), { mini: true }))))));
   const paintPicks = () => {
     rememberChoice(c);
     const list = K.GAME_LIST.filter((g) => g.ready && g.moods.includes(c.mood) && g.mins.includes(c.mins));
     const fallback = list.length ? list : K.GAME_LIST.filter((g) => g.ready && g.moods.includes(c.mood));
-    put(picks, ...fallback.map((g) => gameTile(g, q())));
+    const ids = fallback.map((g) => g.id).join();
+    if (ids !== pickIds) { pickIds = ids; put(picks, ...fallback.map((g) => gameTile(g, q()))); }
+    const query = q();
+    for (const a of page.querySelectorAll('a.game-tile')) a.setAttribute('href', a.getAttribute('href').replace(/\?.*$/, '') + query);
     const label = (arr, v) => arr.find((o) => String(o.value) === String(v))?.label || v;
     summary.textContent = `${label(K.MOODS, c.mood)} · ${c.mins} min · castigos ${String(label(K.LEVELS, c.level)).toLowerCase()}`;
-    const seen = new Set(SHELVES.flatMap(([, ids]) => ids));
-    const extra = K.GAME_LIST.filter((g) => !seen.has(g.id)).map((g) => g.id);
-    put(shelves, ...[...SHELVES, ...(extra.length ? [['Más juegos', extra]] : [])].map(([title, ids]) => el('section', { class: 'game-shelf' },
-      el('h3', { class: 'game-shelf-title' }, title, el('span', { class: 'muted small' }, ` · ${ids.length}`)),
-      el('ul', { class: 'game-row' }, ids.map((id) => K.gameById(id)).filter(Boolean).map((g) => gameTile(g, q(), { mini: true }))))));
   };
   const surprise = ui.button({ label: 'Sorpréndannos', iconName: 'dices', variant: 'primary', onClick: () => {
     const list = K.GAME_LIST.filter((g) => g.ready && g.moods.includes(c.mood));

@@ -19,7 +19,7 @@ const TABS = [
 ];
 
 export function render() {
-  let tab = recall(TAB_KEY, 'nosotros');
+  let tab = 'nosotros';
   if (!TABS.some((t) => t.value === tab)) tab = 'nosotros';
   const body = el('div', { class: 'stack perfil-body' });
   const draw = () => {

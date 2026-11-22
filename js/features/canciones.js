@@ -11,7 +11,7 @@ import { toTrash, TRASH_NOTE } from './papelera.js';
 const { el, icon } = util;
 const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
 const TAB_KEY = `${CONFIG.storageKey}.canciones.tab`;
-const readTab = () => { try { return localStorage.getItem(TAB_KEY) === 'playlist' ? 'playlist' : 'songs'; } catch { return 'songs'; } };
+const readTab = () => 'songs';
 const saveTab = (v) => { try { localStorage.setItem(TAB_KEY, v); } catch { /* private mode */ } };
 const TYPES = { track: 'Canción', album: 'Álbum', playlist: 'Playlist', episode: 'Episodio', show: 'Podcast', artist: 'Artista' };
 const MAX_DEDICATION = 200;
@@ -247,7 +247,7 @@ export async function render({ app, route }) {
     const open = (s) => detail(s, { onChange: draw });
     let content;
     if (!songs.length) {
-      content = [ui.emptyState({ title: 'Su primera canción', text: `Dedícale a ${profile.name(profile.partnerOf(profile.active()))} una canción de Spotify con unas palabras.`, art: 'fan', action: { label: 'Dedicar una canción', onClick: () => openEditor() } })];
+      content = [ui.emptyState({ title: 'Su primera canción', text: `Dedícale a ${profile.name(profile.partnerOf(profile.active()))} una canción de Spotify con unas palabras.`, art: 'fan' })]; // the header already has "Dedicar" (one button, 2026-11-22)
     } else if (tab === 'songs') {
       const pinned = songs.find((s) => s.pinned);
       const week = songs.filter((s) => s.weekOf === time.isoWeek());

@@ -12,7 +12,8 @@ const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long'
 const fmtTime = new Intl.DateTimeFormat('es-CO', { hour: 'numeric', minute: '2-digit' });
 const KEY = `${CONFIG.storageKey}.cupones.tab`;
 const TABS = ['mine', 'given', 'saved'];
-const readTab = () => { try { const v = localStorage.getItem(KEY); return TABS.includes(v) ? v : 'mine'; } catch { return 'mine'; } };
+// Always opens on Historial, so the screen looks the same every time (Rowler, 2026-11-22).
+const readTab = () => 'given';
 const saveTab = (v) => { try { localStorage.setItem(KEY, v); } catch { /* private mode */ } };
 
 const pending = (t) => !t || seed.needsCompletion(t);

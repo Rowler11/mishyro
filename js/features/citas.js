@@ -246,6 +246,12 @@ export async function render() {
     const thirdParty = await security.thirdPartyAllowed();
     const tabs = el('div', { class: 'chip-row', role: 'group', 'aria-label': 'Vista' }, TABS.map(([v, l]) => el('button', { class: 'chip', type: 'button', 'aria-pressed': String(tab === v), onClick: () => { tab = v; try { localStorage.setItem(TAB_KEY, v); } catch { /* private mode */ } shown = []; gacha = null; draw_(); } }, l)));
     const acceptBtn = (i) => ui.button({ label: 'Aceptar', iconName: 'check', small: true, variant: 'primary', onClick: () => accept(i, draw_) });
+    // "Ya lo hicimos hace poco": the idea rests 30 days without being marked as done (Rowler, 2026-11-22).
+    const recentBtn = (i, onRest) => ui.button({ label: 'Ya lo hicimos hace poco', iconName: 'history', small: true, variant: 'ghost', onClick: async () => {
+      const until = new Date(); until.setDate(until.getDate() + 30);
+      await setState(i.id, { restUntil: util.localDay(until), title: i.title });
+      ui.toast('Listo, vuelve a salir en un mes.'); onRest();
+    } });
     const noBtn = (i, onNo) => ui.button({ label: 'No nos llama', small: true, variant: 'ghost', onClick: async () => { await setState(i.id, { repeat: 'no', title: i.title }); onNo(); } });
     const exhausted = (relax) => el('div', { class: 'card paper-card' }, el('p', {}, 'Ya vieron todas las ideas que cumplen con esto.'),
       el('div', { class: 'card-actions' }, ui.button({ label: 'Empezar el mazo de nuevo', iconName: 'rotate-ccw', small: true, onClick: async () => { await resetDeck(); draw_(); } }), relax ? ui.button({ label: 'Quitar filtros', small: true, variant: 'ghost', onClick: relax }) : null));
@@ -263,7 +269,7 @@ export async function render() {
       content = [
         el('div', { class: 'chip-row', role: 'group', 'aria-label': 'Filtro rápido' }, [['', 'Cualquiera'], ['casa', 'En casa'], ['hoy', 'Salir hoy (1 hora)'], ['gratis', 'Gratis']].map(([v, l]) => el('button', { class: 'chip', type: 'button', 'aria-pressed': String(quick === v), onClick: () => { quick = v; gacha = null; draw_(); } }, l))),
         el('section', { class: 'card paper-card gacha-card' }, machine, pool.length || gacha ? ui.button({ label: gacha ? 'Otra cápsula' : 'Girar', iconName: 'dices', variant: 'primary', onClick: spin }) : null),
-        gacha ? ideaCard(gacha, { thirdParty, actions: [acceptBtn(gacha), noBtn(gacha, () => { gacha = null; draw_(); })] }) : !pool.length ? exhausted(quick ? () => { quick = ''; draw_(); } : null) : null,
+        gacha ? ideaCard(gacha, { thirdParty, actions: [acceptBtn(gacha), recentBtn(gacha, () => { gacha = null; draw_(); }), noBtn(gacha, () => { gacha = null; draw_(); })] }) : !pool.length ? exhausted(quick ? () => { quick = ''; draw_(); } : null) : null,
       ];
     } else if (tab === 'filtros') {
       const seg = (lbl, key, list) => el('div', { class: 'field' }, el('span', { class: 'field-label' }, lbl), el('div', { class: 'chip-row', role: 'group', 'aria-label': lbl },
@@ -274,7 +280,7 @@ export async function render() {
       content = [
         el('details', { class: 'card paper-card filters', open: true }, el('summary', {}, 'Filtros'),
           seg('Ánimo', 'mood', MOODS), seg('Presupuesto', 'budget', BUDGETS), seg('Tiempo', 'duration', DURATIONS), seg('Lugar', 'place', PLACES), seg('Clima', 'climate', CLIMATES)),
-        shown.length ? el('div', { class: 'idea-grid' }, shown.map((i, k) => ideaCard(i, { thirdParty, actions: [acceptBtn(i), ui.button({ label: 'Otra', iconName: 'refresh-cw', small: true, onClick: () => swap(k) })] }))) : exhausted(() => { Object.keys(f).forEach((k) => { f[k] = ''; }); draw_(); }),
+        shown.length ? el('div', { class: 'idea-grid' }, shown.map((i, k) => ideaCard(i, { thirdParty, actions: [acceptBtn(i), ui.button({ label: 'Otra', iconName: 'refresh-cw', small: true, onClick: () => swap(k) }), recentBtn(i, () => swap(k))] }))) : exhausted(() => { Object.keys(f).forEach((k) => { f[k] = ''; }); draw_(); }),
       ];
     } else if (tab === 'pendientes') {
       const me = profile.active();

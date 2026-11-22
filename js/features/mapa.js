@@ -216,7 +216,7 @@ export async function render(ctx) {
   const body = el('div', { class: 'stack' }, ui.skeleton(3));
   page.append(body);
   let tab = 'mapa';
-  try { tab = localStorage.getItem(TAB_KEY) === 'lista' ? 'lista' : 'mapa'; } catch { /* private mode */ }
+  // Always opens on the map tab (2026-11-22).
   let places = []; let snaps = []; let map = null; let markers = null; let myPos = null;
   const urls = new Set();
   const me = () => profile.active();

@@ -1572,6 +1572,12 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .dot-fecha { background: var(--gold); }
 .dot-animo { background: var(--accent-2); }
 @media (min-width: 768px) { .cal-cell { min-height: 58px; } }
+/* Día de novios (every Saturday): a soft tint and a tiny heart under the number. */
+.cal-cell { position: relative; }
+.cal-cell.is-novios:not(.is-selected) { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.cal-novios { position: absolute; top: 3px; right: 4px; display: inline-flex; color: var(--accent); }
+.cal-novios .icon { fill: currentColor; }
+.cal-novios-card .cal-fecha-icon .icon { fill: color-mix(in srgb, var(--accent) 25%, transparent); }
 .cal-day-title:focus { outline: none; }
 .cal-event, .cal-fecha { display: flex; align-items: flex-start; gap: var(--space-3); }
 .cal-event-mark { flex: none; width: 4px; align-self: stretch; border-radius: 2px; background: var(--accent); }

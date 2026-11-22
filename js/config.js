@@ -17,6 +17,9 @@ export const CONFIG = {
   // Si lo cambias, también en theme-boot.js. Cambiarlo "empieza de cero" en cada dispositivo.
   storageKey: 'aishiteru',
 
+  // Día fijo de la pareja: se marca solo en el Calendario cada semana (0 = domingo … 6 = sábado).
+  coupleDay: { weekday: 6, name: 'Día de novios' },
+
   // Perfiles. Los ids "sofia" y "david" son internos y no se cambian; los nombres
   // visibles se cargan del seed privado o se escriben en el asistente.
   people: {
