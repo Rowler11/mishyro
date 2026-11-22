@@ -3137,27 +3137,31 @@ a.game-champ::after { content: '›'; margin-left: 2px; color: var(--accent); }
 .pet-name-art svg { width: 100%; height: 100%; }
 
 /* ---------- Nuestro sakura (v0.14.0) ---------- */
-.plant-card { display: grid; grid-template-columns: 150px 1fr; gap: var(--space-3); align-items: center; overflow: visible; }
-@media (max-width: 360px) { .plant-card { grid-template-columns: 1fr; } }
-.plant-stage { position: relative; width: 150px; height: 150px; }
-.plant-art { width: 150px; height: 150px; }
-.plant-panda { position: absolute; left: -10px; bottom: -4px; width: 58px; height: 58px; }
-.plant-card .pet-bubble { left: 30px; bottom: 54px; width: max-content; max-width: min(228px, 62vw); }
-.plant-text { display: grid; gap: var(--space-2); }
-.plant-text .card-title { margin: 0; }
-.plant-next { color: var(--text-2); margin: 0; }
-.plant-leaf { transform-box: fill-box; transform-origin: 50% 100%; animation: plant-sway 5s var(--ease-in-out) infinite; }
-.plant-flower { animation: plant-bloom 900ms var(--ease-spring) both; }
-@keyframes plant-sway { 50% { transform: rotate(2.5deg); } }
-@keyframes plant-bloom { from { opacity: 0; } }
-.plant-drops { position: absolute; inset: 0; pointer-events: none; }
-.plant-drops i { position: absolute; top: 8px; width: 7px; height: 10px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: #7DB7E8; opacity: 0; }
-.plant-drops i:nth-child(1) { left: 60px; } .plant-drops i:nth-child(2) { left: 80px; } .plant-drops i:nth-child(3) { left: 98px; }
-.plant-card.is-watering .plant-drops i { animation: plant-drop 900ms ease-in forwards; }
-.plant-card.is-watering .plant-drops i:nth-child(2) { animation-delay: 150ms; } .plant-card.is-watering .plant-drops i:nth-child(3) { animation-delay: 300ms; }
-@keyframes plant-drop { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: .9; } 100% { opacity: 0; transform: translateY(100px); } }
-@media (prefers-reduced-motion: reduce) { .plant-leaf, .plant-flower, .plant-drops i { animation: none !important; } }
-:root[data-motion="off"] .plant-leaf, :root[data-motion="off"] .plant-flower { animation: none; }
+.garden-card { display: grid; gap: var(--space-2); overflow: visible; }
+.garden-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); }
+.garden-head .card-title { margin: 0; }
+.garden-stage { position: relative; border-radius: var(--radius-md, 14px); background: linear-gradient(#EEF5FA, #F7F1E8 60%); overflow: visible; }
+:root[data-theme="dark"] .garden-stage { background: linear-gradient(#262027, #2B2722 60%); }
+.garden-art { display: block; width: 100%; height: auto; border-radius: inherit; }
+.garden-panda { position: absolute; right: 4px; bottom: 2px; width: 54px; height: 54px; }
+.garden-card .pet-bubble { width: max-content; max-width: min(228px, 62vw); }
+.garden-next { color: var(--text-2); margin: 0; }
+.garden-done { display: inline-flex; align-items: center; gap: 4px; }
+.garden-bloom { transform-box: fill-box; transform-origin: 50% 50%; }
+.garden-flower .garden-bloom { animation: garden-sway 6s var(--ease-in-out) infinite; }
+.garden-flower:nth-child(3n) .garden-bloom { animation-delay: -2s; } .garden-flower:nth-child(3n+1) .garden-bloom { animation-delay: -4s; }
+.garden-flower.is-new { transform-box: fill-box; transform-origin: 50% 100%; animation: garden-pop 900ms var(--ease-spring) both; }
+@keyframes garden-sway { 50% { transform: rotate(6deg); } }
+@keyframes garden-pop { from { opacity: 0; scale: .2; } }
+.garden-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
+.garden-picker[hidden] { display: none; }
+.garden-pick { display: grid; justify-items: center; gap: 2px; padding: var(--space-2) 4px; min-height: 64px; border: 1px solid var(--line); border-radius: var(--radius-md, 14px); background: var(--surface); color: var(--text); font: inherit; font-size: .82rem; cursor: pointer; }
+.garden-pick:hover, .garden-pick:focus-visible { border-color: var(--accent); }
+.garden-legend summary { cursor: pointer; color: var(--text-2); min-height: 32px; display: flex; align-items: center; }
+.garden-legend ul { list-style: none; margin: var(--space-1) 0 0; padding: 0; display: grid; gap: 4px; }
+.garden-legend li { display: flex; align-items: center; gap: var(--space-2); }
+@media (prefers-reduced-motion: reduce) { .garden-flower .garden-bloom, .garden-flower.is-new { animation: none !important; } }
+:root[data-motion="off"] .garden-flower .garden-bloom, :root[data-motion="off"] .garden-flower.is-new { animation: none; }
 
 /* ---------- Mapa de papel: pines con foto, ruta y mini mapa en Inicio (v0.14.0) ---------- */
 .map-photo-pin { background: none; border: 0; }
