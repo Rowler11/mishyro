@@ -2842,12 +2842,12 @@ audio.rec-media { background: transparent; max-height: none; }
 :root[data-motion="off"] .ambient-canvas { display: none; }
 
 /* the branch (by day) or two hanging chōchin (at night) in Inicio's corner; tap to shake it */
-.home-corner { position: absolute; top: -14px; right: calc(var(--space-3) * -1); z-index: 2; width: 128px; height: 84px; cursor: pointer;
+.home-corner { position: absolute; top: calc(var(--space-4) * -1); right: calc(var(--space-4) * -1); z-index: 2; width: 150px; height: 106px; cursor: pointer;
   -webkit-tap-highlight-color: transparent; transform-origin: 96% 6%; }
 .home-corner svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .home-corner[data-kind="night"] { transform-origin: 60% 0; }
-.home > .page-head { padding-right: 120px; }
-@media (min-width: 820px) { .home-corner { width: 170px; height: 112px; right: 0; top: -18px; } .home > .page-head { padding-right: 170px; } }
+.home > .page-head { padding-right: 132px; }
+@media (min-width: 820px) { .home-corner { width: 190px; height: 134px; right: calc(var(--space-5) * -1); top: calc(var(--space-6) * -1); } .home > .page-head { padding-right: 180px; } }
 :root[data-motion="on"] .home-corner .corner-swing { transform-origin: 100% 0; animation: corner-sway 6s ease-in-out infinite; }
 :root[data-motion="on"] .home-corner[data-kind="night"] .corner-swing { transform-origin: 50% 0; transform-box: fill-box; animation-duration: 4.6s; }
 :root[data-motion="on"] .home-corner[data-kind="night"] .corner-swing.is-second { animation-delay: -1.7s; }
@@ -2880,3 +2880,4 @@ audio.rec-media { background: transparent; max-height: none; }
   .home-corner .corner-swing, .home-corner.is-shaking, .page-head .ja, .page-head .ja::after, .enso-loader path { animation: none !important; }
   .page-head .ja::after { clip-path: none; } .enso-loader path { stroke-dashoffset: 0; }
 }
+@media (min-width: 1100px) { .home-corner { right: calc(clamp(var(--space-5), 4vw, var(--space-7)) * -1); } }
