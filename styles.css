@@ -3159,7 +3159,9 @@ a.game-champ::after { content: '›'; margin-left: 2px; color: var(--accent); }
 .garden-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); }
 .garden-head .card-title { margin: 0; }
 .garden-stage { position: relative; border-radius: var(--radius-md, 14px); background: linear-gradient(#EEF5FA, #F7F1E8 60%); overflow: visible; }
-:root[data-theme="dark"] .garden-stage { background: linear-gradient(#262027, #2B2722 60%); }
+:root[data-theme="night"] .garden-stage { background: linear-gradient(#231C27, #2A2430 60%); }
+:root[data-theme="night"] .garden-art > path:first-of-type { fill: #3E4A35; }
+:root[data-theme="night"] .garden-art > path:nth-of-type(2) { fill: #34402D; }
 .garden-art { display: block; width: 100%; height: auto; border-radius: inherit; }
 .garden-panda { position: absolute; right: 4px; bottom: 2px; width: 54px; height: 54px; }
 .garden-card .pet-bubble { width: max-content; max-width: min(228px, 62vw); }
@@ -3175,7 +3177,7 @@ a.game-champ::after { content: '›'; margin-left: 2px; color: var(--accent); }
 .garden-picker[hidden] { display: none; }
 .garden-pick { display: grid; justify-items: center; gap: 2px; padding: var(--space-2) 4px; min-height: 64px; border: 1px solid var(--line); border-radius: var(--radius-md, 14px); background: var(--surface); color: var(--text); font: inherit; font-size: .82rem; cursor: pointer; }
 .garden-pick:hover, .garden-pick:focus-visible { border-color: var(--accent); }
-.garden-legend summary { cursor: pointer; color: var(--text-2); min-height: 32px; display: flex; align-items: center; }
+.garden-legend summary { cursor: pointer; color: var(--text-2); min-height: 44px; display: flex; align-items: center; }
 .garden-legend ul { list-style: none; margin: var(--space-1) 0 0; padding: 0; display: grid; gap: 4px; }
 .garden-legend li { display: flex; align-items: center; gap: var(--space-2); }
 @media (prefers-reduced-motion: reduce) { .garden-flower .garden-bloom, .garden-flower.is-new { animation: none !important; } }
