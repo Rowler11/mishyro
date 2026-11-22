@@ -5,8 +5,10 @@
 // the page says so. With sync it only travels to the owner's own devices (Fase A).
 // Kinds (docs/08 personal): diary, note, draft (surprises for the other), gift, reminder, photo and
 // "future" (a note for me in the future, sealed until its day).
-import { ui, util, db, profile, security, CONFIG } from '../core.js';
+import { ui, util, db, profile, security } from '../core.js';
 import { compressImage, isQuotaError } from '../core/images.js';
+import { wire } from '../core/pets.js';
+import { draw as drawArt } from '../core/art.js';
 
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -26,9 +28,16 @@ const COLORS = [
   { id: 'sakura', name: 'Sakura', value: 'var(--own-sakura)' }, { id: 'fuji', name: 'Glicina', value: 'var(--own-fuji)' },
   { id: 'matcha', name: 'Matcha', value: 'var(--own-matcha)' }, { id: 'kohaku', name: 'Ámbar', value: 'var(--own-kohaku)' },
 ];
-const FILTER_KEY = `${CONFIG.storageKey}.jibun.filter`;
-const readFilter = () => { try { return localStorage.getItem(FILTER_KEY) || 'all'; } catch { return 'all'; } };
-const saveFilter = (v) => { try { localStorage.setItem(FILTER_KEY, v); } catch { /* private mode */ } };
+// Escritorio personal (v0.14.0, option A chosen 2026-11-22): one line for the day, kind to oneself.
+const DAY_LINES = [
+  'Hoy también cuenta lo que haces por ti.', 'Escribe lo que no quieres olvidar.', 'Un ratito para ti también es cuidar la relación.',
+  'Lo pequeño de hoy puede ser un bonito recuerdo mañana.', 'Respira. Aquí nadie te apura.', 'Anota una idea de regalo antes de que se te olvide.',
+  'Guarda una sorpresa para cuando menos lo espere.', 'Escríbete algo para dentro de un año.', 'Lo que sientes merece un lugar.',
+  'Hoy es buen día para una nota bonita.', 'Tus planes también caben aquí.', 'Cuídate como cuidas lo que quieres.',
+];
+const lineOfDay = (day) => DAY_LINES[[...day].reduce((n, c) => n + c.charCodeAt(0), 0) % DAY_LINES.length];
+const fmtShort = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long' });
+const fmtToday = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
 const sealed = (x, today = util.localDay()) => x.kind === 'future' && x.openOn && x.openOn > today;
 
 function editor(existing, { onSaved, kind: startKind = 'note' }) {
@@ -121,7 +130,7 @@ export async function render() {
   const page = el('section', { class: 'page jibun' });
   const urls = new Set();
   let draw = () => {};
-  let filter = readFilter();
+  let filter = 'all'; // always opens on "Todo", like every other section
   const openEditor = (x = null) => editor(x, { kind: filter !== 'all' ? filter : 'note', onSaved: (rec, isNew) => { ui.toast(isNew ? 'Guardado en tu espacio.' : 'Cambios guardados.', { tone: 'success' }); draw(); } });
   page.append(ui.pageHeader({ title: 'Mi espacio', jp: '自分', romaji: 'jibun', back: '/mas', actions: [ui.newButton('Agregar', () => openEditor())] }));
   const body = el('div', { class: 'stack' }, ui.skeleton(3));
@@ -147,8 +156,27 @@ export async function render() {
       if (filter === 'reminder') return (a.date || '').localeCompare(b.date || '');
       return (b.updatedAt || '').localeCompare(a.updatedAt || '');
     });
-    const chips = el('div', { class: 'chip-row', role: 'group', 'aria-label': 'Mostrar' },
-      [{ id: 'all', short: 'Todo' }, ...KINDS].map((k) => el('button', { class: 'chip', type: 'button', 'aria-pressed': String(filter === k.id), onClick: () => { filter = k.id; saveFilter(k.id); draw(); } }, k.short)));
+    const counts = Object.fromEntries(KINDS.map((k) => [k.id, items.filter((x) => x.kind === k.id).length]));
+    const choose = (id) => { filter = filter === id ? 'all' : id; draw(); };
+    const nextReminder = items.filter((x) => x.kind === 'reminder' && x.date && x.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
+    const buddy = wire(el('span', { class: 'own-desk-pet' }, drawArt('rabbit')), 'rabbit'); // the scene above already has the cat
+    const desk = el('section', { class: 'card paper-card own-desk', 'data-bubble-root': '', 'aria-labelledby': 'own-desk-title' },
+      el('div', { class: 'own-desk-top' },
+        el('div', { class: 'stack-tight' },
+          el('p', { class: 'card-kicker' }, fmtToday.format(util.parseDay(today))),
+          el('h2', { class: 'card-title', id: 'own-desk-title' }, `Tu escritorio, ${profile.nick(me) || profile.name(me)}`),
+          el('p', { class: 'own-desk-line' }, lineOfDay(today))),
+        buddy),
+      nextReminder ? el('p', { class: 'own-desk-note small' }, icon('bell', { size: 14 }), ` ${nextReminder.date === today ? 'Hoy' : fmtShort.format(util.parseDay(nextReminder.date))}: ${nextReminder.title || nextReminder.body || 'Recordatorio'}`) : null);
+    const drawers = el('div', { class: 'own-drawers', role: 'group', 'aria-label': 'Cajones' },
+      [{ id: 'all', short: 'Todo', icon: 'layout-grid' }, ...KINDS].map((k) => {
+        const n = k.id === 'all' ? items.length : counts[k.id];
+        return el('button', { class: 'own-drawer', type: 'button', 'aria-pressed': String(filter === k.id), onClick: () => choose(k.id) },
+          el('span', { class: 'own-drawer-icon', 'aria-hidden': 'true' }, icon(k.icon || 'folder', { size: 20 })),
+          el('span', { class: 'own-drawer-name' }, k.short),
+          el('span', { class: 'own-drawer-count' }, n === 1 ? '1 cosa' : `${n} cosas`));
+      }));
+    const listTitle = el('h2', { class: 'section-title own-list-title' }, filter === 'all' ? 'Todo lo que guardas' : kindOf(filter).label);
     const setColor = async (c) => { await db.put('personal', { ...(prefs || { id: `prefs:${me}` }), kind: 'prefs', color: c.id, owner: me, visibility: 'self', private: true }); draw(); };
     const cards = await Promise.all(shown.map(async (x) => {
       const k = kindOf(x.kind);
@@ -172,15 +200,17 @@ export async function render() {
           el('button', { class: 'btn btn-ghost btn-small', type: 'button', onClick: () => remove(x) }, icon('trash-2', { size: 16 }), el('span', {}, 'Borrar'))));
     }));
     body.replaceChildren(...[
+      desk,
       el('section', { class: `card paper-card own-status ${hasPin ? 'is-safe' : ''}` },
         icon(hasPin ? 'shield-check' : 'eye-off', { size: 22 }),
         el('div', { class: 'stack-tight' },
           el('p', { class: 'own-status-title' }, hasPin ? 'Cifrado con tu PIN personal' : 'Oculto, pero sin cifrar'),
           el('p', { class: 'muted small' }, hasPin ? `Se bloquea al salir. Ni con una copia ${profile.name(profile.partnerOf(me))} puede leerlo.` : `${profile.name(profile.partnerOf(me))} no lo ve en la app, pero sin PIN no queda cifrado en el teléfono.`),
           hasPin ? null : el('div', { class: 'btn-row' }, ui.button({ label: 'Crear mi PIN personal', iconName: 'key-round', small: true, onClick: async () => { await security.createPinDialog({ scope: `person:${me}`, title: 'Tu PIN personal' }); draw(); } })))),
-      chips,
+      drawers,
+      items.length ? listTitle : null,
       shown.length ? el('ul', { class: 'own-list' }, cards)
-        : ui.emptyState({ title: items.length ? 'Nada de este tipo' : 'Tu rincón propio', text: items.length ? 'Prueba con otro filtro.' : 'Un diario secreto, notas, ideas de regalo o una nota para ti del futuro.', art: 'omamori', action: { label: 'Agregar algo', onClick: () => openEditor() } }),
+        : ui.emptyState({ title: items.length ? 'Cajón vacío' : 'Tu rincón propio', text: items.length ? 'Este cajón está vacío por ahora.' : 'Un diario secreto, notas, ideas de regalo o una nota para ti del futuro.', art: 'omamori', action: { label: 'Agregar algo', onClick: () => openEditor() } }),
       el('section', { class: 'own-colors' },
         el('span', { class: 'muted small', id: 'own-color-label' }, 'Tu color'),
         el('div', { class: 'own-swatches', role: 'radiogroup', 'aria-labelledby': 'own-color-label' }, COLORS.map((c) => el('button', {
