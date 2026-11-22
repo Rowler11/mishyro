@@ -4,6 +4,7 @@
 import { ui, util, db, CONFIG } from '../core.js';
 import { GROUPS, listed, asListed } from '../routes.js';
 
+import { draw } from '../core/art.js';
 const { el, icon } = util;
 const FAV_ID = 'homeFavorites';
 const FAV_MAX = 6;
@@ -47,7 +48,8 @@ export function suggestion(day = util.localDay(), skip = 0, seen = visited()) {
 export function quickActions() {
   return el('nav', { class: 'quick-actions', 'aria-label': 'Accesos rápidos' },
     QUICK.map((q) => el('a', { class: 'quick-action', href: q.href },
-      el('span', { class: 'quick-icon', 'aria-hidden': 'true' }, icon(q.icon, { size: 22 })),
+      // Shuriken instead of a circle (chosen 2026-11-22); it spins once when tapped.
+      el('span', { class: 'quick-icon', 'aria-hidden': 'true' }, draw('shuriken'), icon(q.icon, { size: 22 })),
       el('span', { class: 'quick-label' }, q.label))));
 }
 

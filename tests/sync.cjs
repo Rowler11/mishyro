@@ -19,7 +19,7 @@ async function device(browser, who, { seed = true } = {}) {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(m.text()); });
   await page.goto(BASE);
-  await page.getByRole('button', { name: 'Empezar' }).click();
+  await page.getByRole('link', { name: 'Empezar desde cero' }).click();
   await page.getByRole('button', { name: who === 'sofia' ? /Sofía/ : /David/ }).click();
   if (seed) {
     await page.setInputFiles('#seed-file', SEED);
@@ -176,7 +176,7 @@ const waitFor = async (page, src, arg, ms = 8000) => {
     const D = await device(browser, 'david', { seed: false });
     const pairCode = await D.page.evaluate(async () => {
       const sync = await import('./js/core/sync.js');
-      window.__pair = sync.requestPairing();
+      window.__pair = await sync.requestPairing();
       window.__pairDone = window.__pair.wait.then((r) => r);
       return window.__pair.code;
     });
@@ -184,10 +184,24 @@ const waitFor = async (page, src, arg, ms = 8000) => {
     const pr = await D.page.evaluate(() => window.__pairDone);
     ok('unir un PC mostrando su código', pr === 'joined');
     ok('el PC recibe los datos', await waitFor(D.page, "return !!(await db.rawGet('memories', 'mem-b1'));"));
+    // v0.13: the same, typing the 10-letter short code on the linked phone (no camera needed).
+    const E = await device(browser, 'sofia', { seed: false });
+    const short = await E.page.evaluate(async () => {
+      const sync = await import('./js/core/sync.js');
+      window.__pair2 = await sync.requestPairing();
+      window.__pair2Done = window.__pair2.wait.then((r) => r);
+      return window.__pair2.short;
+    });
+    ok('código corto: 10 letras y números legibles', /^[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(short), short);
+    ok('código corto: una letra mal escrita no sirve', !(await mod(A.page, 'return sync.isShortCode(a);', short.replace(/-/, '').slice(0, 9))));
+    await mod(A.page, 'return sync.answerPairing(await sync.parseShort(a), "sofia");', short.toLowerCase().replace('-', ' '));
+    ok('unir un equipo escribiendo el código corto', (await E.page.evaluate(() => window.__pair2Done)) === 'joined');
+    ok('el equipo unido con el código corto es de Sofía', await mod(E.page, 'return sync.status().me === "sofia";'));
+    await E.ctx.close();
 
     // Device list with readable names (decrypted on the device).
     const devs = await mod(A.page, 'return (await sync.refreshDevices()).map((d) => d.name);');
-    ok('lista de equipos con nombres', devs.length === 5 && devs.every((n) => /^(PC|Celular) de \S/.test(n)), devs.join(', ')); // 5: B left once without telling the server
+    ok('lista de equipos con nombres', devs.length === 6 && devs.every((n) => /^(PC|Celular) de \S/.test(n)), devs.join(', ')); // 6: B left once without telling the server
 
     // Remove D from A: D loses access at once.
     const dId = await mod(D.page, 'return sync.status().deviceId;');

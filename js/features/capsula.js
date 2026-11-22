@@ -149,7 +149,7 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
   let busy = 0;
 
   const title = ui.input({ maxlength: 80, autocomplete: 'off', value: pending(m.title) ? '' : m.title || '', autofocus: isNew ? undefined : true });
-  const date = ui.input({ type: 'date', value: util.isValidDay(m.date) ? m.date : '', max: util.localDay() });
+  const date = ui.input({ type: 'date', value: util.isValidDay(m.date) ? m.date : (isNew ? util.localDay() : ''), max: util.localDay() }); // new: today by default (2026-11-22)
   const note = ui.textarea({ maxlength: 2000, rows: 5 });
   note.value = pending(m.note) ? '' : m.note || '';
   const fTitle = ui.field({ label: 'Título', control: title, hint: pending(m.title) && m.title ? 'Este recuerdo vino incompleto en los datos iniciales.' : '' });
@@ -248,8 +248,10 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
 
   const validate = () => {
     let first = null;
+    // With photos and no title, the memory is still saved (2026-11-22: "Subir foto" must be quick).
+    if (!title.value.trim() && photos.length && util.isValidDay(date.value)) title.value = `Fotos del ${util.formatDay(date.value)}`;
     const t = title.value.trim();
-    fTitle.setError(t ? '' : 'Escribe un título.'); if (!t) first = first || title;
+    fTitle.setError(t ? '' : 'Escribe un título o agrega una foto.'); if (!t) first = first || title;
     const d = date.value;
     const dateErr = !d ? 'Elige la fecha del recuerdo.' : !util.isValidDay(d) ? 'Esa fecha no es válida.' : '';
     fDate.setError(dateErr); if (dateErr) first = first || date;

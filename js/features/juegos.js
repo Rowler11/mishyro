@@ -4,6 +4,7 @@
 // Routes: /juegos, /juegos/<game>, /juegos/historial, /juegos/ajustes, /juegos/bancos, /juegos/dibujos.
 import { ui, util, db, profile, CONFIG, seed } from '../core.js';
 import * as K from './juegos-kit.js';
+import { draw } from '../core/art.js';
 
 const { el, icon } = util;
 /** replaceChildren that skips null/false (native replaceChildren would print "null"). */
@@ -51,15 +52,29 @@ export const BANKS = [
 /** Content kind of a bank (the daily words have their own kind, shared with CONFIG.japaneseWords). */
 const kindOf = (bank) => (bank === '__words' ? 'japaneseWord' : `game:${bank}`);
 
-// ---------- room ----------
-function gameTile(g, query = '') {
+// ---------- room ("Arcade de papel", chosen 2026-11-22) ----------
+// An origami fox on top, colored tiles with washi tape for "Para ahora" and every game on shelves
+// by kind (they scroll sideways on a phone). The choice of mood, time and level stays as before.
+const SHELVES = [
+  ['Para reír', ['mimica', 'probable', 'estooaquello', 'yonunca', 'cancion', 'cata']],
+  ['Para competir', ['dibujo', 'memoria', 'trivia', 'recuerdo', 'liga', 'cocina']],
+  ['Tranquilos y juntos', ['ruleta', 'cuentos', 'juntos', 'reto30', 'cine', 'tanabata']],
+  ['Salidas y sorpresas', ['tesoro', 'misteriosa', 'bingo']],
+  ['Japón y manualidades', ['origami', 'kotoba', 'manga', 'postales']],
+];
+const toneOf = (id) => (K.GAME_LIST.findIndex((g) => g.id === id) % 6) + 1;
+function gameTile(g, query = '', { mini = false } = {}) {
   const soon = !g.ready;
-  const inner = [el('span', { class: 'section-icon' }, icon(g.icon, { size: 22 })),
-    el('span', { class: 'game-tile-text' }, el('span', { class: 'game-tile-title' }, g.title), el('span', { class: 'muted small clamp-2' }, g.blurb)),
+  const inner = [
+    mini ? null : el('span', { class: 'game-tape', 'aria-hidden': 'true' }),
+    el('span', { class: 'game-stamp' }, icon(g.icon, { size: mini ? 20 : 22 })),
+    el('span', { class: 'game-tile-text' }, el('span', { class: 'game-tile-title' }, g.title), mini ? null : el('span', { class: 'small clamp-2 game-tile-blurb' }, g.blurb)),
+    mini ? null : el('span', { class: 'game-ghost', 'aria-hidden': 'true' }, icon(g.icon, { size: 72 })),
     soon ? el('span', { class: 'badge soon-pill' }, 'Pronto') : null];
+  const cls = `game-tile tone-${toneOf(g.id)}${mini ? ' is-mini' : ''}`;
   return el('li', {}, soon
-    ? el('div', { class: 'game-tile is-soon', 'aria-disabled': 'true' }, inner)
-    : el('a', { class: 'game-tile', href: `#/juegos/${g.id}${query}` }, inner));
+    ? el('div', { class: `${cls} is-soon`, 'aria-disabled': 'true' }, inner.filter(Boolean))
+    : el('a', { class: cls, href: `#/juegos/${g.id}${query}` }, inner.filter(Boolean)));
 }
 
 async function monthChampion() {
@@ -75,31 +90,44 @@ async function room(page) {
   const c = { mood: 'risas', mins: 15, level: (await K.settings()).level || 'divertido', ...recallChoice() };
   const picks = el('ul', { class: 'game-grid' });
   const q = () => `?min=${c.mins}&nivel=${c.level}`;
+  const summary = el('p', { class: 'game-hero-sub' });
+  const shelves = el('div', { class: 'game-shelves' });
   const paintPicks = () => {
     rememberChoice(c);
     const list = K.GAME_LIST.filter((g) => g.ready && g.moods.includes(c.mood) && g.mins.includes(c.mins));
     const fallback = list.length ? list : K.GAME_LIST.filter((g) => g.ready && g.moods.includes(c.mood));
     put(picks, ...fallback.map((g) => gameTile(g, q())));
-    put(all, ...K.GAME_LIST.map((g) => gameTile(g, q())));
+    const label = (arr, v) => arr.find((o) => String(o.value) === String(v))?.label || v;
+    summary.textContent = `${label(K.MOODS, c.mood)} · ${c.mins} min · castigos ${String(label(K.LEVELS, c.level)).toLowerCase()}`;
+    const seen = new Set(SHELVES.flatMap(([, ids]) => ids));
+    const extra = K.GAME_LIST.filter((g) => !seen.has(g.id)).map((g) => g.id);
+    put(shelves, ...[...SHELVES, ...(extra.length ? [['Más juegos', extra]] : [])].map(([title, ids]) => el('section', { class: 'game-shelf' },
+      el('h3', { class: 'game-shelf-title' }, title, el('span', { class: 'muted small' }, ` · ${ids.length}`)),
+      el('ul', { class: 'game-row' }, ids.map((id) => K.gameById(id)).filter(Boolean).map((g) => gameTile(g, q(), { mini: true }))))));
   };
-  const all = el('ul', { class: 'game-grid' });
   const surprise = ui.button({ label: 'Sorpréndannos', iconName: 'dices', variant: 'primary', onClick: () => {
     const list = K.GAME_LIST.filter((g) => g.ready && g.moods.includes(c.mood));
     const g = list[Math.floor(Math.random() * list.length)];
     if (g) location.hash = `#/juegos/${g.id}${q()}`;
   } });
   const champ = await monthChampion();
-  add(page, 
-    el('section', { class: 'card stack game-picker' },
-      el('h2', { class: 'card-title' }, '¿Qué jugamos?'),
-      ui.field({ label: 'Cómo están', control: ui.segmented({ label: 'Cómo están', value: c.mood, options: K.MOODS, onChange: (v) => { c.mood = v; paintPicks(); } }) }),
-      el('div', { class: 'game-picker-row' },
-        ui.field({ label: 'Cuánto tiempo', control: ui.segmented({ label: 'Cuánto tiempo', value: String(c.mins), options: K.DURATIONS.map((m) => ({ value: String(m), label: `${m} min` })), onChange: (v) => { c.mins = Number(v); paintPicks(); } }) }),
-        ui.field({ label: 'Nivel de los castigos', control: ui.segmented({ label: 'Nivel de los castigos', value: c.level, options: K.LEVELS, onChange: (v) => { c.level = v; paintPicks(); } }) })),
-      el('h3', { class: 'section-title' }, 'Para ahora'), picks,
-      el('div', { class: 'btn-row' }, surprise)),
+  const hero = el('section', { class: 'game-hero', 'aria-labelledby': 'game-hero-title' },
+    el('span', { class: 'game-hero-fox', 'aria-hidden': 'true' }, draw('fox')),
+    el('span', { class: 'game-hero-dice', 'aria-hidden': 'true' }, draw('dice')),
+    el('div', { class: 'game-hero-text' },
+      el('h2', { class: 'game-hero-title', id: 'game-hero-title' }, '¿Qué jugamos?'), summary, surprise));
+  add(page,
+    hero,
     champ.played ? el('p', { class: 'game-champ' }, icon('crown', { size: 18 }), champ.best ? `Va ganando el mes: ${profile.name(champ.best)} (${champ.wins[champ.best]} a ${champ.wins[profile.partnerOf(champ.best)]})` : `Este mes van empatados (${champ.wins[profile.PEOPLE[0]]} a ${champ.wins[profile.PEOPLE[1]]})`) : null,
-    el('section', { class: 'stack' }, el('h2', { class: 'section-title' }, 'Todos los juegos'), all));
+    el('details', { class: 'card game-picker' },
+      el('summary', { class: 'game-picker-summary' }, icon('sliders-horizontal', { size: 18 }), el('span', {}, 'Cómo están, tiempo y castigos')),
+      el('div', { class: 'stack game-picker-body' },
+        ui.field({ label: 'Cómo están', control: ui.segmented({ label: 'Cómo están', value: c.mood, options: K.MOODS, onChange: (v) => { c.mood = v; paintPicks(); } }) }),
+        el('div', { class: 'game-picker-row' },
+          ui.field({ label: 'Cuánto tiempo', control: ui.segmented({ label: 'Cuánto tiempo', value: String(c.mins), options: K.DURATIONS.map((m) => ({ value: String(m), label: `${m} min` })), onChange: (v) => { c.mins = Number(v); paintPicks(); } }) }),
+          ui.field({ label: 'Nivel de los castigos', control: ui.segmented({ label: 'Nivel de los castigos', value: c.level, options: K.LEVELS, onChange: (v) => { c.level = v; paintPicks(); } }) })))),
+    el('section', { class: 'stack' }, el('h2', { class: 'section-title' }, 'Para ahora'), picks),
+    el('section', { class: 'stack' }, el('h2', { class: 'section-title' }, 'Todos los juegos'), shelves));
   paintPicks();
 }
 

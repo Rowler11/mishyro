@@ -123,27 +123,39 @@ function loadJsQR() {
 }
 
 // ---------- pairing flows ----------
-/** A device that is not linked joins: scan the code of a linked one, or show its own code. */
-function joinFlow({ onJoined } = {}) {
-  let pairing = null;
-  const body = el('div', { class: 'stack' });
-  const m = ui.openModal({ title: 'Unir este equipo', size: 'sm', body, onClose: () => pairing?.cancel() });
-  const ok = async (result) => {
-    m.close();
-    ui.toast(result === 'keys' ? 'Listo: ahora lo tuyo de "Solo yo" también llega aquí.' : 'Equipo unido. Estamos trayendo todo…', { tone: 'success' });
+// Joining (2026-11-22): the new device shows its QR and a short code right away; a linked device scans
+// it or types the letters (Ajustes > Tus datos > Sincronización > Unir otro equipo). Scanning the
+// other way round stays as a second option.
+const SYNC_PATH = 'Más > Ajustes > Tus datos > Sincronización > Unir otro equipo';
+function joinPanel({ onJoined } = {}) {
+  let pairing = null; let alive = true;
+  const box = el('div', { class: 'stack join-panel' });
+  const ok = (result) => {
+    alive = false;
+    ui.toast(result === 'keys' ? 'Listo: ahora lo tuyo de "Solo yo" también llega aquí.' : '¡Unido! Estamos trayendo todo…', { tone: 'success' });
     util.haptic([10, 40, 10]);
     onJoined?.(result);
   };
   const showCode = async () => {
-    pairing = sync.requestPairing();
-    put(body, ui.skeleton(2));
-    const qr = await qrNode(pairing.code, 'Código para unir este equipo');
-    put(body,
-      muted('En un equipo que ya está unido, abre Ajustes > Sincronización > Unir otro equipo y escanea este código.'),
+    pairing?.cancel();
+    put(box, ui.skeleton(2));
+    pairing = await sync.requestPairing();
+    if (!alive) { pairing.cancel(); return; }
+    const qr = await qrNode(pairing.code, 'Código QR para unir este equipo');
+    put(box,
+      el('ol', { class: 'join-steps' },
+        el('li', {}, 'Abre Aishiteru en el teléfono que ya la tiene.'),
+        el('li', {}, `Ve a ${SYNC_PATH}.`),
+        el('li', {}, 'Escanea este código o escribe las letras.')),
       qr,
-      el('p', { class: 'muted small center', 'aria-live': 'polite' }, 'Esperando al otro equipo… El código vence en 10 minutos.'));
-    try { const r = await pairing.wait; if (r) ok(r); } catch (e) {
-      put(body, el('p', { class: 'error-text', role: 'alert' }, e.message), btnRow(ui.button({ label: 'Generar otro código', iconName: 'repeat', onClick: showCode })));
+      el('p', { class: 'short-code', 'aria-label': `Código: ${pairing.short.split('').join(' ')}` }, pairing.short),
+      el('p', { class: 'muted small center', 'aria-live': 'polite' }, icon('loader', { size: 14, cls: 'spin' }), ' Esperando al otro equipo… vence en 10 minutos.'),
+      canScan() ? el('details', { class: 'join-alt' }, el('summary', {}, 'Mejor escaneo yo el código del otro equipo'),
+        el('div', { class: 'stack' }, muted('En el otro equipo, en "Unir otro equipo", elige "Mostrar un código aquí".', true),
+          ui.button({ label: 'Abrir la cámara', iconName: 'camera', onClick: scan }))) : null);
+    try { const r = await pairing.wait; if (r && alive) ok(r); } catch (e) {
+      if (!alive) return;
+      put(box, el('p', { class: 'error-text', role: 'alert' }, e.message), btnRow(ui.button({ label: 'Generar otro código', iconName: 'repeat', variant: 'primary', onClick: showCode })));
     }
   };
   const scan = async () => {
@@ -151,15 +163,19 @@ function joinFlow({ onJoined } = {}) {
     if (!text) return;
     const code = sync.parseCode(text);
     if (!code || code.type !== 'space') { ui.toast(code?.type === 'pair' ? 'Ese código es para escanearlo desde un equipo ya unido.' : 'Ese código no es de Aishiteru.', { tone: 'error' }); return; }
-    put(body, ui.skeleton(2), muted('Uniendo…', true));
-    try { ok(await sync.joinWithCode(code)); } catch (e) { put(body, el('p', { class: 'error-text', role: 'alert' }, e.message)); }
+    pairing?.cancel();
+    put(box, ui.skeleton(2), muted('Uniendo…', true));
+    try { ok(await sync.joinWithCode(code)); } catch (e) { put(box, el('p', { class: 'error-text', role: 'alert' }, e.message), btnRow(ui.button({ label: 'Volver a intentar', iconName: 'repeat', onClick: showCode }))); }
   };
-  put(body,
-    muted('Necesitas otro equipo que ya tenga la app unida. Elige cómo:'),
-    el('div', { class: 'stack' },
-      canScan() ? ui.button({ label: 'Escanear el código del otro equipo', iconName: 'camera', variant: 'primary', onClick: scan }) : null,
-      ui.button({ label: 'Mostrar un código aquí', iconName: 'smartphone', variant: canScan() ? 'secondary' : 'primary', onClick: showCode })),
-    muted('En el PC lo más fácil es "Mostrar un código aquí" y escanearlo con el celular.', true));
+  showCode();
+  return { node: box, cleanup: () => { alive = false; pairing?.cancel(); } };
+}
+
+/** A device that is not linked joins (modal from Ajustes > Sincronización). */
+function joinFlow({ onJoined } = {}) {
+  let m = null;
+  const panel = joinPanel({ onJoined: (r) => { m?.close(); onJoined?.(r); } });
+  m = ui.openModal({ title: 'Unir este equipo', size: 'sm', body: panel.node, onClose: panel.cleanup });
 }
 
 /** A linked device adds another one (mine or my partner's). */
@@ -175,32 +191,48 @@ function addFlow({ onDone } = {}) {
         ? 'Será tuyo: también le llega lo tuyo de "Solo yo".'
         : `Será de ${profile.name(partner)}: le llega todo lo compartido y el Rincón, nunca lo tuyo de "Solo yo".`, true),
       el('div', { class: 'stack' },
-        ui.button({ label: 'Mostrar un código aquí', iconName: 'smartphone', variant: 'primary', onClick: show }),
-        canScan() ? ui.button({ label: 'Escanear el código del equipo nuevo', iconName: 'camera', onClick: scan }) : null),
-      muted('Si el equipo nuevo es un PC, que muestre su código y escanéalo desde aquí.', true));
+        canScan() ? ui.button({ label: 'Escanear el código del equipo nuevo', iconName: 'camera', variant: 'primary', onClick: scan }) : null,
+        ui.button({ label: 'Escribir las letras del código', iconName: 'keyboard', variant: canScan() ? 'secondary' : 'primary', onClick: typeCode }),
+        ui.button({ label: 'Mostrar un código aquí', iconName: 'smartphone', variant: 'ghost', onClick: show })),
+      muted('El equipo nuevo muestra su QR y unas letras apenas abre la app, en "Unir este equipo".', true));
   };
   const show = async () => {
     put(body, ui.skeleton(2));
     try {
       const code = await sync.makeInvite(forPerson);
       put(body,
-        muted('En el equipo nuevo: Ajustes > Sincronización > Unir este equipo > Escanear el código. Durante la configuración inicial, en "Sus datos", toca "Traerlos de otro equipo".'),
+        muted('En el equipo nuevo: al abrir la app, "Unir este equipo" > "Mejor escaneo yo el código del otro equipo".'),
         await qrNode(code, 'Código para unir el equipo nuevo'),
         el('p', { class: 'muted small center' }, 'Sirve una sola vez y vence en 10 minutos. No le saques foto ni lo compartas: abre todo lo de los dos.'),
         btnRow(ui.button({ label: 'Listo', variant: 'primary', onClick: () => { m.close(); onDone?.(); } })));
     } catch (e) { put(body, el('p', { class: 'error-text', role: 'alert' }, e.code === 'REMOVED' ? 'Este equipo ya no está unido.' : 'No se pudo crear el código. Revisa la conexión.')); }
   };
-  const scan = async () => {
-    const text = await scanQR({ hint: 'Es el código que muestra el equipo nuevo en "Mostrar un código aquí".' });
-    if (!text) return;
-    const code = sync.parseCode(text);
-    if (!code || code.type !== 'pair') { ui.toast('Ese código no sirve aquí. Escanea el que muestra el equipo nuevo.', { tone: 'error' }); return; }
+  const answer = async (code) => {
     put(body, ui.skeleton(2));
     try {
       await sync.answerPairing(code, forPerson);
       put(body, el('p', { class: 'lead center' }, 'Listo. El otro equipo se está uniendo.'), btnRow(ui.button({ label: 'Cerrar', variant: 'primary', onClick: () => { m.close(); onDone?.(); } })));
       setTimeout(() => sync.refreshDevices().then(() => onDone?.()).catch(() => {}), 4000);
-    } catch { put(body, el('p', { class: 'error-text', role: 'alert' }, 'No se pudo enviar. El código pudo vencer: genera otro en el equipo nuevo.')); }
+    } catch { put(body, el('p', { class: 'error-text', role: 'alert' }, 'No se pudo enviar. El código pudo vencer o ya se usó: genera otro en el equipo nuevo.'), btnRow(ui.button({ label: 'Volver', variant: 'ghost', onClick: step2 }))); }
+  };
+  const scan = async () => {
+    const text = await scanQR({ hint: 'Es el código que muestra el equipo nuevo al tocar "Unir este equipo".' });
+    if (!text) return;
+    const code = sync.parseCode(text);
+    if (!code || code.type !== 'pair') { ui.toast('Ese código no sirve aquí. Escanea el que muestra el equipo nuevo.', { tone: 'error' }); return; }
+    answer(code);
+  };
+  const typeCode = () => {
+    const input = ui.input({ autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', maxlength: '13', placeholder: 'ABCDE-FGHJK', class: 'input short-code-input', inputmode: 'text' });
+    const f = ui.field({ label: 'Las letras que muestra el equipo nuevo', control: input, hint: '10 letras y números. Los guiones y espacios no importan.' });
+    const go = ui.button({ label: 'Unir', iconName: 'check', variant: 'primary', onClick: async () => {
+      if (!sync.isShortCode(input.value)) { f.setError('Revisa el código: son 10 letras y números, sin O, I ni L.'); return; }
+      f.setError(''); busy(go, 'Comprobando…');
+      answer(await sync.parseShort(input.value));
+    } });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go.click(); });
+    put(body, f, btnRow(ui.button({ label: 'Volver', variant: 'ghost', onClick: step2 }), go));
+    requestAnimationFrame(() => input.focus());
   };
   put(body,
     el('p', {}, '¿De quién es el equipo nuevo?'),
@@ -377,27 +409,34 @@ function renameDialog(current, onDone) {
 }
 
 // ---------- #/unir (from the first-open setup) ----------
+// Sofía's phone, a PC or a new phone: only the QR and the short code, nothing about creating a profile.
+// Who the device belongs to comes inside the code. A reinstall can also come back with the fingerprint
+// or the 12 words, folded below.
+export const isDesktop = () => matchMedia('(pointer: fine)').matches && !matchMedia('(pointer: coarse)').matches && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 function joinLayer() {
-  const root = el('section', { class: 'layer setup' });
+  const root = el('section', { class: 'layer setup join-layer' });
+  const desktop = isDesktop();
   const back = () => router.go('/setup', { replace: true });
+  // Joined: the person comes from the code, so it goes straight to the optional PIN (no "who", no file, no review).
   const finish = async () => {
-    await db.setMeta({ setupStep: 4 });
+    await db.setMeta({ setupStep: 5, joinedAt: util.nowISO() });
+    await profile.load().catch(() => {});
     router.go('/setup', { replace: true });
   };
   const msg = el('p', { class: 'error-text', role: 'alert' });
   const fail = (e) => { msg.textContent = e?.message || 'No se pudo. Intenta otra vez.'; };
   const joined = (r) => { ui.toast('¡Bienvenido de vuelta! Estamos trayendo todo…', { tone: 'success' }); util.haptic([10, 40, 10]); if (r) finish(); };
-  // 1. Fingerprint (passkey saved in the phone's password manager)
-  const finger = rescue.passkeySupported() ? ui.button({ label: 'Entrar con mi huella', iconName: 'fingerprint', variant: 'primary', onClick: async () => {
+  const panel = joinPanel({ onJoined: finish });
+  // Reinstall: fingerprint (passkey in the phone's password manager) or the 12 words.
+  const finger = rescue.passkeySupported() ? ui.button({ label: 'Entrar con mi huella', iconName: 'fingerprint', variant: 'secondary', onClick: async () => {
     msg.textContent = '';
     const done = busy(finger, 'Buscando tu respaldo…');
     try {
       const secret = await rescue.passkeySecret();
       if (!secret) throw new Error('Este teléfono no pudo usar la huella para abrir el respaldo. Usa tus 12 palabras.');
-      joined(await rescue.restore({ passkey: secret }));
+      panel.cleanup(); joined(await rescue.restore({ passkey: secret }));
     } catch (e) { done(); fail(e.name === 'NotAllowedError' ? new Error('No se usó la huella. Puedes intentar otra vez o usar tus 12 palabras.') : e); }
   } }) : null;
-  // 2. The 12 words
   const words = ui.textarea({ rows: 3, autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', placeholder: 'palabra1 palabra2 palabra3 …' });
   const fWords = ui.field({ label: 'Mis 12 palabras', control: words, hint: 'En orden, separadas por espacios. Las tildes no importan.' });
   const go = ui.button({ label: 'Entrar con mis palabras', iconName: 'key-round', onClick: async () => {
@@ -406,19 +445,19 @@ function joinLayer() {
     if (!c.ok) { fWords.setError(c.count !== 12 ? `Son 12 palabras; escribiste ${c.count}.` : c.bad.length ? `No reconozco la palabra ${c.bad.map((i) => i + 1).join(', ')}. Revísala.` : 'Las palabras no coinciden entre sí. Revisa el orden.'); return; }
     fWords.setError('');
     const done = busy(go, 'Buscando tu respaldo…');
-    try { joined(await rescue.restore({ phrase: c.words })); } catch (e) { done(); fail(e); }
+    try { panel.cleanup(); joined(await rescue.restore({ phrase: c.words })); } catch (e) { done(); fail(e); }
   } });
   root.append(el('div', { class: 'layer-card' },
-    el('div', { class: 'layer-top' }, el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Volver', onClick: back }, icon('arrow-left'))),
+    el('div', { class: 'layer-top' }, desktop ? el('span', { class: 'icon-btn-space' }) : el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Volver', onClick: back }, icon('arrow-left'))),
     el('div', { class: 'layer-body view-enter stack' },
-      el('h1', { class: 'layer-title', tabindex: '-1' }, 'Ya tenemos Aishiteru'),
-      el('p', { class: 'muted' }, 'Entra como antes y llega todo: nombres, fechas, recuerdos, fotos, cartas y lo tuyo de "Solo yo". No necesitas ningún archivo.'),
-      finger, el('div', { class: 'divider-text' }, el('span', {}, 'o')),
-      fWords, go, msg,
-      el('div', { class: 'divider-text' }, el('span', {}, 'o')),
-      muted('¿No activaste la huella ni la frase? Une este teléfono con el código de otro equipo que ya tenga la app.', true),
-      btnRow(ui.button({ label: 'Usar el código de otro equipo', iconName: 'smartphone', variant: 'ghost', onClick: () => joinFlow({ onJoined: finish }) })))));
-  return root;
+      desktop ? ui.logo({ size: 72, label: 'Logo de Aishiteru: flor de sakura con corazón' }) : null,
+      el('h1', { class: 'layer-title', tabindex: '-1' }, 'Unir este equipo'),
+      el('p', { class: 'muted' }, 'Todo llega del otro teléfono, cifrado: nombres, fechas, recuerdos, fotos y cartas. No necesitas ningún archivo.'),
+      panel.node,
+      el('details', { class: 'card join-rescue' }, el('summary', { class: 'card-title' }, '¿Reinstalaste la app? Entra con tu huella o tus 12 palabras'),
+        el('div', { class: 'stack' }, finger, fWords, go, msg)),
+      desktop ? el('p', { class: 'muted small center' }, '¿Es el primer equipo de los dos? ', el('a', { href: '#/setup', onClick: async (e) => { e.preventDefault(); panel.cleanup(); await db.setMeta({ setupStep: 2, startFresh: true }); router.go('/setup', { replace: true }); } }, 'Empezar desde cero')) : null)));
+  return { node: root, cleanup: panel.cleanup };
 }
 
 // ---------- recovery card (Ajustes > Tus datos > Sincronización) ----------

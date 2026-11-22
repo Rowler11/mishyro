@@ -20,7 +20,7 @@ const OPENED = [['/juegos/tesoro', 'Armar una búsqueda'], ['/juegos/misteriosa'
 
 async function setup(page) {
   await page.goto(BASE);
-  await page.getByRole('button', { name: 'Empezar' }).click();
+  await page.getByText('Empezar desde cero').first().click();
   await page.getByRole('button', { name: /Sofía/ }).click();
   await page.setInputFiles('#seed-file', SEED);
   await page.getByRole('button', { name: 'Importar' }).click();

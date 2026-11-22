@@ -666,8 +666,30 @@ async function afterJoin() {
  * A new device that cannot scan (a PC) shows its own code; an already linked device scans it
  * and answers through a one-time mailbox, encrypted with the secret that only the QR carries.
  */
-export function requestPairing() {
-  const pairId = rand(16); const secret = rand(32);
+// Short code (2026-11-22): besides the QR, the new device shows 10 letters and numbers that can be typed
+// on a linked device (a PC without a camera, a QR that does not scan). Both the mailbox id and its key
+// come from those letters with PBKDF2, so the server only ever sees an id and a sealed box, once.
+const SHORT_ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O, 1/I/L: easy to read aloud
+export const normShort = (t) => String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+export const isShortCode = (t) => { const n = normShort(t); return n.length === 10 && [...n].every((c) => SHORT_ALPHA.includes(c)); };
+export const formatShort = (t) => { const n = normShort(t); return `${n.slice(0, 5)}-${n.slice(5)}`; };
+function newShort() {
+  let out = '';
+  while (out.length < 10) { for (const b of rand(16)) { if (b < 248 && out.length < 10) out += SHORT_ALPHA[b % 31]; } }
+  return out;
+}
+async function shortPair(code) {
+  const base = await crypto.subtle.importKey('raw', te.encode(normShort(code)), 'PBKDF2', false, ['deriveBits']);
+  const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: te.encode('aishiteru-pair-v1'), iterations: 300000 }, base, 384));
+  return { type: 'pair', pairId: b64u(bits.slice(0, 16)), secret: bits.slice(16, 48) };
+}
+/** A typed short code -> the same pairing request the QR carries. */
+export const parseShort = (text) => (isShortCode(text) ? shortPair(text) : Promise.resolve(null));
+
+export async function requestPairing() {
+  const short = newShort();
+  const req = await shortPair(short);
+  const pairId = fromB64u(req.pairId); const { secret } = req;
   const code = CODE_PAIR + b64u(concat(pairId, secret));
   let stop = false;
   const wait = (async () => {
@@ -686,7 +708,7 @@ export function requestPairing() {
     if (!stop) throw new Error('El código venció. Genera uno nuevo.');
     return null;
   })();
-  return { code, wait, cancel: () => { stop = true; } };
+  return { code, short: formatShort(short), wait, cancel: () => { stop = true; } };
 }
 export async function answerPairing(req, forPerson) {
   const text = await makeInvite(forPerson);
