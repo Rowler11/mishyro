@@ -94,8 +94,8 @@ function wizard({ app }) {
       out.replaceChildren(el('div', { class: 'card note-card' },
         el('p', { class: 'card-kicker' }, 'Listo para importar'),
         el('ul', { class: 'counts' },
-          el('li', {}, plural(c.reasons, 'razón', 'razones')), el('li', {}, plural(c.coupons, 'cupón', 'cupones')), el('li', {}, plural(c.letters, 'carta', 'cartas')),
-          el('li', {}, plural(c.memories, 'recuerdo', 'recuerdos')), el('li', {}, plural(c.specialDates, 'fecha especial', 'fechas especiales')), el('li', {}, plural(c.pets, 'mascota', 'mascotas'))),
+          el('li', {}, 'Nombres y apodos'), el('li', {}, plural(c.specialDates, 'fecha especial', 'fechas especiales')), el('li', {}, plural(c.pets, 'mascota', 'mascotas'))),
+        el('p', { class: 'muted small' }, 'Cartas, cupones y recuerdos empiezan vacíos: los escriben ustedes en la app.'),
         ui.button({ label: 'Importar', variant: 'primary', iconName: 'check', onClick: async () => {
           await seed.applySeed(obj); await profile.load();
           ui.toast('Datos iniciales importados.', { tone: 'success' });
@@ -170,10 +170,6 @@ function wizard({ app }) {
     const people = (await db.rawGet('profile', 'people')) || {};
     const rel = (await db.rawGet('profile', 'relationship')) || {};
     const pets = (await db.query('pets'));
-    const content = await db.rawAll('content');
-    const count = (kind) => content.filter((c) => c.kind === kind && !c.deleted).length;
-    const memories = await db.query('memories');
-    const pending = [...content.filter((c) => c.origin === 'seed'), ...memories].filter((r) => Object.values(r).some((v) => typeof v === 'string' && seed.needsCompletion(v))).length;
     const missing = (v) => (v ? v : el('span', { class: 'pending' }, 'por completar'));
     const day = (s) => (s ? util.formatDay(s.slice(0, 10)) : '');
     const partialDay = (p) => (p?.m ? `${p.d} de ${['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][p.m - 1]}${p.y ? ` de ${p.y}` : ''}` : '');
@@ -188,9 +184,6 @@ function wizard({ app }) {
       el('div', { class: 'card' }, el('h2', { class: 'card-title' }, 'Relación'), el('dl', { class: 'facts' }, row('Empezamos el', missing(day(rel.startDate))))),
       el('div', { class: 'card' }, el('h2', { class: 'card-title' }, 'Mascotas'),
         pets.length ? el('ul', { class: 'plain' }, pets.map((p) => el('li', {}, `${p.name}${p.breed ? `, ${p.breed}` : ''}${p.birth?.m ? ` · nació el ${partialDay(p.birth)}` : ''}`))) : el('p', { class: 'muted' }, 'Ninguna por ahora.')),
-      el('div', { class: 'card' }, el('h2', { class: 'card-title' }, 'Textos'),
-        el('p', {}, `${plural(count('reason'), 'razón', 'razones')}, ${plural(count('coupon'), 'cupón', 'cupones')}, ${plural(count('letter'), 'carta', 'cartas')} y ${plural(memories.length, 'recuerdo', 'recuerdos')}.`),
-        pending ? el('p', { class: 'muted small' }, `${pending === 1 ? '1 texto todavía tiene' : `${pending} textos todavía tienen`} partes por completar. Se pueden terminar en Perfil y datos.`) : null),
       el('p', { class: 'muted small' }, 'Todo esto se puede cambiar después en Ajustes > Perfil y datos.')),
     [ui.button({ label: 'Corregir a mano', variant: 'ghost', onClick: () => { step = 3; manual(); } }), ui.button({ label: 'Todo bien', variant: 'primary', onClick: () => go(5) })]);
   }
