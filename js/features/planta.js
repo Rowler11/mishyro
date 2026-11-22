@@ -82,16 +82,42 @@ const SLOTS = (() => {
   return out.map((o) => ({ o, k: Math.abs(o.x - 160) / 160 + (1 - o.s) * 1.4 + rnd() * 0.7 })).sort((a, b) => a.k - b.k).map((x) => x.o);
 })();
 
+// Scenery (v0.14.0, "más bonito"): sky with sun or moon and stars, Mount Fuji, drifting clouds, a stone
+// lantern that lights up at night, grass tufts, and some life that comes with the flowers: butterflies
+// by day, fireflies by night and sakura petals once a sakura has bloomed. Colors live in styles.css
+// (.g-*) so the night theme can repaint them; the motion stops with "Reducir movimiento".
+const SCENERY = `
+  <g class="g-stars">${[[24, 12], [70, 8], [112, 20], [150, 10], [196, 16], [262, 8], [300, 22], [92, 34], [134, 40]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${i % 3 ? 0.8 : 1.2}"/>`).join('')}</g>
+  <g class="g-sun"><circle cx="54" cy="28" r="13" class="g-sun-halo"/><circle cx="54" cy="28" r="8.5" class="g-sun-disc"/><circle cx="57.5" cy="25.5" r="7" class="g-moon-cut"/></g>
+  <g class="g-cloud g-cloud-1"><ellipse cx="120" cy="22" rx="16" ry="5.5"/><ellipse cx="111" cy="19" rx="8" ry="6"/><ellipse cx="126" cy="17" rx="9" ry="6.5"/></g>
+  <g class="g-cloud g-cloud-2"><ellipse cx="262" cy="36" rx="13" ry="4.5"/><ellipse cx="256" cy="33" rx="7" ry="5"/><ellipse cx="268" cy="32" rx="7.5" ry="5"/></g>
+  <path class="g-fuji" d="M168 66 C196 50 214 34 228 25 C232 22 238 22 242 25 C256 34 274 50 304 66Z"/>
+  <path class="g-snow" d="M228 25 C232 22 238 22 242 25 C246 28 250 31 253 34 L247 32 L243 36 L238 31 L233 36 L229 32 L221 35 C224 31 226 28 228 25Z"/>
+  <path class="g-hill-far" d="M0 72 C40 60 90 64 130 66 C180 68 240 58 320 62 V150 H0Z"/>
+  <path class="g-hill-near" d="M0 102 C70 92 140 100 200 95 C250 91 290 97 320 93 V150 H0Z"/>
+  <g class="g-tufts">${[[10, 108], [64, 100], [122, 104], [176, 99], [236, 101], [290, 104], [36, 146], [150, 148], [262, 147]].map(([x, y]) => `<path d="M${x} ${y} l-2 -5 M${x} ${y} l0 -6 M${x} ${y} l2.4 -4.6"/>`).join('')}</g>
+  <g class="g-lantern" transform="translate(16 78)">
+    <ellipse cx="7" cy="24" rx="9" ry="2.2" class="g-shadow"/>
+    <rect x="3" y="18" width="8" height="6" rx="1" class="g-stone"/><rect x="5.2" y="10" width="3.6" height="8" class="g-stone"/>
+    <rect x="1.5" y="3.5" width="11" height="7" rx="1.2" class="g-stone"/><rect x="4.4" y="5" width="5.2" height="4" rx=".8" class="g-light"/>
+    <path d="M-2 4 L7 -2 L16 4 Z" class="g-stone-dark"/><circle cx="7" cy="-3" r="1.4" class="g-stone-dark"/>
+  </g>
+  <ellipse cx="292" cy="140" rx="9" ry="4" class="g-rock"/><ellipse cx="300" cy="137" rx="5" ry="3" class="g-rock"/>`;
+const BUTTERFLY = (x, y, c, k) => `<g class="g-fly g-fly-${k}" transform="translate(${x} ${y})"><g class="g-wings"><path d="M0 0 C-6 -7 -9 -2 -5 2 C-7 5 -2 6 0 1Z" fill="${c}"/><path d="M0 0 C6 -7 9 -2 5 2 C7 5 2 6 0 1Z" fill="${c}"/></g><path d="M0 -2 V3" stroke="#5A4A40" stroke-width=".9"/></g>`;
+const FIREFLIES = `<g class="g-fireflies">${[[60, 84], [140, 72], [210, 88], [270, 76], [104, 96]].map(([x, y], i) => `<circle class="g-ff g-ff-${i}" cx="${x}" cy="${y}" r="1.6"/>`).join('')}</g>`;
+const PETALS = `<g class="g-petals">${[[90, -6], [180, -10], [250, -4], [40, -14]].map(([x, y], i) => `<ellipse class="g-petal g-petal-${i}" cx="${x}" cy="${y}" rx="2" ry="1.2"/>`).join('')}</g>`;
+
 /** The garden bed with its flowers (the newest 56 when there are more). */
 export function gardenSvg(list, freshKey) {
   const t = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   t.setAttribute('viewBox', '0 0 320 150'); t.setAttribute('class', 'garden-art'); t.setAttribute('aria-hidden', 'true');
   const shown = list.slice(-SLOTS.length);
   const placed = shown.map((f, i) => ({ ...SLOTS[i], f })).sort((a, b) => a.y - b.y);
-  const ground = '<path d="M0 70 C60 58 120 66 170 60 C230 54 280 62 320 58 V150 H0Z" fill="#D6E8BE"/><path d="M0 104 C70 94 140 102 200 96 C250 92 290 98 320 94 V150 H0Z" fill="#C4DDA6"/>'
-    + '<ellipse cx="292" cy="140" rx="9" ry="4" fill="#B8AFA6"/><ellipse cx="40" cy="128" rx="6" ry="3" fill="#C9C1B8"/>';
-  const empty = shown.length ? '' : '<path d="M150 118 q4 -8 10 -9" stroke="#8DBF6A" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="156" cy="120" rx="8" ry="3" fill="#8A5A3C" opacity=".5"/>';
-  t.innerHTML = ground + empty + placed.map(({ x, y, s, f }) => flowerSvg(f.kind, x, y, s, f.key === freshKey ? ' is-new' : '')).join('');
+  const empty = shown.length ? '' : '<path d="M150 118 q4 -8 10 -9" stroke="#8DBF6A" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="156" cy="120" rx="8" ry="3" class="g-shadow"/>';
+  const shadows = placed.map(({ x, y, s }) => `<ellipse class="g-shadow" cx="${x.toFixed(1)}" cy="${(y + 1).toFixed(1)}" rx="${(5 * s).toFixed(1)}" ry="${(1.4 * s).toFixed(1)}"/>`).join('');
+  const life = (shown.length >= 5 ? BUTTERFLY(110, 70, '#F7B6C8', 1) : '') + (shown.length >= 15 ? BUTTERFLY(230, 64, '#F5C33B', 2) : '') + (shown.length >= 30 ? BUTTERFLY(170, 80, '#A9C4F0', 3) : '');
+  const petals = shown.some((f) => f.kind === 'sakura') ? PETALS : '';
+  t.innerHTML = SCENERY + empty + shadows + placed.map(({ x, y, s, f }) => flowerSvg(f.kind, x, y, s, f.key === freshKey ? ' is-new' : '')).join('') + petals + life + FIREFLIES;
   return t;
 }
 
