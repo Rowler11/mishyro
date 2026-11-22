@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.12.0 (más vida en Inicio)
+
+Nuevo
+- Inicio tiene hojas que caen siempre, pocas y detrás de las tarjetas, así nunca tapan el texto. Cambian con la estación: momiji en otoño, nieve en invierno, sakura en primavera y luciérnagas en verano.
+- De noche (tema Sakura suave): luciérnagas y dos chōchin de papel que suben despacio.
+- Una ramita en la esquina de Inicio se mece con el viento; si la tocas, se sacude y suelta unas hojas más. De noche son dos chōchin colgados que sueltan luciérnagas.
+- Al deslizar Inicio, las hojas se dejan llevar un poco, como si corriera aire.
+- El título japonés de cada pantalla aparece pintado a pincel, con una pincelada corta debajo.
+- Cuando algo tarda en cargar (pantallas, fotos), se dibuja un ensō en vez del círculo que gira.
+- Todo se apaga con "Reducir movimiento" o en Apariencia → "Hojas de Inicio", y se pausa cuando la app queda en segundo plano.
+
 ## 0.11.0 (menos secciones, Inicio con accesos y entrar sin perder nada)
 
 Nuevo
