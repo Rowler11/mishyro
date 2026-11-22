@@ -143,7 +143,15 @@ function legal() {
     el('span', { class: 'list-icon' }, icon('file-text')),
     el('span', { class: 'list-text' }, el('span', { class: 'list-title' }, d.title), el('span', { class: 'list-sub' }, d.summary)),
     icon('chevron-right', { cls: 'list-chevron' })))));
-  return el('section', { class: 'page' }, ui.pageHeader({ title: 'Legal y ayuda', back: '/ajustes' }), list,
+  // v0.14.0: the guide's hints and the "Primeros pasos" card can come back from here.
+  const guide = el('section', { class: 'card stack-tight' },
+    el('h2', { class: 'card-title' }, 'Guía de la app'),
+    el('p', { class: 'muted small' }, 'Vuelve a mostrar la pista corta de cada sección y la tarjeta "Primeros pasos" en Inicio.'),
+    el('div', { class: 'btn-row' }, ui.button({ label: 'Ver la guía otra vez', iconName: 'lightbulb', small: true, onClick: async () => {
+      const g = await import('./guia.js'); g.resetHints(); await db.setSettings('guideHidden', { hidden: false });
+      ui.toast('Listo: las pistas vuelven a salir.', { tone: 'success' });
+    } })));
+  return el('section', { class: 'page' }, ui.pageHeader({ title: 'Legal y ayuda', back: '/ajustes' }), guide, list,
     el('p', { class: 'muted small' }, CONFIG.legalFooter));
 }
 

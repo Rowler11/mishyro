@@ -4,6 +4,7 @@ import { CONFIG, db, router, theme, ui, security, seed, profile, util, cryptoBox
 import { TABS, GROUPS, HIDDEN, SETTINGS_PAGES, HUBS } from './routes.js';
 import { scene as sceneFor } from './core/scene.js';
 import { bouquet } from './core/art.js';
+import * as guia from './features/guia.js';
 
 const { el, icon, ja } = util;
 
@@ -242,6 +243,7 @@ async function render(route) {
   clearTimeout(skeleton);
   addHubTabs(node, route);
   addScene(node, route);
+  addHint(node, route);
   const swapped = swapView(main, node);
   // Focus the new view's search box or title once it is in place.
   if (!app.firstRender) swapped.then(() => requestAnimationFrame(() => (main.querySelector('[data-autofocus]') || main.querySelector('h1') || main).focus({ preventScroll: true })));
@@ -256,6 +258,13 @@ function addScene(node, route) {
   if (!head || node.querySelector('.paper-scene')) return;
   const band = sceneFor?.(route.path.slice(1));
   if (band) (node.querySelector(':scope > .hub-tabs') || head).after(band);
+}
+
+/** First-visit hint (v0.14.0): one short line on what the section is for, until "Entendido". */
+function addHint(node, route) {
+  const head = node?.querySelector?.(':scope > .page-head');
+  const hint = head && guia?.hintFor(route.path.slice(1));
+  if (hint) (node.querySelector(':scope > .paper-scene') || node.querySelector(':scope > .hub-tabs') || head).after(hint);
 }
 
 /** Joined sections (2026-11-21): the same tab strip on top of every tab of a hub. Tabs replace each other in history. */

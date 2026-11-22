@@ -25,6 +25,7 @@ const SHELL = [
   './js/core/util.js',
   './js/core/art.js',
   './js/core/scene.js',
+  './js/features/guia.js',
   './js/core/fx.js',
   './js/core/sync.js',
   './js/features/sync.js',
