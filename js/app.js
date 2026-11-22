@@ -2,6 +2,8 @@
 // router, service worker and global shortcuts.
 import { CONFIG, db, router, theme, ui, security, seed, profile, util, cryptoBox, sync } from './core.js';
 import { TABS, GROUPS, HIDDEN, SETTINGS_PAGES, HUBS } from './routes.js';
+import { scene as sceneFor } from './core/scene.js';
+import { bouquet } from './core/art.js';
 
 const { el, icon, ja } = util;
 
@@ -239,12 +241,21 @@ async function render(route) {
   }
   clearTimeout(skeleton);
   addHubTabs(node, route);
+  addScene(node, route);
   const swapped = swapView(main, node);
   // Focus the new view's search box or title once it is in place.
   if (!app.firstRender) swapped.then(() => requestAnimationFrame(() => (main.querySelector('[data-autofocus]') || main.querySelector('h1') || main).focus({ preventScroll: true })));
   if (app.firstRender) preloadSections();
   app.firstRender = false;
   if (app.keepScroll != null) { const y = app.keepScroll; app.keepScroll = null; requestAnimationFrame(() => window.scrollTo({ top: y })); } else window.scrollTo({ top: 0 });
+}
+
+/** Paper scene under the title of the sections of Más (v0.13.0). */
+function addScene(node, route) {
+  const head = node?.querySelector?.(':scope > .page-head');
+  if (!head || node.querySelector('.paper-scene')) return;
+  const band = sceneFor?.(route.path.slice(1));
+  if (band) (node.querySelector(':scope > .hub-tabs') || head).after(band);
 }
 
 /** Joined sections (2026-11-21): the same tab strip on top of every tab of a hub. Tabs replace each other in history. */
@@ -289,7 +300,8 @@ function splash({ ready = Promise.resolve(), intro = null, mode = 'daily' } = {}
     const reduced = util.prefersReducedMotion();
     const full = !reduced && (intro ?? introDue(mode));
     const layer = el('div', { class: `splash${full ? ' splash-intro' : ''}`, role: 'status', 'aria-label': 'Aishiteru' },
-      el('div', { class: 'splash-heart', 'aria-hidden': 'true' }, icon('heart', { size: 64 })),
+      // A bouquet of lilies, Sofía's flower, opens as the name appears (chosen 2026-11-22).
+      el('div', { class: 'splash-heart splash-bouquet', 'aria-hidden': 'true' }, bouquet()),
       el('p', { class: 'splash-for' }, `Para ${profile.nick(who)}`),
       ja('愛してる', 'aishiteru'),
       el('small', { class: 'splash-romaji', 'aria-hidden': 'true' }, 'aishiteru'),
@@ -305,7 +317,7 @@ function splash({ ready = Promise.resolve(), intro = null, mode = 'daily' } = {}
     };
     layer.addEventListener('click', finish);
     document.body.append(layer);
-    if (!full) { t = setTimeout(finish, reduced ? 600 : 1500); return; }
+    if (!full) { t = setTimeout(finish, reduced ? 600 : 2300); return; }
     try { localStorage.setItem(INTRO_KEY(), util.localDay()); } catch { /* private mode */ }
     import('./features/intro.js')
       .then(({ playIntro }) => { if (!gone) stop = playIntro(layer, { ready, onWelcome: () => layer.classList.add('show'), onDone: finish }); })

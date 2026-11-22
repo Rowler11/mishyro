@@ -24,7 +24,7 @@ function watch(page) {
 
 async function completeSetup(page) {
   await page.goto(BASE);
-  await page.getByRole('button', { name: 'Empezar' }).click();
+  await page.getByRole('link', { name: 'Empezar desde cero' }).click();
   await page.getByRole('button', { name: /Sofía/ }).click();
   await page.setInputFiles('#seed-file', SEED);
   await page.getByRole('button', { name: 'Importar' }).click();
@@ -47,9 +47,10 @@ async function completeSetup(page) {
     const errors = watch(page);
     await page.addInitScript(() => { delete window.showSaveFilePicker; window.showSaveFilePicker = undefined; });
     await page.goto(BASE);
-    await page.getByRole('button', { name: 'Empezar' }).waitFor();
-    ok('setup: first open goes to #/setup', (await page.evaluate(() => location.hash)) === '#/setup');
-    await page.getByRole('button', { name: 'Empezar' }).click();
+    await page.getByRole('link', { name: 'Empezar desde cero' }).waitFor();
+    await page.locator('.short-code').waitFor({ timeout: 15000 }).catch(() => {});
+    ok('setup: first open on a PC shows only the QR and the short code', (await page.evaluate(() => location.hash)) === '#/unir' && (await page.locator('.qr-box').count()) === 1 && /^[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(await page.locator('.short-code').innerText()) && (await page.getByText('¿Quién usa este dispositivo?').count()) === 0);
+    await page.getByRole('link', { name: 'Empezar desde cero' }).click();
     await page.getByRole('button', { name: /Sofía/ }).click();
     await page.setInputFiles('#seed-file', SEED);
     await page.getByRole('button', { name: 'Importar' }).click();
@@ -260,8 +261,10 @@ async function completeSetup(page) {
     await page.locator('.page-new').click();
     const ed = page.locator('.memory-editor');
     await ed.waitFor();
+    ok(`cápsula @${w}: a new memory starts dated today (v0.13)`, (await ed.getByLabel('Fecha').inputValue()) === await page.evaluate(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }));
+    await ed.getByLabel('Fecha').fill('');
     await ed.getByRole('button', { name: 'Guardar recuerdo' }).click();
-    ok(`cápsula @${w}: title and date are required with visible errors`, (await ed.locator('.field-error:not(:empty)').count()) === 2);
+    ok(`cápsula @${w}: title (or a photo) and date are required with visible errors`, (await ed.locator('.field-error:not(:empty)').count()) === 2);
     await page.setInputFiles('.memory-editor input[type=file]', [
       { name: 'big.png', mimeType: 'image/png', buffer: Buffer.from(files.big, 'base64') },
       { name: 'rot.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(files.rot, 'base64') },
@@ -676,10 +679,10 @@ async function completeSetup(page) {
     await p2.evaluate(() => localStorage.setItem('aishiteru.capsula.order', 'asc'));
     await p2.getByLabel('Escribe BORRAR para confirmar').fill('BORRAR');
     await Promise.all([p2.waitForEvent('load'), p2.getByRole('dialog').getByRole('button', { name: 'Borrar todo' }).click()]);
-    await p2.getByRole('button', { name: 'Empezar' }).waitFor({ timeout: 10000 });
+    await p2.getByRole('link', { name: 'Empezar desde cero' }).waitFor({ timeout: 10000 });
     // The theme cache is written again on start; everything else of the app must be gone.
     const left = await p2.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('aishiteru.') && k !== 'aishiteru.theme'));
-    ok('borrar todo: back to the setup with no local keys left', (await p2.evaluate(() => location.hash)) === '#/setup' && left.length === 0, left.join(','));
+    ok('borrar todo: back to the setup with no local keys left', /^#\/(setup|unir)$/.test(await p2.evaluate(() => location.hash)) && left.length === 0, left.join(','));
     await ctx2.close();
     await ctx.close();
   }
@@ -926,7 +929,7 @@ async function completeSetup(page) {
     const page = await ctx.newPage();
     const errors = watch(page);
     await page.goto(BASE);
-    await page.getByRole('button', { name: 'Empezar' }).click();
+    await page.getByRole('link', { name: 'Empezar desde cero' }).click();
     await page.getByRole('button', { name: /Sofía/ }).click();
     await page.setInputFiles('#seed-file', SEED);
     await page.getByRole('button', { name: 'Importar' }).click();
@@ -2120,17 +2123,15 @@ async function completeSetup(page) {
     const page = await ctx.newPage();
     const errs = watch(page);
     await page.goto(BASE);
-    await page.getByRole('link', { name: 'Ya tenemos Aishiteru' }).waitFor();
-    ok('11 bienvenida: "Ya tenemos Aishiteru" junto a Empezar', true);
-    await page.getByRole('link', { name: 'Ya tenemos Aishiteru' }).click();
-    await page.getByText('Mis 12 palabras').waitFor();
+    await page.locator('.short-code').waitFor();
+    ok('11 bienvenida (PC): solo el QR y el código, sin crear perfil', (await page.locator('.qr-box').count()) === 1 && (await page.getByText('Sus datos').count()) === 0);
+    await page.locator('.join-rescue summary').click();
     await page.getByLabel('Mis 12 palabras').fill('una dos tres');
     await page.getByRole('button', { name: 'Entrar con mis palabras' }).click();
     ok('11 volver a entrar: pide 12 palabras', await page.locator('.field-error', { hasText: 'Son 12 palabras' }).waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
-    ok('11 volver a entrar: también ofrece el código de otro equipo', (await page.getByRole('button', { name: 'Usar el código de otro equipo' }).count()) === 1);
-    await page.getByRole('button', { name: 'Volver' }).click();
     // Setup until the permissions step
-    await page.getByRole('button', { name: 'Empezar' }).click();
+    await page.getByRole('link', { name: 'Empezar desde cero' }).click();
+    ok('v0.13 PC: "Empezar desde cero" pasa directo a elegir quién', await page.getByText('¿Quién usa este dispositivo?').waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
     await page.getByRole('button', { name: /Sofía/ }).click();
     await page.setInputFiles('#seed-file', SEED);
     await page.getByRole('button', { name: 'Importar' }).click();

@@ -33,7 +33,7 @@ async function loadData() {
   const hasPets = pets.some((p) => !p.deleted);
   const ofKind = (k) => ready(content.filter((c) => c.kind === k && (c.requires !== 'pets' || hasPets)));
   return {
-    reasons: ofKind('reason'), phrases: ofKind('phrase'), morning: ofKind('goodMorning'), night: ofKind('goodNight'),
+    reasons: ofKind('reason'), phrases: ofKind('phrase'), allPhrases: content.filter((c) => c.kind === 'phrase'), morning: ofKind('goodMorning'), night: ofKind('goodNight'),
     specialDates: specialDates.filter((d) => !d.deleted && !d.hidden),
     milestones: milestonesRec?.items?.length ? milestonesRec.items : CONFIG.milestones,
     thinking, meta,
@@ -216,38 +216,61 @@ function thinkingCard(data, receiver) {
   };
   paintCount();
   const plane = el('span', { class: 'paper-plane', 'aria-hidden': 'true' }, icon('plane', { size: 28 }));
-  const btn = el('button', { class: 'btn btn-primary thinking-btn', type: 'button' }, icon('heart'), 'Pensando en ti');
+  const fly = () => { plane.classList.remove('fly'); void plane.offsetWidth; plane.classList.add('fly'); util.haptic(15); };
+  const status = el('p', { class: 'muted small thinking-status', 'aria-live': 'polite' });
+  // Fixed 2026-11-22: with the devices linked it is sent inside the app (the other phone gets a caring
+  // notice and sees the phrase on Inicio); sharing by WhatsApp is a separate, optional button. Without
+  // sync it still goes through the share sheet, and only counts when something was shared.
+  const linked = sync.isLinked();
+  const pick = () => { const phrase = time.randomOther(data.phrases, recall('lastPhrase')); remember('lastPhrase', phrase.id); return phrase; };
+  const record = async (phrase, via) => {
+    await db.put('thinkingOfYou', { at: util.nowISO(), by: profile.active(), phraseId: phrase.id, via });
+    todayCount++; monthCount++; paintCount(); fly();
+  };
+  const btn = el('button', { class: 'btn btn-primary thinking-btn', type: 'button' }, icon('heart'), linked ? `Mandarle a ${profile.nick(receiver)}` : 'Pensando en ti');
   btn.addEventListener('click', async () => {
-    const phrase = time.randomOther(data.phrases, recall('lastPhrase'));
-    remember('lastPhrase', phrase.id);
+    const phrase = pick();
+    if (linked) {
+      btn.disabled = true;
+      await record(phrase, 'app');
+      status.textContent = `Enviado: «${profile.fill(phrase.text, receiver)}». A ${profile.nick(receiver)} le llega un aviso cariñoso.`;
+      util.sound('chime');
+      setTimeout(() => { btn.disabled = false; }, 1500);
+      return;
+    }
     const result = await ui.share({ text: profile.fill(phrase.text, receiver) });
-    if (result !== 'shared' && result !== 'copied') return;
-    await db.put('thinkingOfYou', { at: util.nowISO(), by: profile.active(), phraseId: phrase.id });
-    todayCount++; monthCount++; paintCount();
-    plane.classList.remove('fly'); void plane.offsetWidth; plane.classList.add('fly');
-    util.haptic(15);
+    if (result !== 'shared' && result !== 'copied') { status.textContent = 'No se envió. Toca otra vez y elige por dónde mandarla.'; return; }
+    status.textContent = '';
+    await record(phrase, 'share');
   });
+  const shareAlso = linked ? ui.button({ label: 'Mandar también por otra app', iconName: 'share-2', small: true, variant: 'ghost', onClick: async () => {
+    const phrase = pick();
+    const result = await ui.share({ text: profile.fill(phrase.text, receiver) });
+    if (result === 'shared' || result === 'copied') await record(phrase, 'share');
+  } }) : el('p', { class: 'muted small' }, 'Si unen sus teléfonos en ', el('a', { href: '#/ajustes/sincronizar' }, 'Sincronización'), ', le llega dentro de la app.');
   // "Yo también": when the other one thought of you today (it arrives with the sync), one tap answers
-  // with a caring notice. No text travels, only that it happened.
+  // with a caring notice. The phrase they picked is shown, never anything else.
   const theirs = data.thinking.filter((t) => t.by === receiver && (t.at || '').slice(0, 10) === today).sort((x, y) => (x.at || '').localeCompare(y.at || ''));
   const lastTheirs = theirs[theirs.length - 1];
+  const theirPhrase = lastTheirs?.phraseId ? data.allPhrases.find((p) => p.id === lastTheirs.phraseId) : null;
   const answered = lastTheirs && mine.some((t) => t.reply && (t.at || '') > (lastTheirs.at || ''));
   const reply = lastTheirs ? el('div', { class: 'thinking-reply' },
-    el('p', { class: 'small' }, icon('heart', { size: 16 }), ` ${profile.nick(receiver)} pensó en ti hoy.`),
+    el('p', { class: 'small' }, icon('heart', { size: 16 }), ` ${profile.nick(receiver)} pensó en ti hoy${theirs.length > 1 ? ` (${theirs.length} veces)` : ''}.`),
+    theirPhrase ? el('blockquote', { class: 'thinking-quote' }, profile.fill(theirPhrase.text, profile.active())) : null,
     answered ? el('p', { class: 'muted small' }, 'Le respondiste: yo también.')
       : ui.button({ label: 'Yo también', iconName: 'heart', small: true, variant: 'ghost', onClick: async (e) => {
         const b = e.currentTarget; b.disabled = true;
         await db.put('thinkingOfYou', { at: util.nowISO(), by: profile.active(), phraseId: null, reply: true });
-        todayCount++; monthCount++; paintCount();
-        plane.classList.remove('fly'); void plane.offsetWidth; plane.classList.add('fly');
-        util.haptic(15); util.sound('chime');
+        todayCount++; monthCount++; paintCount(); fly();
+        util.sound('chime');
         b.replaceWith(el('p', { class: 'muted small' }, sync.isLinked() ? `Listo: a ${profile.nick(receiver)} le llega un aviso cariñoso.` : 'Le respondiste: yo también.'));
       } })) : null;
   return el('article', { class: 'card home-card thinking-card', 'aria-labelledby': 'thinking-title' },
     plane,
     el('h2', { class: 'card-kicker', id: 'thinking-title' }, 'Pensando en ti'),
-    el('p', {}, `Mándale a ${profile.nick(receiver)} una frase bonita por donde quieras.`),
-    btn, count, reply);
+    reply,
+    el('p', {}, linked ? `Un toque y a ${profile.nick(receiver)} le llega una frase bonita.` : `Mándale a ${profile.nick(receiver)} una frase bonita por donde quieras.`),
+    btn, status, count, shareAlso);
 }
 
 // ---------- 1b. "Hoy los dos pasaron por aquí" ----------

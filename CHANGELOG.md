@@ -1,5 +1,23 @@
 # Cambios
 
+## 0.13.0 (unir equipos fácil y más vida en cada sección)
+
+Arreglos
+- Unir equipos: la bienvenida ofrece primero "Unir este equipo", con un QR y un código corto de 10 letras que se puede escribir a mano. El PC va directo a esa pantalla, sin crear perfil. Un equipo que se une se salta las preguntas de quién es y el archivo. "Empezar desde cero" queda solo para quien prepara la app.
+- En "Unir otro equipo" ahora se puede escanear el QR del equipo nuevo o escribir sus letras.
+- "Pensando en ti": con los teléfonos unidos llega por la app al instante y el otro ve la frase. Antes solo se guardaba si se terminaba de compartir por otra app.
+- Mapa: los mapas no cargaban (el servidor de mapas pedía saber desde dónde se pedían).
+- Subir fotos: ya no exige título; la fecha de hoy viene puesta y, si no hay título, se usa "Fotos del día".
+- El encabezado con el logo se queda fijo arriba al bajar, y el final de cada pantalla ya no queda tapado por la barra de abajo.
+
+Nuevo
+- Juegos con el estilo "Arcade de papel": tarjetas de colores con cinta, estantes por tipo, un zorro de papel y "Sorpréndannos".
+- Mapa como diario de viaje: el mapa en una foto con cintas, sellos con lugares, fotos y viajes.
+- Criaturas de origami en las secciones (zorro, gata siamesa, conejo, tanuki y grullas) con pétalos y un lirio, que se mueven con calma.
+- Los accesos de Inicio son shurikens que giran despacio y dan una vuelta al tocarlos.
+- La pantalla de carga muestra un ramo de lirios que se abre cuando aparece el nombre.
+- Todo se apaga con "Reducir movimiento".
+
 ## 0.12.1 (ramas más frondosas)
 
 - La entrada con el corazón tiene una rama de sakura más frondosa: más ramas, ramitas y racimos de flores.

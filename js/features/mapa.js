@@ -294,7 +294,7 @@ export async function render(ctx) {
     requestAnimationFrame(() => {
       if (!map) {
         map = L.map(mapBox, { zoomControl: true, attributionControl: true, tap: true }).setView(BOGOTA, 11);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a>' }).addTo(map);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, referrerPolicy: 'strict-origin-when-cross-origin', attribution: '© <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a>' }).addTo(map);
         map.on('click', (e) => openEditor(null, { lat: +e.latlng.lat.toFixed(5), lng: +e.latlng.lng.toFixed(5) }));
         markers = L.layerGroup().addTo(map);
       }
@@ -317,7 +317,11 @@ export async function render(ctx) {
         map.invalidateSize();
       });
     });
-    return el('div', { class: 'map-wrap' }, mapBox, el('p', { class: 'muted small' }, 'Toca el mapa donde quieras guardar un lugar.'));
+    // "Diario de viaje" (chosen 2026-11-22): the map is a photo taped into their travel diary.
+    return el('figure', { class: 'map-wrap map-polaroid' },
+      el('span', { class: 'map-tape map-tape-l', 'aria-hidden': 'true' }), el('span', { class: 'map-tape map-tape-r', 'aria-hidden': 'true' }),
+      mapBox,
+      el('figcaption', { class: 'map-caption' }, el('span', {}, `Nuestros lugares · ${new Date().getFullYear()}`), el('span', { class: 'muted small' }, 'Toca el mapa para guardar un lugar.')));
   };
   const saveTab = () => { try { localStorage.setItem(TAB_KEY, tab); } catch { /* private mode */ } };
 
@@ -330,9 +334,15 @@ export async function render(ctx) {
       ? el('ul', { class: 'place-list' }, places.map(placeCard))
       : ui.emptyState({ title: 'Su primer lugar', text: 'La primera cita, el restaurante favorito, un viaje. Tóquenlo en el mapa o agréguenlo aquí.', art: 'torii', action: { label: 'Agregar un lugar', onClick: () => openEditor(null, null) } });
     const counter = el('p', { class: 'place-count' }, el('strong', {}, String(visited)), ` ${visited === 1 ? 'lugar guardado' : 'lugares guardados'}`);
+    const stamp = (n, one, many) => el('li', { class: 'map-stamp' }, el('strong', {}, String(n)), el('span', {}, n === 1 ? one : many));
+    const stamps = el('ul', { class: 'map-stamps', 'aria-label': 'Sus lugares en números' },
+      stamp(visited, 'lugar', 'lugares'),
+      stamp(places.filter((p) => p.mediaIds?.length).length, 'con fotos', 'con fotos'),
+      stamp(places.filter((p) => p.kind === 'viaje').length, 'viaje', 'viajes'));
     if (tab === 'mapa') {
       const m = await drawMap();
-      util.fill(body, tabs, await snapshotCard(), counter, m, m.classList.contains('map-off') ? list : null);
+      const off = m.classList.contains('map-off');
+      util.fill(body, tabs, off ? counter : null, m, stamps, await snapshotCard(), places.length ? el('h2', { class: 'section-title' }, 'Su diario de lugares') : null, list);
       if (m.classList.contains('map-off')) { map?.remove(); map = null; }
     } else {
       map?.remove(); map = null;

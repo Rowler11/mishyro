@@ -43,16 +43,22 @@ function wizard({ app }) {
 
   const draw = () => [null, welcome, who, data, review, pin, permissions, finish][step]();
 
-  // 1. Welcome
+  // 1. Welcome (2026-11-22): joining is the main door (Sofía, the PC, a new phone): only a QR or a code.
+  // Starting from zero, with "who" and the data file, is only for the person who prepares the app.
   function welcome() {
+    const option = ({ iconName, title, text, primary, onClick, href }) => el(href ? 'a' : 'button', {
+      class: `welcome-option${primary ? ' primary' : ''}`, ...(href ? { href } : { type: 'button', onClick }),
+    }, el('span', { class: 'welcome-option-icon', 'aria-hidden': 'true' }, icon(iconName, { size: 26 })),
+    el('span', { class: 'welcome-option-text' }, el('span', { class: 'welcome-option-title' }, title), el('span', { class: 'welcome-option-sub' }, text)),
+    icon('chevron-right', { size: 20, cls: 'welcome-option-go' }));
     frame('Aishiteru', null, null, el('div', { class: 'welcome' },
       ui.logo({ size: 120, bloom: true, label: 'Logo de Aishiteru: flor de sakura con corazón' }),
       ja('愛してる', 'aishiteru'),
       el('p', { class: 'lead' }, 'Un lugar solo de los dos.'),
-      el('p', { class: 'muted' }, 'Vamos a dejarla lista en unos pasos. Todo se guarda solo en este dispositivo.')),
-    // "Ya tenemos Aishiteru" (2026-11-21): a reinstalled or new phone comes back with the fingerprint,
-    // the 12 words or a code from another device, without the data file.
-    [ui.button({ label: 'Ya tenemos Aishiteru', variant: 'ghost', href: '#/unir' }), ui.button({ label: 'Empezar', variant: 'primary', onClick: () => go(2) })], { back: false });
+      el('div', { class: 'welcome-options' },
+        option({ iconName: 'qr-code', primary: true, title: 'Unir este equipo', text: 'Con el QR o el código del teléfono que ya tiene la app. Para tu pareja, el PC o un teléfono nuevo.', href: '#/unir' }),
+        option({ iconName: 'sparkles', title: 'Empezar desde cero', text: 'Solo la primera vez, en el teléfono de quien prepara la app.', onClick: () => go(2) }))),
+    null, { back: false });
   }
 
   // 2. Who uses this device
@@ -106,7 +112,7 @@ function wizard({ app }) {
       fileIn, drop, out,
       el('div', { class: 'divider-text' }, el('span', {}, 'o')),
       ui.button({ label: 'Escribirlos a mano', iconName: 'pencil', onClick: () => manual() }),
-      ui.button({ label: 'Traerlos de otro equipo', iconName: 'smartphone', variant: 'ghost', href: '#/unir' })), null);
+      ui.button({ label: 'Mejor unir este equipo a otro', iconName: 'qr-code', variant: 'ghost', href: '#/unir' })), null);
   }
 
   function manual() {
@@ -268,8 +274,9 @@ function wizard({ app }) {
       await db.setMeta({ lastBackupAt: util.nowISO() });
       ui.toast('Copia guardada. Guárdenla en un lugar seguro.', { tone: 'success' });
     } });
+    const linked = (await import('../core/sync.js')).isLinked();
     frame('Cuidar sus datos', null, null, el('div', { class: 'stack' },
-      el('p', {}, 'Los datos viven solo en este dispositivo. Si se borran los datos del navegador sin una copia, se pierde todo.'),
+      el('p', {}, linked ? 'Este equipo está unido: lo de los dos también se guarda cifrado en su espacio. La copia es un respaldo extra que pueden guardar donde quieran.' : 'Los datos viven solo en este dispositivo. Si se borran los datos del navegador sin una copia, se pierde todo.'),
       status,
       el('div', { class: 'card stack' }, el('p', {}, 'La copia de seguridad es un archivo que pueden guardar o pasar al otro teléfono o al PC.'), backupBtn)),
     [ui.button({ label: 'Terminar', variant: 'primary', iconName: 'check', onClick: async () => {
@@ -282,6 +289,8 @@ function wizard({ app }) {
 
   db.getMeta().then((m) => {
     step = m.setupDone ? 1 : Math.max(1, Math.min(STEPS, m.setupStep || 1));
+    // On a PC the first open shows only the QR and the code (2026-11-22).
+    if (step === 1 && !m.startFresh && !m.setupDone) { import('./sync.js').then((x) => { if (x.isDesktop()) router.go('/unir', { replace: true }); else draw(); }); return; }
     if (step === 3 && profile.hasChosen() === false) step = 2;
     draw();
   });
@@ -293,7 +302,7 @@ const STORY = [
   { jp: '二人', romaji: 'futari', art: 'jp-sakura', title: 'Un lugar solo de los dos', text: 'Aquí vive su historia: el tiempo juntos, los recuerdos, las cartas y los cupones.' },
   { jp: '思い出', romaji: 'omoide', art: 'jp-tsuru', title: 'Para guardar lo que viven', text: 'Fotos, fechas especiales, canciones y planes, todo en un mismo lugar y a su manera.' },
   { jp: '遊び', romaji: 'asobi', art: 'jp-chochin', title: 'Para conocerse y jugar', text: 'Preguntas del día, ideas de citas y juegos para hacer juntos, en persona.' },
-  { jp: '愛', romaji: 'ai', art: 'jp-omamori', title: 'Privado y en su teléfono', text: 'Todo se queda en este dispositivo. Con la copia de seguridad pasan los datos al otro teléfono o al PC.' },
+  { jp: '愛', romaji: 'ai', art: 'jp-omamori', title: 'Privado y de los dos', text: 'Lo de los dos viaja cifrado entre sus teléfonos y su PC. Nadie más puede leerlo, ni siquiera el servidor.' },
 ];
 
 function story() {
