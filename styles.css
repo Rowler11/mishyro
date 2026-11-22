@@ -3158,3 +3158,18 @@ a.game-champ::after { content: '›'; margin-left: 2px; color: var(--accent); }
 @keyframes plant-drop { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: .9; } 100% { opacity: 0; transform: translateY(100px); } }
 @media (prefers-reduced-motion: reduce) { .plant-leaf, .plant-flower, .plant-drops i { animation: none !important; } }
 :root[data-motion="off"] .plant-leaf, :root[data-motion="off"] .plant-flower { animation: none; }
+
+/* ---------- Mapa de papel: pines con foto, ruta y mini mapa en Inicio (v0.14.0) ---------- */
+.map-photo-pin { background: none; border: 0; }
+.map-photo-frame { display: block; width: 48px; height: 48px; margin: 0 2px; padding: 3px; border-radius: 50%; background: var(--surface); box-shadow: 0 3px 8px rgb(74 30 45 / .28); border: 2px solid var(--accent); }
+.map-photo-frame img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.map-sakura { display: block; width: 32px; height: 32px; margin: 0 2px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); box-shadow: 0 3px 8px rgb(74 30 45 / .25);
+  background-image: radial-gradient(circle at 50% 50%, #F7D46B 0 3px, transparent 3.5px), conic-gradient(from 0deg, #F4A6B6 0 14%, transparent 14% 20%, #F4A6B6 20% 34%, transparent 34% 40%, #F4A6B6 40% 54%, transparent 54% 60%, #F4A6B6 60% 74%, transparent 74% 80%, #F4A6B6 80% 94%, transparent 94%); }
+.map-photo-tip { display: block; width: 0; height: 0; margin: -2px auto 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid var(--accent); }
+.map-route { stroke: var(--accent); stroke-width: 3; stroke-dasharray: 2 9; stroke-linecap: round; fill: none; opacity: .85; }
+.home-map { display: grid; gap: var(--space-2); text-decoration: none; color: var(--text); }
+.home-map-head { display: flex; align-items: baseline; justify-content: space-between; }
+.home-map-head .card-kicker { margin: 0; }
+.home-map-box { height: 170px; border-radius: var(--radius-m); overflow: hidden; border: 6px solid var(--surface); box-shadow: var(--shadow-1); pointer-events: none; }
+.home-map-last { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--text-2); }
+.home-map-last .icon { color: var(--accent); }
