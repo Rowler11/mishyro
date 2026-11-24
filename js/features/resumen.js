@@ -181,7 +181,7 @@ function petal(ctx, x, y, r, rot, color) {
 const loadBitmap = async (id) => { const b = await db.getMedia(id).catch(() => null); if (!b || !b.type.startsWith('image/')) return null; try { return await createImageBitmap(b); } catch { return null; } };
 
 /** Draw one card on a 1080×1920 canvas. */
-export async function drawCard(canvas, card, { i = 0, n = 1, footer = '', colors = palette(), images = new Map() } = {}) {
+export async function drawCard(canvas, card, { i = 0, n = 1, footer = '', colors = palette(), images = new Map(), signed = [], people = [] } = {}) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = colors.bg; ctx.fillRect(0, 0, W, H);
@@ -218,7 +218,21 @@ export async function drawCard(canvas, card, { i = 0, n = 1, footer = '', colors
     y += 30;
   }
   if (card.sub) { ctx.fillStyle = colors.text2; ctx.font = '500 46px "Zen Maru Gothic", sans-serif'; for (const l of wrap(ctx, card.sub, W - 220).slice(0, 4)) { ctx.fillText(l, W / 2, y + 40); y += 62; } }
-  if (card.end) { ctx.strokeStyle = colors.accent; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(W / 2, H - 420, 70, 0, Math.PI * 2); ctx.stroke(); petal(ctx, W / 2, H - 420, 36, 0, colors.accent); }
+  if (card.end) {
+    // Signed by the two (docs/05 Detalles: Resumen): each one's seal, stamped when they tap it.
+    if (!people.length) { ctx.strokeStyle = colors.accent; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(W / 2, H - 420, 70, 0, Math.PI * 2); ctx.stroke(); petal(ctx, W / 2, H - 420, 36, 0, colors.accent); }
+    people.forEach(({ id, name }, k) => {
+      const x = W / 2 + (k ? 120 : -120); const yy = H - 420; const on = signed.includes(id);
+      ctx.save(); ctx.translate(x, yy); ctx.rotate(on ? (k ? 0.08 : -0.06) : 0);
+      ctx.lineWidth = 6; ctx.strokeStyle = colors.accent;
+      if (on) { ctx.fillStyle = colors.accent; ctx.beginPath(); ctx.arc(0, 0, 74, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = colors.bg; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, 60, 0, Math.PI * 2); ctx.stroke(); }
+      else { ctx.setLineDash([12, 10]); ctx.beginPath(); ctx.arc(0, 0, 74, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+      ctx.fillStyle = on ? colors.bg : colors.text2; ctx.font = '700 72px "Shippori Mincho", serif'; ctx.textBaseline = 'middle';
+      ctx.fillText((name || '♥').charAt(0).toUpperCase(), 0, 4); ctx.textBaseline = 'alphabetic';
+      ctx.restore();
+      ctx.fillStyle = colors.text2; ctx.font = '600 34px "Zen Maru Gothic", sans-serif'; ctx.fillText(on ? name : `Falta ${name}`, x, yy + 130);
+    });
+  }
   ctx.fillStyle = colors.text2; ctx.font = '600 36px "Zen Maru Gothic", sans-serif'; ctx.fillText(footer, W / 2, H - 110);
   return canvas;
 }
@@ -275,10 +289,24 @@ export function openStories(p, list, { footer }) {
   const shareBtn = ui.button({ label: 'Compartir', iconName: 'share-2', small: true, onClick: () => sharePng() });
   const videoBtn = canRecord() ? ui.button({ label: 'Video', iconName: 'film', small: true, onClick: () => makeVideo() }) : null;
   const stage = el('div', { class: 'story-stage' }, canvas, prev, next);
-  const body = el('div', { class: 'stories' }, stage, live,
+  // The last card is signed by the two: each one taps their seal (shared, so it shows on both phones).
+  const SIGN_ID = `wrapped-sign:${p.id}`;
+  let signed = [];
+  const people = profile.PEOPLE.map((id) => ({ id, name: profile.nick(id) || profile.name(id) }));
+  const signBar = el('div', { class: 'story-sign', role: 'group', 'aria-label': 'Firmar el resumen', hidden: true });
+  const paintSign = () => util.fill(signBar, people.map(({ id, name }) => (signed.includes(id)
+    ? el('span', { class: 'story-signed small' }, icon('check', { size: 16 }), ` ${name} ya firmó`)
+    : ui.button({ label: `Firmar como ${name}`, iconName: 'heart-handshake', small: true, variant: 'secondary', onClick: async () => {
+      const rec = (await db.get('streaks', SIGN_ID).catch(() => null)) || { id: SIGN_ID, type: 'wrapped-sign', signed: [], visibility: 'shared', owner: 'both' };
+      signed = [...new Set([...(rec.signed || []), id])];
+      await db.put('streaks', { ...rec, signed }, { userEdit: false });
+      util.haptic([10, 50, 10]); paint();
+    } }))));
+  db.get('streaks', SIGN_ID).then((r) => { signed = r?.signed || []; if (list[i]?.end) paint(); }).catch(() => {});
+  const body = el('div', { class: 'stories' }, stage, live, signBar,
     el('div', { class: 'story-bar' }, shareBtn, videoBtn, status));
   const m = ui.openModal({ title: p.label, kind: 'viewer', className: 'stories-modal', body });
-  const opts = () => ({ footer, images });
+  const opts = () => ({ footer, images, signed, people });
   const textOf = (c) => [c.kicker, c.value, c.label, c.quote, c.sub].filter(Boolean).join('. ');
   const paint = async () => {
     const c = list[i];
@@ -287,6 +315,7 @@ export function openStories(p, list, { footer }) {
     canvas.setAttribute('aria-label', textOf(c));
     live.textContent = `${i + 1} de ${list.length}: ${textOf(c)}`;
     prev.disabled = i === 0; next.setAttribute('aria-label', i === list.length - 1 ? 'Cerrar' : 'Siguiente');
+    signBar.hidden = !c.end; if (c.end) paintSign();
     if (!util.prefersReducedMotion()) { canvas.classList.remove('story-in'); void canvas.offsetWidth; canvas.classList.add('story-in'); }
   };
   const go = (d) => { if (i + d >= list.length) { m.close(); return; } i = Math.max(0, i + d); paint(); };

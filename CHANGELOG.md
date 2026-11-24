@@ -20,6 +20,8 @@ Nuevo
 - Ideas de citas: botón "Ya lo hicimos hace poco" que la deja descansar un mes.
 - Mapa de papel: fotos como polaroids redondas en los pines, la ruta entre lugares y un mapa pequeño en Inicio.
 - Mi espacio como escritorio personal: frase del día, Dango que te habla, el próximo recordatorio y cajones grandes con cuántas cosas hay en cada uno.
+- El jardín tiene paisaje: cielo con sol de día y luna con estrellas de noche, el Fuji, nubes, una linterna de piedra que se enciende de noche, mariposas, luciérnagas y pétalos.
+- Detalles de la especificación que faltaban: modo presentación en la Galería (teatro de papel) y "Foto del día"; "Cita de emergencia" en Ideas de citas (gratis y de menos de una hora); la última tarjeta del Resumen se firma por los dos; y las insignias brillan al inclinar el teléfono.
 
 ## 0.13.0 (unir equipos fácil y más vida en cada sección)
 

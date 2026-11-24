@@ -3231,3 +3231,47 @@ a.game-champ::after { content: '›'; margin-left: 2px; color: var(--accent); }
 .home-map-box { height: 170px; border-radius: var(--radius-m); overflow: hidden; border: 6px solid var(--surface); box-shadow: var(--shadow-1); pointer-events: none; }
 .home-map-last { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--text-2); }
 .home-map-last .icon { color: var(--accent); }
+
+/* Galería: foto del día and the kamishibai show (v0.14.0) */
+.gallery-daily { display: grid; grid-template-columns: 112px 1fr; gap: var(--space-3); align-items: center; padding: var(--space-2); text-align: left; width: 100%; font: inherit; color: var(--text); cursor: pointer; }
+.gallery-daily[hidden] { display: none; }
+.gallery-daily img { width: 112px; height: 112px; object-fit: cover; border-radius: 10px; border: 4px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.12); transform: rotate(-2deg); }
+.gallery-daily-text { display: grid; gap: 4px; }
+.gallery-meta { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; }
+.gallery-meta p { margin: 0; }
+.kami-stage { display: grid; justify-items: center; align-content: center; gap: var(--space-3); min-height: 100%; padding: var(--space-3) var(--space-2); }
+.kami-theatre { position: relative; width: min(92vw, 720px); display: grid; justify-items: center; }
+.kami-roof { width: 104%; height: 22px; background: linear-gradient(#8A5A3C, #6E4630); clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); border-radius: 4px 4px 0 0; }
+.kami-frame { position: relative; width: 100%; aspect-ratio: 4 / 3; padding: 14px; background: #A8754F; box-shadow: inset 0 0 0 3px #7C5236, 0 10px 24px rgba(0,0,0,.25); overflow: hidden; }
+.kami-window { position: relative; width: 100%; height: 100%; background: #F7F1E8; overflow: hidden; border-radius: 2px; }
+.kami-card { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; background: #F7F1E8; }
+.kami-card img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.kami-card.from-right { animation: kami-in-r .7s var(--ease-out, ease-out) both; } .kami-card.from-left { animation: kami-in-l .7s var(--ease-out, ease-out) both; }
+.kami-card.to-left { animation: kami-out-l .7s ease-in both; } .kami-card.to-right { animation: kami-out-r .7s ease-in both; }
+@keyframes kami-in-r { from { transform: translateX(100%); } } @keyframes kami-in-l { from { transform: translateX(-100%); } }
+@keyframes kami-out-l { to { transform: translateX(-100%); } } @keyframes kami-out-r { to { transform: translateX(100%); } }
+.kami-curtain { position: absolute; top: 14px; bottom: 14px; width: 9%; background: repeating-linear-gradient(90deg, #C2405F 0 6px, #A9354F 6px 12px); opacity: .92; }
+.kami-curtain-l { left: 14px; border-radius: 0 0 40% 0; } .kami-curtain-r { right: 14px; border-radius: 0 0 0 40%; }
+.kami-base { width: 70%; height: 16px; background: #6E4630; border-radius: 0 0 8px 8px; }
+.kami-caption { margin: 0; text-align: center; color: #F7F1E8; min-height: 1.4em; }
+.kami-controls .icon-btn { color: #F7F1E8; }
+.kami-controls { display: flex; align-items: center; gap: var(--space-3); }
+@media (prefers-reduced-motion: reduce) { .kami-card { animation: none !important; } }
+:root[data-motion="off"] .kami-card { animation: none !important; }
+/* Cita de emergencia (v0.14.0) */
+.sos-card { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; border-left: 4px solid var(--accent); }
+.sos-card .stack-tight { flex: 1 1 160px; }
+.sos-card p { margin: 0; }
+.sos-title { font-weight: 700; }
+.sos-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); }
+/* Resumen: signed by the two (v0.14.0) */
+.story-sign { display: flex; justify-content: center; gap: var(--space-2); flex-wrap: wrap; }
+.story-sign[hidden] { display: none; }
+.story-signed { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; color: var(--success); font-weight: 600; }
+/* Insignias: holographic shine that follows the tilt (v0.14.0) */
+.ins-badge.is-on .ins-badge-seal { position: relative; overflow: hidden; }
+.ins-badge.is-on .ins-badge-seal::after { content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; mix-blend-mode: soft-light;
+  background: radial-gradient(circle at var(--shine-x, 30%) var(--shine-y, 25%), rgba(255,255,255,.85), rgba(255,255,255,0) 45%),
+    linear-gradient(115deg, rgba(255,120,180,.35), rgba(255,230,120,.3), rgba(120,220,255,.35), rgba(200,140,255,.3));
+  background-size: 100% 100%, 220% 220%; background-position: 0 0, var(--shine-x, 30%) var(--shine-y, 25%); transition: background-position .25s ease-out; }
+@media (prefers-reduced-motion: reduce) { .ins-badge.is-on .ins-badge-seal::after { transition: none; } }

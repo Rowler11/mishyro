@@ -3,6 +3,7 @@
 // for their owner (docs/05 §36 exclusions); the private corner and the cycle never have photos here.
 import { ui, util, db } from '../core.js';
 import { openViewer } from '../core/viewer.js';
+import { openShow } from './kamishibai.js';
 
 const { el, icon } = util;
 const fmtMonth = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' });
@@ -79,6 +80,27 @@ export async function render() {
     return el('li', {}, btn);
   };
 
+  // Foto del día (docs/05 Detalles: Galería): one photo picked by the date, the same all day on both phones.
+  const dailyCard = () => {
+    const card = el('button', { class: 'card paper-card gallery-daily', type: 'button', hidden: true });
+    const seed = [...util.localDay()].reduce((n, c) => (n * 31 + c.charCodeAt(0)) % 100003, 7);
+    (async () => {
+      for (let k = 0; k < Math.min(all.length, 12); k++) {
+        const idx = (seed + k) % all.length; const p = all[idx];
+        const b = await db.getMedia(p.mediaId).catch(() => null);
+        if (!b || !b.type.startsWith('image/')) continue;
+        const u = URL.createObjectURL(b); urls.add(u);
+        card.append(el('img', { src: u, alt: '' }),
+          el('span', { class: 'gallery-daily-text' }, el('span', { class: 'card-kicker' }, 'Foto del día'),
+            el('strong', {}, p.title || p.sourceLabel), el('span', { class: 'muted small' }, fmtDay.format(util.parseDay(p.date)))));
+        card.setAttribute('aria-label', `Foto del día: ${p.title || p.sourceLabel}, ${fmtDay.format(util.parseDay(p.date))}. Abrir`);
+        card.addEventListener('click', () => openViewer(viewerItems(all), idx));
+        card.hidden = false; return;
+      }
+    })();
+    return card;
+  };
+
   const draw = () => {
     urls.forEach((u) => URL.revokeObjectURL(u)); urls.clear();
     const present = SOURCES.filter((s, i) => SOURCES.findIndex((x) => x.id === s.id) === i && all.some((p) => p.source === s.id));
@@ -95,8 +117,10 @@ export async function render() {
       }, s.label, el('span', { class: 'chip-count' }, String(s.id === 'todas' ? all.length : all.filter((p) => p.source === s.id).length)))));
     const months = new Map();
     list.forEach((p, i) => { const k = p.date.slice(0, 7); if (!months.has(k)) months.set(k, []); months.get(k).push([p, i]); });
-    body.replaceChildren(chips,
-      el('p', { class: 'muted small' }, `${list.length} ${list.length === 1 ? 'foto o video' : 'fotos y videos'}. Lo marcado "Solo yo" no aparece aquí.`),
+    body.replaceChildren(dailyCard(), chips,
+      el('div', { class: 'gallery-meta' },
+        el('p', { class: 'muted small' }, `${list.length} ${list.length === 1 ? 'foto o video' : 'fotos y videos'}. Lo marcado "Solo yo" no aparece aquí.`),
+        ui.button({ label: 'Presentación', iconName: 'play', small: true, variant: 'secondary', onClick: () => openShow(list) })),
       ...[...months].map(([k, items]) => el('section', { class: 'gallery-month' },
         el('h2', { class: 'tl-month' }, capital(fmtMonth.format(util.parseDay(`${k}-01`)))),
         el('ul', { class: 'photo-grid gallery-grid' }, items.map(([p, i]) => tile(p, i, list))))));
