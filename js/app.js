@@ -107,7 +107,7 @@ const lockScope = (def) => (def?.lock === 'person' ? `person:${profile.active()}
 let shell = null;
 function buildShell() {
   const tabLink = (t, cls) => el('a', {
-    class: `${cls} tab`, href: `#${t.path}`, dataset: { tab: t.id },
+    class: `${cls} tab`, href: `#${t.path}`, dataset: { tab: t.id }, onClick: () => util.haptic('tap'),
     'aria-label': `${t.title}${cls === 'rail-link' ? '' : ''}`,
   }, el('span', { class: 'tab-icon' }, icon(t.icon)), el('span', { class: 'tab-name' }, t.title));
 

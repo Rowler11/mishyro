@@ -3547,3 +3547,26 @@ html.is-touring .toasts { z-index: 360; top: calc(env(safe-area-inset-top, 0px) 
   .kitty-paws i:first-child { left: 19px; } .kitty-paws i:last-child { right: 19px; }
   .kitty-perch { margin-top: 36px; }
 }
+
+/* ---------- v0.21.0 premium touch: every tappable thing answers the finger ---------- */
+.icon-btn, .profile-chip, .chip, .segmented-option, .list-row, .switch, .tabbar-link .tab-icon, .rail-link {
+  transition: transform var(--dur-1) var(--ease-out), background-color var(--dur-2), color var(--dur-2);
+}
+.icon-btn:active:not(:disabled) { transform: scale(.9); background: var(--surface-2); }
+.profile-chip:active, .chip:active { transform: scale(.96); }
+.segmented-option:active { transform: scale(.96); }
+button.list-row:active, a.list-row:active, label.list-row:active { background: var(--surface-2); }
+.tabbar-link:active .tab-icon { transform: scale(.86); }
+.rail-link:active { transform: scale(.97); }
+@media (hover: hover) { .btn:hover:not(:disabled) { filter: brightness(1.04); } }
+:root[data-motion="off"] .icon-btn:active, :root[data-motion="off"] .profile-chip:active, :root[data-motion="off"] .chip:active,
+:root[data-motion="off"] .segmented-option:active, :root[data-motion="off"] .tabbar-link:active .tab-icon, :root[data-motion="off"] .rail-link:active { transform: none; }
+
+/* v0.21.0: frosted privacy curtain (recent-apps view). Text under it can't be read; shapes and colours stay soft. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .curtain {
+    background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%), color-mix(in srgb, var(--bg) 72%, transparent);
+    -webkit-backdrop-filter: blur(32px) saturate(1.15); backdrop-filter: blur(32px) saturate(1.15);
+  }
+}
+:root[data-contrast="high"] .curtain { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }

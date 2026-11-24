@@ -29,6 +29,7 @@ export function toast(message, { action, timeout = 4500, tone = 'info' } = {}) {
     action ? el('button', { class: 'btn btn-small btn-ghost', type: 'button', onClick: () => { close(); action.onClick(); } }, action.label) : null,
     el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': 'Cerrar aviso', onClick: close }, icon('x', { size: 18 })));
   toastBox.append(t);
+  if (tone === 'success' || tone === 'error') haptic(tone);
   if (timeout) setTimeout(close, action ? timeout * 2 : timeout);
   return { close };
 }
