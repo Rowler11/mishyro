@@ -34,6 +34,27 @@ async function completeSetup(page) {
   await page.getByRole('button', { name: 'Terminar' }).click();
   await page.getByRole('button', { name: 'Saltar' }).click();
   await page.waitForFunction(() => location.hash === '#/inicio');
+  await exampleContent(page);
+}
+
+// Since v0.14.0 the seed file brings only names, dates and pets (clean start). Most checks below need
+// some letters, coupons, reasons and memories, so the example ones are written straight to the DB.
+async function exampleContent(page, { reload = true } = {}) {
+  const seed = JSON.parse(fs.readFileSync(SEED, 'utf8'));
+  await page.evaluate(async (seed) => {
+    const { upsertSeeded } = await import('./js/core/seed.js');
+    await upsertSeeded('content', [
+      ...(seed.reasons || []).map((r) => ({ id: r.id, kind: 'reason', text: r.text })),
+      ...(seed.coupons || []).map((c) => ({ id: c.id, kind: 'coupon', title: c.title, description: c.description })),
+      ...(seed.letters || []).map((l) => ({ id: l.id, kind: 'letter', label: l.label, text: l.text })),
+    ], 'seed');
+    await upsertSeeded('memories', (seed.memories || []).map((m) => ({ id: m.id, date: /^\d{4}-\d{2}-\d{2}$/.test(m.date || '') ? m.date : '', title: m.title, note: m.note, mediaIds: [], draft: !/^\d{4}-\d{2}-\d{2}$/.test(m.date || '') })), 'seed');
+  }, seed);
+  // Re-render Inicio without reloading (a reload would spend the first-open-of-the-day heart).
+  if (reload) {
+    await page.evaluate(() => { location.hash = '#/ajustes'; }); await page.waitForFunction(() => document.querySelector('main h1')?.textContent.includes('Ajustes'));
+    await page.evaluate(() => { location.hash = '#/inicio'; }); await page.waitForSelector('.counter-card');
+  }
 }
 
 (async () => {
@@ -64,7 +85,7 @@ async function completeSetup(page) {
       const db = await import('./js/core/db.js');
       return { memories: (await db.rawAll('memories')).length, content: (await db.rawAll('content')).filter((c) => c.origin === 'seed').length };
     });
-    ok('setup: seed imported once (4 memories? example has 2)', counts.memories === 2 && counts.content === 4, JSON.stringify(counts));
+    ok('setup: clean start, the file brings no letters, coupons, reasons or memories', counts.memories === 0 && counts.content === 0, JSON.stringify(counts));
     await page.getByRole('button', { name: 'Todo bien' }).click();
     await page.getByRole('button', { name: 'Ahora no' }).click();
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -337,6 +358,9 @@ async function completeSetup(page) {
       await db.put('content', { id: 't:c2', kind: 'coupon', title: 'Cupón vencido', from: 'david', to: 'sofia', expiresOn: '2020-01-01' });
     });
     await page.evaluate(() => { location.hash = '#/cupones'; });
+    await page.waitForSelector('.cupones-tabs');
+    ok('cupones: always opens on "Historial"', (await page.locator('.cupones-tabs input:checked').getAttribute('value')) === 'given');
+    await page.locator('.cupones-tabs label.segmented-option', { hasText: 'Para ti' }).click();
     await page.waitForSelector('.kippu');
     ok('cupones: seed and own coupons for Ana are listed in "Para ti"', (await page.locator('.kippu').count()) === 3);
     ok('cupones: an expired coupon cannot be redeemed', (await page.locator('.kippu.is-expired button', { hasText: 'Canjear' }).count()) === 0 && /Venció/.test(await page.locator('.kippu.is-expired').textContent()));
@@ -353,9 +377,8 @@ async function completeSetup(page) {
     await page.waitForFunction(() => !document.querySelector('.kippu.is-redeemed'), null, { timeout: 4000 });
     ok('cupones: after its stamp, the used coupon leaves "Para ti"', (await page.locator('.kippu').count()) === 2);
     await page.reload();
-    await page.waitForSelector('.kippu');
+    await page.waitForSelector('.cupones-tabs');
     const tab = (name) => page.locator('.cupones-tabs label.segmented-option', { hasText: name }).click();
-    await tab('Historial');
     await page.waitForTimeout(250);
     ok('cupones: the redeemed state persists after reload, under "Los que usaste"', (await page.locator('.kippu.is-redeemed').count()) === 1 && /Los que usaste/.test(await page.locator('.cupones-body').textContent()));
     await page.getByRole('button', { name: 'Reiniciar cupones' }).click();
@@ -2005,7 +2028,8 @@ async function completeSetup(page) {
       const me = p.active(); const x = new Date(); x.setDate(x.getDate() + 2);
       await db.put('content', { id: 't10:coupon', kind: 'coupon', title: 'Cupón ficticio', description: '', dedication: '', expiresOn: u.localDay(x), from: p.partnerOf(me), to: me, sentAt: u.nowISO(), visibility: 'shared', owner: 'both' });
     });
-    await go('/cupones', '.kippu');
+    await go('/cupones', '.cupones-tabs');
+    await page.locator('.cupones-tabs label.segmented-option', { hasText: 'Para ti' }).click(); await page.waitForSelector('.kippu');
     ok('10 Cuponera: el sello se ve en el cupón que vence pronto', await page.locator('.kippu-soon', { hasText: '¡Úsame pronto!' }).count() >= 1);
 
     // D3: encuentro phrases
@@ -2109,8 +2133,8 @@ async function completeSetup(page) {
     ok('10 Modo cita: arma el recuerdo con título, foto, lugar y nota', mem && mem.title === 'Cena ficticia' && mem.photos === 1 && /Nota ficticia/.test(mem.note) && /Un lugar ficticio/.test(mem.note), JSON.stringify(mem));
     await go('/modo-cita', '.date-mode-intro');
     ok('10 Modo cita: al terminar vuelve a empezar de cero', true);
-    await go('/mas/juntos', '.more-card, a');
-    ok('10 Más: Modo cita está en Juntos', await page.locator('a[href="#/modo-cita"]').count() >= 1);
+    await go('/modos', '.page');
+    ok('10 Juegos > Modos: tiene Modo cita (v0.14.0)', await page.locator('main a[href="#/modo-cita"]').count() >= 1);
     const real = errs.filter((e) => !/ERR_TUNNEL_CONNECTION_FAILED|ERR_INTERNET_DISCONNECTED/.test(e)); // map tiles: no internet in the test sandbox
     ok('v0.10.0: no page errors or native dialogs', real.length === 0, real.join(' | '));
     await ctx.close(); await b10.close();
@@ -2161,9 +2185,9 @@ async function completeSetup(page) {
     // Más and hubs
     await go('/mas/nosotros', '.section-card');
     const nos = await page.locator('.section-card-name').allInnerTexts();
-    ok('11 Más: Nosotros sin Fechas, Recordatorios ni Encuentro sueltos', nos.join('|') === 'Calendario|Insignias|Ánimo', nos.join('|'));
+    ok('11 Más: Nosotros sin Fechas, Recordatorios ni Encuentro sueltos', nos.join('|') === 'Calendario|Insignias y premios|Ánimo', nos.join('|'));
     const total = await page.evaluate(async () => { const r = await import('./js/routes.js'); return r.GROUPS.flatMap((g) => g.sections.filter((s) => !s.moment && r.listed(s.id))).length; });
-    ok('11 Más: 23 secciones', total === 23, String(total));
+    ok('11 Más: 22 secciones (v0.14.0: Rasca y gana vive dentro de Insignias)', total === 22, String(total));
     await page.locator('a[href="#/calendario"]').click();
     await page.waitForSelector('.hub-tabs');
     ok('11 Calendario: pestañas Mes, Fechas, Avisos y botón Próximo encuentro', (await page.locator('.hub-tab').allInnerTexts()).join('|') === 'Mes|Fechas|Avisos' && (await page.locator('a[href="#/encuentro"]').count()) >= 1);
@@ -2200,6 +2224,116 @@ async function completeSetup(page) {
     const real = errs.filter((e) => !/ERR_TUNNEL_CONNECTION_FAILED|ERR_INTERNET_DISCONNECTED/.test(e));
     ok('v0.11.0: no page errors or native dialogs', real.length === 0, real.join(' | '));
     await ctx.close(); await b11.close();
+  }
+
+  // ---------- v0.14.0: clean start, guide, garden, paper pets, Juegos tabs, Mi espacio, fixed tabs ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errs = watch(page);
+    await page.addInitScript(() => { window.alert = window.confirm = window.prompt = () => { throw new Error('native dialog'); }; });
+    await page.goto(BASE);
+    await page.getByRole('link', { name: 'Empezar desde cero' }).click();
+    await page.getByRole('button', { name: /David/ }).click();
+    await page.setInputFiles('#seed-file', SEED);
+    await page.getByRole('button', { name: 'Importar' }).click();
+    ok('14 Empezar: el resumen dice que cartas, cupones y recuerdos empiezan vacíos', /empiezan vacíos/.test(await page.locator('main').textContent()));
+    for (const n of ['Todo bien', 'Ahora no', 'Continuar', 'Terminar', 'Saltar']) await page.getByRole('button', { name: n }).click();
+    await page.waitForFunction(() => location.hash === '#/inicio');
+    await page.waitForSelector('.garden-card');
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(300); };
+    // Guide
+    ok('14 Guía: Inicio muestra "Primeros pasos" con 8 pasos y 3 sugeridos', /de 8$/.test((await page.locator('.guide-card .guide-count').textContent()).trim()) && (await page.locator('.guide-step').count()) === 3);
+    await go('/cartas', '.page');
+    ok('14 Guía: la primera vez una sección muestra su pista', (await page.locator('.guide-hint').count()) === 1);
+    await page.locator('.guide-hint').getByRole('button', { name: 'Entendido' }).click();
+    await go('/inicio', '.garden-card'); await go('/cartas', '.page');
+    ok('14 Guía: con "Entendido" la pista no vuelve', (await page.locator('.guide-hint').count()) === 0);
+    await go('/inicio', '.guide-card');
+    await page.locator('.guide-card').getByRole('button', { name: 'Ocultar' }).click();
+    await page.waitForFunction(() => !document.querySelector('.guide-card'));
+    ok('14 Guía: "Ocultar" la quita de Inicio', true);
+    // Garden
+    await page.waitForSelector('.garden-card');
+    ok('14 Jardín: empieza sin flores', /0 flores/.test(await page.locator('.garden-card .guide-count').textContent()));
+    await page.locator('.garden-card').getByRole('button', { name: 'Plantar hoy' }).click();
+    ok('14 Jardín: se puede elegir entre 7 flores', (await page.locator('.garden-pick').count()) === 7);
+    await page.locator('.garden-pick', { hasText: 'Lirio' }).click();
+    await page.waitForFunction(() => /1 flor/.test(document.querySelector('.garden-card .guide-count')?.textContent || ''), null, { timeout: 8000 });
+    const g = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const u = await import('./js/core/util.js'); const r = await db.get('streaks', 'garden'); return r?.days?.[u.localDay()]; });
+    ok('14 Jardín: la flor elegida queda guardada para los dos teléfonos', g?.david === 'lirio', JSON.stringify(g));
+    ok('14 Jardín: hoy ya no ofrece plantar otra vez', /Hoy plantaste: Lirio/.test(await page.locator('.garden-card').textContent()) && (await page.locator('.garden-card').getByRole('button', { name: 'Plantar hoy' }).count()) === 0);
+    await page.evaluate(async () => { const db = await import('./js/core/db.js'); await db.put('memories', { id: 't14:m', title: 'Recuerdo ficticio', date: '2026-05-05', mediaIds: [] }); });
+    await go('/ajustes', '.list-row'); await go('/inicio', '.garden-card');
+    ok('14 Jardín: un recuerdo planta una sakura', /2 flores/.test(await page.locator('.garden-card .guide-count').textContent()));
+    // Paper pets
+    await page.locator('.garden-card .pet').click();
+    await page.waitForSelector('.pet-bubble');
+    ok('14 Mascotas: el panda se llama Jorge y habla al tocarlo', /^Jorge: /.test(await page.locator('.pet-bubble').textContent()));
+    await page.evaluate(async () => { const pets = await import('./js/core/pets.js'); await pets.saveNames({ panda: 'Bambú' }); });
+    await go('/ajustes', '.list-row'); await go('/inicio', '.garden-card');
+    ok('14 Mascotas: el nombre se puede cambiar', /Bambú/.test(await page.locator('.garden-card .pet').getAttribute('aria-label')));
+    // Juegos, Liga, Modos, Insignias
+    await go('/juegos', '.hub-tabs');
+    ok('14 Juegos: pestañas Jugar, Liga y Modos', (await page.locator('.hub-tab').allInnerTexts()).join('|') === 'Jugar|Liga|Modos');
+    await go('/liga', '.liga-race');
+    ok('14 Liga: ranking del mes con barras', (await page.locator('.liga-bar-fill').count()) >= 2 && (await page.locator('.liga-col').count()) === 6);
+    await go('/modos', '.page');
+    ok('14 Modos: Modo juntos y Modo cita a la vista', (await page.locator('main a[href="#/juegos/juntos"]').count()) >= 1 && (await page.locator('main a[href="#/modo-cita"]').count()) >= 1);
+    await go('/insignias', '.hub-tabs');
+    ok('14 Insignias: los premios (rasca y gana) están aquí', (await page.locator('.hub-tab').allInnerTexts()).join('|') === 'Insignias|Premios');
+    await go('/mas', 'button.door');
+    await page.locator('button.door[data-group="personal"]').click();
+    await page.waitForFunction(() => location.hash === '#/jibun', null, { timeout: 5000 });
+    ok('14 Más: Mi espacio entra directo, sin segundo toque', true);
+    // Mi espacio
+    await page.waitForSelector('.own-desk');
+    ok('14 Mi espacio: escritorio con frase del día y 8 cajones', (await page.locator('.own-desk-line').textContent()).length > 10 && (await page.locator('.own-drawer').count()) === 8);
+    await page.locator('.own-drawer', { hasText: 'Notas' }).click();
+    await page.waitForSelector('.own-drawer[aria-pressed="true"]:not(:first-child)', { timeout: 5000 }).catch(() => {});
+    ok('14 Mi espacio: un cajón filtra y queda marcado', (await page.locator('.own-drawer[aria-pressed="true"]').textContent()).startsWith('Notas'));
+    // Calendario, Canciones
+    await go('/calendario', '.cal-cell');
+    ok('14 Calendario: los sábados vienen marcados como Día de novios', (await page.locator('.cal-cell.is-novios').count()) >= 4);
+    await go('/canciones', '.page');
+    ok('14 Canciones: un solo botón "Dedicar"', (await page.getByRole('button', { name: /Dedicar/ }).count()) === 1);
+    // Old ideas from the spec applied in v0.14.0
+    await page.evaluate(async () => {
+      const db = await import('./js/core/db.js');
+      const blob = await (await fetch('tests/fixtures/foto-ficticia.jpg')).blob();
+      const m = await db.putMedia(blob, { ownerStore: 'memories', ownerId: 't14:g' });
+      await db.put('memories', { id: 't14:g', title: 'Paseo ficticio', date: '2026-06-01', mediaIds: [m], visibility: 'shared', owner: 'both' });
+    });
+    await go('/galeria', '.gallery-grid');
+    await page.waitForSelector('.gallery-daily:not([hidden]) img', { timeout: 8000 });
+    ok('14 Galería: foto del día arriba', /Foto del día/.test(await page.locator('.gallery-daily').textContent()));
+    await page.getByRole('button', { name: 'Presentación' }).click();
+    await page.waitForSelector('.kami-card img', { timeout: 8000 });
+    ok('14 Galería: presentación en teatro de papel', (await page.locator('.kami-frame').count()) === 1 && /Paseo ficticio/.test(await page.locator('.kami-caption').textContent()));
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('.kami-frame'));
+    await go('/citas', '.sos-card');
+    await page.getByRole('button', { name: 'Cita de emergencia' }).click();
+    await page.waitForSelector('.idea-card, .gacha + *', { timeout: 8000 });
+    const tags = await page.locator('.idea-card').first().textContent().catch(() => '');
+    ok('14 Ideas de citas: "Cita de emergencia" da una idea de 1 hora', /1 hora/.test(tags), tags.slice(0, 120));
+    await go('/insignias', '.ins-badge');
+    await page.mouse.move(300, 200);
+    ok('14 Insignias: el brillo sigue al movimiento', /%$/.test(await page.evaluate(() => document.querySelector('main .page').style.getPropertyValue('--shine-x'))));
+    await go('/resumen', '.resumen-tiles');
+    await page.getByRole('button', { name: 'Ver las historias' }).click();
+    await page.waitForSelector('.story-canvas');
+    for (let k = 0; k < 40 && (await page.locator('.story-sign:not([hidden])').count()) === 0; k++) await page.locator('.story-next').click();
+    ok('14 Resumen: la última tarjeta se firma por los dos', (await page.locator('.story-sign button').count()) === 2);
+    await page.locator('.story-sign button').first().click();
+    await page.waitForSelector('.story-signed');
+    const sig = await page.evaluate(async () => { const db = await import('./js/core/db.js'); return (await db.query('streaks')).find((r) => r.type === 'wrapped-sign')?.signed; });
+    ok('14 Resumen: la firma queda guardada para los dos teléfonos', Array.isArray(sig) && sig.length === 1, JSON.stringify(sig));
+    await page.keyboard.press('Escape');
+    ok('14 sin desplazamiento lateral', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    const real = errs.filter((e) => !/ERR_TUNNEL_CONNECTION_FAILED|ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED/.test(e));
+    ok('v0.14.0: no page errors or native dialogs', real.length === 0, real.join(' | '));
+    await ctx.close();
   }
 
   await browser.close();

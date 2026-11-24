@@ -5,6 +5,7 @@
 import { ui, util, db, profile, CONFIG, seed } from '../core.js';
 import * as K from './juegos-kit.js';
 import { draw } from '../core/art.js';
+import { wire as wirePet } from '../core/pets.js';
 
 const { el, icon } = util;
 /** replaceChildren that skips null/false (native replaceChildren would print "null"). */
@@ -55,10 +56,13 @@ const kindOf = (bank) => (bank === '__words' ? 'japaneseWord' : `game:${bank}`);
 // ---------- room ("Arcade de papel", chosen 2026-11-22) ----------
 // An origami fox on top, colored tiles with washi tape for "Para ahora" and every game on shelves
 // by kind (they scroll sideways on a phone). The choice of mood, time and level stays as before.
+// Liga and Modo juntos have their own tabs; 30 días lives in Retos and Noche de cine in Planes (2026-11-22).
+const ELSEWHERE = new Set(['liga', 'juntos', 'reto30', 'cine']);
+const PLAYABLE = () => K.GAME_LIST.filter((g) => !ELSEWHERE.has(g.id));
 const SHELVES = [
   ['Para reír', ['mimica', 'probable', 'estooaquello', 'yonunca', 'cancion', 'cata']],
-  ['Para competir', ['dibujo', 'memoria', 'trivia', 'recuerdo', 'liga', 'cocina']],
-  ['Tranquilos y juntos', ['ruleta', 'cuentos', 'juntos', 'reto30', 'cine', 'tanabata']],
+  ['Para competir', ['dibujo', 'memoria', 'trivia', 'recuerdo', 'cocina']],
+  ['Tranquilos y juntos', ['ruleta', 'cuentos', 'tanabata']],
   ['Salidas y sorpresas', ['tesoro', 'misteriosa', 'bingo']],
   ['Japón y manualidades', ['origami', 'kotoba', 'manga', 'postales']],
 ];
@@ -92,33 +96,39 @@ async function room(page) {
   const q = () => `?min=${c.mins}&nivel=${c.level}`;
   const summary = el('p', { class: 'game-hero-sub' });
   const shelves = el('div', { class: 'game-shelves' });
+  // Options only change the picks and the links' query: the shelves are built once and the picks are
+  // rebuilt only when the list really changes, so the screen doesn't flash (Rowler, 2026-11-22).
+  let pickIds = '';
+  const seen = new Set(SHELVES.flatMap(([, ids]) => ids));
+  const extra = PLAYABLE().filter((g) => !seen.has(g.id)).map((g) => g.id);
+  put(shelves, ...[...SHELVES, ...(extra.length ? [['Más juegos', extra]] : [])].map(([title, ids]) => el('section', { class: 'game-shelf' },
+    el('h3', { class: 'game-shelf-title' }, title, el('span', { class: 'muted small' }, ` · ${ids.length}`)),
+    el('ul', { class: 'game-row' }, ids.map((id) => K.gameById(id)).filter(Boolean).map((g) => gameTile(g, q(), { mini: true }))))));
   const paintPicks = () => {
     rememberChoice(c);
-    const list = K.GAME_LIST.filter((g) => g.ready && g.moods.includes(c.mood) && g.mins.includes(c.mins));
-    const fallback = list.length ? list : K.GAME_LIST.filter((g) => g.ready && g.moods.includes(c.mood));
-    put(picks, ...fallback.map((g) => gameTile(g, q())));
+    const list = PLAYABLE().filter((g) => g.ready && g.moods.includes(c.mood) && g.mins.includes(c.mins));
+    const fallback = list.length ? list : PLAYABLE().filter((g) => g.ready && g.moods.includes(c.mood));
+    const ids = fallback.map((g) => g.id).join();
+    if (ids !== pickIds) { pickIds = ids; put(picks, ...fallback.map((g) => gameTile(g, q()))); }
+    const query = q();
+    for (const a of page.querySelectorAll('a.game-tile')) a.setAttribute('href', a.getAttribute('href').replace(/\?.*$/, '') + query);
     const label = (arr, v) => arr.find((o) => String(o.value) === String(v))?.label || v;
     summary.textContent = `${label(K.MOODS, c.mood)} · ${c.mins} min · castigos ${String(label(K.LEVELS, c.level)).toLowerCase()}`;
-    const seen = new Set(SHELVES.flatMap(([, ids]) => ids));
-    const extra = K.GAME_LIST.filter((g) => !seen.has(g.id)).map((g) => g.id);
-    put(shelves, ...[...SHELVES, ...(extra.length ? [['Más juegos', extra]] : [])].map(([title, ids]) => el('section', { class: 'game-shelf' },
-      el('h3', { class: 'game-shelf-title' }, title, el('span', { class: 'muted small' }, ` · ${ids.length}`)),
-      el('ul', { class: 'game-row' }, ids.map((id) => K.gameById(id)).filter(Boolean).map((g) => gameTile(g, q(), { mini: true }))))));
   };
   const surprise = ui.button({ label: 'Sorpréndannos', iconName: 'dices', variant: 'primary', onClick: () => {
-    const list = K.GAME_LIST.filter((g) => g.ready && g.moods.includes(c.mood));
+    const list = PLAYABLE().filter((g) => g.ready && g.moods.includes(c.mood));
     const g = list[Math.floor(Math.random() * list.length)];
     if (g) location.hash = `#/juegos/${g.id}${q()}`;
   } });
   const champ = await monthChampion();
   const hero = el('section', { class: 'game-hero', 'aria-labelledby': 'game-hero-title' },
-    el('span', { class: 'game-hero-fox', 'aria-hidden': 'true' }, draw('fox')),
+    wirePet(el('span', { class: 'game-hero-fox' }, draw('fox')), 'fox'),
     el('span', { class: 'game-hero-dice', 'aria-hidden': 'true' }, draw('dice')),
     el('div', { class: 'game-hero-text' },
       el('h2', { class: 'game-hero-title', id: 'game-hero-title' }, '¿Qué jugamos?'), summary, surprise));
   add(page,
     hero,
-    champ.played ? el('p', { class: 'game-champ' }, icon('crown', { size: 18 }), champ.best ? `Va ganando el mes: ${profile.name(champ.best)} (${champ.wins[champ.best]} a ${champ.wins[profile.partnerOf(champ.best)]})` : `Este mes van empatados (${champ.wins[profile.PEOPLE[0]]} a ${champ.wins[profile.PEOPLE[1]]})`) : null,
+    champ.played ? el('a', { class: 'game-champ', href: '#/liga' }, icon('crown', { size: 18 }), champ.best ? `Va ganando el mes: ${profile.name(champ.best)} (${champ.wins[champ.best]} a ${champ.wins[profile.partnerOf(champ.best)]})` : `Este mes van empatados (${champ.wins[profile.PEOPLE[0]]} a ${champ.wins[profile.PEOPLE[1]]})`) : null,
     el('details', { class: 'card game-picker' },
       el('summary', { class: 'game-picker-summary' }, icon('sliders-horizontal', { size: 18 }), el('span', {}, 'Cómo están, tiempo y castigos')),
       el('div', { class: 'stack game-picker-body' },
@@ -132,14 +142,14 @@ async function room(page) {
 }
 
 // ---------- runner ----------
-async function runner(page, game, query) {
+async function runner(page, game, query, back = '/juegos') {
   const st = await K.settings();
   const mins = K.DURATIONS.includes(Number(query.min)) ? Number(query.min) : (game.mins.includes(15) ? 15 : game.mins[0]);
   const opts = { first: profile.active(), level: K.LEVELS.some((l) => l.value === query.nivel) ? query.nivel : st.level, drink: false, mins };
   const body = el('div', { class: 'game-body' });
   let cleanup = null;
   const quit = el('button', { class: 'btn btn-ghost btn-small', type: 'button', hidden: true, onClick: async () => { if (await K.confirmQuit()) endNow?.(); } }, icon('flag', { size: 18 }), el('span', {}, 'Terminar'));
-  add(page, ui.pageHeader({ title: game.title, back: '/juegos', actions: [quit] }), body);
+  add(page, ui.pageHeader({ title: game.title, back, actions: [quit] }), body);
   const mod = await loaders[game.id]();
   let endNow = null;
 
@@ -220,6 +230,89 @@ async function history(page) {
         el('div', { class: 'grow' }, el('strong', {}, g?.title || r.gameId), el('p', { class: 'muted small' }, [detail, pens ? `${pens} ${pens === 1 ? 'castigo' : 'castigos'}` : '', when ? util.formatDay(when) : ''].filter(Boolean).join(' · '))),
         g?.ready && r.score && r.gameId !== 'liga' ? el('a', { class: 'btn btn-ghost btn-small', href: `#/juegos/${r.gameId}`, 'aria-label': `Revancha de ${g.title}` }, icon('swords', { size: 18 }), el('span', {}, 'Revancha')) : null);
     })));
+}
+
+// ---------- Liga (tab, 2026-11-22): the monthly winner, bars and champions ----------
+const MONTHS = new Intl.DateTimeFormat('es-CO', { month: 'short' });
+const ym = (r) => (r.date || r.endedAt || '').slice(0, 7);
+/** Wins per person per month for every game with a winner (Liga entries and scored games). */
+export function monthlyWins(recs) {
+  const by = new Map();
+  for (const r of recs) {
+    if (r.deleted || !r.winner || !profile.PEOPLE.includes(r.winner)) continue;
+    const k = ym(r); if (!k) continue;
+    if (!by.has(k)) by.set(k, Object.fromEntries(profile.PEOPLE.map((p) => [p, 0])));
+    by.get(k)[r.winner]++;
+  }
+  return by;
+}
+
+async function ligaPage(page) {
+  add(page, ui.pageHeader({ title: 'Liga', jp: 'リーグ', romaji: 'rīgu', back: '/mas', actions: [
+    ui.button({ label: 'Historial', iconName: 'history', small: true, variant: 'ghost', href: '#/juegos/historial' })] }));
+  const recs = (await db.query('games').catch(() => [])).filter((r) => !r.deleted);
+  const by = monthlyWins(recs);
+  const now = util.localDay().slice(0, 7);
+  const cur = by.get(now) || Object.fromEntries(profile.PEOPLE.map((p) => [p, 0]));
+  const best = K.winnerOf(cur);
+  const top = Math.max(1, ...profile.PEOPLE.map((p) => cur[p]));
+  const [a, b] = profile.PEOPLE;
+  const titles = Object.fromEntries(profile.PEOPLE.map((p) => [p, 0]));
+  for (const [k, w] of by) { if (k >= now) continue; const who = K.winnerOf(w); if (who) titles[who]++; }
+  const months = [];
+  for (let i = 5; i >= 0; i--) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`); }
+  const maxM = Math.max(1, ...months.flatMap((k) => profile.PEOPLE.map((p) => by.get(k)?.[p] || 0)));
+  const bar = (p, n, max) => el('span', { class: `liga-bar who-${profile.PEOPLE.indexOf(p) + 1}` }, el('span', { class: 'liga-bar-fill', 'data-pct': String(Math.round((n / max) * 100)) }));
+  add(page,
+    el('section', { class: 'card liga-hero', 'aria-labelledby': 'liga-hero-title' },
+      el('span', { class: 'liga-hero-crown', 'aria-hidden': 'true' }, icon('crown', { size: 34 })),
+      el('p', { class: 'card-kicker' }, `Campeón de ${MONTHS.format(new Date()).replace('.', '')}`),
+      el('h2', { class: 'liga-hero-title', id: 'liga-hero-title' }, best ? `Va ganando ${profile.name(best)}` : (cur[a] ? 'Van empatados' : 'Nadie ha ganado aún')),
+      el('ul', { class: 'liga-race' }, profile.PEOPLE.map((p) => el('li', { class: `liga-race-row${best === p ? ' is-best' : ''}` },
+        el('span', { class: 'score-avatar', 'aria-hidden': 'true' }, profile.name(p).slice(0, 1)),
+        el('span', { class: 'liga-race-name' }, profile.name(p)),
+        bar(p, cur[p], top),
+        el('strong', { class: 'liga-race-n' }, String(cur[p]))))),
+      el('p', { class: 'muted small' }, 'Cuenta las partidas de la Liga y cada juego con ganador. El 1 de cada mes empieza de cero.')),
+    el('div', { class: 'btn-row' },
+      ui.button({ label: 'Anotar una partida', iconName: 'plus', variant: 'primary', href: '#/juegos/liga' }),
+      ui.button({ label: 'Jugar algo', iconName: 'gamepad-2', variant: 'ghost', href: '#/juegos' })),
+    el('section', { class: 'card liga-months', 'aria-labelledby': 'liga-months-title' },
+      el('h2', { class: 'section-title', id: 'liga-months-title' }, 'Últimos 6 meses'),
+      el('div', { class: 'liga-legend small' }, profile.PEOPLE.map((p, i) => el('span', {}, el('span', { class: `liga-dot who-${i + 1}`, 'aria-hidden': 'true' }), profile.name(p)))),
+      el('ol', { class: 'liga-cols' }, months.map((k) => {
+        const w = by.get(k) || {};
+        const label = MONTHS.format(new Date(Number(k.slice(0, 4)), Number(k.slice(5)) - 1, 1)).replace('.', '');
+        return el('li', { class: 'liga-col', 'aria-label': `${label}: ${profile.PEOPLE.map((p) => `${profile.name(p)} ${w[p] || 0}`).join(', ')}` },
+          el('span', { class: 'liga-col-bars', 'aria-hidden': 'true' }, profile.PEOPLE.map((p, i) => el('span', { class: `liga-col-bar who-${i + 1}`, 'data-pct': String(Math.round(((w[p] || 0) / maxM) * 100)) }))),
+          el('span', { class: 'liga-col-label small' }, label), K.winnerOf(w) ? el('span', { class: 'liga-col-crown', 'aria-hidden': 'true' }, icon('crown', { size: 12 })) : null);
+      }))),
+    el('section', { class: 'card game-stats' },
+      ...profile.PEOPLE.map((p) => el('div', {}, el('strong', {}, String(titles[p])), el('span', { class: 'muted small' }, `${titles[p] === 1 ? 'mes ganado' : 'meses ganados'} por ${profile.name(p)}`))),
+      el('div', {}, el('strong', {}, String(recs.filter((r) => r.winner).length)), el('span', { class: 'muted small' }, 'partidas con ganador'))));
+  // Bar widths go through the CSSOM (the CSP blocks inline style attributes).
+  for (const f of page.querySelectorAll('[data-pct]')) {
+    const pct = `${Math.max(Number(f.dataset.pct), 0)}%`;
+    if (f.classList.contains('liga-col-bar')) f.style.height = pct; else f.style.width = pct;
+  }
+  void b;
+}
+
+// ---------- Modos (tab, 2026-11-22): the two "be together" modes, explained ----------
+async function modosPage(page) {
+  add(page, ui.pageHeader({ title: 'Modos', jp: '時間', romaji: 'jikan', back: '/mas' }));
+  const mode = (href, art, title, what, how, cta) => el('a', { class: 'card card-link mode-card', href },
+    el('span', { class: 'mode-art', 'aria-hidden': 'true' }, draw(art)),
+    el('span', { class: 'mode-text' },
+      el('span', { class: 'mode-title' }, title),
+      el('span', { class: 'mode-what' }, what),
+      el('span', { class: 'muted small' }, how),
+      el('span', { class: 'mode-cta' }, cta, icon('chevron-right', { size: 18 }))));
+  add(page, el('div', { class: 'mode-list' },
+    mode('#/juegos/juntos', 'tanuki', 'Modo juntos', 'Teléfonos boca abajo y tiempo de verdad.',
+      'Eligen cuántos minutos, ponen el teléfono boca abajo y la app cuenta el tiempo. Si alguno lo levanta antes, se nota. Suma minutos a su historial.', 'Empezar'),
+    mode('#/modo-cita', 'crane', 'Modo cita', 'Para usar mientras están en una salida.',
+      'Les da una pregunta para conversar, un botón de foto rápida y una nota para no olvidar. Al terminar, la app arma sola el recuerdo en la Cápsula.', 'Empezar una cita')));
 }
 
 // ---------- settings ----------
@@ -311,12 +404,15 @@ async function drawings(page) {
 }
 
 // ---------- page ----------
-export async function render({ params = {}, query = {} } = {}) {
+export async function render({ params = {}, query = {}, def = {} } = {}) {
   const page = el('section', { class: 'page page-wide juegos' });
   let cleanup = null;
   const sub = params.a;
   try {
-    if (!sub) {
+    if (def.id === 'liga') await ligaPage(page);
+    else if (def.id === 'modos') await modosPage(page);
+    else if (def.id === 'cine' || def.id === 'reto30') cleanup = await runner(page, K.gameById(def.id), query, '/mas');
+    else if (!sub) {
       add(page, ui.pageHeader({ title: 'Juegos', jp: '遊び', romaji: 'asobi', back: '/mas', actions: [
         ui.button({ label: 'Historial', iconName: 'history', small: true, variant: 'ghost', href: '#/juegos/historial' }),
         el('a', { class: 'icon-btn', href: '#/juegos/ajustes', 'aria-label': 'Ajustes de juegos' }, icon('sliders-horizontal'))] }));

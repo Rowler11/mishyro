@@ -4,7 +4,7 @@
 // with "Crear recuerdo". Fase 4B adds the cycle and private layers (ciclo.js): Sofía sees hers and her
 // estimates; David sees the chips only once she shared something, and only what she shared.
 // Record in "events": { id, title, start: "YYYY-MM-DD" | "YYYY-MM-DDTHH:MM", place, note, remind, by, createdAt }.
-import { ui, util, db, profile } from '../core.js';
+import { ui, util, db, profile, CONFIG } from '../core.js';
 import * as dates from '../core/dates.js';
 import * as ics from '../core/ics.js';
 import { MOODS } from './animo.js';
@@ -100,6 +100,12 @@ export function editor(existing, { day, onSaved, prefill = {} }) {
   });
 }
 
+// The couple's fixed day (CONFIG.coupleDay, Saturdays: "Día de novios", Rowler 2026-11-22). It is
+// always on, marked in the grid and in the day panel, and needs no record.
+const COUPLE = { weekday: 6, name: 'Día de novios', ...(CONFIG.coupleDay || {}) };
+const WEEKDAY_NAME = ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'][COUPLE.weekday] || 'sábados';
+const isCoupleDay = (key) => util.parseDay(key).getDay() === COUPLE.weekday;
+
 export async function render(ctx = {}) {
   const page = el('section', { class: 'page calendario' });
   const today = util.localDay();
@@ -176,13 +182,15 @@ export async function render(ctx = {}) {
       const mood = moods.has(key);
       const cyc = shown('ciclo') ? ciclo.dayKind(key, data.cycle) : null;
       const priv = privDays.has(key);
-      const parts = [n ? `${n} ${n === 1 ? 'cita' : 'citas'}` : '', ...f.map((x) => x.name), mood ? 'ánimo registrado' : '', cyc ? ciclo.kindLabel(cyc) : '', priv ? 'registro privado' : ''].filter(Boolean);
+      const novios = isCoupleDay(key);
+      const parts = [novios ? COUPLE.name : '', n ? `${n} ${n === 1 ? 'cita' : 'citas'}` : '', ...f.map((x) => x.name), mood ? 'ánimo registrado' : '', cyc ? ciclo.kindLabel(cyc) : '', priv ? 'registro privado' : ''].filter(Boolean);
       const date = new Date(y, m, day);
       cells.push(el('button', {
-        class: `cal-cell${key === today ? ' is-today' : ''}${key === selected ? ' is-selected' : ''}${f.length ? ' has-date' : ''}`, type: 'button',
+        class: `cal-cell${key === today ? ' is-today' : ''}${key === selected ? ' is-selected' : ''}${f.length ? ' has-date' : ''}${novios ? ' is-novios' : ''}`, type: 'button',
         'aria-pressed': String(key === selected), 'aria-label': `${fmtDay.format(date)}${parts.length ? `: ${parts.join(', ')}` : ''}`,
         onClick: () => { selected = key; draw(); body.querySelector('.cal-day-title')?.focus({ preventScroll: false }); },
       }, el('span', { class: 'cal-num' }, String(day)),
+      novios ? el('span', { class: 'cal-novios', 'aria-hidden': 'true' }, icon('heart', { size: 10 })) : null,
       el('span', { class: 'cal-dots', 'aria-hidden': 'true' },
         n ? el('span', { class: 'cal-dot dot-cita' }) : null,
         f.length ? el('span', { class: 'cal-dot dot-fecha' }) : null,
@@ -207,10 +215,15 @@ export async function render(ctx = {}) {
         if (layers.has(l.id)) layers.delete(l.id); else layers.add(l.id); saveLayers(layers); draw();
       } }, el('span', { class: `cal-dot dot-${DOT[l.id]}`, 'aria-hidden': 'true' }), l.label)));
     const cycBlock = (shown('ciclo') || shown('privado')) ? ciclo.dayBlock(selected, data.cycle, { cycle: shown('ciclo'), priv: shown('privado'), refresh }) : null;
-    const empty = !it.events.length && !it.fechas.length && !it.moods.length && !cycBlock;
+    const novios = isCoupleDay(selected);
+    const empty = !novios && !it.events.length && !it.fechas.length && !it.moods.length && !cycBlock;
     const dayPanel = el('section', { class: 'cal-day stack-tight', 'aria-labelledby': 'cal-day-title' },
       el('h2', { class: 'card-kicker cal-day-title', id: 'cal-day-title', tabindex: '-1' }, selected === today ? `Hoy, ${fmtDay.format(sel)}` : cap(fmtDay.format(sel))),
       empty ? el('p', { class: 'muted' }, 'Nada este día.') : null,
+      novios ? el('div', { class: 'card paper-card cal-fecha cal-novios-card' },
+        el('span', { class: 'cal-fecha-icon', 'aria-hidden': 'true' }, icon('heart', { size: 20 })),
+        el('div', { class: 'cal-event-text' }, el('span', { class: 'cal-event-title' }, COUPLE.name),
+          el('span', { class: 'muted small' }, it.events.length ? 'Ya tienen plan para hoy.' : `Todos los ${WEEKDAY_NAME} son de ustedes.`))) : null,
       it.fechas.length ? el('ul', { class: 'cal-list' }, it.fechas.map((d) => el('li', { class: 'card paper-card cal-fecha' },
         el('span', { class: 'cal-fecha-icon', 'aria-hidden': 'true' }, icon(dates.KIND_ICON[d.kind] || 'calendar', { size: 20 })),
         el('div', { class: 'cal-event-text' }, el('span', { class: 'cal-event-title' }, d.name),

@@ -16,7 +16,8 @@ const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long'
 const fmtTime = new Intl.DateTimeFormat('es-CO', { hour: 'numeric', minute: '2-digit' });
 const KEY = `${CONFIG.storageKey}.cartas.tab`;
 const TABS = ['mine', 'write', 'stickers'];
-const readTab = () => { try { const v = localStorage.getItem(KEY); return TABS.includes(v) ? v : 'mine'; } catch { return 'mine'; } };
+// Screens open on their first tab every time instead of the last one used (2026-11-22).
+const readTab = () => 'mine';
 const saveTab = (v) => { try { localStorage.setItem(KEY, v); } catch { /* private mode */ } };
 const AUTHOR = Object.entries(CONFIG.people || {}).find(([, p]) => p.role === 'author')?.[0] || 'david';
 const pending = (t) => !t || seed.needsCompletion(t);

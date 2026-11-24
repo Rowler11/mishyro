@@ -484,16 +484,22 @@ export async function render() {
     const pet = await import('./mascotas.js').then((m) => m.homeCard({ onChange: build })).catch(() => null);
     const acc = await import('./home-accesos.js');
     const favs = await acc.favoritesCard().catch((e) => { console.error(e); return null; });
+    const homeMap = await import('./mapa.js').then((m) => m.homeCard()).catch(() => null);
+    const plant = await import('./planta.js').then((m) => m.homeCard({ onChange: build })).catch((e) => { console.error(e); return null; });
+    const guide = await import('./guia.js').then((m) => m.homeCard({ onChange: build })).catch(() => null);
     const both = bothLine(recv);
     cleanups.push(both.cleanup);
     body.replaceChildren(...[
       counter ? counter.card : noStartCard(),
       both.node,
       acc.quickActions(),
+      guide,
       celebrationCard(events),
       meeting,
       slides.length ? daySwitcher(slides) : null,
+      plant,
       favs,
+      homeMap,
       comingCard(data, start),
       today,
       acc.discoverCard(),

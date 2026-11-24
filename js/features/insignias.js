@@ -224,5 +224,12 @@ export async function render() {
   try { await draw(); } catch (e) { console.error(e); body.replaceChildren(ui.emptyState({ title: 'No pudimos abrir esta sección', text: 'Cierra y vuelve a abrir la app.', art: 'wave' })); }
   const later = util.debounce(() => draw().catch(() => {}), 400);
   const off = db.onChange((s) => { if (tracked.has(s)) later(); });
-  return { node: page, cleanup: () => { off(); } };
+  // Holographic shine on the earned seals when the phone tilts (docs/05 Detalles: Insignias). Only with
+  // motion on; on a computer the pointer moves it. Nothing is asked for: without the sensor it stays still.
+  const shine = (x, y) => { page.style.setProperty('--shine-x', `${Math.round(50 + x * 50)}%`); page.style.setProperty('--shine-y', `${Math.round(50 + y * 50)}%`); };
+  const onTilt = (e) => { if (util.prefersReducedMotion() || e.gamma == null) return; shine(Math.max(-1, Math.min(1, e.gamma / 35)), Math.max(-1, Math.min(1, (e.beta - 45) / 35))); };
+  const onPointer = (e) => { if (util.prefersReducedMotion() || e.pointerType !== 'mouse') return; shine((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1); };
+  window.addEventListener('deviceorientation', onTilt);
+  page.addEventListener('pointermove', onPointer);
+  return { node: page, cleanup: () => { off(); window.removeEventListener('deviceorientation', onTilt); } };
 }

@@ -71,7 +71,55 @@ export function loadLeaflet() {
   return leafletP;
 }
 
+// v0.14.0 (Mapa de papel, option A): CARTO Voyager tiles, soft colors with no filter on top, free and keyless.
+export const TILES = { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', options: { subdomains: 'abcd', maxZoom: 19, referrerPolicy: 'strict-origin-when-cross-origin', attribution: '© <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a> © <a href="https://carto.com/attributions" rel="noopener" target="_blank">CARTO</a>' } };
+export const tiles = (L) => L.tileLayer(TILES.url, TILES.options);
 export const pinIcon = (L, cls = '') => L.divIcon({ className: `map-pin ${cls}`.trim(), html: '<span class="map-pin-dot"></span>', iconSize: [30, 30], iconAnchor: [15, 28] });
+/** A sakura pin; with a photo it becomes a little round polaroid of the place (url is a local blob: URL). */
+export const photoPin = (L, url = '') => L.divIcon({
+  className: `map-pin map-photo-pin${url ? ' has-photo' : ''}`,
+  html: url ? `<span class="map-photo-frame"><img src="${url}" alt=""></span><i class="map-photo-tip"></i>` : '<span class="map-sakura"></span><i class="map-photo-tip"></i>',
+  iconSize: url ? [52, 62] : [36, 44], iconAnchor: url ? [26, 60] : [18, 42],
+});
+/** Places in the order they lived them, for the dotted route. */
+export const routeOf = (places) => places.filter((p) => Number.isFinite(p.lat) && p.date).sort((a, b) => a.date.localeCompare(b.date)).map((p) => [p.lat, p.lng]);
+
+/** Inicio (v0.14.0): a small map with their places; tap to open the Mapa. Null without places or without map access. */
+export async function homeCard() {
+  const places = (await db.query('places').catch(() => [])).filter((p) => !p.dream && !p.deleted && Number.isFinite(p.lat));
+  if (!places.length || !navigator.onLine || !(await security.thirdPartyAllowed())) return null;
+  const L = await loadLeaflet().catch(() => null);
+  if (!L) return null;
+  const last = [...places].sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0];
+  const box = el('div', { class: 'home-map-box', 'aria-hidden': 'true' });
+  const urls = [];
+  const card = el('a', { class: 'card paper-card home-map', href: '#/mapa', 'aria-label': `Mapa de sus lugares: ${places.length} ${places.length === 1 ? 'lugar' : 'lugares'}. Abrir el mapa` },
+    el('div', { class: 'home-map-head' }, el('p', { class: 'card-kicker' }, 'Nuestros lugares'), el('span', { class: 'muted small' }, `${places.length} ${places.length === 1 ? 'lugar' : 'lugares'}`)),
+    box,
+    el('p', { class: 'small home-map-last' }, icon('map-pin', { size: 16 }), `Último: ${last.name}`));
+  // Build the map only once the card is on screen (Inicio inserts it after all its cards are ready).
+  const init = () => {
+    const map = L.map(box, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false, tap: false });
+    tiles(L).addTo(map);
+    const route = routeOf(places);
+    if (route.length > 1) L.polyline(route, { className: 'map-route', interactive: false }).addTo(map);
+    for (const p of places) {
+      const m = L.marker([p.lat, p.lng], { icon: photoPin(L), interactive: false, keyboard: false }).addTo(map);
+      if (p.mediaIds?.[0]) db.getMedia(p.mediaIds[0]).then((b) => { if (b) { const u = URL.createObjectURL(b); urls.push(u); m.setIcon(photoPin(L, u)); } }).catch(() => {});
+    }
+    const pts = places.map((p) => [p.lat, p.lng]);
+    if (pts.length > 1) map.fitBounds(pts, { paddingTopLeft: [30, 64], paddingBottomRight: [30, 20], maxZoom: 14 }); else map.setView(pts[0], 13);
+    return map;
+  };
+  let map = null;
+  // Free the map and its photos when Inicio is replaced.
+  const obs = new MutationObserver(() => {
+    if (!map && card.isConnected && box.clientWidth) map = init();
+    else if (map && !card.isConnected) { obs.disconnect(); map.remove(); urls.forEach((u) => URL.revokeObjectURL(u)); }
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+  return card;
+}
 
 // ---------- geolocation with explanation first ----------
 export async function explainAndLocate({ title = 'Usar tu ubicación', text } = {}) {
@@ -216,7 +264,7 @@ export async function render(ctx) {
   const body = el('div', { class: 'stack' }, ui.skeleton(3));
   page.append(body);
   let tab = 'mapa';
-  try { tab = localStorage.getItem(TAB_KEY) === 'lista' ? 'lista' : 'mapa'; } catch { /* private mode */ }
+  // Always opens on the map tab (2026-11-22).
   let places = []; let snaps = []; let map = null; let markers = null; let myPos = null;
   const urls = new Set();
   const me = () => profile.active();
@@ -287,22 +335,26 @@ export async function render(ctx) {
     const allowed = await security.thirdPartyAllowed();
     if (!allowed || !navigator.onLine) {
       return el('div', { class: 'card paper-card map-off' }, icon('map', { size: 28 }),
-        el('p', {}, !allowed ? 'El mapa usa OpenStreetMap, un servicio externo, y está activo el Modo sin terceros. Aquí tienen la lista.' : 'Sin conexión no se puede cargar el mapa. Aquí tienen la lista.'));
+        el('p', {}, !allowed ? 'El mapa usa CARTO, un servicio externo, y está activo el Modo sin terceros. Aquí tienen la lista.' : 'Sin conexión no se puede cargar el mapa. Aquí tienen la lista.'));
     }
     let L;
     try { L = await loadLeaflet(); } catch { return el('div', { class: 'card paper-card map-off' }, el('p', {}, 'No pudimos cargar el mapa. Aquí tienen la lista.')); }
     requestAnimationFrame(() => {
       if (!map) {
         map = L.map(mapBox, { zoomControl: true, attributionControl: true, tap: true }).setView(BOGOTA, 11);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, referrerPolicy: 'strict-origin-when-cross-origin', attribution: '© <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a>' }).addTo(map);
+        tiles(L).addTo(map);
         map.on('click', (e) => openEditor(null, { lat: +e.latlng.lat.toFixed(5), lng: +e.latlng.lng.toFixed(5) }));
         markers = L.layerGroup().addTo(map);
       }
       markers.clearLayers();
       const pts = [];
+      const route = routeOf(places);
+      if (route.length > 1) L.polyline(route, { className: 'map-route', interactive: false }).addTo(markers);
       for (const p of places.filter((x) => Number.isFinite(x.lat))) {
         pts.push([p.lat, p.lng]);
-        L.marker([p.lat, p.lng], { icon: pinIcon(L), title: p.name, alt: p.name, keyboard: true }).addTo(markers)
+        const mk = L.marker([p.lat, p.lng], { icon: photoPin(L), title: p.name, alt: p.name, keyboard: true });
+        if (p.mediaIds?.[0]) db.getMedia(p.mediaIds[0]).then((b) => { if (b) { const u = URL.createObjectURL(b); urls.add(u); mk.setIcon(photoPin(L, u)); } }).catch(() => {});
+        mk.addTo(markers)
           .on('click', () => { tab = 'lista'; saveTab(); draw().then(() => body.querySelector(`.place-card[data-id="${CSS.escape(p.id)}"]`)?.scrollIntoView({ block: 'center' })); });
       }
       getViewMode().then((mode) => {
@@ -312,9 +364,9 @@ export async function render(ctx) {
           if (theirs.precision !== 'exact') L.circle([theirs.lat, theirs.lng], { radius: theirs.precision === 'city' ? 15000 : 3500, className: 'map-snap-area' }).addTo(markers);
           pts.push([theirs.lat, theirs.lng]);
         }
-        if (pts.length > 1) map.fitBounds(pts, { padding: [36, 36], maxZoom: 15 });
+        map.invalidateSize(); // size first: the box may have just been placed, or fitBounds lands off-screen
+        if (pts.length > 1) map.fitBounds(pts, { paddingTopLeft: [40, 70], paddingBottomRight: [40, 24], maxZoom: 15 });
         else if (pts.length) map.setView(pts[0], 14);
-        map.invalidateSize();
       });
     });
     // "Diario de viaje" (chosen 2026-11-22): the map is a photo taped into their travel diary.

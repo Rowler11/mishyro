@@ -1,5 +1,28 @@
 # Cambios
 
+## 0.14.0 (app limpia, guía, mascotas con nombre y su jardín)
+
+Arreglos
+- Las secciones con pestañas abren siempre en la misma (Cuponera en Historial, Cartas en las tuyas, Mapa en el mapa, etc.).
+- Canciones tiene un solo botón "Dedicar".
+- Juegos ya no parpadea al cambiar opciones.
+- Los grupos de Más con una sola sección (Jugar, Mi espacio) entran directo, sin segundo toque.
+- Las pestañas de arriba ya no se parten en dos líneas.
+
+Nuevo
+- Empezar de cero: el archivo trae solo nombres, fechas y mascotas. Cartas, cupones, razones y recuerdos empiezan vacíos.
+- Guía: tarjeta "Primeros pasos" en Inicio con lo que falta por hacer, y una pista corta la primera vez que se abre cada sección. Se puede ocultar y volver a ver en Ajustes.
+- Mascotas de papel con nombre y personalidad: Jorge el panda, Kitsu el zorro, Mochi la gata, Dango el conejo, Ponpoko el tanuki y Hana la grulla. Al tocarlas se mueven y dicen algo; si hay dos juntas, la otra responde. Los nombres se cambian en Ajustes > Apariencia.
+- Nuestro jardín en Inicio: cada carta, recuerdo, cita, juego, canción, cupón o página del diario planta una flor, y cada uno puede plantar una vez al día la flor que elija (sakura, lirio, tulipán, margarita, campanilla, girasol o violeta).
+- Juegos con tres pestañas: Jugar, Liga (ganador del mes con barras y los últimos 6 meses) y Modos (Modo juntos y Modo cita, explicados).
+- Rasca y gana pasa a Insignias como "Premios". Desafío de 30 días va a Retos y Noche de cine a Planes.
+- Calendario: todos los sábados vienen marcados como Día de novios.
+- Ideas de citas: botón "Ya lo hicimos hace poco" que la deja descansar un mes.
+- Mapa de papel: fotos como polaroids redondas en los pines, la ruta entre lugares y un mapa pequeño en Inicio.
+- Mi espacio como escritorio personal: frase del día, Dango que te habla, el próximo recordatorio y cajones grandes con cuántas cosas hay en cada uno.
+- El jardín tiene paisaje: cielo con sol de día y luna con estrellas de noche, el Fuji, nubes, una linterna de piedra que se enciende de noche, mariposas, luciérnagas y pétalos.
+- Detalles de la especificación que faltaban: modo presentación en la Galería (teatro de papel) y "Foto del día"; "Cita de emergencia" en Ideas de citas (gratis y de menos de una hora); la última tarjeta del Resumen se firma por los dos; y las insignias brillan al inclinar el teléfono.
+
 ## 0.13.0 (unir equipos fácil y más vida en cada sección)
 
 Arreglos

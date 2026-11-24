@@ -49,6 +49,16 @@ const DRAW = {
     <polygon points="48,70 60,66 72,70 60,84" fill="#F2E6D8"/>
     <g class="art-eyes"><circle cx="45" cy="59" r="2.6" fill="#FFF"/><circle cx="75" cy="59" r="2.6" fill="#FFF"/></g>
     <polygon points="57,72 63,72 60,76" fill="#2A1E1A"/></g>`, 'creature tanuki'),
+  panda: () => svg('0 0 120 120', `
+    <polygon points="28,112 60,60 92,112" fill="#F6F3EF"/><polygon points="60,60 92,112 60,112" fill="#E6E1DB"/>
+    <polygon points="28,112 40,92 50,112" fill="#2E2A2B"/><polygon points="92,112 80,92 70,112" fill="#2E2A2B"/>
+    <g class="art-arm"><polygon points="34,80 48,74 44,98" fill="#2E2A2B"/></g><polygon points="86,80 72,74 76,98" fill="#3A3536"/>
+    <g class="art-head"><circle cx="34" cy="28" r="10" fill="#2E2A2B"/><circle cx="86" cy="28" r="10" fill="#3A3536"/>
+    <polygon points="24,46 60,30 96,46 86,78 60,88 34,78" fill="#FBF8F4"/><polygon points="60,30 96,46 86,78 60,88" fill="#EDE8E2"/>
+    <polygon points="36,52 52,48 52,64 40,68" fill="#2E2A2B" transform="rotate(-8 46 58)"/><polygon points="84,52 68,48 68,64 80,68" fill="#2E2A2B" transform="rotate(8 74 58)"/>
+    <g class="art-eyes"><circle cx="46" cy="57" r="2.6" fill="#FFF"/><circle cx="74" cy="57" r="2.6" fill="#FFF"/></g>
+    <polygon points="56,70 64,70 60,75" fill="#2E2A2B"/>${cheeks(70)}</g>
+    <g class="art-bamboo"><rect x="96" y="58" width="5" height="50" rx="2" fill="#8DBF6A"/><rect x="95" y="74" width="7" height="2" fill="#6E9F4E"/><polygon points="101,62 114,54 104,66" fill="#A6D184"/></g>`, 'creature panda'),
   crane: (color = '#F3B7C5') => svg('0 0 140 100', `
     <g class="art-wing-l"><polygon points="70,56 22,8 56,60" fill="${color}"/><polygon points="70,56 40,26 56,60" fill="#fff" opacity=".35"/></g>
     <g class="art-wing-r"><polygon points="70,56 122,6 86,60" fill="#E58FA6"/></g>

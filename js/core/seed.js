@@ -148,17 +148,9 @@ export async function applySeed(seed) {
   ];
   res.profile = await upsertSeeded('profile', profile, 'seed', tombstones);
 
-  const content = [
-    ...(seed.reasons || []).map((r) => ({ id: r.id, kind: 'reason', text: clean(r.text) })),
-    ...(seed.coupons || []).map((c) => ({ id: c.id, kind: 'coupon', title: clean(c.title), description: clean(c.description) })),
-    ...(seed.letters || []).map((l) => ({ id: l.id, kind: 'letter', label: clean(l.label), text: clean(l.text) })),
-  ];
-  res.content = await upsertSeeded('content', content, 'seed', tombstones);
-
-  res.memories = await upsertSeeded('memories', (seed.memories || []).map((m) => {
-    const date = clean(m.date);
-    return { id: m.id, date: isValidDay(date) ? date : '', title: clean(m.title), note: clean(m.note), mediaIds: [], draft: !isValidDay(date) };
-  }), 'seed', tombstones);
+  // Clean start (Rowler, 2026-11-22, option A): the file brings names, dates and pets only. Letters,
+  // coupons, reasons and memories start empty so everything in the app is written by them for real.
+  // Older files may still carry those lists: they are validated but not imported.
 
   const petIdByName = {};
   res.pets = await upsertSeeded('pets', (seed.pets || []).map((p) => {

@@ -3,7 +3,7 @@
 // toggles, segmented control, "Los dos / Solo yo" picker and PIN pad.
 import { el, icon, ja, haptic, prefersReducedMotion, uuid } from './util.js';
 import { previousPath, parseHash } from './router.js';
-import { GROUPS, hubOf } from '../routes.js';
+import { GROUPS, hubOf, listed } from '../routes.js';
 
 // ---------- live announcements ----------
 let live;
@@ -153,7 +153,9 @@ export function confirmDialog({ title = '¿Seguro?', message = '', confirmLabel 
 function masTarget() {
   const id = parseHash().path.split('/')[1];
   const g = GROUPS.find((x) => x.sections.some((s) => s.id === id));
-  return g ? `/mas/${g.id}` : '/mas';
+  // A group with a single section opens it straight from the doors, so back goes to the doors too.
+  const single = g && g.sections.filter((s) => !s.moment && listed(s.id)).length === 1;
+  return g && !single ? `/mas/${g.id}` : '/mas';
 }
 function backLink(back) {
   const toMas = typeof back !== 'string' || back === '/mas';

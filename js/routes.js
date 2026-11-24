@@ -16,6 +16,7 @@ export const GROUPS = [
     { id: 'calendario', title: 'Calendario', jp: 'カレンダー', romaji: 'karendā', icon: 'calendar', phase: '3', module: 'calendario', blurb: 'Citas, fechas y capas en un solo calendario.' },
     { id: 'fechas', title: 'Fechas especiales', jp: '記念日', romaji: 'kinenbi', icon: 'cake', phase: '3', module: 'fechas', blurb: 'Aniversario, cumpleaños y cuentas regresivas.' },
     { id: 'insignias', title: 'Racha e insignias', jp: 'バッジ', romaji: 'bajji', icon: 'award', phase: '4A', module: 'insignias', blurb: 'Lo que van logrando juntos.' },
+    { id: 'rasca', title: 'Rasca y gana', jp: '当たり', romaji: 'atari', icon: 'wand-sparkles', phase: '4B', module: 'rasca', blurb: 'Premios pequeños para raspar.' },
     { id: 'animo', title: 'Medidor de ánimo', jp: '気分', romaji: 'kibun', icon: 'smile', phase: '3', module: 'animo', blurb: 'Cómo amanece cada uno.' },
     { id: 'resumen', title: 'Resumen del año', jp: '年間', romaji: 'nenkan', icon: 'sparkles', phase: '4A', module: 'resumen', moment: true, blurb: 'Su año en historias, con modo Wrapped.' },
     { id: 'recordatorios', title: 'Recordatorios', jp: 'お知らせ', romaji: 'oshirase', icon: 'bell', phase: '3', module: 'recordatorios', blurb: 'Avisos suaves y calendario del teléfono.' },
@@ -42,11 +43,14 @@ export const GROUPS = [
     { id: 'suenos', title: 'Sueños y viajes', jp: '夢', romaji: 'yume', icon: 'moon-star', phase: '4A', module: 'suenos', blurb: 'Los grandes sueños, paso a paso.' },
     { id: 'citas', title: 'Sugerencias de citas', jp: 'デート', romaji: 'dēto', icon: 'dices', phase: '4A', module: 'citas', blurb: 'Una idea nueva cuando no se les ocurre nada.' },
     { id: 'modo-cita', title: 'Modo cita', jp: 'お出かけ', romaji: 'odekake', icon: 'heart', phase: '0.10', module: 'modo-cita', blurb: 'Para la salida: al final arma el recuerdo solo.' },
+    { id: 'cine', title: 'Noche de cine', jp: '映画', romaji: 'eiga', icon: 'film', phase: '0.14', module: 'juegos', blurb: 'Lo que quieren ver juntos.' },
+    { id: 'reto30', title: 'Desafío de 30 días', jp: '三十日', romaji: 'sanjūnichi', icon: 'calendar', phase: '0.14', module: 'juegos', blurb: 'Un mini reto de pareja al día.' },
     { id: 'regalos', title: 'Regalos secretos', jp: '贈り物', romaji: 'okurimono', icon: 'gift', phase: '4A', module: 'regalos', blurb: 'Ideas de regalo que el otro no ve.' },
   ] },
   { id: 'jugar', title: 'Jugar', jp: '遊び', romaji: 'asobi', sections: [
     { id: 'juegos', title: 'Juegos', jp: '遊び', romaji: 'asobi', icon: 'gamepad-2', phase: '5', module: 'juegos', blurb: 'Juegos en pareja, en persona.' },
-    { id: 'rasca', title: 'Rasca y gana', jp: '当たり', romaji: 'atari', icon: 'wand-sparkles', phase: '4B', module: 'rasca', blurb: 'Premios pequeños para raspar.' },
+    { id: 'liga', title: 'Liga', jp: 'リーグ', romaji: 'rīgu', icon: 'trophy', phase: '0.14', module: 'juegos', blurb: 'El ganador del mes y su marcador.' },
+    { id: 'modos', title: 'Modos', jp: '時間', romaji: 'jikan', icon: 'leaf', phase: '0.14', module: 'juegos', blurb: 'Modo juntos y Modo cita.' },
     { id: 'eventos', title: 'Eventos de temporada', jp: '季節', romaji: 'kisetsu', icon: 'party-popper', phase: '5', module: 'eventos', moment: true, blurb: 'Fechas del año con su decoración.' },
   ] },
   { id: 'hogar', title: 'Hogar', sections: [
@@ -101,9 +105,12 @@ export const HUBS = [
   { id: 'calendario', title: 'Calendario', icon: 'calendar', blurb: 'Citas, fechas especiales, avisos y el próximo encuentro.', tabs: [['calendario', 'Mes'], ['fechas', 'Fechas'], ['recordatorios', 'Avisos']], also: ['encuentro'] },
   { id: 'galeria', title: 'Galería', icon: 'image', blurb: 'Todas sus fotos y videos, su año y el photobooth.', tabs: [['galeria', 'Todas'], ['album', 'Nuestro año'], ['photobooth', 'Photobooth']] },
   { id: 'preguntas', title: 'Conocernos', icon: 'message-circle-question', blurb: 'La pregunta del día, el quiz y sus lenguajes del amor.', tabs: [['preguntas', 'Preguntas'], ['lenguajes', 'Lenguajes del amor']] },
-  { id: 'retos', title: 'Retos y hábitos', icon: 'flag', blurb: 'El reto de la semana y sus pequeños hábitos.', tabs: [['retos', 'Reto semanal'], ['habitos', 'Hábitos']] },
-  { id: 'planes', title: 'Planes', icon: 'list-checks', blurb: 'Lo que quieren vivir, sus sueños e ideas de citas.', tabs: [['planes', 'Lista'], ['suenos', 'Sueños y viajes'], ['citas', 'Ideas de citas']] },
-  { id: 'juegos', title: 'Juegos', icon: 'gamepad-2', blurb: 'Juegos en pareja y rasca y gana.', tabs: [['juegos', 'Juegos'], ['rasca', 'Rasca y gana']] },
+  { id: 'retos', title: 'Retos y hábitos', icon: 'flag', blurb: 'El reto de la semana, el desafío de 30 días y sus hábitos.', tabs: [['retos', 'Reto semanal'], ['reto30', '30 días'], ['habitos', 'Hábitos']] },
+  { id: 'planes', title: 'Planes', icon: 'list-checks', blurb: 'Lo que quieren vivir, ideas de citas, sueños y noche de cine.', tabs: [['planes', 'Lista'], ['citas', 'Ideas de citas'], ['suenos', 'Sueños y viajes'], ['cine', 'Noche de cine']] },
+  // Juegos reorganized (2026-11-22, option A): play, the monthly league and the modes; Rasca y gana
+  // went to Insignias (prizes), 30 días to Retos and Noche de cine to Planes.
+  { id: 'juegos', title: 'Juegos', icon: 'gamepad-2', blurb: 'Juegos en pareja, la liga del mes y los modos.', tabs: [['juegos', 'Jugar'], ['liga', 'Liga'], ['modos', 'Modos']], also: ['modo-cita'] },
+  { id: 'insignias', title: 'Insignias y premios', icon: 'award', blurb: 'Lo que van logrando juntos y sus premios para raspar.', tabs: [['insignias', 'Insignias'], ['rasca', 'Premios']] },
   { id: 'alcancia', title: 'Dinero', icon: 'piggy-bank', blurb: 'Metas de ahorro y gastos compartidos.', tabs: [['alcancia', 'Alcancía'], ['gastos', 'Gastos']] },
   // Ajustes
   { id: 'ajustes/privacidad', title: 'Privacidad', icon: 'eye-off', tabs: [['ajustes/privacidad', 'Privacidad'], ['ajustes/permisos', 'Permisos'], ['ajustes/terceros', 'Sin terceros']] },

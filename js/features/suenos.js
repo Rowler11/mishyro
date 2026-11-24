@@ -6,7 +6,7 @@
 // Different from Planes juntos (small, quick); a plan can become a dream and back.
 import { ui, util, db, profile, security } from '../core.js';
 import { compressImage, isQuotaError } from '../core/images.js';
-import { loadLeaflet, pinIcon } from './mapa.js';
+import { loadLeaflet, pinIcon, tiles } from './mapa.js';
 import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
@@ -37,7 +37,7 @@ async function pickOnMap(start) {
     actions: [{ label: 'Cancelar', variant: 'ghost' }, { label: 'Usar este punto', variant: 'primary', value: 'ok', onClick: () => (pos ? true : (ui.toast('Toca primero un punto.'), false)) }] });
   requestAnimationFrame(() => {
     const map = L.map(box).setView(pos ? [pos.lat, pos.lng] : [20, 0], pos ? 10 : 2);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a>' }).addTo(map);
+    tiles(L).addTo(map);
     if (pos) marker = L.marker([pos.lat, pos.lng], { icon: pinIcon(L, 'map-pin-dream') }).addTo(map);
     map.on('click', (e) => { pos = { lat: +e.latlng.lat.toFixed(4), lng: +e.latlng.lng.toFixed(4) }; marker?.remove(); marker = L.marker([pos.lat, pos.lng], { icon: pinIcon(L, 'map-pin-dream') }).addTo(map); });
     m.result.then(() => map.remove());

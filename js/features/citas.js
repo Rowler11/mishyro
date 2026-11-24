@@ -12,7 +12,6 @@ import { ui, util, db, profile, security, CONFIG } from '../core.js';
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
 const fmtShort = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
-const TAB_KEY = 'aishiteru.citas.tab';
 const S = CONFIG.dateSettings || {};
 export const MOODS = [['romantico', 'Romántico'], ['tranquilos', 'Tranquilos'], ['risas', 'Risas'], ['aventura', 'Aventura']];
 export const BUDGETS = [['gratis', 'Gratis'], ['bajo', 'Bajo'], ['medio', 'Medio'], ['especial', 'Especial']];
@@ -234,24 +233,30 @@ export async function render() {
   page.append(ui.pageHeader({ title: 'Sugerencias de citas', jp: 'デート', romaji: 'dēto', back: '/mas', actions: [ui.button({ label: '¿Quién decide?', iconName: 'dices', small: true, onClick: () => decider(log, () => {}) }), ui.button({ label: 'Modo cita', iconName: 'heart', small: true, href: '#/modo-cita' })] }));
   const body = el('div', { class: 'stack' }, ui.skeleton(3));
   page.append(body);
-  let tab = 'sorpresa';
-  try { tab = localStorage.getItem(TAB_KEY) || 'sorpresa'; } catch { /* private mode */ }
+  let tab = 'sorpresa'; // always opens on Sorpresa, like every other section (Rowler, 2026-11-22)
   const f = { mood: '', budget: '', duration: '', place: '', climate: '' };
-  let quick = ''; let shown = []; let gacha = null;
+  let quick = ''; let shown = []; let gacha = null; let autoSpin = false;
   const TABS = [['sorpresa', 'Sorpresa'], ['filtros', 'Con filtros'], ['pendientes', 'Pendientes'], ['historial', 'Historial'], ['mias', 'Mis ideas']];
 
   const draw_ = async () => {
     const data = await loadAll();
     log = (await db.query('deciderLog')).filter((l) => !l.deleted);
     const thirdParty = await security.thirdPartyAllowed();
-    const tabs = el('div', { class: 'chip-row', role: 'group', 'aria-label': 'Vista' }, TABS.map(([v, l]) => el('button', { class: 'chip', type: 'button', 'aria-pressed': String(tab === v), onClick: () => { tab = v; try { localStorage.setItem(TAB_KEY, v); } catch { /* private mode */ } shown = []; gacha = null; draw_(); } }, l)));
+    const tabs = el('div', { class: 'chip-row', role: 'group', 'aria-label': 'Vista' }, TABS.map(([v, l]) => el('button', { class: 'chip', type: 'button', 'aria-pressed': String(tab === v), onClick: () => { tab = v; shown = []; gacha = null; draw_(); } }, l)));
     const acceptBtn = (i) => ui.button({ label: 'Aceptar', iconName: 'check', small: true, variant: 'primary', onClick: () => accept(i, draw_) });
+    // "Ya lo hicimos hace poco": the idea rests 30 days without being marked as done (Rowler, 2026-11-22).
+    const recentBtn = (i, onRest) => ui.button({ label: 'Ya lo hicimos hace poco', iconName: 'history', small: true, variant: 'ghost', onClick: async () => {
+      const until = new Date(); until.setDate(until.getDate() + 30);
+      await setState(i.id, { restUntil: util.localDay(until), title: i.title });
+      ui.toast('Listo, vuelve a salir en un mes.'); onRest();
+    } });
     const noBtn = (i, onNo) => ui.button({ label: 'No nos llama', small: true, variant: 'ghost', onClick: async () => { await setState(i.id, { repeat: 'no', title: i.title }); onNo(); } });
     const exhausted = (relax) => el('div', { class: 'card paper-card' }, el('p', {}, 'Ya vieron todas las ideas que cumplen con esto.'),
       el('div', { class: 'card-actions' }, ui.button({ label: 'Empezar el mazo de nuevo', iconName: 'rotate-ccw', small: true, onClick: async () => { await resetDeck(); draw_(); } }), relax ? ui.button({ label: 'Quitar filtros', small: true, variant: 'ghost', onClick: relax }) : null));
     let content = [];
     if (tab === 'sorpresa') {
-      const quickF = { casa: { place: 'casa' }, hoy: { duration: '1h' }, gratis: { budget: 'gratis' } }[quick] || {};
+      // "Cita de emergencia" (docs/05 Detalles: Sugerencias de citas): free and under an hour, in one tap.
+      const quickF = { casa: { place: 'casa' }, hoy: { duration: '1h' }, gratis: { budget: 'gratis' }, emergencia: { duration: '1h', budget: 'gratis' } }[quick] || {};
       const pool = eligible(data.ideas.filter((i) => matches(i, quickF)), data.states, data.seen);
       const machine = el('div', { class: `gacha${gacha ? ' has-ball' : ''}`, 'aria-hidden': 'true' }, el('span', { class: 'gacha-dome' }), el('span', { class: 'gacha-body' }), el('span', { class: 'gacha-ball' }));
       const spin = async () => {
@@ -260,10 +265,16 @@ export async function render() {
         await util.sleep(util.prefersReducedMotion() ? 0 : 900);
         gacha = draw(pool, data.states, 1)[0]; await markSeen([gacha.id]); util.haptic([8, 30, 8]); draw_();
       };
+      if (autoSpin) { autoSpin = false; setTimeout(spin, 0); }
+      const sos = el('section', { class: 'card paper-card sos-card' },
+        el('span', { class: 'sos-icon', 'aria-hidden': 'true' }, icon('siren', { size: 22 })),
+        el('div', { class: 'stack-tight' }, el('p', { class: 'sos-title' }, '¿Aburridos?'), el('p', { class: 'muted small' }, 'Una idea gratis y de menos de una hora, ya mismo.')),
+        ui.button({ label: 'Cita de emergencia', small: true, variant: 'primary', onClick: () => { quick = 'emergencia'; gacha = null; autoSpin = true; draw_(); } }));
       content = [
-        el('div', { class: 'chip-row', role: 'group', 'aria-label': 'Filtro rápido' }, [['', 'Cualquiera'], ['casa', 'En casa'], ['hoy', 'Salir hoy (1 hora)'], ['gratis', 'Gratis']].map(([v, l]) => el('button', { class: 'chip', type: 'button', 'aria-pressed': String(quick === v), onClick: () => { quick = v; gacha = null; draw_(); } }, l))),
+        sos,
+        el('div', { class: 'chip-row', role: 'group', 'aria-label': 'Filtro rápido' }, [['', 'Cualquiera'], ['casa', 'En casa'], ['hoy', 'Salir hoy (1 hora)'], ['gratis', 'Gratis'], ['emergencia', 'Emergencia']].map(([v, l]) => el('button', { class: 'chip', type: 'button', 'aria-pressed': String(quick === v), onClick: () => { quick = v; gacha = null; draw_(); } }, l))),
         el('section', { class: 'card paper-card gacha-card' }, machine, pool.length || gacha ? ui.button({ label: gacha ? 'Otra cápsula' : 'Girar', iconName: 'dices', variant: 'primary', onClick: spin }) : null),
-        gacha ? ideaCard(gacha, { thirdParty, actions: [acceptBtn(gacha), noBtn(gacha, () => { gacha = null; draw_(); })] }) : !pool.length ? exhausted(quick ? () => { quick = ''; draw_(); } : null) : null,
+        gacha ? ideaCard(gacha, { thirdParty, actions: [acceptBtn(gacha), recentBtn(gacha, () => { gacha = null; draw_(); }), noBtn(gacha, () => { gacha = null; draw_(); })] }) : !pool.length ? exhausted(quick ? () => { quick = ''; draw_(); } : null) : null,
       ];
     } else if (tab === 'filtros') {
       const seg = (lbl, key, list) => el('div', { class: 'field' }, el('span', { class: 'field-label' }, lbl), el('div', { class: 'chip-row', role: 'group', 'aria-label': lbl },
@@ -274,7 +285,7 @@ export async function render() {
       content = [
         el('details', { class: 'card paper-card filters', open: true }, el('summary', {}, 'Filtros'),
           seg('Ánimo', 'mood', MOODS), seg('Presupuesto', 'budget', BUDGETS), seg('Tiempo', 'duration', DURATIONS), seg('Lugar', 'place', PLACES), seg('Clima', 'climate', CLIMATES)),
-        shown.length ? el('div', { class: 'idea-grid' }, shown.map((i, k) => ideaCard(i, { thirdParty, actions: [acceptBtn(i), ui.button({ label: 'Otra', iconName: 'refresh-cw', small: true, onClick: () => swap(k) })] }))) : exhausted(() => { Object.keys(f).forEach((k) => { f[k] = ''; }); draw_(); }),
+        shown.length ? el('div', { class: 'idea-grid' }, shown.map((i, k) => ideaCard(i, { thirdParty, actions: [acceptBtn(i), ui.button({ label: 'Otra', iconName: 'refresh-cw', small: true, onClick: () => swap(k) }), recentBtn(i, () => swap(k))] }))) : exhausted(() => { Object.keys(f).forEach((k) => { f[k] = ''; }); draw_(); }),
       ];
     } else if (tab === 'pendientes') {
       const me = profile.active();
