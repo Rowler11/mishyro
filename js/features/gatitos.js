@@ -139,7 +139,7 @@ async function addMimo(pet, kind) {
 }
 
 // ---------- little effects ----------
-/** A soft purr (v0.19.0: lives in core/sounds.js with the other voices). */
+/** A soft purr (v0.20.0: lives in core/sounds.js with the other voices). */
 const purr = () => sounds.play('purr');
 /** Its own voice when it talks: meow, or wuf for a dog. */
 const voiceOf = (pet) => (/perr|dog/i.test(pet.species || '') ? 'dog' : /gat|cat/i.test(pet.species || 'gato') ? 'kitty' : null);
@@ -326,6 +326,9 @@ export async function decorateHome(body) {
   const pets = await livePets();
   if (!pets.length || !body.isConnected) return;
   const cards = [...body.children].filter((c) => c.classList?.contains('card') && !c.classList.contains('counter-card') && solidCard(c));
+  // Inicio "Sereno" (v0.19.0) has fewer cards: when there are more pets than cards, the counter takes one too.
+  const counter = body.querySelector(':scope > .counter-card');
+  if (cards.length < pets.length && counter && solidCard(counter)) cards.unshift(counter);
   if (!cards.length) return;
   const records = await db.query('petRecords').catch(() => []);
   const care = careBubble(pets, records, util.localDay());

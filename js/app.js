@@ -25,6 +25,7 @@ const load = {
   permisos: () => import('./features/permisos.js'),
   listas: () => import('./features/listas.js'),
   mascotas: () => import('./features/mascotas.js'),
+  jardin: () => import('./features/jardin.js'),
   recetas: () => import('./features/recetas.js'),
   alcancia: () => import('./features/alcancia.js'),
   gastos: () => import('./features/gastos.js'),
@@ -272,7 +273,7 @@ function addScene(node, route) {
   if (band) (node.querySelector(':scope > .hub-tabs') || head).after(band);
 }
 
-/** First visit (v0.14.0 hint, v0.19.0 tour): the section's friend explains it with a little tour; the
+/** First visit (v0.14.0 hint, v0.20.0 tour): the section's friend explains it with a little tour; the
  * plain hint stays where there is no tour. Inicio starts the main tour the first time. */
 function addHint(node, route) {
   const id = route.path.slice(1);

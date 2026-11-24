@@ -1,4 +1,4 @@
-// Voces de los animalitos (v0.19.0, option A chosen 2026-11-24): cartoon sounds made right here with
+// Voces de los animalitos (v0.20.0, option A chosen 2026-11-24): cartoon sounds made right here with
 // Web Audio (no files, nothing copied, works offline). Each friend has its own voice: meow, fox yip,
 // rabbit squeak, the tanuki's pon-pon drum, the panda munching bamboo and the crane's call; the cats
 // also purr. They play only when Ajustes > Apariencia > "Voces de los animalitos" is on (on by default)

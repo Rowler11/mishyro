@@ -13,7 +13,7 @@ function svg(viewBox, body, cls) {
   return t;
 }
 
-// ---------- Peluches de acuarela (v0.19.0, option B chosen 2026-11-24) ----------
+// ---------- Peluches de acuarela (v0.20.0, option B chosen 2026-11-24) ----------
 // The six paper friends redrawn as round watercolor plushies: painted fur (soft radial gradients),
 // shiny eyes and a few brush hairs. Same groups as before (art-head, art-eyes, art-tail, art-ears,
 // art-arm, art-bamboo, art-wing-l/r), so every place that animates or wires them keeps working.

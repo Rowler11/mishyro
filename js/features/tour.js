@@ -1,4 +1,4 @@
-// Recorrido con los animalitos (v0.19.0, options chosen 2026-11-24: C "camina y tocas tú", A "corto + uno
+// Recorrido con los animalitos (v0.20.0, options chosen 2026-11-24: C "camina y tocas tú", A "corto + uno
 // por sección"). The screen dims, what is being explained lights up and one of the paper friends walks
 // over to it and talks in a bubble. Tap anywhere to go on; on the key steps you tap the lit thing
 // yourself (Más, a group) and the tour follows you into that screen. "Saltar tutorial" is always there.

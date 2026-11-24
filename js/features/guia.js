@@ -1,5 +1,5 @@
 // Guía (v0.14.0, option A chosen 2026-11-22): a "Primeros pasos" card on Inicio that says what is
-// left to do, and a short hint the first time each section opens (since v0.19.0 the hint text is said
+// left to do, and a short hint the first time each section opens (since v0.20.0 the hint text is said
 // by the section's friend in its little tour; the plain hint stays only where no tour runs). Both can be dismissed, and
 // Ajustes > Acerca de > Legal y ayuda can show the hints again. Hints are per device (localStorage).
 import { ui, util, db, profile, security, CONFIG } from '../core.js';
@@ -10,7 +10,7 @@ const SEEN_KEY = `${CONFIG.storageKey}.hints.seen`;
 const HIDE = 'guideHidden';
 
 
-// v0.19.0 (Rowler, 2026-11-24): "Primeros pasos" is only for setting the app up and goes with the tour;
+// v0.20.0 (Rowler, 2026-11-24): "Primeros pasos" is only for setting the app up and goes with the tour;
 // it leaves Inicio by itself once every step is done. Content (letters, coupons…) is not a "step" anymore:
 // each section's friend explains it the first time it opens (features/tour.js).
 const tourState = () => { try { return JSON.parse(localStorage.getItem(`${CONFIG.storageKey}.tour`) || '{}') || {}; } catch { return {}; } };
