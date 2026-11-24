@@ -137,6 +137,7 @@ function motion({ app } = {}) {
       ui.toggle({ label: 'Animaciones', hint: sys ? 'Tu dispositivo pide reducir el movimiento: se usan versiones sobrias.' : 'Pétalos, sellos y transiciones. Apágalas para una versión sobria y rápida.', checked: s.animations, onChange: (v) => save({ animations: v }) }),
       ui.toggle({ label: 'Vibración suave', hint: 'Un toque leve en acciones clave.', checked: s.haptics, onChange: (v) => { save({ haptics: v }); if (v) util.haptic(15); } }),
       ui.toggle({ label: 'Sonidos suaves', hint: 'Campanilla y tonos generados en el teléfono. Apagados por defecto.', checked: s.sound, onChange: (v) => { save({ sound: v }); if (v) chime(); } }),
+      ui.toggle({ label: 'Voces de los animalitos', hint: 'Maullidos, el pon-pon del tanuki y más cuando los tocas. Encendidas por defecto.', checked: s.animalSound !== false, onChange: (v) => { save({ animalSound: v }); if (v) import('../core/sounds.js').then((m) => m.play('cat', { force: true })); } }),
       el('div', { class: 'btn-row', role: 'group', 'aria-label': 'Escuchar los sonidos antes de activarlos' },
         ui.button({ label: 'Campanilla', iconName: 'bell', variant: 'ghost', small: true, onClick: chime }),
         ui.button({ label: 'Papel', iconName: 'mail', variant: 'ghost', small: true, onClick: () => util.sound('paper', { force: true }) }),
@@ -191,11 +192,19 @@ function legal() {
   // v0.14.0: the guide's hints and the "Primeros pasos" card can come back from here.
   const guide = el('section', { class: 'card stack-tight' },
     el('h2', { class: 'card-title' }, 'Guía de la app'),
-    el('p', { class: 'muted small' }, 'Vuelve a mostrar la pista corta de cada sección y la tarjeta "Primeros pasos" en Inicio.'),
-    el('div', { class: 'btn-row' }, ui.button({ label: 'Ver la guía otra vez', iconName: 'lightbulb', small: true, onClick: async () => {
-      const g = await import('./guia.js'); g.resetHints(); await db.setSettings('guideHidden', { hidden: false });
-      ui.toast('Listo: las pistas vuelven a salir.', { tone: 'success' });
-    } })));
+    el('p', { class: 'muted small' }, 'Los animalitos te muestran la app otra vez: el recorrido de Inicio y el de cada sección la primera vez que entres. También vuelve "Primeros pasos".'),
+    el('div', { class: 'btn-row' },
+      ui.button({ label: 'Ver el recorrido', iconName: 'sparkles', small: true, onClick: async () => {
+        const [g, t] = await Promise.all([import('./guia.js'), import('./tour.js')]);
+        g.resetHints(); t.reset(); await db.setSettings('guideHidden', { hidden: false });
+        router.go('/inicio'); setTimeout(() => t.start('main'), 500);
+      } }),
+      ui.button({ label: 'Solo las secciones', iconName: 'lightbulb', small: true, variant: 'ghost', onClick: async () => {
+        const [g, t] = await Promise.all([import('./guia.js'), import('./tour.js')]);
+        g.resetHints(); const main = t.state().main || 'done'; t.reset(); try { localStorage.setItem(`${CONFIG.storageKey}.tour`, JSON.stringify({ main })); } catch { /* private mode */ }
+        await db.setSettings('guideHidden', { hidden: false });
+        ui.toast('Listo: cada sección se explica otra vez la primera vez que entres.', { tone: 'success' });
+      } })));
   return el('section', { class: 'page' }, ui.pageHeader({ title: 'Legal y ayuda', back: '/ajustes' }), guide, list,
     el('p', { class: 'muted small' }, CONFIG.legalFooter));
 }

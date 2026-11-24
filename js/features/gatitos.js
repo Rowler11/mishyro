@@ -7,6 +7,7 @@
 // - "Travesura": a quick diary entry with a photo, saved as a moment of the pet (Momentos, Galería).
 // - Now and then one of them strolls through Juegos, Mi espacio and the garden.
 // Names and data live only in the couple's synced data, never in the code.
+import * as sounds from '../core/sounds.js';
 import { ui, util, db, profile } from '../core.js';
 import * as time from '../core/time.js';
 import { kittyArt } from '../core/kitty.js';
@@ -139,21 +140,10 @@ async function addMimo(pet, kind) {
 }
 
 // ---------- little effects ----------
-let audio = null;
-/** A soft purr (Web Audio noise, no files); only with "Sonidos suaves". */
-function purr() {
-  if (document.documentElement.dataset.sound !== 'on') return;
-  try {
-    audio = audio || new AudioContext();
-    const t = audio.currentTime; const len = 1.2;
-    const buf = audio.createBuffer(1, audio.sampleRate * len, audio.sampleRate); const d = buf.getChannelData(0);
-    let last = 0; for (let i = 0; i < d.length; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5 * (0.55 + 0.45 * Math.sin((i / audio.sampleRate) * 2 * Math.PI * 24)); }
-    const src = audio.createBufferSource(); src.buffer = buf;
-    const g = audio.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.2); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-    const lp = audio.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 380;
-    src.connect(lp).connect(g).connect(audio.destination); src.start(t); src.stop(t + len);
-  } catch { /* audio not available */ }
-}
+/** A soft purr (v0.19.0: lives in core/sounds.js with the other voices). */
+const purr = () => sounds.play('purr');
+/** Its own voice when it talks: meow, or wuf for a dog. */
+const voiceOf = (pet) => (/perr|dog/i.test(pet.species || '') ? 'dog' : /gat|cat/i.test(pet.species || 'gato') ? 'kitty' : null);
 function floaters(host, kind) {
   if (util.prefersReducedMotion()) return;
   const n = kind === 'pet' ? 4 : 1;
@@ -191,6 +181,7 @@ export function kittyButton(pet, { index = 0, label = true, onTap } = {}) {
   host.talk = (text) => bubble(host, pet.name, text, { ms: 4600 });
   host.addEventListener('click', () => {
     util.haptic(8); move(host);
+    const v = voiceOf(pet); if (v) sounds.play(v);
     last = pick(linesFor(pet), last); host.talk(fill(last, pet));
     onTap?.(pet, host);
   });

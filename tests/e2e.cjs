@@ -2264,7 +2264,7 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.waitForSelector('.garden-card');
     const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(300); };
     // Guide
-    ok('14 Guía: Inicio muestra "Primeros pasos" con 8 pasos y 3 sugeridos', /de 8$/.test((await page.locator('.guide-card .guide-count').textContent()).trim()) && (await page.locator('.guide-step').count()) === 3);
+    ok('14 Guía: Inicio muestra "Primeros pasos" solo para configurar (4 pasos, con el recorrido)', /de 4$/.test((await page.locator('.guide-card .guide-count').textContent()).trim()) && (await page.locator('.guide-step', { hasText: 'Ver el recorrido' }).count()) === 1 && (await page.locator('.guide-step', { hasText: 'carta' }).count()) === 0);
     await go('/cartas', '.page');
     ok('14 Guía: la primera vez una sección muestra su pista', (await page.locator('.guide-hint').count()) === 1);
     await page.locator('.guide-hint').getByRole('button', { name: 'Entendido' }).click();
@@ -2274,6 +2274,42 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.locator('.guide-card').getByRole('button', { name: 'Ocultar' }).click();
     await page.waitForFunction(() => !document.querySelector('.guide-card'));
     ok('14 Guía: "Ocultar" la quita de Inicio', true);
+    // Tour with the paper friends (v0.19.0). Automated browsers only get it when they ask for it.
+    {
+      await page.evaluate(() => { localStorage.setItem('aishiteru.tour.auto', '1'); localStorage.removeItem('aishiteru.tour'); });
+      await go('/ajustes', 'main h1'); await page.evaluate(() => { location.hash = '#/inicio'; });
+      await page.waitForSelector('.tour.is-on', { timeout: 8000 });
+      const still = () => page.waitForFunction(() => { const t = document.querySelector('.tour'); return t && !t.classList.contains('is-moving') && document.querySelector('.tour-text')?.textContent; }, null, { timeout: 8000 });
+      await still();
+      ok('19 Recorrido: sale la primera vez en Inicio, con un animalito de peluche y "Saltar tutorial"',
+        (await page.locator('.tour-guide svg.plush').count()) === 1 && (await page.locator('.tour-skip').textContent()).includes('Saltar tutorial') && /^1 de \d+$/.test((await page.locator('.tour-count').textContent()).trim()));
+      for (let i = 0; i < 6 && !/Abrir Más/.test(await page.locator('.tour-next').textContent()); i++) { await page.locator('.tour').click({ position: { x: 20, y: 300 } }); await page.waitForTimeout(250); await still(); }
+      ok('19 Recorrido: llega al paso donde tocas tú "Más", con la pantalla oscurecida', /Abrir Más/.test(await page.locator('.tour-next').textContent()) && (await page.locator('.tour.is-tap .tour-hole').count()) === 1);
+      await page.locator('.tour').click({ position: { x: 20, y: 120 } }); await page.waitForTimeout(400);
+      ok('19 Recorrido: tocar fuera de lo iluminado no avanza', /Abrir Más/.test(await page.locator('.tour-next').textContent()));
+      const rc = JSON.parse(await page.locator('.tour-hole').getAttribute('data-rect'));
+      await page.mouse.click(rc.left + rc.w / 2, rc.top + rc.h / 2);
+      await page.waitForFunction(() => location.hash.startsWith('#/mas'), null, { timeout: 5000 }); await still();
+      ok('19 Recorrido: al tocar lo iluminado se abre Más y el recorrido sigue ahí', /grupo/.test(await page.locator('.tour-next').textContent()));
+      await page.locator('.tour-skip').click();
+      await page.waitForFunction(() => !document.querySelector('.tour'));
+      const st = await page.evaluate(() => JSON.parse(localStorage.getItem('aishiteru.tour') || '{}'));
+      ok('19 Recorrido: "Saltar tutorial" lo cierra en cualquier momento y no vuelve', st.main === 'skipped' && st.off === true);
+      await go('/cupones', '.page'); await page.waitForTimeout(1600);
+      ok('19 Recorrido: al saltarlo tampoco salen las explicaciones de cada sección', (await page.locator('.tour').count()) === 0 && (await page.locator('.guide-hint').count()) === 0);
+      await page.evaluate(() => localStorage.setItem('aishiteru.tour', JSON.stringify({ main: 'done' })));
+      await go('/inicio', '.counter-card'); await go('/cupones', '.page');
+      await page.waitForSelector('.tour.is-on', { timeout: 6000 }); await still();
+      ok('19 Sección: la primera vez, su animalito la explica y muestra el botón para empezar', /^1 de [23]$/.test((await page.locator('.tour-count').textContent()).trim()) && (await page.locator('.tour-skip').textContent()).trim() === 'Saltar');
+      await page.keyboard.press('Escape'); await page.waitForFunction(() => !document.querySelector('.tour'));
+      await go('/inicio', '.counter-card'); await go('/cupones', '.page'); await page.waitForTimeout(1600);
+      ok('19 Sección: con Esc se cierra y no vuelve a salir', (await page.locator('.tour').count()) === 0);
+      const voices = await page.evaluate(async () => { const s = await import('./js/core/sounds.js'); const errs = []; for (const k of s.kinds) { try { s.play(k, { force: true }); await new Promise((r) => setTimeout(r, 200)); } catch (e) { errs.push(`${k}: ${e.message}`); } } return { kinds: s.kinds, errs, on: s.enabled() }; });
+      ok('19 Voces: cada animalito tiene su sonido y suenan sin errores (encendidas por defecto)', voices.errs.length === 0 && ['fox', 'cat', 'rabbit', 'tanuki', 'panda', 'crane', 'purr', 'dog', 'kitty'].every((k) => voices.kinds.includes(k)) && voices.on, JSON.stringify(voices));
+      const plush = await page.evaluate(async () => { const a = await import('./js/core/art.js'); return ['fox', 'cat', 'rabbit', 'tanuki', 'panda', 'crane'].every((k) => a.draw(k).classList.contains('plush')); });
+      ok('19 Dibujos: los seis animalitos son peluches de acuarela', plush);
+      await page.evaluate(() => localStorage.removeItem('aishiteru.tour.auto'));
+    }
     // Garden
     await page.waitForSelector('.garden-card');
     ok('14 Jardín: empieza sin flores', /0 flores/.test(await page.locator('.garden-card .guide-count').textContent()));

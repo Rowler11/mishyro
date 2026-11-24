@@ -3455,3 +3455,37 @@ a.game-champ::after { content: '›'; margin-left: 2px; color: var(--accent); }
   .kitty.is-petted .k-head { transform: none; }
   .kitty-care { animation: none; }
 }
+
+/* ---------- Recorrido con los animalitos (v0.18.0) ---------- */
+:root { --tour-veil: rgb(30 16 22 / .72); --tour-ring: #F6C9D5; --tour-ink: #FFFFFF; }
+:root[data-theme="night"] { --tour-veil: rgb(6 4 5 / .78); --tour-ring: var(--accent); }
+.tour { position: fixed; inset: 0; z-index: 350; opacity: 0; transition: opacity 240ms var(--ease-out, ease); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.tour.is-on { opacity: 1; }
+.tour-hole { position: fixed; left: 0; top: 0; border-radius: 18px; box-shadow: 0 0 0 200vmax var(--tour-veil); outline: 3px solid var(--tour-ring); outline-offset: 2px;
+  transition: transform 420ms var(--ease-in-out), width 420ms var(--ease-in-out), height 420ms var(--ease-in-out), opacity 300ms; pointer-events: none; }
+.tour.is-tap .tour-hole { animation: tour-pulse 1.6s var(--ease-in-out) infinite; }
+.tour-hole.is-nudge { animation: tour-nudge 420ms var(--ease-in-out) !important; }
+@keyframes tour-pulse { 50% { outline-offset: 7px; outline-color: color-mix(in srgb, var(--tour-ring) 55%, transparent); } }
+@keyframes tour-nudge { 25% { outline-offset: 10px; } 60% { outline-offset: 0; } }
+.tour-dock { position: fixed; left: 0; top: 0; display: flex; align-items: flex-end; gap: 4px; width: min(380px, calc(100vw - 24px));
+  transition: transform 560ms var(--ease-in-out); cursor: default; }
+.tour-guide { flex: 0 0 auto; width: 92px; height: 92px; filter: drop-shadow(0 6px 10px rgb(0 0 0 / .25)); }
+.tour-guide > svg { width: 100%; height: 100%; display: block; }
+.tour-guide.pet-crane { width: 112px; }
+.tour-guide.is-walking > svg { animation: tour-walk 560ms var(--ease-in-out); transform-origin: 50% 100%; }
+@keyframes tour-walk { 0%, 100% { transform: none; } 20% { transform: translateY(-10px) rotate(-6deg); } 45% { transform: translateY(0) rotate(0); } 70% { transform: translateY(-7px) rotate(5deg); } }
+.tour-bubble { position: relative; flex: 1 1 auto; margin-bottom: 26px; padding: 12px 14px 10px; border-radius: 18px 18px 18px 6px; background: var(--surface); color: var(--text); box-shadow: var(--shadow-2); }
+.tour-bubble::before { content: ""; position: absolute; left: -7px; bottom: 12px; width: 14px; height: 14px; background: inherit; transform: rotate(45deg); border-radius: 2px; }
+.tour-who { display: block; font-size: .8rem; color: var(--accent); letter-spacing: .02em; }
+.tour-text { margin: 2px 0 8px; font-size: .95rem; line-height: 1.4; }
+.tour-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tour-count { font-size: .78rem; color: var(--text-2); }
+.tour-next { min-height: 44px; }
+.tour-skip { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px;
+  border-radius: 999px; border: 1px solid color-mix(in srgb, var(--tour-ink) 45%, transparent); background: color-mix(in srgb, var(--surface) 18%, transparent); color: var(--tour-ink); font: 600 .85rem/1 inherit; cursor: pointer; }
+.tour-skip:focus-visible, .tour-next:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.tour.is-still, .tour.is-still * { transition: none !important; animation: none !important; }
+html.is-touring { overflow: hidden; }
+html.is-touring .toasts { z-index: 360; top: calc(env(safe-area-inset-top, 0px) + 66px); }
+@media (min-width: 900px) { .tour-guide { width: 112px; height: 112px; } .tour-guide.pet-crane { width: 132px; } }
+@media (prefers-reduced-motion: reduce) { .tour, .tour * { transition: none !important; animation: none !important; } }

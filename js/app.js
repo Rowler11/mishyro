@@ -5,6 +5,7 @@ import { TABS, GROUPS, HIDDEN, SETTINGS_PAGES, HUBS } from './routes.js';
 import { scene as sceneFor } from './core/scene.js';
 import { bouquet } from './core/art.js';
 import * as guia from './features/guia.js';
+import * as tour from './features/tour.js';
 
 const { el, icon, ja } = util;
 
@@ -260,10 +261,14 @@ function addScene(node, route) {
   if (band) (node.querySelector(':scope > .hub-tabs') || head).after(band);
 }
 
-/** First-visit hint (v0.14.0): one short line on what the section is for, until "Entendido". */
+/** First visit (v0.14.0 hint, v0.19.0 tour): the section's friend explains it with a little tour; the
+ * plain hint stays where there is no tour. Inicio starts the main tour the first time. */
 function addHint(node, route) {
+  const id = route.path.slice(1);
+  if (id === 'inicio') { tour.maybeMain(); return; }
+  if (tour.maybeSection(id) || tour.state().off) return; // skipped the tutorial: no hints either
   const head = node?.querySelector?.(':scope > .page-head');
-  const hint = head && guia?.hintFor(route.path.slice(1));
+  const hint = head && !tour.state().seen?.[id] && guia?.hintFor(id);
   if (hint) (node.querySelector(':scope > .paper-scene') || node.querySelector(':scope > .hub-tabs') || head).after(hint);
 }
 

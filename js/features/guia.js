@@ -1,5 +1,6 @@
 // Guía (v0.14.0, option A chosen 2026-11-22): a "Primeros pasos" card on Inicio that says what is
-// left to do, and a short hint the first time each section opens. Both can be dismissed, and
+// left to do, and a short hint the first time each section opens (since v0.19.0 the hint text is said
+// by the section's friend in its little tour; the plain hint stays only where no tour runs). Both can be dismissed, and
 // Ajustes > Acerca de > Legal y ayuda can show the hints again. Hints are per device (localStorage).
 import { ui, util, db, profile, security, CONFIG } from '../core.js';
 import * as sync from '../core/sync.js';
@@ -8,20 +9,19 @@ const { el, icon } = util;
 const SEEN_KEY = `${CONFIG.storageKey}.hints.seen`;
 const HIDE = 'guideHidden';
 
-const own = (r) => r && !r.deleted && r.origin !== 'config' && r.origin !== 'seed';
-const count = async (store, pred = own) => (await db.query(store).catch(() => [])).filter(pred).length;
-const contentOf = async (kind) => (await db.query('content', { index: 'kind', range: IDBKeyRange.only(kind) }).catch(() => [])).filter(own).length;
 
-/** The first steps, in order. `done` is checked against what they really did. */
+// v0.19.0 (Rowler, 2026-11-24): "Primeros pasos" is only for setting the app up and goes with the tour;
+// it leaves Inicio by itself once every step is done. Content (letters, coupons…) is not a "step" anymore:
+// each section's friend explains it the first time it opens (features/tour.js).
+const tourState = () => { try { return JSON.parse(localStorage.getItem(`${CONFIG.storageKey}.tour`) || '{}') || {}; } catch { return {}; } };
+const startTour = async (e) => { e.preventDefault(); (await import('./tour.js')).start('main'); };
+/** The setup steps, in order. `done` is checked against what they really did. */
 export const STEPS = [
+  { id: 'recorrido', title: 'Ver el recorrido', text: 'Los animalitos te muestran la app en un ratito.', href: '#/inicio', onClick: startTour, icon: 'sparkles', done: async () => !!tourState().main },
   { id: 'unir', title: 'Unir sus teléfonos', text: 'Así todo llega al otro al instante.', href: '#/ajustes/sincronizar', icon: 'qr-code', done: async () => sync.isLinked() },
   { id: 'pin', title: 'Ponerle PIN a la app', text: 'Para que nadie más la abra.', href: '#/ajustes/seguridad', icon: 'lock', done: async () => security.hasKey('app') },
-  { id: 'carta', title: 'Escribir la primera carta', text: 'Una carta para abrir hoy o más adelante.', href: '#/cartas', icon: 'mail', done: async () => (await contentOf('letter')) > 0 },
-  { id: 'cupon', title: 'Regalar un cupón', text: 'Vale por un abrazo, un desayuno, lo que quieras.', href: '#/cupones', icon: 'ticket', done: async () => (await contentOf('coupon')) > 0 },
-  { id: 'foto', title: 'Guardar un recuerdo con foto', text: 'La Cápsula guarda sus momentos.', href: '#/capsula', icon: 'image-plus', done: async () => (await count('memories')) > 0 },
-  { id: 'cita', title: 'Agendar una cita', text: 'En el Calendario; los sábados ya son de novios.', href: '#/calendario', icon: 'calendar', done: async () => (await count('events')) > 0 },
-  { id: 'cancion', title: 'Dedicar una canción', text: 'Con unas palabras para el otro.', href: '#/canciones', icon: 'music', done: async () => (await count('songs').catch(() => 0)) > 0 },
-  { id: 'juego', title: 'Jugar su primer juego', text: 'Y empezar la Liga del mes.', href: '#/juegos', icon: 'gamepad-2', done: async () => (await count('games')) > 0 },
+  { id: 'avisos', title: 'Activar los avisos cariñosos', text: 'Un aviso tierno cuando el otro te piensa.', href: '#/ajustes/sincronizar', icon: 'bell',
+    done: async () => !sync.notificationsSupported() || (typeof Notification !== 'undefined' && Notification.permission !== 'default') },
 ];
 
 /** The "Primeros pasos" card for Inicio, or null when everything is done or it was hidden. */
@@ -30,23 +30,26 @@ export async function homeCard({ onChange } = {}) {
   const state = await Promise.all(STEPS.map(async (s) => ({ ...s, ok: await s.done().catch(() => false) })));
   const done = state.filter((s) => s.ok).length;
   if (done === state.length) return null;
-  const next = state.filter((s) => !s.ok).slice(0, 3);
+  const next = state.filter((s) => !s.ok);
   const bar = el('span', { class: 'guide-bar-fill' });
   bar.style.width = `${Math.round((done / state.length) * 100)}%`;
   const card = el('section', { class: 'card paper-card guide-card', 'aria-labelledby': 'guide-title' },
     el('div', { class: 'guide-head' },
-      el('div', {}, el('p', { class: 'card-kicker' }, 'Te falta esto'), el('h2', { class: 'card-title', id: 'guide-title' }, 'Primeros pasos')),
+      el('div', {}, el('p', { class: 'card-kicker' }, 'Para dejar la app lista'), el('h2', { class: 'card-title', id: 'guide-title' }, 'Primeros pasos')),
       el('span', { class: 'guide-count' }, `${done} de ${state.length}`)),
     el('span', { class: 'guide-bar', role: 'progressbar', 'aria-label': 'Primeros pasos hechos', 'aria-valuemin': '0', 'aria-valuemax': String(state.length), 'aria-valuenow': String(done) }, bar),
-    el('ul', { class: 'guide-list' }, next.map((s) => el('li', {}, el('a', { class: 'guide-step', href: s.href },
+    el('ul', { class: 'guide-list' }, next.map((s) => el('li', {}, el('a', { class: 'guide-step', href: s.href, onClick: s.onClick },
       el('span', { class: 'guide-step-icon', 'aria-hidden': 'true' }, icon(s.icon, { size: 18 })),
       el('span', { class: 'guide-step-text' }, el('strong', {}, s.title), el('span', { class: 'muted small' }, s.text)),
       icon('chevron-right', { size: 18 }))))),
     el('div', { class: 'card-actions' }, ui.button({ label: 'Ocultar', small: true, variant: 'ghost', onClick: async () => {
       await db.setSettings(HIDE, { hidden: true });
-      ui.toast('Listo. Las pistas siguen en cada sección.');
+      ui.toast('Listo. Se va sola cuando terminas, pero ya la ocultaste.');
       onChange?.();
     } })));
+  // When the tour ends (or is skipped), its step is done: refresh the card.
+  const refresh = () => { if (card.isConnected) onChange?.(); };
+  document.addEventListener('tour:done', refresh, { once: true });
   return card;
 }
 
