@@ -2556,10 +2556,10 @@ async function exampleContent(page, { reload = true } = {}) {
     // v0.22.0: a pet waits on empty screens and talks with its name when tapped
     await go('/ajustes', '.list-row'); await page.waitForTimeout(300);
     await page.evaluate(async () => { const ui = await import('./js/core/ui.js'); document.querySelector('main').append(ui.emptyState({ title: 'Vacío de prueba', text: 'Texto ficticio' }), ui.emptyState({ title: 'Otro vacío', text: 'Texto ficticio' })); });
-    ok('22 Vacío: un gatito espera en lugar del ícono', (await page.locator('main .empty .empty-pet').count()) === 1);
-    await page.locator('main .empty-pet').click(); await page.waitForTimeout(250);
-    ok('22 Vacío: al tocarlo habla con su nombre', /^\S+: /.test(await page.locator('main .empty-pet-bubble').innerText()));
-    ok('22 Vacío: una sola mascota por pantalla (el segundo vacío deja su ícono)', (await page.locator('main .empty-pet').count()) === 1 && (await page.locator('main .empty .empty-icon').count()) === 1);
+    ok('22 Vacío: un animalito espera en lugar del ícono', (await page.locator('main .empty .empty-pet, main .empty .empty-paper').count()) === 1);
+    await page.locator('main .empty-pet, main .empty-paper').click(); await page.waitForTimeout(250);
+    ok('22 Vacío: al tocarlo habla con su nombre', /^\S+: /.test(await page.locator('main .empty-pet-bubble, main .pet-bubble').innerText()));
+    ok('22 Vacío: uno solo por pantalla (el segundo vacío deja su ícono)', (await page.locator('main .empty-pet, main .empty-paper').count()) === 1 && (await page.locator('main .empty .empty-icon').count()) === 1);
     // v0.22.0 Latido: holding the days ring counts heartbeats; a fresh one from the partner beats on screen once
     await go('/inicio', '.latido-target');
     { const box = await page.locator('.latido-target').boundingBox(); await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down(); await page.waitForTimeout(1500); }
@@ -2573,6 +2573,14 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.locator('.latido-close').click(); await page.waitForTimeout(400);
     await page.evaluate(async () => (await import('./js/features/latido.js')).check()); await page.waitForTimeout(300);
     ok('22 Latido: cada latido se siente una sola vez', (await page.locator('.latido-layer').count()) === 0);
+    // v0.23.0: premium sky, offline pill, g-chords, letter print action
+    await page.evaluate(() => { location.hash = '#/inicio'; }); await page.waitForTimeout(600);
+    ok('23 Cielo: Inicio tiene el cielo de la hora', (await page.locator('.home-sky .sky-body').count()) === 1);
+    await ctx.setOffline(true); await page.evaluate(() => dispatchEvent(new Event('offline'))); await page.waitForTimeout(150);
+    ok('23 Sin internet: aparece el aviso tranquilo', /Sin internet/.test(await page.locator('.net-pill.is-on').innerText()));
+    await ctx.setOffline(false); await page.evaluate(() => dispatchEvent(new Event('online'))); await page.waitForTimeout(150);
+    await page.keyboard.press('g'); await page.keyboard.press('a'); await page.waitForTimeout(300);
+    ok('23 Atajo g y a: lleva a Cartas', page.url().includes('#/cartas'));
     await go('/ajustes', '.list-row'); await page.waitForTimeout(900);
     ok('18 Ajustes: ahí no aparecen', (await page.locator('.kitty-perch, .kitty-nap').count()) === 0);
     const napRoute = await page.evaluate(async () => { const r = ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']; return r; });

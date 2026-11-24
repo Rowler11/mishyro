@@ -12,7 +12,8 @@ import { ui, util, db, profile } from '../core.js';
 import * as time from '../core/time.js';
 import { kittyArt, COATS, coatId } from '../core/kitty.js';
 const coatOf = (pet) => COATS.find((c) => c.id === coatId(pet)) || COATS[5];
-import { bubble, move } from '../core/pets.js';
+import { bubble, move, wire, PETS as PAPER } from '../core/pets.js';
+import { draw as drawPaper } from '../core/art.js';
 import { latestByProduct, doseStatus, daysHome, addDays } from './mascotas.js';
 import { photoField, isQuotaError } from './hogar-kit.js';
 
@@ -411,29 +412,38 @@ export async function stroll(scene, scope, { chance = 0.6, delay = 1800, flow = 
 // ---------- empty states (v0.22.0, option A) ----------
 // A pet sits where the icon of an empty screen used to be. The list is cached so ui.emptyState() can
 // draw it synchronously; it refreshes when pets or the "Que se paseen por la app" setting change.
-let emptyCache = [];
+let emptyCache = { show: false, pets: [] };
 let lastEmpty = null;
 const WAIT_LINES = ['¡Miau! Aquí espero contigo.', 'Me quedo cuidando este lugar.', 'Cuando tengan algo, me avisan.', 'Mientras tanto, ¿un mimo?'];
 async function refreshEmptyCache() {
-  try { emptyCache = (await showPets()) ? await livePets() : []; } catch { emptyCache = []; }
+  try { const show = await showPets(); emptyCache = { show, pets: show ? await livePets() : [] }; } catch { emptyCache = { show: false, pets: [] }; }
 }
 function emptyPet(key) {
-  // One pet per screen (decided 2026-11-24): if one already waits here, the next empty state keeps its icon.
-  if (!emptyCache.length || document.querySelector('main .empty-pet')) return null;
+  // One character per screen (decided 2026-11-24): if one already waits here, the next empty state keeps its icon.
+  if (!emptyCache.show || document.querySelector('main .empty-pet, main .empty-paper')) return null;
   // ...also when one was just built for this same screen and is not on the page yet
   if (lastEmpty && !lastEmpty.el.isConnected && lastEmpty.hash === location.hash && performance.now() - lastEmpty.at < 1500) return null;
   const h = hash(`${key}|${util.localDay()}`);
-  const index = h % emptyCache.length; const pet = emptyCache[index];
-  const name = pet.name || '';
-  const bubbleEl = util.el('span', { class: 'empty-pet-bubble', role: 'status' });
-  const btn = util.el('button', { class: 'empty-pet', type: 'button', 'aria-label': name ? `${name}, tócalo para un mimo` : 'Gatito, tócalo para un mimo',
-    onClick: () => {
-      const n = +(btn.dataset.n || 0) + 1; btn.dataset.n = String(n);
-      bubbleEl.textContent = `${name ? `${name}: ` : ''}${WAIT_LINES[(h + n) % WAIT_LINES.length]}`;
-      btn.classList.remove('is-mimo'); void btn.offsetWidth; btn.classList.add('is-mimo');
-      { const v = voiceOf(pet); if (v) sounds.play(v); } util.haptic('select');
-    } }, util.el('span', { class: 'kitty-body' }, kittyArt(pet, { index })), bubbleEl);
-  const art = util.el('div', { class: 'empty-art empty-art-pet' }, btn);
+  // v0.23.0 (Rowler, 2026-11-24): the cats are loved, but the paper animals matter too, so they take turns.
+  const cast = [...emptyCache.pets.map((pet, index) => ({ pet, index })), ...Object.keys(PAPER).map((id) => ({ id }))];
+  const who = cast[h % cast.length];
+  let art;
+  if (who.id) {
+    const host = wire(util.el('span', { class: 'empty-paper' }, drawPaper(who.id)), who.id);
+    art = util.el('div', { class: 'empty-art empty-art-pet', 'data-bubble-root': '' }, host);
+  } else {
+    const { pet, index } = who;
+    const name = pet.name || '';
+    const bubbleEl = util.el('span', { class: 'empty-pet-bubble', role: 'status' });
+    const btn = util.el('button', { class: 'empty-pet', type: 'button', 'aria-label': name ? `${name}, tócalo para un mimo` : 'Gatito, tócalo para un mimo',
+      onClick: () => {
+        const n = +(btn.dataset.n || 0) + 1; btn.dataset.n = String(n);
+        bubbleEl.textContent = `${name ? `${name}: ` : ''}${WAIT_LINES[(h + n) % WAIT_LINES.length]}`;
+        btn.classList.remove('is-mimo'); void btn.offsetWidth; btn.classList.add('is-mimo');
+        { const v = voiceOf(pet); if (v) sounds.play(v); } util.haptic('select');
+      } }, util.el('span', { class: 'kitty-body' }, kittyArt(pet, { index })), bubbleEl);
+    art = util.el('div', { class: 'empty-art empty-art-pet' }, btn);
+  }
   lastEmpty = { el: art, hash: location.hash, at: performance.now() };
   return art;
 }

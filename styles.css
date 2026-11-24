@@ -3609,3 +3609,85 @@ button.list-row:active, a.list-row:active, label.list-row:active { background: v
 .latido-sub { margin: 0; color: var(--text-2); }
 .latido-close { margin-top: var(--space-4); }
 :root[data-motion="off"] .latido-target.is-beat, :root[data-motion="off"] .latido-heart.is-beat { animation: none; }
+
+/* ---------- v0.23.0 premium: staggered entrance, pull to refresh, offline pill, finer type ---------- */
+.view-enter > :is(.card, .home-card, .segmented, .list-group, .stack, .hub-tabs, .page-head ~ section) { animation: rise var(--dur-4) var(--ease-out) both; }
+.view-enter > :nth-child(2) { animation-delay: 40ms; } .view-enter > :nth-child(3) { animation-delay: 80ms; }
+.view-enter > :nth-child(4) { animation-delay: 120ms; } .view-enter > :nth-child(5) { animation-delay: 160ms; }
+.view-enter > :nth-child(6) { animation-delay: 200ms; } .view-enter > :nth-child(n+7) { animation-delay: 240ms; }
+:root[data-motion="off"] .view-enter > * { animation: none; }
+.ptr { position: fixed; top: calc(env(safe-area-inset-top) + 8px); left: 50%; z-index: 60; width: 40px; height: 40px; margin-left: -20px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--surface); color: var(--accent); box-shadow: var(--shadow-2, 0 4px 14px rgb(0 0 0 / .18)); opacity: 0; pointer-events: none; transform: translateY(calc(var(--ptr, 0px) - 40px)) rotate(calc(var(--ptr, 0px) * 4deg)) scale(.8); transition: opacity var(--dur-2); }
+.ptr.is-on { opacity: 1; } .ptr.is-ready { transform: translateY(calc(var(--ptr, 0px) - 40px)) rotate(360deg) scale(1.1); transition: transform var(--dur-3) var(--ease-spring), opacity var(--dur-2); }
+.ptr.is-busy { opacity: 1; transform: translateY(20px) scale(1); animation: spin 0.9s linear infinite; }
+.ptr .icon { fill: currentColor; }
+.net-pill { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 10px); z-index: 94; max-width: min(92vw, 420px); transform: translate(-50%, -140%); padding: 8px 16px; border-radius: 999px; background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow-2, 0 4px 14px rgb(0 0 0 / .18)); font: 500 .85rem/1.35 var(--font-ui); text-align: center; transition: transform var(--dur-3) var(--ease-out); pointer-events: none; }
+.net-pill.is-on { transform: translate(-50%, 0); } .net-pill[data-tone="off"] { border-color: var(--gold); } .net-pill[data-tone="on"] { border-color: var(--success); }
+/* finer type: calmer rhythm for reading, tighter titles, steady digits */
+body { font-feature-settings: 'kern' 1, 'liga' 1; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+h1, h2, h3, .card-kicker, .empty-title { text-wrap: balance; letter-spacing: -.005em; }
+p, .muted, .small { text-wrap: pretty; }
+.counter-big, .stat, .kbd-num, .viewer-count, .latido-count { font-variant-numeric: tabular-nums lining-nums; }
+
+/* skeletons with the shape of what is coming (v0.23.0) */
+.skeleton-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.skeleton-grid .skeleton-block { aspect-ratio: 1; border-radius: 12px; }
+.skeleton-cards { display: grid; gap: var(--space-3); }
+.skeleton-cards .skeleton-block { height: 104px; border-radius: var(--radius-l, 18px); }
+.skeleton-rows { display: grid; gap: var(--space-2); }
+.skeleton-rows .skeleton-block { height: 58px; border-radius: 14px; }
+.skeleton-block { display: block; background: linear-gradient(90deg, var(--surface-2), var(--border), var(--surface-2)); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+:root[data-motion="off"] .skeleton-block { animation: none; }
+
+.empty-paper { display: block; width: 132px; height: 132px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.empty-paper > svg { width: 100%; height: 100%; display: block; overflow: visible; animation: float 5s var(--ease-in-out) infinite; }
+.empty-art-pet[data-bubble-root] { position: relative; }
+:root[data-motion="off"] .empty-paper > svg { animation: none; }
+
+.viewer-media { transform-origin: center; will-change: transform; touch-action: pan-x pan-y; }
+.viewer-slide { overflow: hidden; }
+
+/* v0.23.0: a sky that follows the hour behind Inicio. It borrows each style's accent so it never fights the palette. */
+.home-sky { position: fixed; top: 0; left: 0; right: 0; height: 46vh; max-height: 420px; z-index: -1; pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 30%, transparent); mask-image: linear-gradient(180deg, #000 30%, transparent); transition: opacity var(--dur-5); }
+.home-sky[data-phase="dawn"] { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 30%, #FFD9B8) 0%, color-mix(in srgb, var(--gold) 18%, transparent) 55%, transparent); }
+.home-sky[data-phase="day"] { background: linear-gradient(180deg, color-mix(in srgb, #A9D8F0 38%, var(--bg)) 0%, color-mix(in srgb, var(--gold) 10%, transparent) 60%, transparent); }
+.home-sky[data-phase="dusk"] { background: linear-gradient(180deg, color-mix(in srgb, #7A5BA8 34%, var(--bg)) 0%, color-mix(in srgb, var(--accent) 28%, transparent) 55%, transparent); }
+.home-sky[data-phase="night"] { background: linear-gradient(180deg, color-mix(in srgb, #1E1A44 70%, var(--bg)) 0%, color-mix(in srgb, #3A2F6B 30%, transparent) 55%, transparent); }
+:root[data-theme="night"] .home-sky[data-phase="day"] { opacity: .55; }
+.home-sky[data-phase="night"]::before, .home-sky[data-phase="dusk"]::before, .home-sky[data-phase="dawn"]::before {
+  content: ''; position: absolute; inset: 0; opacity: .85;
+  background:
+    radial-gradient(1.5px 1.5px at 12% 22%, #fff 50%, transparent), radial-gradient(1px 1px at 28% 12%, #fff 50%, transparent),
+    radial-gradient(1.5px 1.5px at 41% 30%, #fff 50%, transparent), radial-gradient(1px 1px at 55% 14%, #fff 50%, transparent),
+    radial-gradient(1.5px 1.5px at 68% 26%, #fff 50%, transparent), radial-gradient(1px 1px at 79% 10%, #fff 50%, transparent),
+    radial-gradient(1.5px 1.5px at 90% 24%, #fff 50%, transparent), radial-gradient(1px 1px at 6% 40%, #fff 50%, transparent), radial-gradient(1px 1px at 61% 44%, #fff 50%, transparent);
+  animation: sky-twinkle 5s ease-in-out infinite alternate; }
+.home-sky[data-phase="dusk"]::before, .home-sky[data-phase="dawn"]::before { opacity: .3; }
+@keyframes sky-twinkle { to { opacity: .45; } }
+.sky-body { position: absolute; left: var(--sx, 50%); top: var(--sy, 40%); width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; transition: left 1s linear, top 1s linear; }
+.home-sky[data-phase="day"] .sky-body, .home-sky[data-phase="dawn"] .sky-body { background: radial-gradient(circle, #FFF3C9 0 38%, rgb(255 226 150 / .5) 55%, transparent 72%); }
+.home-sky[data-phase="dusk"] .sky-body { background: radial-gradient(circle, #FFD1A1 0 38%, rgb(255 150 120 / .5) 55%, transparent 72%); }
+.home-sky[data-phase="night"] .sky-body { background: radial-gradient(circle at 38% 38%, #FFFDF2 0 46%, rgb(255 253 242 / .35) 62%, transparent 74%); box-shadow: 0 0 28px rgb(255 253 242 / .35); }
+:root[data-motion="off"] .home-sky::before { animation: none; }
+:root[data-contrast="high"] .home-sky { display: none; }
+@media (min-width: 820px) { .home-sky { left: 72px; } }
+
+.novedades-pet { width: 96px; height: 96px; margin: 0 auto; }
+.novedades-pet > svg { width: 100%; height: 100%; display: block; }
+.novedades-list { margin: 0; padding-left: 1.2em; display: grid; gap: var(--space-2); }
+
+/* v0.23.0: print a letter, drop photos on Galería, lock opening, touch targets */
+.print-letter { display: none; }
+@media print {
+  body.printing-letter > *:not(.print-letter) { display: none !important; }
+  body.printing-letter .print-letter { display: block; padding: 2.5cm 3cm; font-family: var(--font-serif, serif); color: #222; background: #fff; }
+  .print-letter h1 { font-size: 1.6rem; font-weight: 600; margin: 0 0 1.2cm; text-align: center; letter-spacing: .04em; }
+  .print-letter p { font-size: 1.1rem; line-height: 1.8; margin: 0 0 .6cm; text-wrap: pretty; }
+  .print-letter .print-letter-sign { text-align: right; margin-top: 1.2cm; font-style: italic; }
+  .print-letter::after { content: ''; display: block; width: 3cm; height: 2px; margin: 1.5cm auto 0; background: #c2405f; opacity: .6; }
+}
+body.is-dropping::after { content: 'Suelta las fotos para crear un recuerdo'; position: fixed; inset: 12px; z-index: 90; display: grid; place-items: center; border: 2px dashed var(--accent); border-radius: var(--radius-l, 16px); background: color-mix(in srgb, var(--bg) 82%, transparent); color: var(--accent); font-family: var(--font-serif); font-size: 1.3rem; pointer-events: none; }
+.lock.is-opening { transition: opacity .35s var(--ease-out, ease), transform .35s var(--ease-out, ease); opacity: 0; transform: scale(1.04); pointer-events: none; }
+:root[data-motion="reduce"] .lock.is-opening { transition: none; }
+@media (pointer: coarse) { .icon-btn, .btn-icon, .appbar button, .modal-close { min-width: 44px; min-height: 44px; } }

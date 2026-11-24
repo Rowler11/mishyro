@@ -228,7 +228,7 @@ async function render(route) {
     if (router.currentRoute() !== route) return;
   }
   // Keep the current view until the next one is ready; show the skeleton only if it takes a while.
-  const skeleton = setTimeout(() => { if (router.currentRoute() === route) main.replaceChildren(ui.skeleton(4)); }, 250);
+  const skeleton = setTimeout(() => { if (router.currentRoute() === route) main.replaceChildren(ui.skeleton(3, { kind: 'cards' })); }, 250);
   let node;
   try {
     const mod = await def.load();
@@ -359,6 +359,7 @@ function showShortcuts() {
   const rows = [
     ['1 a 5', 'Inicio, Cápsula, Cuponera, Cartas y Más'],
     ['/', 'Buscar'],
+    ['g y luego i, c, u, a, m', 'Ir a Inicio, Cápsula, Cuponera, Cartas o Más'],
     ['n', 'Crear algo nuevo en la sección abierta'],
     ['← →', 'Pasar fotos, recuerdos y cartas de juego'],
     ['?', 'Ver esta lista'],
@@ -370,7 +371,8 @@ function showShortcuts() {
 }
 
 function installShortcuts() {
-  let lastEsc = 0;
+  let lastEsc = 0; let gAt = 0;
+  const GO = { i: '/inicio', c: '/capsula', u: '/cupones', a: '/cartas', m: '/mas', g: '/galeria' };
   addEventListener('keydown', (e) => {
     const t = e.target;
     const typing = t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
@@ -380,6 +382,8 @@ function installShortcuts() {
       return;
     }
     if (typing || e.ctrlKey || e.metaKey || e.altKey || ui.hasOpenModal() || document.documentElement.dataset.layer === 'full') return;
+    if (gAt && Date.now() - gAt < 1200 && GO[e.key]) { e.preventDefault(); gAt = 0; router.go(GO[e.key]); return; }
+    gAt = e.key === 'g' ? Date.now() : 0;
     const tab = TABS.find((x) => x.key === e.key);
     if (tab) { e.preventDefault(); router.go(tab.path); return; }
     if (e.key === '/') { e.preventDefault(); router.go('/buscar'); return; }
@@ -511,7 +515,24 @@ async function start() {
   ui.installRipple();
   installShortcuts();
   installVisibility();
+  import('./core/premium.js').then((m) => m.install()).catch(() => {}); // v0.23.0: pull to refresh, edge swipe, offline pill
   addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); app.deferredInstall = e; });
+  // v0.23.0: guided install. The browser's own prompt when it offers one; otherwise the two taps, said clearly.
+  document.addEventListener('aishiteru:install', async () => {
+    if (app.deferredInstall) {
+      app.deferredInstall.prompt();
+      const { outcome } = await app.deferredInstall.userChoice; app.deferredInstall = null;
+      if (outcome === 'accepted') ui.toast('Instalada. Búscala en tu pantalla de inicio 🌸');
+      return;
+    }
+    ui.openModal({ title: 'Instalar la app', size: 'sm', body: el('div', { class: 'stack' },
+      el('p', {}, 'Así queda con su ícono, a pantalla completa y abre más rápido:'),
+      el('ol', { class: 'steps-list' },
+        el('li', {}, 'Toca los tres puntitos (⋮) de Chrome, arriba a la derecha.'),
+        el('li', {}, 'Elige "Instalar aplicación" o "Agregar a la pantalla de inicio".'),
+        el('li', {}, 'Confirma. Ya puedes cerrar esta pestaña y abrirla desde el ícono.')),
+      el('p', { class: 'muted small' }, 'En el computador, busca el ícono de instalar al final de la barra de direcciones.')) });
+  });
   profile.onProfileChange(updateProfileChips);
   profile.onProfileChange(updateLetterDot);
   registerRoutes();
@@ -539,6 +560,7 @@ async function start() {
   await Promise.race([emptyPets, new Promise((r) => setTimeout(r, 400))]);
   await router.start({ render, navigate: onNavigate });
   appReady();
+  if (setupDone && meta.onboardingDone) setTimeout(() => import('./features/novedades.js').then((m) => m.maybeShow()).catch(() => {}), 2500); // v0.23.0: what is new, once per version
   registerServiceWorker();
   document.documentElement.classList.add('ready');
 }

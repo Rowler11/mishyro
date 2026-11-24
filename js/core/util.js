@@ -133,6 +133,7 @@ export function chime() {
  *   paper: a short rustle (opening or sealing a letter)
  *   stamp: a soft thump (a hanko seal pressed)
  *   pop:   a faint, far firework (hanabi)
+ *   tick:  a tiny glassy double tap (something was saved or sent; v0.23.0)
  */
 export function sound(kind = 'chime', { force = false } = {}) {
   if (!force && document.documentElement.dataset.sound !== 'on') return;
@@ -140,6 +141,16 @@ export function sound(kind = 'chime', { force = false } = {}) {
   try {
     audioCtx = audioCtx || new AudioContext();
     const t = audioCtx.currentTime;
+    if (kind === 'tick') {
+      // a tiny glassy double tap: "saved"
+      [1568, 2093].forEach((f, i) => {
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); const at = t + i * 0.07;
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.05, at + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.16);
+        o.connect(g).connect(audioCtx.destination); o.start(at); o.stop(at + 0.2);
+      });
+      return;
+    }
     if (kind === 'paper') {
       // filtered noise that swells and fades, like a sheet of washi
       const len = Math.floor(audioCtx.sampleRate * 0.42);

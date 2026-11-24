@@ -170,6 +170,8 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
     grid, photoMsg, fileInput);
   // "Subir" from Galería or Inicio: the photo picker opens right away.
   if (prefill.pick) setTimeout(() => fileInput.click(), 350);
+  // Photos dragged from the PC onto Galería arrive here (premium.js).
+  import('../core/premium.js').then((m) => { const f = m.takeDropped(); if (f.length) addFiles(f); }).catch(() => {});
 
   const paintPhotos = () => {
     const tiles = photos.map((p, i) => el('div', { class: 'photo-tile' },

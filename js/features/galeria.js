@@ -60,7 +60,7 @@ export async function render() {
   page.append(ui.pageHeader({ title: 'Galería', jp: '写真', romaji: 'shashin', back: '/mas', actions: [
     // Subir: new photos and videos become a memory in the Cápsula (so they keep a date and a story).
     ui.button({ label: 'Subir', iconName: 'image-plus', variant: 'primary', small: true, href: `#/capsula/nuevo?fotos=1&fecha=${util.localDay()}` })] }));
-  const body = el('div', { class: 'stack' }, ui.skeleton(3));
+  const body = el('div', { class: 'stack' }, ui.skeleton(3, { kind: 'grid' }));
   page.append(body);
   const urls = new Set();
   let filter = 'todas';

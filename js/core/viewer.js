@@ -37,6 +37,7 @@ export function openViewer(items, start = 0) {
       : el('img', { class: 'viewer-media', src: u, alt: it.alt || '', decoding: 'async', draggable: 'false' }));
   };
   const paint = () => {
+    resetZoom();
     counter.textContent = n > 1 ? `${index + 1} de ${n}` : '';
     const it = items[index] || {};
     fill(caption,
@@ -66,16 +67,50 @@ export function openViewer(items, start = 0) {
     if (e.key === 'ArrowRight') { e.preventDefault(); go(index + 1); }
     if (e.key === 'ArrowLeft') { e.preventDefault(); go(index - 1); }
   });
+  // Pinch or double tap to zoom, drag to look around (v0.23.0). Swiping between photos works at normal size.
+  let scale = 1; let tx = 0; let ty = 0; let pinch = null; let pan = null; let lastTap = 0;
+  const zoomed = () => scale > 1.02;
+  const cur = () => slides[index]?.querySelector('img.viewer-media');
+  const clampPan = () => {
+    const m = cur(); if (!m) return;
+    const mx = (m.clientWidth * (scale - 1)) / 2; const my = (m.clientHeight * (scale - 1)) / 2;
+    tx = Math.max(-mx, Math.min(mx, tx)); ty = Math.max(-my, Math.min(my, ty));
+  };
+  const applyZoom = () => {
+    const m = cur(); if (!m) return;
+    clampPan();
+    m.style.transform = scale === 1 ? '' : `translate(${tx}px, ${ty}px) scale(${scale})`;
+    track.style.overflowX = zoomed() ? 'hidden' : '';
+  };
+  const resetZoom = () => { scale = 1; tx = 0; ty = 0; slides.forEach((sl) => { const m = sl.querySelector('img.viewer-media'); if (m) m.style.transform = ''; }); track.style.overflowX = ''; };
+  const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  track.addEventListener('touchstart', (e) => {
+    if (!cur()) return;
+    if (e.touches.length === 2) { pinch = { d: dist(e.touches), s: scale }; pan = null; }
+    else if (e.touches.length === 1) {
+      const t = e.touches[0]; const now = Date.now();
+      if (now - lastTap < 300) { scale = zoomed() ? 1 : 2.5; tx = 0; ty = 0; applyZoom(); lastTap = 0; }
+      else lastTap = now;
+      if (zoomed()) pan = { x: t.clientX, y: t.clientY, tx, ty };
+    }
+  }, { passive: true });
+  track.addEventListener('touchmove', (e) => {
+    if (pinch && e.touches.length === 2) { e.preventDefault(); scale = Math.max(1, Math.min(4, pinch.s * (dist(e.touches) / pinch.d))); applyZoom(); }
+    else if (pan && zoomed() && e.touches.length === 1) { e.preventDefault(); const t = e.touches[0]; tx = pan.tx + (t.clientX - pan.x); ty = pan.ty + (t.clientY - pan.y); applyZoom(); }
+  }, { passive: false });
+  track.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinch = null; if (!e.touches.length) { pan = null; if (!zoomed()) resetZoom(); } }, { passive: true });
+  track.addEventListener('dblclick', () => { scale = zoomed() ? 1 : 2.5; tx = 0; ty = 0; applyZoom(); }); // mouse on the computer
+  track.addEventListener('wheel', (e) => { if (!e.ctrlKey) return; e.preventDefault(); scale = Math.max(1, Math.min(4, scale * (e.deltaY < 0 ? 1.12 : 0.89))); applyZoom(); }, { passive: false });
   // Swipe down to close (only when the gesture is clearly vertical).
   let sx = 0; let sy = 0; let dragging = false;
-  track.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') return; sx = e.clientX; sy = e.clientY; dragging = true; });
+  track.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' || zoomed()) return; sx = e.clientX; sy = e.clientY; dragging = true; });
   track.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
+    if (!dragging || zoomed()) return;
     const dy = e.clientY - sy; const dx = Math.abs(e.clientX - sx);
     if (dy > 0 && dy > dx * 1.4) { track.style.transform = `translateY(${dy * 0.6}px)`; track.style.opacity = String(Math.max(0.4, 1 - dy / 500)); }
   });
   const end = (e) => {
-    if (!dragging) return; dragging = false;
+    if (!dragging || zoomed()) { dragging = false; return; } dragging = false;
     const dy = e.clientY - sy; const dx = Math.abs(e.clientX - sx);
     track.style.transform = ''; track.style.opacity = '';
     if (dy > 110 && dy > dx * 1.4) api.close();

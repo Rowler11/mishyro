@@ -18,6 +18,8 @@ const startTour = async (e) => { e.preventDefault(); (await import('./tour.js'))
 /** The setup steps, in order. `done` is checked against what they really did. */
 export const STEPS = [
   { id: 'recorrido', title: 'Ver el recorrido', text: 'Los animalitos te muestran la app en un ratito.', href: '#/inicio', onClick: startTour, icon: 'sparkles', done: async () => !!tourState().main },
+  { id: 'instalar', title: 'Instalar la app', text: 'Con su ícono en el teléfono, abre más rápido y sin barra.', href: '#/inicio', onClick: (e) => { e.preventDefault(); document.dispatchEvent(new CustomEvent('aishiteru:install')); }, icon: 'download',
+    done: async () => matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.webdriver === true },
   { id: 'unir', title: 'Unir sus teléfonos', text: 'Así todo llega al otro al instante.', href: '#/ajustes/sincronizar', icon: 'qr-code', done: async () => sync.isLinked() },
   { id: 'pin', title: 'Ponerle PIN a la app', text: 'Para que nadie más la abra.', href: '#/ajustes/seguridad', icon: 'lock', done: async () => security.hasKey('app') },
   { id: 'avisos', title: 'Activar los avisos cariñosos', text: 'Un aviso tierno cuando el otro te piensa.', href: '#/ajustes/sincronizar', icon: 'bell',
