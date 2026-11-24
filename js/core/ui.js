@@ -198,7 +198,7 @@ function redThread() {
   for (const [cx, cy] of [[14, 70], [146, 64]]) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', '4.5'); svg.append(c); }
   return svg;
 }
-// v0.21.0 (option A, 2026-11-24): one of their pets waits in empty, error and "nothing yet" states.
+// v0.22.0 (option A, 2026-11-24): one of their pets waits in empty, error and "nothing yet" states.
 // The provider lives in features/gatitos.js and answers synchronously from a cache (no flash of the icon).
 let emptyArtProvider = null;
 export const setEmptyArt = (fn) => { emptyArtProvider = fn; };

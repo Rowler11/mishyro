@@ -185,7 +185,7 @@ export function b64ToBuf(b64) {
 export async function blobToB64(blob) { return bufToB64(await blob.arrayBuffer()); }
 export function b64ToBlob(b64, type) { return new Blob([b64ToBuf(b64)], { type }); }
 
-/** Named vibration patterns so each kind of action feels different (v0.21.0). */
+/** Named vibration patterns so each kind of action feels different (v0.22.0). */
 export const HAPTIC = { tap: 8, select: 12, success: [12, 50, 16], love: [16, 70, 16, 70, 34], error: [36, 60, 36] };
 
 /** Light haptic feedback, only if enabled. Accepts a pattern or a HAPTIC name. */

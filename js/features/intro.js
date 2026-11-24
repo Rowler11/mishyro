@@ -9,7 +9,7 @@ import { util } from '../core.js';
 const WORDS = ['Te amo', 'I love you', "Je t'aime", 'Ti amo', 'Ich liebe dich', 'Ik hou van jou', 'Jag älskar dig', 'Jeg elsker deg', 'Kocham cię',
   'Seni seviyorum', 'Я тебя люблю', '사랑해', 'Σ\'αγαπώ', 'Aku cinta kamu', 'Anh yêu em', 'Mahal kita', 'Te iubesc', 'Volim te', 'Szeretlek',
   'Rakastan sinua', "T'estimo", 'Maite zaitut', 'Eu te amo', 'Mi amas vin'];
-// v0.21.0: in the Chinese styles the heart becomes 我爱你 (option A, 2026-11-24).
+// v0.22.0: in the Chinese styles the heart becomes 我爱你 (option A, 2026-11-24).
 let CENTER = '愛してる';
 
 // Timeline in ms of "story time"; the whole thing plays SLOW times slower in real time.
@@ -106,7 +106,7 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
   const moteColor = mix(gold, '#ffffff', 0.15);
   const haloColor = night ? mix(accent, '#ffffff', 0.3) : mix(accent, gold, 0.35);
   const serif = tok('--font-serif') || 'serif';
-  // v0.21.0: the heart's word uses the same letters as the titles (brush in Palacio rojo, porcelain serif in Porcelana azul)
+  // v0.22.0: the heart's word uses the same letters as the titles (brush in Palacio rojo, porcelain serif in Porcelana azul)
   const centerFont = st === 'rojo' ? `400 SIZEpx 'Ma Shan Zheng', 'Noto Serif SC', ${serif}` : st === 'azul' ? `700 SIZEpx 'Noto Serif SC', ${serif}` : `700 SIZEpx ${serif}`;
   document.fonts?.load(centerFont.replace('SIZE', '40'), CENTER).catch(() => {});
   const sans = tok('--font-ui') || tok('--font-sans') || 'sans-serif';

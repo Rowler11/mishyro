@@ -347,7 +347,7 @@ export async function decorateHome(body) {
 /** Any other screen: one pet, different per screen and day, peeking over a card or asleep at the end. */
 export async function companion(node, id) {
   if (!node || !id || SKIP.has(id) || node.querySelector('.kitty-perch, .kitty-nap')) return;
-  // v0.21.0: a pet already waiting on an empty state is this screen's pet; extra ones (built in the same tick) step aside.
+  // v0.22.0: a pet already waiting on an empty state is this screen's pet; extra ones (built in the same tick) step aside.
   const waiting = [...node.querySelectorAll('.empty-art-pet')];
   waiting.slice(1).forEach((w) => w.replaceWith(util.el('div', { class: 'empty-art', 'aria-hidden': 'true' }, util.icon('jp-sakura', { size: 96, cls: 'empty-icon' }), util.el('span', { class: 'empty-ring' }))));
   if (waiting.length) return;
@@ -408,7 +408,7 @@ export async function stroll(scene, scope, { chance = 0.6, delay = 1800, flow = 
   lane.remove();
 }
 
-// ---------- empty states (v0.21.0, option A) ----------
+// ---------- empty states (v0.22.0, option A) ----------
 // A pet sits where the icon of an empty screen used to be. The list is cached so ui.emptyState() can
 // draw it synchronously; it refreshes when pets or the "Que se paseen por la app" setting change.
 let emptyCache = [];

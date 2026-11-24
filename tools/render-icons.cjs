@@ -9,7 +9,7 @@ const path = require('path');
   const browser = await chromium.launch();
   const page = await browser.newPage({ deviceScaleFactor: 1 });
   const jobs = [['icon.svg', 'icon-192.png', 192], ['icon.svg', 'icon-512.png', 512], ['maskable.svg', 'maskable-512.png', 512],
-    // v0.21.0: own icons for the long-press shortcuts (Android masks them to a circle)
+    // v0.22.0: own icons for the long-press shortcuts (Android masks them to a circle)
     ['sc-amor.svg', 'sc-amor-192.png', 192], ['sc-pregunta.svg', 'sc-pregunta-192.png', 192], ['sc-pensando.svg', 'sc-pensando-192.png', 192]];
   for (const [src, out, size] of jobs) {
     const svg = fs.readFileSync(path.join(dir, src), 'utf8');

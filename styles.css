@@ -3548,7 +3548,7 @@ html.is-touring .toasts { z-index: 360; top: calc(env(safe-area-inset-top, 0px) 
   .kitty-perch { margin-top: 36px; }
 }
 
-/* ---------- v0.21.0 premium touch: every tappable thing answers the finger ---------- */
+/* ---------- v0.22.0 premium touch: every tappable thing answers the finger ---------- */
 .icon-btn, .profile-chip, .chip, .segmented-option, .list-row, .switch, .tabbar-link .tab-icon, .rail-link {
   transition: transform var(--dur-1) var(--ease-out), background-color var(--dur-2), color var(--dur-2);
 }
@@ -3562,7 +3562,7 @@ button.list-row:active, a.list-row:active, label.list-row:active { background: v
 :root[data-motion="off"] .icon-btn:active, :root[data-motion="off"] .profile-chip:active, :root[data-motion="off"] .chip:active,
 :root[data-motion="off"] .segmented-option:active, :root[data-motion="off"] .tabbar-link:active .tab-icon, :root[data-motion="off"] .rail-link:active { transform: none; }
 
-/* v0.21.0: frosted privacy curtain (recent-apps view). Text under it can't be read; shapes and colours stay soft. */
+/* v0.22.0: frosted privacy curtain (recent-apps view). Text under it can't be read; shapes and colours stay soft. */
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .curtain {
     background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%), color-mix(in srgb, var(--bg) 72%, transparent);
@@ -3571,7 +3571,7 @@ button.list-row:active, a.list-row:active, label.list-row:active { background: v
 }
 :root[data-contrast="high"] .curtain { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
 
-/* v0.21.0: a pet waits on empty screens (option A) */
+/* v0.22.0: a pet waits on empty screens (option A) */
 .empty-art-pet { width: 170px; height: 150px; }
 .empty-pet { position: relative; display: grid; place-items: end center; width: 150px; height: 150px; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .empty-pet .kitty-body { display: block; width: 124px; animation: float 5s var(--ease-in-out) infinite; }
@@ -3584,7 +3584,7 @@ button.list-row:active, a.list-row:active, label.list-row:active { background: v
 .empty-pet:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; border-radius: 24px; }
 :root[data-motion="off"] .empty-pet .kitty-body { animation: none; }
 
-/* v0.21.0: the Chinese styles' plum branch (and lanterns or moon) over the loading screen */
+/* v0.22.0: the Chinese styles' plum branch (and lanterns or moon) over the loading screen */
 .splash-corner { position: absolute; top: env(safe-area-inset-top); right: 0; width: min(78vw, 420px); pointer-events: none; animation: rise var(--dur-5) var(--ease-out) both; }
 .splash-corner > svg { width: 100%; height: auto; display: block; }
 .splash-intro:not(.show) .splash-corner { visibility: hidden; }

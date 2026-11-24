@@ -326,7 +326,7 @@ function splash({ ready = Promise.resolve(), intro = null, mode = 'daily' } = {}
     const who = 'sofia'; // The app is a gift for her: the loading screen says "Para <her name>" on every phone (Rowler, 2026-11-21).
     const reduced = util.prefersReducedMotion();
     const full = !reduced && (intro ?? introDue(mode));
-    const cnStyle = ['rojo', 'azul'].includes(document.documentElement.dataset.style); // v0.21.0: 我爱你 in the Chinese styles
+    const cnStyle = ['rojo', 'azul'].includes(document.documentElement.dataset.style); // v0.22.0: 我爱你 in the Chinese styles
     const layer = el('div', { class: `splash${full ? ' splash-intro' : ''}`, role: 'status', 'aria-label': 'Aishiteru' },
       // A bouquet of lilies, Sofía's flower, opens as the name appears (chosen 2026-11-22).
       cnStyle ? el('div', { class: 'splash-corner', 'aria-hidden': 'true' }, cornerArt()) : null,
@@ -504,7 +504,7 @@ async function start() {
   db.emptyExpiredTrash().catch(() => {}); // Papelera: what is older than 30 days goes for good
   await profile.load();
   await import('./core/pets.js').then((m) => m.load()).catch(() => {});
-  const emptyPets = import('./features/gatitos.js').then((m) => m.primeEmptyStates()).catch(() => {}); // v0.21.0: a pet waits on empty screens
+  const emptyPets = import('./features/gatitos.js').then((m) => m.primeEmptyStates()).catch(() => {}); // v0.22.0: a pet waits on empty screens
   db.onChange((store) => { if (store === 'pets') profile.load(); if (store === 'letters' || store === 'content') updateLetterDot(); });
   await applySettings();
   ui.installRipple();
