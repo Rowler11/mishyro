@@ -9,11 +9,10 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.24.0',
+  version: '0.25.0',
   items: [
-    'Nuevo en Inicio: mándale los buenos días o las buenas noches con un toque, y un abrazo a distancia que se siente en el teléfono.',
-    'Respirar juntos: si los dos abren la pantalla a la vez, respiran al mismo ritmo. Con sonido de lluvia o de templo si quieres.',
-    'Cada saludo te lo trae un animalito distinto, de papel o de los de casa.',
+    'Tarjeta para compartir: una imagen con los días juntos y una frase, sin nombres ni fechas.',
+    'Está en Inicio, junto a los buenos días, el abrazo y Respirar juntos.',
   ],
 };
 
