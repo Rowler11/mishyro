@@ -504,7 +504,6 @@ export async function render() {
     const today = await todayCard().catch((e) => { console.error(e); return null; });
     const meeting = await import('./encuentro.js').then((m) => m.homeCard()).catch(() => null);
     const weekend = await import('./citas.js').then((m) => m.weekendCard()).catch(() => null);
-    const pet = await import('./mascotas.js').then((m) => m.homeCard({ onChange: build })).catch(() => null);
     const acc = await import('./home-accesos.js');
     const favs = await acc.favoritesCard().catch((e) => { console.error(e); return null; });
     const homeMap = await import('./mapa.js').then((m) => m.homeCard()).catch(() => null);
@@ -524,7 +523,6 @@ export async function render() {
       meeting,
       slides.length ? daySwitcher(slides) : null,
       plant,
-      pet,
       favs,
       homeMap,
       comingCard(data, start),
@@ -534,6 +532,8 @@ export async function render() {
       backupCard(data.meta),
     ].filter(Boolean));
     ui.stagger(body);
+    // v0.18.0: the pets have no card of their own; each one peeks over a different card.
+    import('./gatitos.js').then((m) => m.decorateHome(body)).catch((e) => console.error(e));
     // Seasonal decoration while an event is on (San Valentín hearts, Tanabata lanterns…).
     page.querySelector('.season-deco')?.remove();
     import('./eventos.js').then((m) => m.decoration()).then((d) => {
