@@ -105,8 +105,8 @@ function counterCard(start, onNewDay) {
   const card = el('article', { class: 'card home-card counter-card', 'aria-labelledby': 'counter-title' },
     petals,
     el('h2', { class: 'sr-only', id: 'counter-title' }, 'Nuestro tiempo'),
-    el('div', { class: 'counter-ring', 'aria-hidden': 'true' }, ring, el('p', { class: 'counter-big' }, big, bigLabel),
-      el('span', { class: 'counter-seal' }, icon('heart', { size: 11 }))),
+    latidoRing(el('div', { class: 'counter-ring', 'aria-hidden': 'true' }, ring, el('p', { class: 'counter-big', 'aria-hidden': 'true' }, big, bigLabel),
+      el('span', { class: 'counter-seal', 'aria-hidden': 'true' }, icon('heart', { size: 11 })))),
     el('div', { 'aria-hidden': 'true' }, goal, el('p', { class: 'counter-detail' }, detail, clock)),
     sr);
   // Ticks every second while visible; stops when the tab is hidden and recalculates on return.
@@ -309,6 +309,12 @@ function omikujiCard(data) {
 
 // ---------- the day's cards: one at a time, chosen with buttons (Inicio B, decided 2026-11-19) ----------
 // No sideways swipe. "Pensando en ti" shows first. From 900 px the three share one row and the buttons hide.
+/** v0.22.0: the days ring doubles as the Latido heart (hold it and your heartbeat goes to the other phone). */
+function latidoRing(ring) {
+  import('./latido.js').then((m) => m.attachHold(ring)).catch((e) => console.error(e));
+  return ring;
+}
+
 const SLIDE_LABEL = { 'thinking-card': 'Pensando en ti', 'omikuji-card': 'Razón' };
 function daySwitcher(slides) {
   const label = (s) => SLIDE_LABEL[[...s.classList].find((c) => SLIDE_LABEL[c])] || s.querySelector('.card-kicker')?.textContent || 'Saludo';

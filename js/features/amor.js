@@ -108,7 +108,7 @@ export async function homeCard({ onChange } = {}) {
     heart.disabled = true;
     try {
       if (await send(me)) {
-        util.haptic([10, 50, 10]);
+        util.haptic('love');
         heart.classList.add('is-sent', 'is-pop'); heart.setAttribute('aria-pressed', 'true'); label.textContent = 'Amor enviado hoy';
         burst(heart);
         ui.toast(theirs ? `¡Los dos enviaron amor hoy! Racha de ${st.current + 1} ${st.current + 1 === 1 ? 'día' : 'días'} 🔥` : `Le enviaste amor a ${nick} 💗`, { tone: 'success' });
@@ -175,7 +175,7 @@ export async function homeStrip({ onChange } = {}) {
     btn.disabled = true;
     try {
       if (await send(me)) {
-        util.haptic([10, 50, 10]);
+        util.haptic('love');
         btn.classList.add('is-sent', 'is-pop'); btn.setAttribute('aria-pressed', 'true'); label.textContent = 'Amor enviado';
         burst(btn);
         ui.toast(theirs ? `¡Los dos enviaron amor hoy! Racha de ${st.current + 1} ${st.current + 1 === 1 ? 'día' : 'días'} 🔥` : `Le enviaste amor a ${nick} 💗`, { tone: 'success' });

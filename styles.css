@@ -3547,3 +3547,65 @@ html.is-touring .toasts { z-index: 360; top: calc(env(safe-area-inset-top, 0px) 
   .kitty-paws i:first-child { left: 19px; } .kitty-paws i:last-child { right: 19px; }
   .kitty-perch { margin-top: 36px; }
 }
+
+/* ---------- v0.22.0 premium touch: every tappable thing answers the finger ---------- */
+.icon-btn, .profile-chip, .chip, .segmented-option, .list-row, .switch, .tabbar-link .tab-icon, .rail-link {
+  transition: transform var(--dur-1) var(--ease-out), background-color var(--dur-2), color var(--dur-2);
+}
+.icon-btn:active:not(:disabled) { transform: scale(.9); background: var(--surface-2); }
+.profile-chip:active, .chip:active { transform: scale(.96); }
+.segmented-option:active { transform: scale(.96); }
+button.list-row:active, a.list-row:active, label.list-row:active { background: var(--surface-2); }
+.tabbar-link:active .tab-icon { transform: scale(.86); }
+.rail-link:active { transform: scale(.97); }
+@media (hover: hover) { .btn:hover:not(:disabled) { filter: brightness(1.04); } }
+:root[data-motion="off"] .icon-btn:active, :root[data-motion="off"] .profile-chip:active, :root[data-motion="off"] .chip:active,
+:root[data-motion="off"] .segmented-option:active, :root[data-motion="off"] .tabbar-link:active .tab-icon, :root[data-motion="off"] .rail-link:active { transform: none; }
+
+/* v0.22.0: frosted privacy curtain (recent-apps view). Text under it can't be read; shapes and colours stay soft. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .curtain {
+    background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%), color-mix(in srgb, var(--bg) 72%, transparent);
+    -webkit-backdrop-filter: blur(32px) saturate(1.15); backdrop-filter: blur(32px) saturate(1.15);
+  }
+}
+:root[data-contrast="high"] .curtain { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* v0.22.0: a pet waits on empty screens (option A) */
+.empty-art-pet { width: 170px; height: 150px; }
+.empty-pet { position: relative; display: grid; place-items: end center; width: 150px; height: 150px; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.empty-pet .kitty-body { display: block; width: 124px; animation: float 5s var(--ease-in-out) infinite; }
+.empty-pet .kitty-body > svg { width: 100%; height: auto; display: block; }
+.empty-pet::after { content: ''; position: absolute; bottom: 2px; left: 50%; width: 92px; height: 10px; margin-left: -46px; border-radius: 50%; background: color-mix(in srgb, var(--text) 10%, transparent); }
+.empty-pet.is-mimo .kitty-body { animation: empty-pet-hop .5s var(--ease-spring); }
+@keyframes empty-pet-hop { 40% { transform: translateY(-10px) rotate(-3deg); } }
+.empty-pet-bubble:empty { display: none; }
+.empty-pet-bubble { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: max-content; max-width: 220px; padding: 6px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1); font: 500 .82rem var(--font-ui); color: var(--text); animation: rise var(--dur-3) var(--ease-out) both; }
+.empty-pet:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; border-radius: 24px; }
+:root[data-motion="off"] .empty-pet .kitty-body { animation: none; }
+
+/* v0.22.0: the Chinese styles' plum branch (and lanterns or moon) over the loading screen */
+.splash-corner { position: absolute; top: env(safe-area-inset-top); right: 0; width: min(78vw, 420px); pointer-events: none; animation: rise var(--dur-5) var(--ease-out) both; }
+.splash-corner > svg { width: 100%; height: auto; display: block; }
+.splash-intro:not(.show) .splash-corner { visibility: hidden; }
+
+/* v0.22.0 Latido: hold the days ring, and their heartbeat fills the screen on the other phone */
+.latido-target { cursor: pointer; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; border-radius: 50%; -webkit-tap-highlight-color: transparent; }
+.latido-target:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+.latido-target.is-holding { transform: scale(.96); transition: transform var(--dur-2) var(--ease-out); }
+.latido-target.is-beat { animation: latido-beat .5s var(--ease-out); }
+.latido-target.is-holding::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; box-shadow: 0 0 0 2px var(--accent), 0 0 24px color-mix(in srgb, var(--accent) 45%, transparent); opacity: .7; pointer-events: none; }
+.latido-count { position: absolute; top: -4px; left: -4px; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font: 700 .78rem var(--font-ui); pointer-events: none; }
+.latido-count:empty { display: none; }
+@keyframes latido-beat { 0% { transform: scale(.96); } 18% { transform: scale(1.04); } 34% { transform: scale(.98); } 50% { transform: scale(1.06); } 100% { transform: scale(.96); } }
+.latido-layer { position: fixed; inset: 0; z-index: 97; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3); padding: var(--space-5);
+  background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 62%), color-mix(in srgb, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); animation: fade-in var(--dur-3) var(--ease-out) both; text-align: center; }
+.latido-layer.leaving { animation: fade-out var(--dur-2) forwards; }
+.latido-heart { width: 140px; color: var(--accent); filter: drop-shadow(0 8px 28px color-mix(in srgb, var(--accent) 45%, transparent)); }
+.latido-heart svg { display: block; width: 100%; height: auto; fill: currentColor; }
+.latido-heart.is-beat { animation: latido-beat .7s var(--ease-out); }
+.latido-title { margin: 0; font: 700 1.5rem var(--font-serif); }
+.latido-sub { margin: 0; color: var(--text-2); }
+.latido-close { margin-top: var(--space-4); }
+:root[data-motion="off"] .latido-target.is-beat, :root[data-motion="off"] .latido-heart.is-beat { animation: none; }

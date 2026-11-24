@@ -2546,13 +2546,33 @@ async function exampleContent(page, { reload = true } = {}) {
     let seenPerch = false; let seenNap = false; let onePer = true;
     for (const r of ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']) {
       await go(r, 'main h1'); await page.waitForTimeout(900);
-      const n = await page.locator('main .kitty-perch, main .kitty-nap').count();
+      const n = await page.locator('main .kitty-perch, main .kitty-nap, main .empty-pet').count();
       if (n !== 1) onePer = false;
       if (await page.locator('main .kitty-perch').count()) seenPerch = true;
       if (await page.locator('main .kitty-nap').count()) seenNap = true;
     }
     ok('18 Pantallas: en cada una aparece una sola mascota', onePer);
     ok('18 Pantallas: unas veces asomada y otras dormida al final', seenPerch && seenNap);
+    // v0.22.0: a pet waits on empty screens and talks with its name when tapped
+    await go('/ajustes', '.list-row'); await page.waitForTimeout(300);
+    await page.evaluate(async () => { const ui = await import('./js/core/ui.js'); document.querySelector('main').append(ui.emptyState({ title: 'Vacío de prueba', text: 'Texto ficticio' }), ui.emptyState({ title: 'Otro vacío', text: 'Texto ficticio' })); });
+    ok('22 Vacío: un gatito espera en lugar del ícono', (await page.locator('main .empty .empty-pet').count()) === 1);
+    await page.locator('main .empty-pet').click(); await page.waitForTimeout(250);
+    ok('22 Vacío: al tocarlo habla con su nombre', /^\S+: /.test(await page.locator('main .empty-pet-bubble').innerText()));
+    ok('22 Vacío: una sola mascota por pantalla (el segundo vacío deja su ícono)', (await page.locator('main .empty-pet').count()) === 1 && (await page.locator('main .empty .empty-icon').count()) === 1);
+    // v0.22.0 Latido: holding the days ring counts heartbeats; a fresh one from the partner beats on screen once
+    await go('/inicio', '.latido-target');
+    { const box = await page.locator('.latido-target').boundingBox(); await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down(); await page.waitForTimeout(1500); }
+    ok('22 Latido: al mantener el círculo cuenta los latidos', Number(await page.locator('.latido-count').textContent()) >= 1);
+    await page.mouse.up(); await page.waitForTimeout(300);
+    await page.evaluate(async () => { const db = await import('./js/core/db.js'); const pr = await import('./js/core/profile.js'); const me = pr.active();
+      await db.put('streaks', { id: 'beat:e2e', type: 'beat', by: pr.partnerOf(me), to: me, beats: 2, at: new Date().toISOString(), visibility: 'shared', owner: 'both' }, { userEdit: false });
+      (await import('./js/features/latido.js')).check(); });
+    await page.waitForSelector('.latido-layer');
+    ok('22 Latido: el de su pareja aparece con su nombre', /^El latido de /.test(await page.locator('.latido-title').innerText()));
+    await page.locator('.latido-close').click(); await page.waitForTimeout(400);
+    await page.evaluate(async () => (await import('./js/features/latido.js')).check()); await page.waitForTimeout(300);
+    ok('22 Latido: cada latido se siente una sola vez', (await page.locator('.latido-layer').count()) === 0);
     await go('/ajustes', '.list-row'); await page.waitForTimeout(900);
     ok('18 Ajustes: ahí no aparecen', (await page.locator('.kitty-perch, .kitty-nap').count()) === 0);
     const napRoute = await page.evaluate(async () => { const r = ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']; return r; });
