@@ -1,9 +1,11 @@
 # Cambios
 
-## 0.15.1 (Inicio con glicinia y hojas por encima)
+## 0.15.1 (Inicio con arce japonés y furin, hojas por encima)
 
-- Las hojas, pétalos y nieve de Inicio son más grandes y caen por encima de las tarjetas, sin estorbar los toques. Los faroles de noche siguen detrás.
-- De día, Inicio ya no tiene una rama parecida a la de la entrada: ahora cuelga glicinia lila y rosada, con racimos que se mecen uno por uno y se sacuden al tocarlos. De noche siguen los dos chōchin.
+- De día, la esquina de Inicio tiene una rama frondosa de arce japonés (ya no se parece a la sakura de la entrada) con un furin de vidrio colgando que se mece con el viento. Al tocarla se sacude.
+- Lo que cae son las hojas de ese arce, más grandes y por encima de las tarjetas, sin estorbar los toques: verde claro en primavera, verde en verano, rojo y naranja en otoño. En invierno la rama queda desnuda con nieve y caen copos.
+- El dibujo del furin cambia con la estación: flores, peces dorados, hojas de arce o copos.
+- De noche siguen los dos chōchin y las luciérnagas; los faroles quedan detrás de las tarjetas.
 
 ## 0.15.0 (Contador de amor y avisos a su hora)
 

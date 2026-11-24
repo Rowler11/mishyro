@@ -237,7 +237,8 @@ export function ambient(host) {
   let W = 0; let H = 0;
   const size = () => { W = innerWidth; H = innerHeight; for (const k of [c, back]) { k.width = Math.round(W * dpr); k.height = Math.round(H * dpr); } };
   size();
-  let kind = ambientKind(); let night = kind === 'night'; let pal = COLORS(night ? 'hotaru' : kind, night, tokens().gold);
+  const palette = (k) => (k === 'night' ? COLORS('hotaru', true, tokens().gold) : MAPLE[k] || COLORS('snow', false));
+  let kind = ambientKind(); let night = kind === 'night'; let pal = palette(kind);
   const n = innerWidth > 1100 ? 8 : 7; // few, decided with the user
   const make = (k, { top = true, at = null, extra = false } = {}) => {
     const now = performance.now();
@@ -253,10 +254,11 @@ export function ambient(host) {
       life: k === 'hotaru' ? R(7000, 12000) : 0, color: pal[Math.floor(Math.random() * pal.length)],
     };
   };
-  const particle = () => (night ? 'hotaru' : kind);
+  // v0.15.1: by day the corner maple drops its own leaves (green, then red); snow in winter.
+  const particle = () => (night ? 'hotaru' : kind === 'snow' ? 'snow' : 'momiji');
   let bits = [];
   const reset = () => {
-    kind = ambientKind(); night = kind === 'night'; pal = COLORS(night ? 'hotaru' : kind, night, tokens().gold);
+    kind = ambientKind(); night = kind === 'night'; pal = palette(kind);
     bits = Array.from({ length: n }, () => make(particle(), { top: false }));
     if (night) bits.push(make('lantern', { top: false }), make('lantern'));
   };
@@ -328,7 +330,7 @@ export function ambient(host) {
     burst(x, y) {
       if (stopped) return;
       const extras = bits.filter((b) => b.extra).length;
-      for (let i = 0; i < Math.min(5, 10 - extras); i++) bits.push(make(night ? 'hotaru' : kind, { at: { x: x + R(-50, 50), y: y + R(-20, 30) }, extra: true }));
+      for (let i = 0; i < Math.min(5, 10 - extras); i++) bits.push(make(particle(), { at: { x: x + R(-50, 50), y: y + R(-20, 30) }, extra: true }));
     },
   };
   return api;
@@ -349,43 +351,95 @@ export function cornerArt(kind = ambientKind()) {
     svg.innerHTML = `<defs>${defs}</defs>${lantern(78, 64, 44, 1)}${lantern(128, 46, 34, 2)}`;
     return svg;
   }
-  // v0.15.1: by day Inicio has hanging wisteria (fuji) instead of a branch, so it does not look like
-  // the welcome splash's sakura branch. Seeded, so it is the same drawing every time.
-  return wisteriaArt(svg);
+  // v0.15.1 (chosen 2026-11-24, option H): by day a leafy Japanese maple branch (never the welcome
+  // splash's sakura) with a glass furin hanging from it. Its own leaves are what falls over the cards.
+  return mapleArt(svg, kind);
 }
 
-function wisteriaArt(svg) {
-  svg.setAttribute('viewBox', '0 0 230 120');
-  let seed = 11; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-  const f = (n) => n.toFixed(1);
-  const mix = (a, b, t) => { const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); const x = p(a); const y = p(b); return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * t)).join(',')})`; };
-  const TONES = [['#E6D5F3', '#8E6CC0'], ['#FBD9E3', '#D2708F'], ['#EFE2F7', '#A98BD3']];
-  // the vine: comes in from beyond the right edge and runs left along the top
-  const vine = 'M236 4C206 10 186 2 160 9S118 18 96 12 58 6 34 13';
-  let leaves = '';
-  for (let i = 0; i < 16; i++) {
-    const x = 40 + i * 12 + rnd() * 6; const y = 7 + Math.sin(i * 1.3) * 4 + rnd() * 3;
-    leaves += `<ellipse cx="${f(x)}" cy="${f(y)}" rx="5.4" ry="2.3" transform="rotate(${f(-40 + rnd() * 80)} ${f(x)} ${f(y)})" fill="${i % 3 ? '#8DAA6E' : '#A7BF86'}"/>`;
-  }
-  // racemes: short over the title (left), long on the right
-  const anchors = [[46, 12, 22], [64, 10, 32], [82, 11, 28], [100, 13, 44], [118, 14, 38], [136, 13, 58], [153, 10, 50], [170, 8, 68], [187, 7, 56], [204, 8, 72], [221, 6, 52]];
-  let hang = '';
-  anchors.forEach(([x, y, len], i) => {
-    const [top, tip] = TONES[i % TONES.length];
-    let fl = '';
-    const n = Math.round(len / 2.4);
-    for (let k = 0; k < n; k++) {
-      const t = k / (n - 1); const w = (1 - t) * 7 + 1.5;
-      const yy = y + 4 + t * len;
-      for (const side of [-1, 0, 1]) {
-        if ((t > 0.85 && side) || (side === 0 && k % 2)) continue;
-        const xx = x + side * w * (0.4 + rnd() * 0.45) + Math.sin(t * 3) * 1.5;
-        fl += `<ellipse cx="${f(xx)}" cy="${f(yy)}" rx="${f(3.6 - t * 1.5)}" ry="${f(2.7 - t * 0.9)}" fill="${mix(top, tip, Math.min(1, t * 1.15))}"/>`;
+/** Leaves of Inicio's maple by season (also the colors of the leaves that fall). null = bare in winter. */
+export const MAPLE = {
+  sakura: ['#8FC95A', '#A9D86E', '#6FAE45', '#C9694A'],
+  hotaru: ['#3F8A3A', '#57A046', '#2F6F2C', '#4A9A40'],
+  momiji: ['#D8462F', '#EF8A2C', '#B8321F', '#F2B23C'],
+  snow: null,
+};
+const TANZAKU = { sakura: ['#F7C3D1', '#FDE4EA'], hotaru: ['#A9D8EE', '#E1F2FA'], momiji: ['#F2A86C', '#FDE1C6'], snow: ['#D6CFE9', '#F0ECF8'] };
+let mseed = 1;
+const mr = (a, b) => { mseed = (mseed * 16807) % 2147483647; return a + ((mseed - 1) / 2147483646) * (b - a); };
+const shade = (hex, k) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');
+function mapleLeaf(x, y, r, a, c) {
+  let d = ''; let v = '';
+  for (let i = 0; i < 14; i++) { const g = -Math.PI / 2 + (i * Math.PI) / 7; const rr = i % 2 ? r * 0.4 : r * (i === 0 ? 1 : i === 2 || i === 12 ? 0.92 : 0.74); d += (i ? 'L' : 'M') + (x + Math.cos(g) * rr).toFixed(1) + ' ' + (y + Math.sin(g) * rr).toFixed(1); }
+  for (const k of [0, 2, 4, 10, 12]) { const g = -Math.PI / 2 + (k * Math.PI) / 7; v += `M${x.toFixed(1)} ${y.toFixed(1)}L${(x + Math.cos(g) * r * 0.8).toFixed(1)} ${(y + Math.sin(g) * r * 0.8).toFixed(1)}`; }
+  return `<g transform="rotate(${a.toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"><path d="${d}Z" fill="${c}"/><path d="${v}" stroke="#FFFFFF" stroke-width=".45" opacity=".35"/></g>`;
+}
+function furinArt(kind, x, y) {
+  const flower = (cx, cy, r, c) => [0, 1, 2, 3, 4].map((i) => `<ellipse cx="${cx}" cy="${cy - r * 0.55}" rx="${r * 0.42}" ry="${r * 0.6}" fill="${c}" transform="rotate(${i * 72} ${cx} ${cy})"/>`).join('') + `<circle cx="${cx}" cy="${cy}" r="${r * 0.22}" fill="#E7B04A"/>`;
+  const fish = (fx, fy, k, a) => `<g transform="translate(${fx} ${fy}) rotate(${a}) scale(${k})"><path d="M0 0C4-4 10-3.5 12 0C10 3.5 4 4 0 0Z" fill="#E2483A"/><path d="M11.5 0L17-4.5L15.5 0L17 4.5Z" fill="#F06B4F"/><circle cx="3" cy="-.6" r=".7" fill="#3A1A14"/></g>`;
+  const flake = (fx, fy, r, c = '#7AA6C8') => [0, 60, 120].map((a) => `<line x1="${fx - r}" y1="${fy}" x2="${fx + r}" y2="${fy}" stroke="${c}" stroke-width=".9" stroke-linecap="round" transform="rotate(${a} ${fx} ${fy})"/>`).join('');
+  const paint = kind === 'hotaru' ? fish(-9, 15, 0.75, -10) + fish(2, 22, 0.65, 15) + '<path d="M-15 27q4-3 8 0t8 0t8 0t8 0" fill="none" stroke="#4A8FC0" stroke-width="1.1"/>'
+    : kind === 'sakura' ? flower(-6, 14, 5, '#F2A0B8') + flower(6, 21, 4.2, '#F7BCCD') + flower(-3, 25, 3.4, '#EC8FAA')
+      : kind === 'momiji' ? mapleLeaf(-6, 14, 6, -15, '#D8462F') + mapleLeaf(6, 21, 5, 20, '#EF8A2C') + mapleLeaf(-4, 25, 3.8, 5, '#C23A28')
+        : flake(-6, 13, 5) + flake(6, 20, 4) + flake(-3, 25, 3);
+  const tag = kind === 'sakura' ? flower(0, 20, 4, '#FFFFFF') : kind === 'momiji' ? mapleLeaf(0, 20, 5, 10, '#C23A28') : kind === 'hotaru' ? fish(-5, 20, 0.65, 0) : flake(0, 20, 4, '#8B80B4');
+  const dome = 'M-15 30C-15 10-9 1 0 1C9 1 15 10 15 30Z';
+  return `<g transform="translate(${x} ${y})"><g class="corner-furin">
+    <line x1="0" y1="0" x2="0" y2="4" stroke="#6A4A3A" stroke-width="1"/>
+    <g transform="translate(0 4) scale(.78)">
+      <ellipse cx="0" cy="1.5" rx="3.4" ry="2.2" fill="#9CC3D6"/>
+      <path d="${dome}" fill="url(#ca-glass)" stroke="#6F9FB8" stroke-width=".8"/>
+      <g clip-path="url(#ca-dome)">${paint}</g>
+      ${kind === 'snow' ? '<path d="M-7 5C-4 1 4 1 7 5C4 6-4 6-7 5Z" fill="#FFFFFF" stroke="#C4D4E2" stroke-width=".5"/>' : ''}
+      <ellipse cx="0" cy="30" rx="15" ry="3" fill="#CFE8F3" stroke="#6F9FB8" stroke-width=".8"/>
+      <ellipse cx="0" cy="30" rx="12.5" ry="1.8" fill="#7FB0C8" opacity=".45"/>
+      <path d="M-10.5 26C-11.5 15-7.5 6-2 3.8" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" opacity=".9"/>
+      <path d="M9 12C10.5 16 11 20 11 24" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity=".6"/>
+      <line x1="0" y1="3" x2="0" y2="40" stroke="#7A5A4A" stroke-width=".8"/>
+      <rect x="-2.4" y="27" width="4.8" height="6" rx="1.6" fill="#E4685A"/>
+      <g transform="translate(0 40)"><g class="corner-tanzaku">
+        <rect x="-7.5" y="0" width="15" height="40" rx="1.2" fill="url(#ca-tz)" filter="url(#ca-tex)"/>
+        <rect x="-7.5" y="0" width="15" height="40" rx="1.2" fill="none" stroke="rgba(90,50,40,.18)" stroke-width=".6"/>
+        <line x1="-5" y1="5" x2="5" y2="5" stroke="#C9A14A" stroke-width=".9"/><line x1="-5" y1="35" x2="5" y2="35" stroke="#C9A14A" stroke-width=".9"/>
+        ${tag}<circle cx="0" cy="2.2" r=".9" fill="#7A5A4A"/>
+      </g></g>
+    </g></g></g>`;
+}
+function mapleArt(svg, kind) {
+  svg.setAttribute('viewBox', '0 0 270 156');
+  const pal = MAPLE[kind] === undefined ? MAPLE.momiji : MAPLE[kind];
+  const tz = TANZAKU[kind] || TANZAKU.momiji;
+  mseed = 7;
+  const limbs = [
+    ['M274 18C252 17 236 24 218 29', 10], ['M218 29C200 34 184 36 166 44', 7.5], ['M166 44C150 51 134 54 118 62', 5], ['M118 62C108 67 100 72 94 80', 3],
+    ['M226 27C220 18 212 12 202 8', 3.2], ['M190 37C188 48 182 58 172 70', 3.6], ['M172 70C166 78 160 82 152 86', 2], ['M150 50C146 40 140 32 130 26', 2.6],
+    ['M126 58C124 68 120 78 112 88', 2], ['M244 21C246 30 250 38 258 44', 2.6], ['M204 33C210 40 216 46 226 50', 2.2], ['M140 52C134 46 124 42 112 42', 1.8],
+    ['M94 80C90 84 86 86 79 87', 1.2], ['M112 88C110 92 106 95 100 96', 1.1], ['M202 8C198 6 194 6 189 7', 1.2], ['M152 86C148 88 144 88 139 87', 1.1], ['M258 44C260 48 261 51 261 55', 1.2],
+  ];
+  const bark = limbs.map(([d, w]) => `<path d="${d}" fill="none" stroke="#3B261C" stroke-width="${w + 1.4}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="url(#ca-bark)" stroke-width="${w}" stroke-linecap="round"/>`).join('')
+    + limbs.slice(0, 4).map(([d, w]) => `<path d="${d}" fill="none" stroke="#A07A60" stroke-width="${(w * 0.22).toFixed(2)}" stroke-linecap="round" opacity=".55" transform="translate(0 -${(w * 0.22).toFixed(2)})"/>`).join('');
+  const clusters = [[238, 30, 15], [204, 14, 13], [180, 62, 14], [156, 84, 11], [132, 30, 12], [112, 86, 11], [96, 76, 10], [160, 50, 12], [222, 50, 12], [258, 46, 11], [112, 44, 11], [196, 36, 10], [142, 64, 10]];
+  let back = ''; let front = '';
+  if (pal) {
+    clusters.forEach(([cx, cy, r], ci) => {
+      for (let i = 0; i < 11; i++) {
+        const ang = mr(0, 6.28); const rr = r * Math.sqrt(mr(0, 1));
+        const x = cx + Math.cos(ang) * rr; const y = cy + Math.sin(ang) * rr * 0.8;
+        const col = pal[(i + ci) % pal.length];
+        if (i < 5) back += mapleLeaf(x, y, mr(5.5, 8.5), mr(-50, 50), shade(col, 0.78)); else front += mapleLeaf(x, y, mr(5.5, 8.5), mr(-50, 50), col);
       }
-    }
-    hang += `<g class="wis-raceme"><path d="M${x} ${y}L${f(x + 0.5)} ${f(y + len * 0.9)}" stroke="#7E8F5E" stroke-width=".7"/>${fl}</g>`;
-  });
-  svg.innerHTML = `<g class="corner-swing"><path d="${vine}" fill="none" stroke="#7A5B4C" stroke-width="2.6" stroke-linecap="round"/>${hang}${leaves}</g>`;
+    });
+  } else {
+    front = '<g fill="#FFFFFF" stroke="#C4D4E2" stroke-width=".5"><path d="M274 13C252 12 236 19 218 24C200 29 184 31 166 39C150 46 134 49 118 57L119 60C135 52 151 49 167 42C185 34 201 32 219 27C237 22 253 15 274 16Z"/><path d="M188 33c2 4 0 8-3 12l1 1c3-4 5-8 3-13z"/></g>'
+      + [[250, 22], [230, 27], [208, 33], [186, 37], [160, 46], [136, 54], [112, 64]].map(([x, y]) => { const h = mr(4, 8).toFixed(1); return `<path d="M${x} ${y + 3}l1.4 ${h}l1.4-${h}z" fill="#DBEAF5" stroke="#B9CFE2" stroke-width=".4"/>`; }).join('')
+      + mapleLeaf(172, 72, 5, 20, '#A0522D') + mapleLeaf(120, 64, 4.5, -30, '#B0643A');
+  }
+  svg.innerHTML = `<defs>
+    <linearGradient id="ca-bark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8A634C"/><stop offset=".5" stop-color="#5E3F2F"/><stop offset="1" stop-color="#40291E"/></linearGradient>
+    <radialGradient id="ca-glass" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".97"/><stop offset=".55" stop-color="#DCF0F9" stop-opacity=".8"/><stop offset="1" stop-color="#8DBFD8" stop-opacity=".9"/></radialGradient>
+    <linearGradient id="ca-tz" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${tz[1]}"/><stop offset="1" stop-color="${tz[0]}"/></linearGradient>
+    <clipPath id="ca-dome"><path d="M-15 30C-15 10-9 1 0 1C9 1 15 10 15 30Z"/></clipPath>
+    <filter id="ca-tex" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7" result="n"/><feColorMatrix in="n" type="saturate" values="0" result="g"/><feComponentTransfer in="g" result="g2"><feFuncR type="linear" slope=".42" intercept=".7"/><feFuncG type="linear" slope=".42" intercept=".7"/><feFuncB type="linear" slope=".42" intercept=".7"/></feComponentTransfer><feBlend in="SourceGraphic" in2="g2" mode="multiply" result="m"/><feComposite in="m" in2="SourceGraphic" operator="in"/></filter>
+    <filter id="ca-soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="#3A2018" flood-opacity=".22"/></filter>
+  </defs><g class="corner-swing"><g class="corner-maple" filter="url(#ca-soft)">${back}<g filter="url(#ca-tex)">${bark}</g>${front}</g>${furinArt(kind, 150, 51)}</g>`;
   return svg;
 }
-
