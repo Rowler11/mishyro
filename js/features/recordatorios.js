@@ -184,7 +184,7 @@ export async function render() {
   const page = el('section', { class: 'page recordatorios' });
   page.append(ui.pageHeader({ title: 'Recordatorios', jp: 'お知らせ', romaji: 'oshirase', back: '/mas',
     actions: [ui.newButton('Agregar', () => customEditor(null, draw))] }));
-  const body = el('div', { class: 'stack' }, ui.skeleton(3));
+  const body = el('div', { class: 'stack' }, ui.skeleton(4, { kind: 'rows' }));
   page.append(body);
 
   async function draw() {

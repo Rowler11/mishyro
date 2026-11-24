@@ -1,5 +1,21 @@
 # Cambios
 
+## 0.23.0 (Sensación, confianza y PC)
+
+Nuevo
+- Inicio tiene un cielo que cambia con la hora (amanecer, día, atardecer y noche con estrellas) con los colores de cada estilo.
+- Arrastrar hacia abajo en Inicio para actualizar, rebote suave al final de las pantallas y deslizar desde el borde izquierdo para volver.
+- Sonido suave (campanita) al guardar, si los sonidos están activados.
+- Fotos y videos se pueden ampliar con dos dedos o doble toque, y moverse al ampliar (en PC, Ctrl + rueda).
+- Esqueletos de carga con la forma real de lo que viene (cuadrícula, tarjetas, filas).
+- Las tarjetas entran una tras otra y la tipografía quedó más fina y pareja.
+- Pantallas vacías: ahora rotan entre los gatitos y los animalitos de papel.
+- "Novedades" al abrir una versión nueva, con un animalito distinto cada vez.
+- Instalar la app: paso nuevo en Primeros pasos con instrucciones guiadas.
+- Aviso tranquilo cuando no hay internet y cuando vuelve.
+- Entrada con huella: al abrir el bloqueo la pide sola (si cancelas, queda el PIN) y el candado se desvanece al entrar.
+- PC: atajos "g" y luego i, c, u, a, m para ir a cada sección; arrastra fotos a Galería para crear un recuerdo; Imprimir en cada carta con un diseño sencillo.
+
 ## 0.22.0 (Más premium y Latido)
 
 Nuevo

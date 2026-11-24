@@ -2,7 +2,7 @@
 // leave, privacy curtain, panic screen and inactivity lock (docs/04).
 import * as db from './db.js';
 import * as cryptoBox from './crypto.js';
-import { el, icon, nowISO } from './util.js';
+import { el, icon, nowISO, prefersReducedMotion } from './util.js';
 import { hanko, logo, pinPad, closeAllModals, toast, openModal } from './ui.js';
 
 export const SECURITY_DEFAULTS = {
@@ -221,9 +221,11 @@ export async function lockScreen({ scope, neutralName = 'Aishiteru', inline = fa
           } else pad.setMessage(r);
         } }, icon('fingerprint'), el('span', {}, 'Usar huella'));
         box.querySelector('.lock-card').append(bioBtn);
+        // Straight in with the fingerprint: ask once as soon as the full lock opens (cancel falls back to the PIN).
+        if (!inline && scope === 'app') setTimeout(() => { if (box.isConnected) bioBtn.click(); }, 450);
       }
     });
-    const done = () => { clearInterval(tick); box.remove(); if (!inline) document.getElementById('app')?.removeAttribute('inert'); afterUnlock(scope); resolve(true); };
+    const done = () => { clearInterval(tick); box.classList.add('is-opening'); setTimeout(() => box.remove(), prefersReducedMotion() ? 0 : 380); if (!inline) document.getElementById('app')?.removeAttribute('inert'); afterUnlock(scope); resolve(true); };
     if (inline && mount) { mount.replaceChildren(box); } else { document.getElementById('app')?.setAttribute('inert', ''); document.body.append(box); }
     refreshWait();
     requestAnimationFrame(() => pad.focusInput());

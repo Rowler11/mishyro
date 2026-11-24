@@ -441,6 +441,25 @@ function celebrateOnce(kind) {
   return true;
 }
 
+/** v0.23.0: a soft sky behind Inicio that follows the real hour (dawn, day, dusk, night with stars). */
+const skyPhase = (h) => (h < 5.5 ? 'night' : h < 7.5 ? 'dawn' : h < 16.5 ? 'day' : h < 19 ? 'dusk' : 'night');
+function paintSky(page) {
+  const sky = el('div', { class: 'home-sky', 'aria-hidden': 'true' }, el('span', { class: 'sky-body' }));
+  page.prepend(sky);
+  const tick = () => {
+    if (!page.isConnected && sky.dataset.ready) { clearInterval(timer); sky.remove(); return; }
+    const d = new Date(); const h = d.getHours() + d.getMinutes() / 60;
+    const phase = skyPhase(h); sky.dataset.phase = phase; sky.dataset.ready = '1';
+    // the sun crosses from 6 to 18 and the moon from 18 to 6: left to right, highest at noon and midnight
+    const t = phase === 'night' ? ((h < 6 ? h + 24 : h) - 18) / 12 : (h - 6) / 12;
+    const body = sky.firstChild;
+    body.style.setProperty('--sx', `${Math.round(8 + Math.min(1, Math.max(0, t)) * 84)}%`);
+    body.style.setProperty('--sy', `${Math.round(70 - Math.sin(Math.min(1, Math.max(0, t)) * Math.PI) * 52)}%`);
+  };
+  tick();
+  const timer = setInterval(tick, 60000);
+}
+
 export async function render() {
   const page = el('section', { class: 'page page-wide home' });
   // Same as the welcome splash: the screen is for whoever holds the phone.
@@ -461,6 +480,7 @@ export async function render() {
   });
   corner.addEventListener('animationend', (e) => { if (e.animationName === 'corner-shake') corner.classList.remove('is-shaking'); });
   page.prepend(corner);
+  paintSky(page);
   const cornerWatch = new MutationObserver(() => {
     if (corner.dataset.kind !== fx.ambientKind() || corner.dataset.style !== (document.documentElement.dataset.style || 'jp')) drawCorner();
     if (document.documentElement.dataset.seasonal !== 'off' && !page.querySelector('.ambient-canvas')) amb = fx.ambient(page); // switched back on

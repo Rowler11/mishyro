@@ -1,7 +1,7 @@
 // Shared UI components used by every section: modal, sheet/panel, confirm,
 // toast, page header, empty state, hanko seal, ripple, share, skeleton,
 // toggles, segmented control, "Los dos / Solo yo" picker and PIN pad.
-import { el, icon, ja, haptic, prefersReducedMotion, uuid } from './util.js';
+import { el, icon, ja, haptic, sound, prefersReducedMotion, uuid } from './util.js';
 import { previousPath, parseHash } from './router.js';
 import { GROUPS, hubOf, listed } from '../routes.js';
 
@@ -30,6 +30,7 @@ export function toast(message, { action, timeout = 4500, tone = 'info' } = {}) {
     el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': 'Cerrar aviso', onClick: close }, icon('x', { size: 18 })));
   toastBox.append(t);
   if (tone === 'success' || tone === 'error') haptic(tone);
+  if (tone === 'success') sound('tick');
   if (timeout) setTimeout(close, action ? timeout * 2 : timeout);
   return { close };
 }
@@ -214,7 +215,13 @@ export function emptyState({ title, text, art = 'sakura', action } = {}) {
     action ? el('button', { class: 'btn btn-primary', type: 'button', onClick: action.onClick }, action.label) : null);
 }
 
-export function skeleton(lines = 3) {
+export function skeleton(lines = 3, { kind = 'lines' } = {}) {
+  // v0.23.0: 'grid' (photos), 'cards' (Inicio, Cartas) and 'rows' (lists) show the shape of what is coming
+  if (kind !== 'lines') {
+    const n = kind === 'grid' ? 9 : lines;
+    return el('div', { class: `skeleton skeleton-${kind}`, role: 'status', 'aria-busy': 'true', 'aria-label': 'Cargando' },
+      Array.from({ length: n }, (_, i) => el('span', { class: 'skeleton-block', dataset: { i: String(i) } })));
+  }
   const box = el('div', { class: 'skeleton', role: 'status', 'aria-busy': 'true', 'aria-label': 'Cargando' },
     Array.from({ length: lines }, (_, i) => el('span', { class: 'skeleton-line', dataset: { i: String(i) } })));
   box.prepend(enso());

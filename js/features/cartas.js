@@ -131,6 +131,18 @@ async function flyOpen(node, letter) {
   };
 }
 
+/** Prints a letter on its own page (PC): the app is hidden by CSS while body.printing-letter is set. */
+function printLetter(letter, paras) {
+  const sheet = el('article', { class: 'print-letter' },
+    el('h1', {}, letter.label),
+    paras.map((p) => el('p', {}, p)),
+    el('p', { class: 'print-letter-sign' }, letter.signature || profile.name(letter.from)));
+  document.body.append(sheet); document.body.classList.add('printing-letter');
+  const clean = () => { sheet.remove(); document.body.classList.remove('printing-letter'); removeEventListener('afterprint', clean); };
+  addEventListener('afterprint', clean);
+  setTimeout(() => window.print(), 50);
+}
+
 async function letterModal(letter, { onShareable = true, flown = false, onDelete = null, onEdit = null } = {}) {
   const paras = String(letter.body || '').split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   let photo = null; let url = null;
@@ -147,6 +159,7 @@ async function letterModal(letter, { onShareable = true, flown = false, onDelete
     el('p', { class: 'washi-sign' }, letter.signature || profile.name(letter.from)),
     letter.openedAt ? el('p', { class: 'washi-meta' }, openedText(letter.openedAt)) : null);
   const actions = [{ label: 'Cerrar', variant: 'ghost' }];
+  actions.unshift({ label: 'Imprimir', onClick: () => { printLetter(letter, paras); return false; } });
   if (onShareable) actions.unshift({ label: 'Compartir el texto', onClick: () => { ui.share({ title: letter.label, text: `${letter.label}\n\n${paras.join('\n\n')}\n\n${letter.signature || profile.name(letter.from)}` }); return false; } });
   if (onDelete) actions.unshift({ label: 'Borrar', variant: 'ghost', onClick: () => { onDelete(); return true; } });
   if (onEdit) actions.unshift({ label: 'Editar', onClick: () => { setTimeout(onEdit, 0); return true; } });
@@ -259,7 +272,7 @@ function editor(existing, { onSaved }) {
 export async function render(ctx) {
   const page = el('section', { class: 'page page-wide cartas' });
   const header = ui.pageHeader({ title: 'Cartas', jp: '手紙', romaji: 'tegami', actions: [ui.newButton('Escribir carta', () => openEditor(), 'pencil')] });
-  const body = el('div', { class: 'cartas-body' }, ui.skeleton(3));
+  const body = el('div', { class: 'cartas-body' }, ui.skeleton(3, { kind: 'cards' }));
   page.append(header, body);
   let tab = readTab();
   let letters = [];
