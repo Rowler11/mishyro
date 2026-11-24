@@ -2581,6 +2581,16 @@ async function exampleContent(page, { reload = true } = {}) {
     await ctx.setOffline(false); await page.evaluate(() => dispatchEvent(new Event('online'))); await page.waitForTimeout(150);
     await page.keyboard.press('g'); await page.keyboard.press('a'); await page.waitForTimeout(300);
     ok('23 Atajo g y a: lleva a Cartas', page.url().includes('#/cartas'));
+    // v0.24.0: a greeting from the partner arrives full screen; breathing opens
+    await page.evaluate(async () => { const db = await import('./js/core/db.js'); const pr = await import('./js/core/profile.js'); const me = pr.active();
+      await db.put('streaks', { id: 'greet:e2e', type: 'greet', kind: 'am', who: 'fox', by: pr.partnerOf(me), to: me, at: new Date().toISOString(), visibility: 'shared', owner: 'both' }, { userEdit: false });
+      await (await import('./js/features/toques.js')).check(); });
+    await page.waitForSelector('.toque-layer', { timeout: 4000 }).catch(() => {});
+    ok('24 Toques: el saludo de su pareja llega con su nombre', /Buenos días de /.test(await page.locator('.toque-layer .latido-title').innerText().catch(() => '')));
+    await page.locator('.toque-layer').click().catch(() => {});
+    await page.evaluate(async () => (await import('./js/features/calma.js')).openCalma());
+    ok('24 Calma: Respirar juntos muestra el círculo', (await page.locator('.calma-orb').count()) === 1);
+    await page.keyboard.press('Escape');
     await go('/ajustes', '.list-row'); await page.waitForTimeout(900);
     ok('18 Ajustes: ahí no aparecen', (await page.locator('.kitty-perch, .kitty-nap').count()) === 0);
     const napRoute = await page.evaluate(async () => { const r = ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']; return r; });

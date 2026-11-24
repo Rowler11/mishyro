@@ -3691,3 +3691,21 @@ body.is-dropping::after { content: 'Suelta las fotos para crear un recuerdo'; po
 .lock.is-opening { transition: opacity .35s var(--ease-out, ease), transform .35s var(--ease-out, ease); opacity: 0; transform: scale(1.04); pointer-events: none; }
 :root[data-motion="reduce"] .lock.is-opening { transition: none; }
 @media (pointer: coarse) { .icon-btn, .btn-icon, .appbar button, .modal-close { min-width: 44px; min-height: 44px; } }
+
+/* v0.24.0: toques (buenos días, abrazo) y respirar juntos */
+.toques-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.toque-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 72px; padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-m, 12px); background: var(--surface-2); color: var(--text); font: inherit; font-size: .82rem; text-align: center; cursor: pointer; transition: transform var(--dur-2) var(--ease-out), background var(--dur-2); }
+.toque-btn:active { transform: scale(.96); }
+.toque-btn .icon { color: var(--accent); }
+.toque-art { width: 132px; height: 132px; display: grid; place-items: center; margin: 0 auto var(--space-3); animation: toque-float 3.2s ease-in-out infinite; }
+.toque-art svg { width: 100%; height: 100%; }
+.toque-layer.is-hug .toque-art { animation: toque-hug 3s ease-in-out infinite; }
+@keyframes toque-float { 50% { transform: translateY(-8px); } }
+@keyframes toque-hug { 0%, 100% { transform: scale(1); } 40% { transform: scale(1.12); } }
+.calma-stage { display: grid; place-items: center; min-height: 240px; position: relative; }
+.calma-orb { width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 55%, #fff), var(--accent)); opacity: .85; animation: calma-breath 10s infinite; }
+@keyframes calma-breath { 0% { transform: scale(.6); } 40% { transform: scale(1.15); } 100% { transform: scale(.6); } }
+.calma-word { position: absolute; bottom: 4px; margin: 0; font-family: var(--font-serif); font-size: 1.15rem; color: var(--text); }
+.calma-sounds { display: flex; gap: var(--space-2); justify-content: center; flex-wrap: wrap; }
+.calma-sounds [aria-pressed="true"] { background: var(--accent); color: var(--on-accent, #fff); }
+:root[data-motion="reduce"] .calma-orb, :root[data-motion="reduce"] .toque-art { animation: none; }

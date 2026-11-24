@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.24.0 (Toques y calma)
+
+Nuevo
+- Inicio: "Buenos días" o "Buenas noches" de un toque (según la hora) y "Abrazo", con una vibración larga y suave. Les llega a pantalla completa con un personaje distinto cada vez, rotando entre los gatitos de casa y los animalitos de papel. También llega el aviso si la app está cerrada.
+- Respirar juntos: un círculo que respira cada 10 segundos al compás del reloj, así los dos quedan sincronizados sin enviar nada. Con sonido de lluvia o de templo generado en el teléfono, o en silencio.
+- Ya existían y no se repitieron: Próximo encuentro (cuenta regresiva), Preguntas (cada día, con respuestas ocultas hasta que responden los dos), canciones dedicadas, cartas con fecha de apertura y el medidor de ánimo.
+- Pendiente de esta tanda: foto del día compartida (necesita enviar fotos a diario y se decide aparte).
+
 ## 0.23.0 (Sensación, confianza y PC)
 
 Nuevo

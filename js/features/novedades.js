@@ -9,11 +9,11 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.23.0',
+  version: '0.24.0',
   items: [
-    'Todo responde mejor al tocar, y en Inicio puedes arrastrar hacia abajo para actualizar.',
-    'Inicio tiene un cielo que cambia con la hora: amanecer, día, atardecer y noche con estrellas.',
-    'Las fotos se pueden ampliar con dos dedos o con doble toque.',
+    'Nuevo en Inicio: mándale los buenos días o las buenas noches con un toque, y un abrazo a distancia que se siente en el teléfono.',
+    'Respirar juntos: si los dos abren la pantalla a la vez, respiran al mismo ritmo. Con sonido de lluvia o de templo si quieres.',
+    'Cada saludo te lo trae un animalito distinto, de papel o de los de casa.',
   ],
 };
 

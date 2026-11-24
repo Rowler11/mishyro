@@ -509,6 +509,7 @@ export async function render() {
     const events = todayEvents(data, start, recv);
     const slides = [greetingCard(data, recv), thinkingCard(data, recv), omikujiCard(data)].filter(Boolean);
     const today = await todayCard().catch((e) => { console.error(e); return null; });
+    const toques = counter && sync.isLinked() ? await import('./toques.js').then((m) => m.homeCard()).catch(() => null) : null;
     const meeting = await import('./encuentro.js').then((m) => m.homeCard()).catch(() => null);
     const weekend = await import('./citas.js').then((m) => m.weekendCard()).catch(() => null);
     const acc = await import('./home-accesos.js');
@@ -525,6 +526,7 @@ export async function render() {
       both.node,
       celebrationCard(events),
       meeting,
+      toques,
       favs,
       guide,
       slides.length ? daySwitcher(slides) : null,
