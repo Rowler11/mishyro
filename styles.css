@@ -3489,3 +3489,46 @@ html.is-touring { overflow: hidden; }
 html.is-touring .toasts { z-index: 360; top: calc(env(safe-area-inset-top, 0px) + 66px); }
 @media (min-width: 900px) { .tour-guide { width: 112px; height: 112px; } .tour-guide.pet-crane { width: 132px; } }
 @media (prefers-reduced-motion: reduce) { .tour, .tour * { transition: none !important; animation: none !important; } }
+/* v0.18.0 · Gatitos por la app (options C + menu, 2026-11-24): no card of their own. On Inicio each pet
+   peeks over the top edge of a different card; on other screens one of them peeks or naps at the end. */
+.kitty-perch { position: relative; display: grid; margin-top: 30px; isolation: isolate; }
+.kitty-perch > .card { position: relative; z-index: 1; }
+.kitty-perch .kitty-peek { position: absolute; z-index: 0; top: -45px; left: clamp(6px, calc(var(--kx, 75%) - 36px), calc(100% - 78px)); width: 72px; }
+.kitty-peek .k-shadow { display: none; }
+.kitty-paws { position: absolute; z-index: 2; top: -6px; left: clamp(6px, calc(var(--kx, 75%) - 36px), calc(100% - 78px)); width: 72px; height: 12px; pointer-events: none; }
+.kitty-paws i { position: absolute; top: 0; width: 17px; height: 11px; border-radius: 50%; background: var(--paw); border: 1.6px solid color-mix(in srgb, var(--paw-edge) 70%, transparent); }
+.kitty-paws i:first-child { left: 15px; } .kitty-paws i:last-child { right: 15px; }
+.kitty-perch .kitty.is-poked .kitty-body, .kitty-perch .kitty.is-playing .kitty-body { animation-name: k-peek-hop; }
+@keyframes k-peek-hop { 0%, 100% { transform: none; } 40% { transform: translateY(-7px); } }
+.kitty-perch .pet-bubble, .kitty-nap .pet-bubble { width: max-content; max-width: min(228px, 62vw); z-index: 6; }
+.kitty-perch + .kitty-care, .kitty-care + .kitty-perch { margin-top: 4px; }
+.kitty-care[data-pet] { border-radius: 14px 14px 4px 14px; }
+
+.kitty-menu { position: absolute; z-index: 7; top: 8px; display: flex; gap: 4px; padding: 5px; border-radius: 22px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-2, 0 8px 22px rgba(0,0,0,.14)); animation: k-menu-in 180ms var(--ease-out, ease-out); }
+.kitty-menu.is-flow { position: relative; top: auto; margin-top: var(--space-2); scroll-margin-bottom: 120px; }
+.kitty-menu-btn { display: grid; justify-items: center; align-content: center; gap: 1px; min-width: 56px; min-height: 48px; padding: 4px 6px; border: 0; border-radius: 17px; background: var(--accent-soft); color: var(--text); font: 600 .72rem var(--font-ui); cursor: pointer; }
+.kitty-menu-btn svg { color: var(--accent); }
+.kitty-menu-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+@keyframes k-menu-in { from { opacity: 0; transform: translateY(-4px) scale(.96); } }
+
+.kitty-nap { position: relative; display: grid; justify-items: center; padding: 30px 0 var(--space-2); }
+.kitty-nap .kitty { width: 96px; z-index: 1; }
+.kitty-cushion { position: absolute; top: calc(30px + 72px); left: 50%; width: 170px; height: 30px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--accent) 22%, var(--surface)), color-mix(in srgb, var(--accent) 42%, var(--surface))); box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--accent) 30%, transparent); }
+.kitty-nap .kitty.is-asleep .k-eyes { opacity: 0; animation: none; }
+.kitty-nap .kitty.is-asleep .k-eyes-happy { opacity: 1; transform: translateY(2px) scaleY(-1); transform-box: fill-box; transform-origin: center; }
+.kitty-nap .kitty.is-asleep .k-head { transform: rotate(-9deg) translateY(5px); }
+.kitty-nap .kitty.is-asleep .k-body { animation-duration: 5.5s; }
+.kitty-zzz { position: absolute; top: 18px; left: calc(50% + 34px); font: 700 1rem/1 var(--font-serif); color: var(--text-2); pointer-events: none; transition: opacity 300ms; }
+.kitty-zzz span { display: inline-block; margin-left: 2px; font-size: .8em; transform: translateY(-6px); }
+.kitty-zzz span + span { font-size: .65em; transform: translateY(-12px); }
+.kitty-nap:has(.kitty:not(.is-asleep)) .kitty-zzz { opacity: 0; }
+@media (prefers-reduced-motion: no-preference) { .kitty-zzz { animation: k-zzz 3s ease-in-out infinite; } }
+@keyframes k-zzz { 0%, 100% { transform: translateY(0); opacity: .55; } 50% { transform: translateY(-6px); opacity: 1; } }
+.kitty-perch.is-inline { justify-self: start; justify-items: start; max-width: 100%; }
+.kitty-perch.is-inline > .segmented { position: relative; z-index: 1; }
+@media (min-width: 900px) {
+  .kitty-perch .kitty-peek { width: 84px; top: -52px; left: clamp(6px, calc(var(--kx, 75%) - 42px), calc(100% - 90px)); }
+  .kitty-paws { left: clamp(6px, calc(var(--kx, 75%) - 42px), calc(100% - 90px)); width: 84px; }
+  .kitty-paws i:first-child { left: 19px; } .kitty-paws i:last-child { right: 19px; }
+  .kitty-perch { margin-top: 36px; }
+}

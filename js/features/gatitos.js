@@ -10,7 +10,8 @@
 import * as sounds from '../core/sounds.js';
 import { ui, util, db, profile } from '../core.js';
 import * as time from '../core/time.js';
-import { kittyArt } from '../core/kitty.js';
+import { kittyArt, COATS, coatId } from '../core/kitty.js';
+const coatOf = (pet) => COATS.find((c) => c.id === coatId(pet)) || COATS[5];
 import { bubble, move } from '../core/pets.js';
 import { latestByProduct, doseStatus, daysHome, addDays } from './mascotas.js';
 import { photoField, isQuotaError } from './hogar-kit.js';
@@ -18,7 +19,6 @@ import { photoField, isQuotaError } from './hogar-kit.js';
 const { el, icon } = util;
 const fmtDM = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long' });
 const TREATS_PER_DAY = 3;
-const SEL_KEY = 'aishiteru.kitty.sel';
 const DISMISS_KEY = 'aishiteru.kittyCare';
 export const PET_KEY = 'aishiteru.pet';
 export const PET_TAB_KEY = 'aishiteru.pet.tab';
@@ -108,7 +108,6 @@ export function careFor(pet, records, { today = util.localDay(), hour = new Date
 
 const recall = (k, fb) => { try { return JSON.parse(localStorage.getItem(k)) ?? fb; } catch { return fb; } };
 const keep = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } };
-const sessionGet = (k) => { try { return sessionStorage.getItem(k); } catch { return null; } };
 const sessionSet = (k, v) => { try { sessionStorage.setItem(k, v); } catch { /* private mode */ } };
 
 /** Open a pet's page in Mascotas on a given tab. */
@@ -217,80 +216,146 @@ export function mischiefEditor(pet, { onSaved } = {}) {
   });
 }
 
-// ---------- Inicio ----------
-const article = (pets) => (pets.every((p) => speciesKey(p.species) === 'gato') ? 'Nuestros gatitos' : 'Nuestras mascotas');
-const one = (pets) => (pets.length === 1 ? pets[0].name : article(pets).replace('Nuestros ', '').replace('Nuestras ', ''));
+// ---------- around the app (v0.18.0, options C + menu chosen 2026-11-24) ----------
+// No section of their own: on Inicio each pet peeks over the top edge of a different card, and on every
+// other screen one of them shows up, a different one per screen and day: peeking over a card or asleep
+// on a cushion at the end. Tap it and it talks and opens a little menu of mimos.
+const SKIP = new Set(['inicio', 'mascotas', 'juegos', 'jibun', 'yoru', 'ciclo', 'buscar', 'modo-cita']);
+const hash = (str) => { let h = 2166136261; for (const ch of str) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
 
-export async function homeCard({ onChange } = {}) {
-  const prefs = await db.getSettings('home', { petHidden: false });
-  if (prefs.petHidden) return null;
-  const pets = await livePets();
-  if (!pets.length) return null;
-  const records = await db.query('petRecords');
-  const today = util.localDay();
-  let mimos = mimosOf(records, today);
-  let selId = sessionGet(SEL_KEY); if (!pets.some((p) => p.id === selId)) selId = pets[0].id;
-  const sel = () => pets.find((p) => p.id === selId) || pets[0];
+/** Today's mimos of one pet from both people (fresh from the DB, so both phones count). */
+async function mimosToday(pet) {
+  const recs = await db.query('petRecords').catch(() => []);
+  return mimosOf(recs)[pet.id] || { pet: 0, treat: 0, play: 0, by: new Set() };
+}
+let writes = Promise.resolve();
+/** Give a mimo: the pet reacts, says something and it is saved (treats up to 3 a day). */
+export async function giveMimo(pet, host, kind) {
+  const m = await mimosToday(pet);
+  if (kind === 'treat' && m.treat >= TREATS_PER_DAY) { move(host); host.talk(pick(REACT.full)); return false; }
+  react(host, kind);
+  host.talk(fill(pick(kind === 'pet' ? REACT.pet[speciesKey(pet.species)] : REACT[kind]), pet));
+  writes = writes.then(() => addMimo(pet, kind)).catch((e) => console.error(e));
+  await writes;
+  return true;
+}
 
-  const room = el('div', { class: `kitty-room kitty-n${Math.min(pets.length, 5)}`, 'data-bubble-root': '' });
-  const hosts = new Map();
-  pets.forEach((pet, i) => {
-    const h = kittyButton(pet, { index: i, onTap: (p) => { selId = p.id; sessionSet(SEL_KEY, p.id); paint(); } });
-    hosts.set(pet.id, h); room.append(h);
-  });
-  const line = el('p', { class: 'kitty-line small', 'aria-live': 'polite' });
-  const actBtn = (kind, label, iconName) => el('button', { class: 'btn btn-secondary btn-small kitty-act', type: 'button', 'data-act': kind, onClick: () => act(kind) }, icon(iconName, { size: 16 }), el('span', {}, label));
-  const actions = el('div', { class: 'kitty-actions', role: 'group' },
-    actBtn('pet', 'Acariciar', 'hand-heart'), actBtn('treat', 'Premio', 'fish'), actBtn('play', 'Jugar', 'feather'),
-    el('button', { class: 'btn btn-ghost btn-small kitty-act', type: 'button', onClick: () => mischiefEditor(sel(), { onSaved: () => onChange?.() }) }, icon('camera', { size: 16 }), el('span', {}, 'Travesura')));
-
-  function paint() {
-    const p = sel();
-    for (const [id, h] of hosts) h.setAttribute('aria-pressed', String(id === p.id));
-    actions.setAttribute('aria-label', `Mimos para ${p.name}`);
-    actions.querySelectorAll('.kitty-act').forEach((b) => {
-      const verb = { pet: 'Acariciar a', treat: 'Darle un premio a', play: 'Jugar con' }[b.dataset.act] || 'Anotar una travesura de';
-      b.setAttribute('aria-label', `${verb} ${p.name}`);
-    });
-    const m = mimos[p.id];
-    const home = daysHome(p.arrival);
-    const who = m && m.by.size >= 2 ? 'hoy l' + (p.sex === 'macho' ? 'o' : 'a') + ' mimaron los dos' : m ? `hoy: ${m.pet + m.treat + m.play} ${m.pet + m.treat + m.play === 1 ? 'mimo' : 'mimos'}` : '';
-    const round = home !== null && home > 0 && ([100, 365, 500].includes(home) || home % 1000 === 0);
-    line.replaceChildren(el('strong', {}, p.name), round ? el('span', { class: 'pet-home-round' }, ' · ', icon('cake', { size: 14 }), ` ¡Hoy cumple ${home.toLocaleString('es-CO')} días en casa!`) : '',
-      [!round && home !== null ? ` · ${home.toLocaleString('es-CO')} días en casa` : '', who ? ` · ${who}` : ''].join(''));
+/** The little menu that opens next to a pet when it is tapped: Mimo, Premio, Jugar, Foto. */
+function openMenu(pet, host, root, { flow = false } = {}) {
+  root.querySelectorAll('.kitty-menu').forEach((x) => x.remove());
+  const close = () => { menu.remove(); document.removeEventListener('pointerdown', outside, true); clearTimeout(menu._t); };
+  const outside = (e) => { if (!menu.contains(e.target) && !host.contains(e.target)) close(); };
+  const stay = () => { clearTimeout(menu._t); menu._t = setTimeout(close, 9000); };
+  const btn = (kind, label, iconName, aria) => el('button', { class: 'kitty-menu-btn', type: 'button', 'data-act': kind, 'aria-label': `${aria} ${pet.name}`,
+    onClick: async () => { stay(); if (kind === 'photo') { close(); mischiefEditor(pet); return; } await giveMimo(pet, host, kind); } },
+  icon(iconName, { size: 18 }), el('span', {}, label));
+  const menu = el('div', { class: 'kitty-menu', role: 'group', 'aria-label': `Mimos para ${pet.name}` },
+    btn('pet', 'Mimo', 'hand-heart', 'Acariciar a'), btn('treat', 'Premio', 'fish', 'Darle un premio a'),
+    btn('play', 'Jugar', 'feather', 'Jugar con'), btn('photo', 'Travesura', 'camera', 'Anotar una travesura de'));
+  root.append(menu);
+  if (flow) {
+    menu.classList.add('is-flow');
+    menu.scrollIntoView?.({ block: 'nearest', behavior: util.prefersReducedMotion() ? 'auto' : 'smooth' });
+  } else {
+    // Hangs from the top edge of the card, under the pet, without leaving the card's width.
+    const r = root.getBoundingClientRect(); const h = host.getBoundingClientRect();
+    const w = Math.min(menu.offsetWidth || 260, r.width);
+    menu.style.left = `${Math.round(Math.min(Math.max(h.left - r.left + h.width / 2 - w / 2, 4), Math.max(4, r.width - w - 4)))}px`;
   }
-  async function act(kind) {
-    const p = sel(); const h = hosts.get(p.id);
-    const m = mimos[p.id] || { pet: 0, treat: 0, play: 0, by: new Set() };
-    if (kind === 'treat' && m.treat >= TREATS_PER_DAY) { move(h); h.talk(pick(REACT.full)); return; }
-    react(h, kind);
-    h.talk(fill(pick(kind === 'pet' ? REACT.pet[speciesKey(p.species)] : REACT[kind]), p));
-    // Count it right away (fast taps see the real total) and write one tap at a time.
-    m[kind] += 1; m.by.add(profile.active()); mimos[p.id] = m; paint();
-    writes = writes.then(() => addMimo(p, kind)).catch((e) => console.error(e));
-  }
-  let writes = Promise.resolve();
+  setTimeout(() => document.addEventListener('pointerdown', outside, true), 0);
+  stay();
+}
 
-  // The care bubble: the most urgent thing among all pets, said by the pet who needs it.
+/** A pet that talks and opens its menu when tapped. */
+function companionKitty(pet, index, root, { flow = false } = {}) {
+  const k = kittyButton(pet, { index, label: false, onTap: (p, host) => openMenu(p, host, root, { flow }) });
+  k.setAttribute('aria-label', `${pet.name}. ${pet.sex === 'hembra' ? 'Tócala' : 'Tócalo'} para que te hable y darle mimos`);
+  k.setAttribute('aria-haspopup', 'true');
+  return k;
+}
+
+/** Wrap a card so a pet can peek over its top edge (head and paws out, body hidden behind the card). */
+export function perch(card, pet, index, { side = 0.75 } = {}) {
+  const wrap = el('div', { class: 'kitty-perch', 'data-bubble-root': '', style: { '--kx': `${Math.round(side * 100)}%` } });
+  card.replaceWith(wrap);
+  const k = companionKitty(pet, index, wrap);
+  k.classList.add('kitty-peek');
+  const coat = coatOf(pet);
+  const paw = coat.pattern === 'points' ? coat.point : coat.pattern === 'tuxedo' ? coat.belly : coat.base;
+  const paws = el('span', { class: 'kitty-paws', 'aria-hidden': 'true', style: { '--paw': paw, '--paw-edge': coat.shade } }, el('i'), el('i'));
+  if (!card.classList.contains('card')) wrap.classList.add('is-inline');
+  wrap.append(k, card, paws);
+  card.classList.add('is-perched');
+  return k;
+}
+
+/** A pet asleep on a zabuton at the end of a screen. Tap: it wakes up a moment, talks and opens its menu. */
+export function nap(pet, index) {
+  const box = el('div', { class: 'kitty-nap', 'data-bubble-root': '' });
+  const k = companionKitty(pet, index, box, { flow: true });
+  k.classList.add('is-asleep');
+  k.addEventListener('click', () => { k.classList.remove('is-asleep'); clearTimeout(k._sleepT); k._sleepT = setTimeout(() => k.classList.add('is-asleep'), 12000); });
+  box.append(el('span', { class: 'kitty-cushion', 'aria-hidden': 'true' }), k, el('span', { class: 'kitty-zzz', 'aria-hidden': 'true' }, 'z', el('span', {}, 'z'), el('span', {}, 'z')));
+  return box;
+}
+
+const solidCard = (c) => {
+  if (!c.isConnected || c.offsetHeight < (c.classList.contains('segmented') ? 36 : 72) || c.closest('.kitty-perch, .modal, li, .hub-tabs, [role="tablist"], .carousel, .day-switcher, .card .segmented')) return false;
+  const bg = getComputedStyle(c).backgroundColor;
+  return bg && bg !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(bg);
+};
+const showPets = async () => !(await db.getSettings('home', { petHidden: false }).catch(() => ({}))).petHidden;
+
+/** The care bubble: the most urgent thing among all pets, said by the pet who needs it. */
+function careBubble(pets, records, today) {
   const dismissed = recall(DISMISS_KEY, {});
   const care = pets.flatMap((p) => careFor(p, records, { today }).map((c) => ({ ...c, pet: p }))).filter((c) => dismissed[c.key] !== today).sort((a, b) => a.level - b.level)[0];
-  let careNode = null;
-  if (care) {
-    careNode = el('div', { class: 'kitty-care', role: 'status' },
-      el('p', {}, el('strong', {}, `${care.pet.name}: `), care.text),
-      el('div', { class: 'kitty-care-actions' },
-        el('button', { class: 'btn btn-secondary btn-small', type: 'button', onClick: () => openPet(care.pet, care.tab) }, `Ver la página de ${care.pet.name}`),
-        el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': 'Ya lo vi, ocultar por hoy', onClick: () => { const d = recall(DISMISS_KEY, {}); for (const k of Object.keys(d)) if (d[k] !== today) delete d[k]; d[care.key] = today; keep(DISMISS_KEY, d); careNode.remove(); } }, icon('x', { size: 16 }))));
-    setTimeout(() => { const h = hosts.get(care.pet.id); if (h?.isConnected) move(h); }, 500);
-  }
+  if (!care) return null;
+  const node = el('div', { class: 'kitty-care', role: 'status', 'data-pet': care.pet.id },
+    el('p', {}, el('strong', {}, `${care.pet.name}: `), care.text),
+    el('div', { class: 'kitty-care-actions' },
+      el('button', { class: 'btn btn-secondary btn-small', type: 'button', onClick: () => openPet(care.pet, care.tab) }, `Ver la página de ${care.pet.name}`),
+      el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': 'Ya lo vi, ocultar por hoy', onClick: () => { const d = recall(DISMISS_KEY, {}); for (const k of Object.keys(d)) if (d[k] !== today) delete d[k]; d[care.key] = today; keep(DISMISS_KEY, d); node.remove(); } }, icon('x', { size: 16 }))));
+  return { node, pet: care.pet };
+}
 
-  const hide = async () => { await db.setSettings('home', { petHidden: true }); ui.toast('Listo. Vuelve a mostrarlos desde Mascotas.'); onChange?.(); };
-  paint();
-  return el('section', { class: 'card paper-card pet-home-card kitty-card', 'aria-labelledby': 'pet-home-title' },
-    el('header', { class: 'kitty-head' },
-      el('a', { class: 'kitty-title-link', href: '#/mascotas' }, el('h2', { class: 'card-title', id: 'pet-home-title' }, article(pets))),
-      el('button', { class: 'icon-btn', type: 'button', 'aria-label': `Ocultar la tarjeta de ${one(pets)} en Inicio`, onClick: hide }, icon('eye-off', { size: 18 }))),
-    careNode, room, line, actions);
+/** Inicio: every pet peeks over a different card (the one who needs care, with its bubble). */
+export async function decorateHome(body) {
+  if (!body) return;
+  if (!(await showPets())) return;
+  const pets = await livePets();
+  if (!pets.length || !body.isConnected) return;
+  const cards = [...body.children].filter((c) => c.classList?.contains('card') && !c.classList.contains('counter-card') && solidCard(c));
+  if (!cards.length) return;
+  const records = await db.query('petRecords').catch(() => []);
+  const care = careBubble(pets, records, util.localDay());
+  // Spread them down the screen: one every other card, starting on a different card each day.
+  const day = Number(util.localDay().replace(/-/g, ''));
+  const step = Math.max(1, Math.floor(cards.length / pets.length));
+  const order = care ? [care.pet, ...pets.filter((p) => p !== care.pet)] : pets;
+  order.forEach((pet, n) => {
+    const card = cards[(n * step + (care && n === 0 ? 0 : day % 2)) % cards.length];
+    if (!card || card.closest('.kitty-perch')) return;
+    const k = perch(card, pet, pets.indexOf(pet), { side: [0.78, 0.2, 0.55, 0.36, 0.66][n % 5] });
+    if (care && n === 0) { k.closest('.kitty-perch').before(care.node); setTimeout(() => { if (k.isConnected) move(k); }, 600); }
+  });
+}
+
+/** Any other screen: one pet, different per screen and day, peeking over a card or asleep at the end. */
+export async function companion(node, id) {
+  if (!node || !id || SKIP.has(id) || node.querySelector('.kitty-perch, .kitty-nap')) return;
+  if (!(await showPets())) return;
+  const pets = await livePets();
+  if (!pets.length || !node.isConnected) return;
+  const h = hash(`${id}|${util.localDay()}`);
+  const index = h % pets.length; const pet = pets[index];
+  // Cards, and the pill switch on top of a screen (Para ti · Escribimos…), are good places to peek from.
+  const cards = [...node.querySelectorAll('.card, .segmented')].filter((c) => solidCard(c) && /flex|grid|block/.test(getComputedStyle(c.parentElement).display) && c.parentElement.children.length > 1).slice(0, 6);
+  if (cards.length && (h >>> 4) % 3 !== 0) {
+    perch(cards[(h >>> 8) % cards.length], pet, index, { side: [0.78, 0.22, 0.6][(h >>> 12) % 3] });
+  } else {
+    node.append(nap(pet, index));
+  }
 }
 
 // ---------- strolls ----------

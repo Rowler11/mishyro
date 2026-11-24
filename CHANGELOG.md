@@ -12,6 +12,13 @@ Cambios
 - Los seis animalitos están redibujados como peluches de acuarela: redonditos, con pelaje pintado, ojos con brillo y más detalle.
 - "Primeros pasos" ahora es solo para dejar la app lista (ver el recorrido, unir los teléfonos, PIN y avisos cariñosos) y se va sola de Inicio cuando terminas.
 - En Ajustes > Acerca de > Legal y ayuda: "Ver el recorrido" lo repite entero, y "Solo las secciones" vuelve a explicar cada sección.
+## 0.18.0 (Los gatitos por toda la app)
+
+- Las mascotas ya no tienen su tarjeta propia en Inicio: ahora cada una se asoma por el borde de una tarjeta distinta, con la cabeza y las patitas afuera.
+- En las demás pantallas aparece una de ellas, distinta en cada pantalla y cada día: a veces asomada sobre una tarjeta y a veces dormida en un cojín al final.
+- Al tocarla, habla y abre un menú pequeño con Mimo, Premio, Jugar y Travesura. Los mimos se siguen sumando entre los dos teléfonos.
+- Cuando a una le toca una vacuna o se le acaba algo, lo dice en un globito justo encima de ella.
+- En Mascotas, "Que se paseen por la app" las muestra u oculta.
 
 ## 0.17.1 (Inicio más fluido y arce en alta calidad)
 
