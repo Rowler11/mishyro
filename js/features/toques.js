@@ -61,7 +61,8 @@ export function homeCard() {
     el('div', { class: 'toques-row' },
       b(am ? 'sun' : 'moon', am ? 'Buenos días' : 'Buenas noches', sendGreeting),
       b('hand-heart', 'Abrazo', sendHug),
-      b('leaf', 'Respirar juntos', () => import('./calma.js').then((m) => m.openCalma()))));
+      b('leaf', 'Respirar juntos', () => import('./calma.js').then((m) => m.openCalma())),
+      b('image', 'Tarjeta', () => import('./compartir.js').then((m) => m.openShareCard()))));
 }
 
 async function pending() {

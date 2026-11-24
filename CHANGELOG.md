@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.25.0 (Tarjeta para compartir)
+
+Nuevo
+- Inicio: botón "Tarjeta" que crea una imagen con los días juntos y una frase (cambiable), lista para compartir o descargar. No lleva nombres ni fechas.
+- Revisado el resto de la lista: Un día como hoy, dividir la cuenta, mapa con pines, trofeos y ruleta de planes ya existían en la app.
+
 ## 0.24.0 (Toques y calma)
 
 Nuevo
