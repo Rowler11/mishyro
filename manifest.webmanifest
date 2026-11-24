@@ -103,5 +103,35 @@
         }
       ]
     }
-  }
+  },
+  "screenshots": [
+    {
+      "src": "./icons/screens/inicio.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Inicio: los días juntos, enviar amor y sus favoritos"
+    },
+    {
+      "src": "./icons/screens/cartas.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Cartas: las que se escriben, con un gatito esperando"
+    },
+    {
+      "src": "./icons/screens/mas.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Más: todas las secciones en grupos"
+    },
+    {
+      "src": "./icons/screens/inicio-pc.jpg",
+      "sizes": "1280x800",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Inicio en el computador"
+    }
+  ]
 }

@@ -6,6 +6,7 @@ Nuevo
 - Cuando una sección está vacía o algo falla, uno de sus gatitos se sienta a esperar en lugar del ícono. Si lo tocas, maúlla y te dice algo con su nombre. Si apagaron "Que se paseen por la app" en Mascotas, vuelve el ícono de siempre.
 - En Palacio rojo y Porcelana azul, la pantalla de carga dice 我爱你 (wǒ ài nǐ, "te amo" en chino) con la letra de cada estilo, y su rama de ciruelo aparece arriba. El corazón de pétalos también se forma con 我爱你.
 - Al mantener presionado el ícono de la app, los atajos (Enviar amor, Pregunta de hoy y Pensando en ti) tienen sus propios dibujitos.
+- Al instalarla, Android y el computador muestran una ventana con capturas de la app (hechas con datos ficticios).
 
 Cambios
 - Todo responde al toque: botones, íconos, chips, pestañas y opciones se hunden un poco al tocarlos.
