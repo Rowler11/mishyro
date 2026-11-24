@@ -1,6 +1,6 @@
 # Cambios
 
-## 0.21.0 (Más premium)
+## 0.22.0 (Más premium)
 
 Nuevo
 - Cuando una sección está vacía o algo falla, uno de sus gatitos se sienta a esperar en lugar del ícono. Si lo tocas, maúlla y te dice algo con su nombre. Si apagaron "Que se paseen por la app" en Mascotas, vuelve el ícono de siempre.
@@ -11,6 +11,13 @@ Cambios
 - Todo responde al toque: botones, íconos, chips, pestañas y opciones se hunden un poco al tocarlos.
 - La vibración cambia según lo que pasa: un toque corto al cambiar de pestaña, uno doble al guardar, un latido al enviar amor y otro distinto si algo sale mal. Se apaga en Ajustes > Apariencia > Vibración suave.
 - La cortina de privacidad (en la vista de apps recientes) ahora es un vidrio esmerilado con el sello: no deja leer nada y se ve más fina. Con alto contraste sigue siendo un fondo liso.
+## 0.21.0 (Logo en HD)
+
+Cambios
+- Logo nuevo "Doble flor": la misma sakura con corazón, ahora en alta definición, con una segunda capa de pétalos rosados detrás, pétalos con su muesca, degradado suave y estambres dorados.
+- Se ve en el ícono de la app (también el redondo de Android), en la pestaña del navegador, la bienvenida, el bloqueo, Acerca de y la flor del encabezado del estilo Japonés.
+- En el teléfono, el ícono de la pantalla de inicio puede tardar en cambiar: Android lo actualiza solo al rato; si no, quita y vuelve a instalar la app.
+
 ## 0.20.0 (Tutorial con los animalitos, peluches y voces)
 
 Nuevo
