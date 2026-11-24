@@ -2312,6 +2312,7 @@ async function exampleContent(page, { reload = true } = {}) {
       const plush = await page.evaluate(async () => { const a = await import('./js/core/art.js'); return ['fox', 'cat', 'rabbit', 'tanuki', 'panda', 'crane'].every((k) => a.draw(k).classList.contains('plush')); });
       ok('19 Dibujos: los seis animalitos son peluches de acuarela', plush);
       await page.evaluate(() => localStorage.removeItem('aishiteru.tour.auto'));
+      await go('/inicio', '.garden-card');
     }
     // Garden
     await page.waitForSelector('.garden-card');
