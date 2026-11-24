@@ -33,7 +33,7 @@ const SHELL = [
   './js/features/guia.js', './js/features/tour.js', './js/core/sounds.js',
   './js/features/planta.js', './js/features/jardin.js',
   './js/features/kamishibai.js',
-  './js/features/amor.js',
+  './js/features/amor.js', './js/features/latido.js',
   './js/features/avisos.js',
   './js/core/fx.js',
   './js/core/sync.js',
