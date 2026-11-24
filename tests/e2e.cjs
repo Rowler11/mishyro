@@ -1903,6 +1903,8 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.locator('.home-corner').click();
     ok('12 rama: al tocarla se sacude', await page.locator('.home-corner').evaluate((c) => c.classList.contains('is-shaking')));
     ok('12 rama: es decorativa para lectores de pantalla', await page.locator('.home-corner').getAttribute('aria-hidden') === 'true');
+    const xmas = await page.evaluate(async () => { const ev = await import('./js/features/eventos.js'); const fx = await import('./js/core/fx.js'); const top = ev.decoLayer('lights'); const card = ev.decoLayer('lights', 8, { onCard: true }); const c = fx.cornerArt('snow', { xmas: true }); return [top.querySelectorAll('.xmas-lantern').length, !!top.querySelector('.deco-bit'), card.querySelectorAll('.xmas-lantern').length, !!card.querySelector('.xmas-bow'), !!c.querySelector('.corner-tanzaku'), top.getAttribute('aria-hidden')].join(','); });
+    ok('Navidad a la japonesa (v0.15.1): 5 chōchin en Inicio, cinta con moño en la tarjeta y campana en el arce', xmas === '5,false,3,true,false,true', xmas);
     const ja = await page.evaluate(() => getComputedStyle(document.querySelector('.page-head .ja')).animationName);
     ok('12 título a pincel: el japonés del título se pinta', /ja-paint/.test(ja), ja);
     const enso = await page.evaluate(async () => { const { ui } = await import('./js/core.js'); const n = ui.skeleton(2); return !!n.querySelector('svg.enso-loader .enso-stroke') && n.getAttribute('role') === 'status'; });

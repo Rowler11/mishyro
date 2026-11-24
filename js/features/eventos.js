@@ -98,7 +98,38 @@ export async function decoration() {
   return decoLayer(deco);
 }
 
-export function decoLayer(kind, count = 12) {
+// v0.15.1 (chosen 2026-11-24, "Navidad a la japonesa"): novenas and Navidad hang red and white chōchin
+// from a gold rope over Inicio, and the event card is wrapped with a red ribbon and its bow, like a gift.
+const XMAS_DEFS = '<defs><radialGradient id="xl-r" cx=".4" cy=".4" r=".7"><stop offset="0" stop-color="#FFD9A0"/><stop offset=".5" stop-color="#F06A4B"/><stop offset="1" stop-color="#B8322A"/></radialGradient><radialGradient id="xl-w" cx=".4" cy=".4" r=".7"><stop offset="0" stop-color="#FFFAF0"/><stop offset=".6" stop-color="#FBE9D6"/><stop offset="1" stop-color="#E3C9B0"/></radialGradient><radialGradient id="xl-h"><stop offset="0" stop-color="#FFB060" stop-opacity=".45"/><stop offset="1" stop-color="#FFB060" stop-opacity="0"/></radialGradient><linearGradient id="xl-rb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D84A3A"/><stop offset="1" stop-color="#A8301F"/></linearGradient></defs>';
+function xmasLantern(white) {
+  const ribs = [5, 9, 13, 17, 21].map((k) => { const hw = Math.sqrt(Math.max(0, 81 - ((k - 13) ** 2 * 81) / 121)).toFixed(1); return `<path d="M-${hw} ${k}Q0 ${k + 1} ${hw} ${k}" stroke="rgba(90,24,16,.3)" stroke-width=".6" fill="none"/>`; }).join('');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '-16 -2 32 46'); svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
+  svg.innerHTML = `${XMAS_DEFS}<line x1="0" y1="-2" x2="0" y2="6" stroke="#6A4A3A" stroke-width=".8"/><g transform="translate(0 6)"><circle cx="0" cy="13" r="16" fill="url(#xl-h)"/><rect x="-5" y="0" width="10" height="2.6" fill="#2A1E22"/><ellipse cx="0" cy="13" rx="9" ry="11" fill="url(#xl-${white ? 'w' : 'r'})"/>${ribs}<rect x="-5" y="23.4" width="10" height="2.6" fill="#2A1E22"/><line x1="0" y1="26" x2="0" y2="32" stroke="#D4A943" stroke-width="1.4"/><circle cx="0" cy="33" r="1.4" fill="#D4A943"/></g>`;
+  return svg;
+}
+function xmasLayer(onCard) {
+  const layer = el('div', { class: `season-deco deco-lights${onCard ? ' is-band' : ''}`, 'aria-hidden': 'true' });
+  const rope = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  rope.setAttribute('class', 'xmas-rope'); rope.setAttribute('viewBox', '0 0 100 20'); rope.setAttribute('preserveAspectRatio', 'none'); rope.setAttribute('aria-hidden', 'true');
+  rope.innerHTML = onCard
+    ? `${XMAS_DEFS}<rect x="0" y="9" width="100" height="7" fill="url(#xl-rb)"/><rect x="0" y="10.4" width="100" height=".5" fill="#F3C54A"/><rect x="0" y="14" width="100" height=".5" fill="#F3C54A"/>`
+    : '<path d="M0 4Q25 14 50 6T100 7" fill="none" stroke="#C9A35E" stroke-width="1.6" vector-effect="non-scaling-stroke"/>';
+  add(layer, rope);
+  const n = onCard ? 3 : 5;
+  for (let i = 0; i < n; i++) add(layer, el('span', { class: 'xmas-lantern' }, xmasLantern(i % 2 === 1)));
+  if (onCard) {
+    const bow = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    bow.setAttribute('class', 'xmas-bow'); bow.setAttribute('viewBox', '-34 -16 68 46'); bow.setAttribute('aria-hidden', 'true');
+    bow.innerHTML = `${XMAS_DEFS}<path d="M0 0l-10 26M0 0l10 26" stroke="#C9302C" stroke-width="5" stroke-linecap="round"/><path d="M0 0c-14-14-32-10-25 4 5 9 18 3 25-4zM0 0c14-14 32-10 25 4-5 9-18 3-25-4z" fill="url(#xl-rb)"/><circle r="5" fill="#A8301F"/><path d="M-20-4q10 8 20 4q10 4 20-4" stroke="#F3C54A" stroke-width="1.2" fill="none"/>`;
+    add(layer, bow);
+  }
+  if (util.prefersReducedMotion()) layer.classList.add('is-still');
+  return layer;
+}
+
+export function decoLayer(kind, count = 12, { onCard = false } = {}) {
+  if (kind === 'lights') return xmasLayer(onCard);
   const layer = el('div', { class: `season-deco deco-${kind}`, 'aria-hidden': 'true' });
   const still = util.prefersReducedMotion();
   const n = kind === 'lights' ? 14 : kind === 'lanterns' ? 5 : kind === 'candles' ? 7 : count;
@@ -117,7 +148,7 @@ function eventCard(a, rec, { readOnly = false, onToggle } = {}) {
   const reto = a.event.rule?.type === 'monthly' ? monthlyChallenge(a.event, a.period) : '';
   const acts = [...(a.event.activities || []), ...(reto ? [`Reto del mes: ${reto}`] : [])];
   return el('article', { class: 'card event-card stack' },
-    decoLayer(a.event.decoration || 'petals', 8),
+    decoLayer(a.event.decoration || 'petals', 8, { onCard: true }),
     el('div', { class: 'event-head' }, el('span', { class: 'section-icon' }, icon(a.event.icon || 'party-popper', { size: 22 })),
       el('div', {}, el('h2', { class: 'card-title' }, a.name), el('p', { class: 'muted small' }, a.period.length === 7 ? new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' }).format(new Date(Number(a.period.slice(0, 4)), Number(a.period.slice(5, 7)) - 1, 1)) : a.period.slice(0, 4)))),
     a.event.message ? el('p', { class: 'event-message' }, profile.fill(a.event.message)) : null,

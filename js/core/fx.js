@@ -337,7 +337,7 @@ export function ambient(host) {
 }
 
 /** The branch (by day, it changes with the season) or two hanging chōchin (at night) for Inicio's corner. */
-export function cornerArt(kind = ambientKind()) {
+export function cornerArt(kind = ambientKind(), { xmas = false } = {}) {
   const NS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', '0 0 170 120'); svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
@@ -353,7 +353,7 @@ export function cornerArt(kind = ambientKind()) {
   }
   // v0.15.1 (chosen 2026-11-24, option H): by day a leafy Japanese maple branch (never the welcome
   // splash's sakura) with a glass furin hanging from it. Its own leaves are what falls over the cards.
-  return mapleArt(svg, kind);
+  return mapleArt(svg, kind, xmas);
 }
 
 /** Leaves of Inicio's maple by season (also the colors of the leaves that fall). null = bare in winter. */
@@ -404,7 +404,15 @@ function furinArt(kind, x, y) {
       </g></g>
     </g></g></g>`;
 }
-function mapleArt(svg, kind) {
+/** Novenas and Navidad: a gold bell with a red bow hangs from the maple instead of the furin. */
+function xmasBell(x, y) {
+  return `<g transform="translate(${x} ${y})"><g class="corner-furin">
+    <line x1="0" y1="0" x2="0" y2="8" stroke="#A8301F" stroke-width="1.2"/>
+    <g transform="translate(0 6)"><path d="M0 0l-6 14M0 0l6 14" stroke="#C9302C" stroke-width="2.4" stroke-linecap="round"/><path d="M0 0c-8-8-18-6-14 2 3 5 10 2 14-2zM0 0c8-8 18-6 14 2-3 5-10 2-14-2z" fill="#C9302C" stroke="#8A1E1A" stroke-width=".6"/><path d="M-12-2q6 4 12 2q6 2 12-2" stroke="#D4A943" stroke-width="1" fill="none"/><circle r="2.6" fill="#A8301F"/></g>
+    <g transform="translate(0 10)"><path d="M-11 30C-11 18-7 11 0 11C7 11 11 18 11 30Z" fill="url(#ca-goldb)"/><rect x="-12.5" y="28.5" width="25" height="3.4" rx="1.6" fill="#B8862C"/><circle cx="0" cy="34" r="2.6" fill="#8A5F1A"/><path d="M-6 26C-7 20-5 15-1.5 13" stroke="#FFF4C8" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".8"/></g>
+  </g></g>`;
+}
+function mapleArt(svg, kind, xmas = false) {
   svg.setAttribute('viewBox', '0 0 270 156');
   const pal = MAPLE[kind] === undefined ? MAPLE.momiji : MAPLE[kind];
   const tz = TANZAKU[kind] || TANZAKU.momiji;
@@ -437,9 +445,10 @@ function mapleArt(svg, kind) {
     <linearGradient id="ca-bark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8A634C"/><stop offset=".5" stop-color="#5E3F2F"/><stop offset="1" stop-color="#40291E"/></linearGradient>
     <radialGradient id="ca-glass" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".97"/><stop offset=".55" stop-color="#DCF0F9" stop-opacity=".8"/><stop offset="1" stop-color="#8DBFD8" stop-opacity=".9"/></radialGradient>
     <linearGradient id="ca-tz" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${tz[1]}"/><stop offset="1" stop-color="${tz[0]}"/></linearGradient>
+    <linearGradient id="ca-goldb" x1="0" x2="1"><stop offset="0" stop-color="#A87A22"/><stop offset=".4" stop-color="#F3D27A"/><stop offset="1" stop-color="#B8862C"/></linearGradient>
     <clipPath id="ca-dome"><path d="M-15 30C-15 10-9 1 0 1C9 1 15 10 15 30Z"/></clipPath>
     <filter id="ca-tex" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7" result="n"/><feColorMatrix in="n" type="saturate" values="0" result="g"/><feComponentTransfer in="g" result="g2"><feFuncR type="linear" slope=".42" intercept=".7"/><feFuncG type="linear" slope=".42" intercept=".7"/><feFuncB type="linear" slope=".42" intercept=".7"/></feComponentTransfer><feBlend in="SourceGraphic" in2="g2" mode="multiply" result="m"/><feComposite in="m" in2="SourceGraphic" operator="in"/></filter>
     <filter id="ca-soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="#3A2018" flood-opacity=".22"/></filter>
-  </defs><g class="corner-swing"><g class="corner-maple" filter="url(#ca-soft)">${back}<g filter="url(#ca-tex)">${bark}</g>${front}</g>${furinArt(kind, 150, 51)}</g>`;
+  </defs><g class="corner-swing"><g class="corner-maple" filter="url(#ca-soft)">${back}<g filter="url(#ca-tex)">${bark}</g>${front}</g>${xmas ? xmasBell(150, 51) : furinArt(kind, 150, 51)}</g>`;
   return svg;
 }
