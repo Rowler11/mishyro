@@ -335,6 +335,9 @@ export async function decorateHome(body) {
   const pets = await livePets();
   if (!pets.length || !body.isConnected) return;
   const cards = [...body.children].filter((c) => c.classList?.contains('card') && !c.classList.contains('counter-card') && solidCard(c));
+  // Inicio "Sereno" (v0.19.0) has fewer cards: when there are more pets than cards, the counter takes one too.
+  const counter = body.querySelector(':scope > .counter-card');
+  if (cards.length < pets.length && counter && solidCard(counter)) cards.unshift(counter);
   if (!cards.length) return;
   const records = await db.query('petRecords').catch(() => []);
   const care = careBubble(pets, records, util.localDay());
