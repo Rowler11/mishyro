@@ -1,5 +1,17 @@
 # Cambios
 
+## 0.15.0 (Contador de amor y avisos a su hora)
+
+Nuevo
+- Contador de amor en Inicio: un corazón grande para "Enviar amor" una vez al día cada uno. Muestra la racha de días seguidos en que los dos lo enviaron (y la mejor), el total enviado y los puntos de amor por lo que hacen juntos (cartas, recuerdos, citas, cupones, canciones, juegos, diario, Pensando en ti), con niveles de Chispa a Para siempre.
+- Al otro le llega el aviso "Te llegó amor" (sin contenido, como los demás avisos cariñosos).
+- Avisos a su hora, aunque la app esté cerrada: lo que tengan activo en Recordatorios (mesiversario, aniversario, cumpleaños, mascotas, cita de la semana y los propios) y los planes del Calendario con aviso. También "¿Ya enviaste amor hoy?" a la hora que elijan (20:00 por defecto), solo los días que falta. Se configuran en Ajustes > Sincronización > Avisos, por equipo.
+- Atajo "Enviar amor" al mantener presionado el ícono de la app.
+
+Notas
+- Los avisos programados viajan cifrados: el servidor solo sabe a qué hora tocar la puerta, no qué dice el aviso. Sus textos son fijos y no llevan nombres ni títulos.
+- Widgets en la pantalla de inicio o de bloqueo: una app web no puede ponerlos en Android; necesitarían una app nativa (fase futura B, no se construye).
+
 ## 0.14.0 (app limpia, guía, mascotas con nombre y su jardín)
 
 Arreglos

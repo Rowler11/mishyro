@@ -257,6 +257,25 @@ const waitFor = async (page, src, arg, ms = 8000) => {
       await E.ctx.close();
     }
 
+    // v0.15.0: scheduled notices. The server takes only { at, p } for the calling device, within limits.
+    const sched = await A.page.evaluate(async () => {
+      const cfg = await (await import('./js/core/db.js')).rawGet('settings', 'sync');
+      const put = (items) => fetch(`api/s/${cfg.spaceId}/sched`, { method: 'PUT', headers: { authorization: `Bearer ${cfg.deviceId}.${cfg.token}`, 'content-type': 'application/json' }, body: JSON.stringify({ items }) }).then(async (r) => ({ s: r.status, j: await r.json().catch(() => null) }));
+      const soon = Date.now() + 3600000;
+      return {
+        good: await put([{ at: soon, p: 'AAAA' }, { at: soon + 86400000, p: 'BBBB' }]),
+        far: await put([{ at: Date.now() + 500 * 86400000, p: 'AAAA' }]),
+        many: await put(Array.from({ length: 81 }, (_, i) => ({ at: soon + i, p: 'AAAA' }))),
+        empty: await put([]),
+        anon: (await fetch(`api/s/${cfg.spaceId}/sched`, { method: 'PUT', body: '{"items":[]}' })).status,
+      };
+    });
+    ok('avisos programados: el servidor los guarda', sched.good.s === 200 && sched.good.j?.count === 2, JSON.stringify(sched.good));
+    ok('avisos programados: rechaza fechas fuera de rango y listas enormes', sched.far.s === 400 && sched.many.s === 400);
+    ok('avisos programados: se pueden borrar todos', sched.empty.s === 200 && sched.empty.j?.count === 0);
+    ok('avisos programados: sin llave del equipo no entra', sched.anon === 401 || sched.anon === 403, String(sched.anon));
+    ok('avisos programados: sin avisos activados no se envía nada', (await mod(A.page, 'return sync.scheduleNotices([{ at: Date.now() + 3600000, k: "loveRemind" }]);')) === null);
+
     // The server stores nothing readable.
     const leak = await A.page.evaluate(async () => {
       const s = (await import('./js/core/sync.js')).status();

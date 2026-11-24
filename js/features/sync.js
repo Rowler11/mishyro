@@ -361,19 +361,35 @@ function linked(box, redraw) {
     onChange: async (on) => {
       try {
         if (on && !(await security.thirdPartyAllowed())) throw new Error('Está activo el Modo sin terceros. Los avisos usan el servicio del navegador; apágalo en Ajustes > Modo sin terceros para activarlos.');
-        if (on) await sync.enableNotifications(); else await sync.disableNotifications(); ui.toast(on ? 'Avisos activados en este equipo.' : 'Avisos apagados en este equipo.', { tone: 'success' }); } catch (e) {
+        if (on) await sync.enableNotifications(); else await sync.disableNotifications(); sched.hidden = !on; ui.toast(on ? 'Avisos activados en este equipo.' : 'Avisos apagados en este equipo.', { tone: 'success' }); } catch (e) {
         ui.toast(e.message || 'No se pudo.', { tone: 'error' });
         const input = notifyToggle.querySelector('input'); if (input) input.checked = !on;
       }
     },
   });
 
+  // v0.15.0: scheduled notices, also per device, only while "Avisos cariñosos" is on.
+  const np = sync.noticePrefs();
+  const replan = () => import('./avisos.js').then((m) => m.refresh(300)).catch(() => {});
+  const loveAt = ui.input({ type: 'time', value: np.loveAt, 'aria-label': 'Hora del recordatorio de amor' });
+  loveAt.addEventListener('change', async () => { if (!loveAt.value) return; await sync.setNoticePrefs({ loveAt: loveAt.value }); replan(); ui.toast(`Te recordamos a las ${loveAt.value}.`, { tone: 'success' }); });
+  const sched = el('div', { class: 'stack-tight sched-prefs', hidden: !s.notify },
+    ui.toggle({ label: 'Recordatorios a su hora', checked: np.reminders,
+      hint: 'Mesiversario, aniversario, cumpleaños y lo que activen en Recordatorios, más los planes del Calendario con aviso. Llegan aunque la app esté cerrada.',
+      onChange: async (on) => { await sync.setNoticePrefs({ reminders: on }); replan(); } }),
+    ui.toggle({ label: '¿Ya enviaste amor hoy?', checked: np.love,
+      hint: 'Un recordatorio suave para no perder la racha del Contador de amor. No llega si ya lo enviaste.',
+      onChange: async (on) => { await sync.setNoticePrefs({ love: on }); loveRow.hidden = !on; replan(); } }));
+  const loveRow = ui.field({ label: 'Hora del recordatorio de amor', control: loveAt });
+  loveRow.hidden = !np.love;
+  sched.append(loveRow);
+
   put(box,
     statusCard(),
     rescueCard(),
     usageCard(),
     card('Equipos unidos', list, btnRow(ui.button({ label: 'Unir otro equipo', iconName: 'plus', variant: 'primary', onClick: () => addFlow({ onDone: () => sync.refreshDevices().then(drawDevices).catch(() => {}) }) }))),
-    card('Avisos', notifyToggle, muted('Se activan por equipo. Si los bloqueaste, permítelos en los ajustes del navegador.', true)),
+    card('Avisos', notifyToggle, sched, muted('Se activan por equipo. Si los bloqueaste, permítelos en los ajustes del navegador.', true)),
     card('Lo privado', personal),
     card('Qué sale de este equipo',
       el('ul', { class: 'bullets' },

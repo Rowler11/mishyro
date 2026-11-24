@@ -3275,3 +3275,39 @@ a.game-champ::after { content: '›'; margin-left: 2px; color: var(--accent); }
     linear-gradient(115deg, rgba(255,120,180,.35), rgba(255,230,120,.3), rgba(120,220,255,.35), rgba(200,140,255,.3));
   background-size: 100% 100%, 220% 220%; background-position: 0 0, var(--shine-x, 30%) var(--shine-y, 25%); transition: background-position .25s ease-out; }
 @media (prefers-reduced-motion: reduce) { .ins-badge.is-on .ins-badge-seal::after { transition: none; } }
+
+/* ---------- Contador de amor (v0.15.0) ---------- */
+.love-card { display: grid; gap: var(--space-3); }
+.love-streak { display: inline-flex; align-items: center; gap: 4px; }
+.love-main { display: flex; align-items: center; gap: var(--space-4); }
+.love-heart { position: relative; flex: none; display: grid; justify-items: center; gap: 4px; width: 132px; padding: var(--space-2) 0; border: 0; background: none; color: var(--text); font: inherit; font-weight: 700; font-size: .9rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.love-heart svg { width: 104px; height: 94px; overflow: visible; }
+.love-heart-shape { fill: var(--surface-2); stroke: var(--accent); stroke-width: 2.5; transition: fill 300ms var(--ease-out); }
+.love-heart-shine { stroke: var(--accent-soft); }
+.love-heart:not(.is-sent) svg { animation: love-beat 1.6s var(--ease-in-out) infinite; }
+.love-heart:hover:not(.is-sent) .love-heart-shape, .love-heart:focus-visible .love-heart-shape { fill: var(--accent-soft); }
+.love-heart.is-sent .love-heart-shape { fill: var(--accent); }
+.love-heart.is-sent .love-heart-shine { stroke: rgba(255, 255, 255, .55); }
+.love-heart.is-sent .love-heart-label { color: var(--accent); }
+.love-heart.is-pop svg { animation: love-pop 700ms var(--ease-spring) both; }
+.love-heart:focus-visible { outline: 3px solid var(--focus, var(--accent)); outline-offset: 2px; border-radius: 16px; }
+@keyframes love-beat { 0%, 60%, 100% { scale: 1; } 15% { scale: 1.08; } 30% { scale: .98; } 45% { scale: 1.05; } }
+@keyframes love-pop { 0% { scale: .7; } 60% { scale: 1.18; } 100% { scale: 1; } }
+.love-burst { position: absolute; left: 50%; top: 48px; pointer-events: none; }
+.love-mini { position: absolute; left: -6px; top: -8px; color: var(--accent); font-size: 16px; animation: love-fly 1.1s var(--ease-out) var(--d) both; }
+@keyframes love-fly { from { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(.6); } to { opacity: 0; transform: rotate(var(--a)) translateY(-70px) scale(1.1); } }
+.love-today { display: grid; gap: 6px; }
+.love-today-title { margin: 0; color: var(--text-2); font-weight: 700; }
+.love-who { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; min-height: 32px; border-radius: 999px; border: 1px dashed var(--border); color: var(--text-2); font-size: .88rem; }
+.love-who.is-on { border-style: solid; border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.love-who.is-on .icon { color: var(--accent); }
+.love-hint { margin: 0; color: var(--text-2); }
+.love-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.love-stat { display: grid; justify-items: center; text-align: center; gap: 0; padding: var(--space-2) 4px; border-radius: var(--radius-md, 14px); background: var(--surface-2); }
+.love-stat strong { font-size: 1.35rem; line-height: 1.2; color: var(--accent); }
+.love-how li strong { min-width: 2.4em; color: var(--accent); }
+@media (max-width: 360px) { .love-main { flex-direction: column; } }
+@media (prefers-reduced-motion: reduce) { .love-heart svg, .love-heart.is-pop svg, .love-mini { animation: none !important; } }
+:root[data-motion="off"] .love-heart svg, :root[data-motion="off"] .love-heart.is-pop svg, :root[data-motion="off"] .love-mini { animation: none !important; }
+.sched-prefs { padding-top: var(--space-2); border-top: 1px solid var(--border); }
+.sched-prefs[hidden] { display: none; }

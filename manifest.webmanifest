@@ -45,6 +45,17 @@
   ],
   "shortcuts": [
     {
+      "name": "Enviar amor",
+      "short_name": "Amor",
+      "url": "./#/inicio?amor=1",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "Pregunta de hoy",
       "short_name": "Pregunta",
       "url": "./#/preguntas",

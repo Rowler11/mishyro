@@ -465,6 +465,7 @@ async function startSync() {
     router.refresh();
   });
   await sync.start().catch((e) => db.logError(`sync: ${e?.message}`, e?.stack, CONFIG.appVersion));
+  import('./features/avisos.js').then((m) => m.start()).catch(() => {}); // scheduled caring notices (v0.15.0)
 }
 
 // ---------- start ----------
