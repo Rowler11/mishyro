@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.15.1 (Inicio con arce japonés y furin, hojas por encima; Navidad a la japonesa)
+
+- De día, la esquina de Inicio tiene una rama frondosa de arce japonés (ya no se parece a la sakura de la entrada) con un furin de vidrio colgando que se mece con el viento. Al tocarla se sacude.
+- Lo que cae son las hojas de ese arce, más grandes y por encima de las tarjetas, sin estorbar los toques: verde claro en primavera, verde en verano, rojo y naranja en otoño. En invierno la rama queda desnuda con nieve y caen copos.
+- El dibujo del furin cambia con la estación: flores, peces dorados, hojas de arce o copos.
+- De noche siguen los dos chōchin y las luciérnagas; los faroles quedan detrás de las tarjetas.
+- Navidad a la japonesa (novenas y 25 de diciembre): en Inicio cuelgan chōchin rojos y blancos de una cuerda dorada sobre el título, y del arce nevado cuelga una campana dorada con moño rojo en vez del furin. La tarjeta de Navidad en Eventos lleva una cinta roja con moño, como un regalo, y sus faroles. Antes solo había puntitos de colores.
+
 ## 0.15.0 (Contador de amor y avisos a su hora)
 
 Nuevo

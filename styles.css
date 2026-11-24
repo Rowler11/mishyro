@@ -2508,9 +2508,26 @@ a.game-tile:active { transform: scale(.98); }
 @keyframes deco-fall { 10% { opacity: .8; } 90% { opacity: .6; } 100% { opacity: 0; transform: translate(-24px, 230px) rotate(200deg) scale(var(--s)); } }
 .deco-sakura .deco-bit, .deco-petals .deco-bit { background: #F4B6C6; border-radius: 80% 0 80% 0; }
 .deco-hearts .deco-bit { background: var(--accent); clip-path: path('M6 11 1 6a3 3 0 0 1 5-4 3 3 0 0 1 5 4Z'); }
-.deco-lights .deco-bit { top: 8px; width: 9px; height: 9px; border-radius: 50%; background: var(--gold); animation: deco-blink 1.6s ease-in-out var(--d) infinite; opacity: .8; }
-.deco-lights .deco-bit:nth-child(3n) { background: var(--accent); }
-.deco-lights .deco-bit:nth-child(3n+1) { background: #6FA37A; }
+/* v0.15.1: novenas and Navidad "a la japonesa": red and white chōchin on a gold rope; on the card, a red ribbon with its bow */
+.season-deco.deco-lights { height: 90px; }
+.home:has(> .season-deco.deco-lights) > .page-head { padding-top: 44px; } /* room for the garland above the title */
+.deco-lights .xmas-rope { position: absolute; left: 0; top: 0; width: min(64%, 620px); height: 22px; }
+.deco-lights .xmas-lantern { position: absolute; top: 1px; width: 30px; height: 44px; transform-origin: 50% 0; }
+.deco-lights .xmas-lantern svg { display: block; width: 100%; height: 100%; }
+.deco-lights .xmas-lantern:nth-of-type(1) { left: calc(min(64%, 620px) * .06); top: 3px; }
+.deco-lights .xmas-lantern:nth-of-type(2) { left: calc(min(64%, 620px) * .25); top: 7px; width: 26px; height: 38px; }
+.deco-lights .xmas-lantern:nth-of-type(3) { left: calc(min(64%, 620px) * .45); top: 6px; }
+.deco-lights .xmas-lantern:nth-of-type(4) { left: calc(min(64%, 620px) * .65); top: 3px; width: 26px; height: 38px; }
+.deco-lights .xmas-lantern:nth-of-type(5) { left: calc(min(64%, 620px) * .84); top: 2px; }
+:root[data-motion="on"] .deco-lights .xmas-lantern { animation: xmas-swing 3.6s ease-in-out infinite; }
+:root[data-motion="on"] .deco-lights .xmas-lantern:nth-of-type(2n) { animation-delay: -1.4s; animation-duration: 4.2s; }
+@keyframes xmas-swing { 0%, 100% { rotate: -5deg; } 50% { rotate: 5deg; } }
+.event-card .season-deco.deco-lights.is-band { position: relative; inset: auto; height: 70px; opacity: 1; margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) 0; background: #FFF8F2; overflow: hidden; }
+.deco-lights.is-band .xmas-rope { top: 34px; width: 100%; height: 20px; }
+.deco-lights.is-band .xmas-lantern { top: -2px; width: 34px; height: 50px; }
+.deco-lights.is-band .xmas-lantern:nth-of-type(1) { left: 10%; } .deco-lights.is-band .xmas-lantern:nth-of-type(2) { left: 24%; } .deco-lights.is-band .xmas-lantern:nth-of-type(3) { left: 38%; }
+.deco-lights.is-band .xmas-bow { position: absolute; right: 14%; top: 24px; width: 64px; height: 44px; }
+:root[data-theme="night"] .event-card .season-deco.deco-lights.is-band { background: #241B1E; }
 @keyframes deco-blink { 50% { opacity: .25; } }
 .deco-lanterns .deco-bit { top: 0; width: 28px; height: 40px; color: var(--accent); opacity: .7; animation: deco-swing 3s ease-in-out var(--d) infinite; transform-origin: 50% 0; }
 @keyframes deco-swing { 50% { transform: rotate(6deg) scale(var(--s)); } }
@@ -2527,8 +2544,8 @@ a.game-tile:active { transform: scale(.98); }
 .event-act { display: flex; align-items: center; gap: var(--space-3); min-height: 44px; }
 .event-act label { cursor: pointer; }
 .event-act.is-reto label { font-weight: 700; }
-@media (prefers-reduced-motion: reduce) { .deco-bit, .calm-breath span, .liga-crown { animation: none !important; } }
-:root[data-motion="off"] .deco-bit, :root[data-motion="off"] .calm-breath span { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .deco-bit, .xmas-lantern, .calm-breath span, .liga-crown { animation: none !important; } }
+:root[data-motion="off"] .deco-bit, :root[data-motion="off"] .calm-breath span, :root[data-motion="off"] .xmas-lantern { animation: none !important; }
 .segmented-option { min-width: 48px; justify-content: center; text-align: center; }
 
 /* ===================== Fase 5B: los 13 juegos que faltaban ===================== */
@@ -2911,7 +2928,8 @@ audio.rec-media { background: transparent; max-height: none; }
 
 /* ===================== v0.12.0: más vida en Inicio ===================== */
 /* Inicio's living background: a canvas behind the cards (fx.ambient), never over text */
-.ambient-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.ambient-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; } /* v0.15.1: over the cards, never catches taps */
+.ambient-canvas.is-back { z-index: 0; }
 @media (prefers-reduced-motion: reduce) { .ambient-canvas { display: none; } }
 :root[data-motion="off"] .ambient-canvas { display: none; }
 
@@ -2929,6 +2947,14 @@ audio.rec-media { background: transparent; max-height: none; }
 @keyframes corner-sway { 0%, 100% { transform: rotate(0deg); } 35% { transform: rotate(2.2deg); } 70% { transform: rotate(-1.2deg); } }
 @keyframes corner-shake { 15% { transform: rotate(6deg); } 35% { transform: rotate(-4deg); } 55% { transform: rotate(3deg); } 75% { transform: rotate(-1.5deg); } 100% { transform: rotate(0); } }
 :root[data-seasonal="off"] .home-corner .corner-swing { animation: none !important; }
+/* v0.15.1: by day a leafy Japanese maple with a glass furin hanging from it */
+.home-corner:not([data-kind="night"]) { width: 240px; height: 139px; top: calc(var(--space-4) * -1); right: calc(var(--space-4) * -1); }
+@media (min-width: 820px) { .home-corner:not([data-kind="night"]) { width: 300px; height: 173px; top: calc(var(--space-6) * -1); } }
+.home-corner .corner-furin, .home-corner .corner-tanzaku { transform-box: fill-box; transform-origin: 50% 0; }
+:root[data-motion="on"] .home-corner .corner-furin { animation: furin-sway 3.4s ease-in-out infinite; }
+:root[data-motion="on"] .home-corner .corner-tanzaku { animation: furin-sway 2.3s ease-in-out -.6s infinite; }
+@keyframes furin-sway { 0%, 100% { rotate: -5deg; } 50% { rotate: 5deg; } }
+:root[data-seasonal="off"] .home-corner .corner-furin, :root[data-seasonal="off"] .home-corner .corner-tanzaku { animation: none !important; }
 
 /* screen titles: the Japanese word is painted with the brush, then a short stroke is drawn under it */
 .page-head .ja { position: relative; display: inline-block; }
@@ -2951,7 +2977,7 @@ audio.rec-media { background: transparent; max-height: none; }
 @keyframes enso-draw { 0% { stroke-dashoffset: 1; opacity: 1; } 70% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
 .skeleton .skeleton-line { animation: none; opacity: .6; }
 @media (prefers-reduced-motion: reduce) {
-  .home-corner .corner-swing, .home-corner.is-shaking, .page-head .ja, .page-head .ja::after, .enso-loader path { animation: none !important; }
+  .home-corner .corner-swing, .home-corner .corner-furin, .home-corner .corner-tanzaku, .home-corner.is-shaking, .page-head .ja, .page-head .ja::after, .enso-loader path { animation: none !important; }
   .page-head .ja::after { clip-path: none; } .enso-loader path { stroke-dashoffset: 0; }
 }
 @media (min-width: 1100px) { .home-corner { right: calc(clamp(var(--space-5), 4vw, var(--space-7)) * -1); } }
