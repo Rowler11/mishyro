@@ -1,10 +1,24 @@
 # Cambios
 
-## 0.16.1 (Inicio más fluido y arce en alta calidad)
+## 0.17.1 (Inicio más fluido y arce en alta calidad)
 
 - Inicio ya no se traba: la rama se pinta una sola vez en alta resolución en vez de recalcular sus filtros en cada cuadro, y la animación va a 60 cuadros por segundo.
 - Las hojas que caen ya no se mueven raro al subir o bajar: el viento del scroll es más suave y ya no las hace girar de golpe.
 - La rama de arce es más pequeña y más detallada (corteza con luz, ramitas, hojas con nervaduras y sombra suave), y el furin o la campana de Navidad se ven más grandes y claros.
+
+## 0.17.0 (Dos estilos chinos y las 24 estaciones del año)
+
+Nuevo
+- Estilo de la app en Ajustes > Apariencia: Japonés (el de siempre), Palacio rojo y Porcelana azul. Cada uno tiene día y noche y cambia al instante.
+- Palacio rojo: bermellón, dorado y jade, nubes de la suerte de fondo, greca dorada bajo el contador, sellos cuadrados, puertas de luna en Más y, en Inicio, una rama de ciruelo con dos farolillos de seda (福 y 爱) que de noche se encienden.
+- Porcelana azul: azul cobalto sobre blanco, como la porcelana china, con una rama de ciruelo pintada delante de la luna.
+- En los estilos chinos, los títulos llevan su palabra en chino (今天, 情书, 更多…) y la flor del encabezado es un ciruelo. Lo que cae en Inicio son pétalos de ciruelo, u hojas en verano y otoño.
+- Las 24 estaciones del año: en Inicio aparece la estación de turno (cambia cada 15 días más o menos), con una línea sobre ella y una idea para hacer juntos. "Otra idea" muestra la siguiente.
+- Fiestas según el estilo: con el japonés, Shōgatsu y Tsukimi (además de Hanami y Tanabata); con los chinos, Año Nuevo chino, Festival de los faroles, Qixi (el San Valentín chino) y Fiesta del Medio Otoño. Las fechas lunares están revisadas año por año.
+
+Cambios
+- Las letras japonesas junto a cada título se ven más grandes.
+- En Apariencia, "Japonés" pasa a llamarse "Letras de los títulos" y sirve para los dos idiomas.
 
 ## 0.16.0 (sus mascotas cobran vida)
 

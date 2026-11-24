@@ -5,6 +5,7 @@
 // block taps, and never flash: every light fades in and out over hundreds of ms (photosensitivity, docs/04).
 import { CONFIG } from '../config.js';
 import { sound, prefersReducedMotion } from './util.js';
+import * as estilo from './estilo.js';
 
 const SEASONS = ['snow', 'snow', 'sakura', 'sakura', 'sakura', 'hotaru', 'hotaru', 'hotaru', 'momiji', 'momiji', 'momiji', 'snow']; // by month, Japan's calendar
 const LABEL = { sakura: 'pétalos de sakura', hotaru: 'luciérnagas', momiji: 'hojas de momiji', snow: 'copos de nieve' };
@@ -237,7 +238,9 @@ export function ambient(host) {
   let W = 0; let H = 0;
   const size = () => { W = innerWidth; H = innerHeight; for (const k of [c, back]) { k.width = Math.round(W * dpr); k.height = Math.round(H * dpr); } };
   size();
-  const palette = (k) => (k === 'night' ? COLORS('hotaru', true, tokens().gold) : MAPLE[k] || COLORS('snow', false));
+  // v0.16.0: the Chinese styles drop plum petals (or leaves in summer and autumn) from their own branch.
+  let style = estilo.styleNow();
+  const palette = (k) => (k === 'night' ? COLORS('hotaru', true, tokens().gold) : estilo.isChinese(style) ? estilo.fallingColors(style, k) : MAPLE[k] || COLORS('snow', false));
   let kind = ambientKind(); let night = kind === 'night'; let pal = palette(kind);
   const n = innerWidth > 1100 ? 8 : 7; // few, decided with the user
   const make = (k, { top = true, at = null, extra = false } = {}) => {
@@ -255,12 +258,12 @@ export function ambient(host) {
     };
   };
   // v0.15.1: by day the corner maple drops its own leaves (green, then red); snow in winter.
-  const particle = () => (night ? 'hotaru' : kind === 'snow' ? 'snow' : 'momiji');
+  const particle = () => (night ? 'hotaru' : estilo.isChinese(style) ? estilo.fallingKind(kind) : kind === 'snow' ? 'snow' : 'momiji');
   let bits = [];
   const reset = () => {
-    kind = ambientKind(); night = kind === 'night'; pal = palette(kind);
+    kind = ambientKind(); night = kind === 'night'; style = estilo.styleNow(); pal = palette(kind);
     bits = Array.from({ length: n }, () => make(particle(), { top: false }));
-    if (night) bits.push(make('lantern', { top: false }), make('lantern'));
+    if (night && style !== 'azul') bits.push(make('lantern', { top: false }), make('lantern'));
   };
   reset();
   let wind = 0; let lastY = null;
@@ -289,7 +292,8 @@ export function ambient(host) {
         bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         bctx.translate(x, b.y); bctx.rotate(Math.sin(t / 2600 + b.ph) * 0.06);
         bctx.globalAlpha = Math.min(1, t / 1500) * Math.min(1, (b.y + 70) / 170) * 0.85;
-        lantern(bctx, b.s, t, b.ph); continue;
+        if (style === 'rojo') estilo.canvasLantern(bctx, b.s, t, b.ph); else lantern(bctx, b.s, t, b.ph);
+        continue;
       }
       if (b.k === 'hotaru') { b.x += (b.drift + wind * 0.02) * dt + Math.sin(t / 1200 + b.ph) * 0.15; b.y += b.v * dt + Math.cos(t / 1500 + b.ph) * 0.12; }
       else { b.x += (b.drift + wind * 0.04) * dt + Math.sin(t / 900 + b.ph) * 0.25; b.y += b.v * dt; }
@@ -306,7 +310,10 @@ export function ambient(host) {
       ctx.globalAlpha = fadeIn * (b.k === 'snow' ? 0.9 : 0.88);
       if (b.k === 'snow') { ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(0, 0, b.s, 0, 6.29); ctx.fill(); continue; }
       ctx.rotate(b.ph + b.spin * t); ctx.scale(Math.max(0.15, Math.abs(Math.cos(t / b.flip + b.ph))), 1);
-      if (b.k === 'momiji') leaf(ctx, b.s, b.color); else petal(ctx, b.s, b.color);
+      if (b.k === 'momiji') leaf(ctx, b.s, b.color);
+      else if (b.k === 'plum') estilo.canvasPetal(ctx, b.s * 0.75, b.color);
+      else if (b.k === 'leaf') { ctx.scale(0.55, 1.15); estilo.canvasPetal(ctx, b.s * 0.8, b.color); }
+      else petal(ctx, b.s, b.color);
     }
   };
   const play = () => { if (!stopped && !raf) { prev = 0; raf = requestAnimationFrame(frame); } };
@@ -314,9 +321,9 @@ export function ambient(host) {
   const onVis = () => (document.visibilityState === 'hidden' ? pause() : play());
   const mo = new MutationObserver(() => {
     if (!ambientOn()) { api.stop(); return; }
-    if (ambientKind() !== kind) reset();
+    if (ambientKind() !== kind || estilo.styleNow() !== style) reset();
   });
-  mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-seasonal', 'data-motion'] });
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-seasonal', 'data-motion', 'data-style'] });
   addEventListener('resize', size);
   addEventListener('scroll', onScroll, { passive: true, capture: true });
   document.addEventListener('visibilitychange', onVis);
@@ -342,6 +349,9 @@ export function cornerArt(kind = ambientKind(), { xmas = false } = {}) {
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', '0 0 170 120'); svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
   const night = kind === 'night';
+  // v0.16.0: the Chinese styles have their own corner (plum branch with silk lanterns, or porcelain plum and moon).
+  const st = estilo.styleNow();
+  if (estilo.isChinese(st)) return estilo.cornerArt(st, kind, seasonOf());
   if (night) {
     const lantern = (x, y, s, id) => {
       const ribs = [-0.27, -0.09, 0.09, 0.27].map((k) => { const hw = s * 0.36 * Math.sqrt(1 - (k / 0.46) ** 2); return `<path d="M${-hw} ${k * s} Q0 ${k * s + s * 0.04} ${hw} ${k * s}" stroke="rgba(90,24,16,.35)" stroke-width=".8" fill="none"/>`; }).join('');

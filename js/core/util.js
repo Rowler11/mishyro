@@ -1,5 +1,6 @@
 // Small shared helpers: DOM building (safe by default), dates, money, ids.
 // Never use innerHTML with user data: el() only sets textContent.
+import { titleLetters } from './letters.js';
 
 export const uuid = () => crypto.randomUUID();
 export const nowISO = () => toLocalISO(new Date());
@@ -96,7 +97,8 @@ export function icon(name, { label, size = 24, cls = '' } = {}) {
 
 /** Japanese decorative label (hidden when the user turns Japanese off). */
 export function ja(text, romaji) {
-  return el('span', { class: 'ja', lang: 'ja', title: romaji || undefined }, text);
+  const t = titleLetters(text); // the Chinese styles show their own word (v0.16.0)
+  return el('span', { class: 'ja', lang: t.lang, 'data-jp': text, title: t.lang === 'ja' ? romaji || undefined : undefined }, t.text);
 }
 
 export function debounce(fn, ms = 200) {

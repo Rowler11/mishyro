@@ -1,10 +1,11 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.16.1';
+const CACHE_VERSION = 'aishiteru-v0.17.1';
 const SHELL = [
   './',
   './styles.css',
+  './styles-chino.css',
   './theme-boot.js',
   './manifest.webmanifest',
   './js/app.js',
@@ -23,6 +24,9 @@ const SHELL = [
   './js/core/time.js',
   './js/core/ui.js',
   './js/core/util.js',
+  './js/core/letters.js',
+  './js/core/estilo.js',
+  './js/core/temporadas.js',
   './js/core/art.js',
   './js/core/scene.js',
   './js/core/pets.js', './js/core/kitty.js',
@@ -65,6 +69,8 @@ const SHELL = [
   './fonts/zen-maru-gothic-700.woff2',
   './fonts/atkinson-hyperlegible-400.woff2',
   './fonts/atkinson-hyperlegible-700.woff2',
+  './fonts/ma-shan-zheng-400.woff2',
+  './fonts/noto-serif-sc-700.woff2',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -74,6 +80,8 @@ const SHELL = [
   './icons/patterns/asanoha.svg',
   './icons/patterns/kumiko.svg',
   './icons/patterns/brush.svg',
+  './icons/patterns/xiangyun.svg',
+  './icons/patterns/huiwen.svg',
 ];
 
 self.addEventListener('install', (event) => {

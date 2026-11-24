@@ -1,6 +1,6 @@
 // Accessibility check with axe-core on every Fase 1 view, day and night.
 // Runs with reduced motion so axe reads final colors, not mid-fade ones.
-// Usage: BASE=http://127.0.0.1:8765/mishyro/ AXE=/path/to/axe.min.js node tests/a11y.cjs
+// Usage: BASE=http://127.0.0.1:8765/mishyro/ AXE=/path/to/axe.min.js [STYLE=jp|rojo|azul] node tests/a11y.cjs
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -8,6 +8,7 @@ const path = require('path');
 const BASE = process.env.BASE || 'http://127.0.0.1:8765/mishyro/';
 const AXE = fs.readFileSync(process.env.AXE, 'utf8');
 const SEED = path.join(__dirname, '..', 'seed-privado.example.json');
+const STYLE = process.env.STYLE || 'jp'; // v0.17.0: the visual style to check
 
 (async () => {
   const browser = await chromium.launch();
@@ -28,7 +29,7 @@ const SEED = path.join(__dirname, '..', 'seed-privado.example.json');
         console.log(`${r.length ? 'FAIL' : 'PASS'} ${theme} @${width} ${label}${r.length ? `\n   ${r.join('\n   ')}` : ''}`);
       };
       await page.getByRole('link', { name: 'Empezar desde cero' }).waitFor();
-      await page.evaluate(async (t) => { (await import('./js/core/theme.js')).apply({ theme: t }); }, theme);
+      await page.evaluate(async ([t, st]) => { (await import('./js/core/theme.js')).apply({ theme: t, style: st }); }, [theme, STYLE]);
       await scan('setup 1');
       await page.getByRole('link', { name: 'Empezar desde cero' }).click();
       await scan('setup 2');
@@ -49,7 +50,7 @@ const SEED = path.join(__dirname, '..', 'seed-privado.example.json');
       await scan('historia');
       await page.getByRole('button', { name: 'Saltar' }).click();
       await page.waitForFunction(() => location.hash === '#/inicio');
-      await page.evaluate(async (t) => { (await import('./js/core/theme.js')).apply({ theme: t }); }, theme);
+      await page.evaluate(async ([t, st]) => { (await import('./js/core/theme.js')).apply({ theme: t, style: st }); }, [theme, STYLE]);
       for (const r of ['/inicio', '/capsula', '/capsula/nuevo', '/cupones', '/cartas', '/mas', '/liga', '/modos', '/jibun', '/insignias', '/calendario', '/ajustes', '/ajustes/perfil', '/ajustes/seguridad', '/ajustes/privacidad', '/ajustes/terceros', '/ajustes/copia', '/ajustes/apariencia', '/ajustes/movimiento', '/ajustes/legal', '/ajustes/legal/privacidad', '/ajustes/legal/version', '/buscar', '/ajustes/acerca', '/ajustes/guia-estilo', '/calendario', '/preguntas', '/canciones', '/diario', '/animo', '/jibun', '/retos', '/fechas', '/recordatorios', '/galeria', '/album', '/mapa', '/primeras-veces', '/photobooth', '/capsula-tiempo', '/planes', '/suenos', '/citas', '/regalos', '/encuentro', '/voz', '/lenguajes', '/gratitud', '/insignias', '/resumen', '/mascotas', '/listas', '/recetas', '/alcancia', '/gastos', '/habitos', '/rasca', '/ciclo', '/juegos', '/juegos/historial', '/juegos/ajustes', '/juegos/bancos', '/juegos/recuerdo', '/juegos/tesoro', '/juegos/cata', '/juegos/cocina', '/juegos/bingo', '/juegos/misteriosa', '/juegos/reto30', '/juegos/cine', '/juegos/origami', '/juegos/tanabata', '/juegos/kotoba', '/juegos/manga', '/juegos/postales', '/eventos', '/ajustes/papelera', '/modo-cita', '/ajustes/permisos']) {
         await page.evaluate((p) => { location.hash = `#${p}`; }, r);
         await page.waitForTimeout(700);
