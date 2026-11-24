@@ -270,18 +270,18 @@ export function ambient(host) {
   const onScroll = (e) => {
     const t = e.target === document ? document.scrollingElement : e.target;
     const y = t?.scrollTop ?? scrollY;
-    if (lastY !== null) wind = Math.max(-1.5, Math.min(1.5, wind + (y - lastY) * 0.03));
+    if (lastY !== null) wind = Math.max(-0.6, Math.min(0.6, wind + (y - lastY) * 0.006)); // v0.15.2: a soft breeze, never a jerk
     lastY = y;
   };
   let raf = 0; let stopped = false; let prev = 0;
   const frame = (now) => {
     if (stopped) return;
     raf = requestAnimationFrame(frame);
-    if (now - prev < 32) return; // ~30 fps is plenty for slow leaves and saves battery
+    if (now - prev < 15) return; // v0.15.2: smooth (it looked choppy at 30 fps); still only a few particles
     const dt = Math.min(64, now - (prev || now)); prev = now;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
     bctx.setTransform(dpr, 0, 0, dpr, 0, 0); bctx.clearRect(0, 0, W, H);
-    wind *= 0.9;
+    wind *= 0.95;
     for (let i = bits.length - 1; i >= 0; i--) {
       const b = bits[i]; const t = now - b.born;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -309,7 +309,7 @@ export function ambient(host) {
       }
       ctx.globalAlpha = fadeIn * (b.k === 'snow' ? 0.9 : 0.88);
       if (b.k === 'snow') { ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(0, 0, b.s, 0, 6.29); ctx.fill(); continue; }
-      ctx.rotate(b.ph + b.spin * t + wind * 0.3); ctx.scale(Math.max(0.15, Math.abs(Math.cos(t / b.flip + b.ph))), 1);
+      ctx.rotate(b.ph + b.spin * t); ctx.scale(Math.max(0.15, Math.abs(Math.cos(t / b.flip + b.ph))), 1);
       if (b.k === 'momiji') leaf(ctx, b.s, b.color);
       else if (b.k === 'plum') estilo.canvasPetal(ctx, b.s * 0.75, b.color);
       else if (b.k === 'leaf') { ctx.scale(0.55, 1.15); estilo.canvasPetal(ctx, b.s * 0.8, b.color); }
@@ -363,7 +363,7 @@ export function cornerArt(kind = ambientKind(), { xmas = false } = {}) {
   }
   // v0.15.1 (chosen 2026-11-24, option H): by day a leafy Japanese maple branch (never the welcome
   // splash's sakura) with a glass furin hanging from it. Its own leaves are what falls over the cards.
-  return mapleArt(svg, kind, xmas);
+  return mapleArt(kind, xmas);
 }
 
 /** Leaves of Inicio's maple by season (also the colors of the leaves that fall). null = bare in winter. */
@@ -383,7 +383,7 @@ function mapleLeaf(x, y, r, a, c) {
   for (const k of [0, 2, 4, 10, 12]) { const g = -Math.PI / 2 + (k * Math.PI) / 7; v += `M${x.toFixed(1)} ${y.toFixed(1)}L${(x + Math.cos(g) * r * 0.8).toFixed(1)} ${(y + Math.sin(g) * r * 0.8).toFixed(1)}`; }
   return `<g transform="rotate(${a.toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"><path d="${d}Z" fill="${c}"/><path d="${v}" stroke="#FFFFFF" stroke-width=".45" opacity=".35"/></g>`;
 }
-function furinArt(kind, x, y) {
+function furinArt(kind) {
   const flower = (cx, cy, r, c) => [0, 1, 2, 3, 4].map((i) => `<ellipse cx="${cx}" cy="${cy - r * 0.55}" rx="${r * 0.42}" ry="${r * 0.6}" fill="${c}" transform="rotate(${i * 72} ${cx} ${cy})"/>`).join('') + `<circle cx="${cx}" cy="${cy}" r="${r * 0.22}" fill="#E7B04A"/>`;
   const fish = (fx, fy, k, a) => `<g transform="translate(${fx} ${fy}) rotate(${a}) scale(${k})"><path d="M0 0C4-4 10-3.5 12 0C10 3.5 4 4 0 0Z" fill="#E2483A"/><path d="M11.5 0L17-4.5L15.5 0L17 4.5Z" fill="#F06B4F"/><circle cx="3" cy="-.6" r=".7" fill="#3A1A14"/></g>`;
   const flake = (fx, fy, r, c = '#7AA6C8') => [0, 60, 120].map((a) => `<line x1="${fx - r}" y1="${fy}" x2="${fx + r}" y2="${fy}" stroke="${c}" stroke-width=".9" stroke-linecap="round" transform="rotate(${a} ${fx} ${fy})"/>`).join('');
@@ -393,72 +393,163 @@ function furinArt(kind, x, y) {
         : flake(-6, 13, 5) + flake(6, 20, 4) + flake(-3, 25, 3);
   const tag = kind === 'sakura' ? flower(0, 20, 4, '#FFFFFF') : kind === 'momiji' ? mapleLeaf(0, 20, 5, 10, '#C23A28') : kind === 'hotaru' ? fish(-5, 20, 0.65, 0) : flake(0, 20, 4, '#8B80B4');
   const dome = 'M-15 30C-15 10-9 1 0 1C9 1 15 10 15 30Z';
-  return `<g transform="translate(${x} ${y})"><g class="corner-furin">
-    <line x1="0" y1="0" x2="0" y2="4" stroke="#6A4A3A" stroke-width="1"/>
-    <g transform="translate(0 4) scale(.78)">
+  return `<g class="corner-furin">
+    <line x1="0" y1="0" x2="0" y2="8" stroke="#6A4A3A" stroke-width="1"/>
+    <g transform="translate(0 8)">
       <ellipse cx="0" cy="1.5" rx="3.4" ry="2.2" fill="#9CC3D6"/>
-      <path d="${dome}" fill="url(#ca-glass)" stroke="#6F9FB8" stroke-width=".8"/>
-      <g clip-path="url(#ca-dome)">${paint}</g>
+      <path d="${dome}" fill="url(#ch-glass)" stroke="#5F8FA8" stroke-width=".9"/>
+      <g clip-path="url(#ch-dome)">${paint}</g>
       ${kind === 'snow' ? '<path d="M-7 5C-4 1 4 1 7 5C4 6-4 6-7 5Z" fill="#FFFFFF" stroke="#C4D4E2" stroke-width=".5"/>' : ''}
-      <ellipse cx="0" cy="30" rx="15" ry="3" fill="#CFE8F3" stroke="#6F9FB8" stroke-width=".8"/>
+      <ellipse cx="0" cy="30" rx="15" ry="3" fill="#CFE8F3" stroke="#5F8FA8" stroke-width=".9"/>
       <ellipse cx="0" cy="30" rx="12.5" ry="1.8" fill="#7FB0C8" opacity=".45"/>
       <path d="M-10.5 26C-11.5 15-7.5 6-2 3.8" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" opacity=".9"/>
       <path d="M9 12C10.5 16 11 20 11 24" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity=".6"/>
       <line x1="0" y1="3" x2="0" y2="40" stroke="#7A5A4A" stroke-width=".8"/>
       <rect x="-2.4" y="27" width="4.8" height="6" rx="1.6" fill="#E4685A"/>
       <g transform="translate(0 40)"><g class="corner-tanzaku">
-        <rect x="-7.5" y="0" width="15" height="40" rx="1.2" fill="url(#ca-tz)" filter="url(#ca-tex)"/>
-        <rect x="-7.5" y="0" width="15" height="40" rx="1.2" fill="none" stroke="rgba(90,50,40,.18)" stroke-width=".6"/>
-        <line x1="-5" y1="5" x2="5" y2="5" stroke="#C9A14A" stroke-width=".9"/><line x1="-5" y1="35" x2="5" y2="35" stroke="#C9A14A" stroke-width=".9"/>
+        <rect x="-7.5" y="0" width="15" height="38" rx="1.2" fill="url(#ch-tz)"/>
+        <rect x="-7.5" y="0" width="15" height="38" rx="1.2" fill="none" stroke="rgba(90,50,40,.22)" stroke-width=".6"/>
+        <line x1="-5" y1="5" x2="5" y2="5" stroke="#C9A14A" stroke-width=".9"/><line x1="-5" y1="33" x2="5" y2="33" stroke="#C9A14A" stroke-width=".9"/>
         ${tag}<circle cx="0" cy="2.2" r=".9" fill="#7A5A4A"/>
       </g></g>
-    </g></g></g>`;
+    </g></g>`;
 }
 /** Novenas and Navidad: a gold bell with a red bow hangs from the maple instead of the furin. */
-function xmasBell(x, y) {
-  return `<g transform="translate(${x} ${y})"><g class="corner-furin">
+function xmasBell() {
+  return `<g class="corner-furin">
     <line x1="0" y1="0" x2="0" y2="8" stroke="#A8301F" stroke-width="1.2"/>
     <g transform="translate(0 6)"><path d="M0 0l-6 14M0 0l6 14" stroke="#C9302C" stroke-width="2.4" stroke-linecap="round"/><path d="M0 0c-8-8-18-6-14 2 3 5 10 2 14-2zM0 0c8-8 18-6 14 2-3 5-10 2-14-2z" fill="#C9302C" stroke="#8A1E1A" stroke-width=".6"/><path d="M-12-2q6 4 12 2q6 2 12-2" stroke="#D4A943" stroke-width="1" fill="none"/><circle r="2.6" fill="#A8301F"/></g>
-    <g transform="translate(0 10)"><path d="M-11 30C-11 18-7 11 0 11C7 11 11 18 11 30Z" fill="url(#ca-goldb)"/><rect x="-12.5" y="28.5" width="25" height="3.4" rx="1.6" fill="#B8862C"/><circle cx="0" cy="34" r="2.6" fill="#8A5F1A"/><path d="M-6 26C-7 20-5 15-1.5 13" stroke="#FFF4C8" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".8"/></g>
-  </g></g>`;
+    <g transform="translate(0 10)"><path d="M-11 30C-11 18-7 11 0 11C7 11 11 18 11 30Z" fill="url(#ch-goldb)"/><rect x="-12.5" y="28.5" width="25" height="3.4" rx="1.6" fill="#B8862C"/><circle cx="0" cy="34" r="2.6" fill="#8A5F1A"/><path d="M-6 26C-7 20-5 15-1.5 13" stroke="#FFF4C8" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".8"/></g>
+  </g>`;
 }
-function mapleArt(svg, kind, xmas = false) {
-  svg.setAttribute('viewBox', '0 0 270 156');
-  const pal = MAPLE[kind] === undefined ? MAPLE.momiji : MAPLE[kind];
+/** What hangs from the maple (the furin, or the bell at Christmas) as its own small picture, so it can sway on its own. */
+function hangArt(kind, xmas) {
   const tz = TANZAKU[kind] || TANZAKU.momiji;
-  mseed = 7;
-  const limbs = [
-    ['M274 18C252 17 236 24 218 29', 10], ['M218 29C200 34 184 36 166 44', 7.5], ['M166 44C150 51 134 54 118 62', 5], ['M118 62C108 67 100 72 94 80', 3],
-    ['M226 27C220 18 212 12 202 8', 3.2], ['M190 37C188 48 182 58 172 70', 3.6], ['M172 70C166 78 160 82 152 86', 2], ['M150 50C146 40 140 32 130 26', 2.6],
-    ['M126 58C124 68 120 78 112 88', 2], ['M244 21C246 30 250 38 258 44', 2.6], ['M204 33C210 40 216 46 226 50', 2.2], ['M140 52C134 46 124 42 112 42', 1.8],
-    ['M94 80C90 84 86 86 79 87', 1.2], ['M112 88C110 92 106 95 100 96', 1.1], ['M202 8C198 6 194 6 189 7', 1.2], ['M152 86C148 88 144 88 139 87', 1.1], ['M258 44C260 48 261 51 261 55', 1.2],
-  ];
-  const bark = limbs.map(([d, w]) => `<path d="${d}" fill="none" stroke="#3B261C" stroke-width="${w + 1.4}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="url(#ca-bark)" stroke-width="${w}" stroke-linecap="round"/>`).join('')
-    + limbs.slice(0, 4).map(([d, w]) => `<path d="${d}" fill="none" stroke="#A07A60" stroke-width="${(w * 0.22).toFixed(2)}" stroke-linecap="round" opacity=".55" transform="translate(0 -${(w * 0.22).toFixed(2)})"/>`).join('');
-  const clusters = [[238, 30, 15], [204, 14, 13], [180, 62, 14], [156, 84, 11], [132, 30, 12], [112, 86, 11], [96, 76, 10], [160, 50, 12], [222, 50, 12], [258, 46, 11], [112, 44, 11], [196, 36, 10], [142, 64, 10]];
-  let back = ''; let front = '';
-  if (pal) {
-    clusters.forEach(([cx, cy, r], ci) => {
-      for (let i = 0; i < 11; i++) {
-        const ang = mr(0, 6.28); const rr = r * Math.sqrt(mr(0, 1));
-        const x = cx + Math.cos(ang) * rr; const y = cy + Math.sin(ang) * rr * 0.8;
-        const col = pal[(i + ci) % pal.length];
-        if (i < 5) back += mapleLeaf(x, y, mr(5.5, 8.5), mr(-50, 50), shade(col, 0.78)); else front += mapleLeaf(x, y, mr(5.5, 8.5), mr(-50, 50), col);
-      }
-    });
-  } else {
-    front = '<g fill="#FFFFFF" stroke="#C4D4E2" stroke-width=".5"><path d="M274 13C252 12 236 19 218 24C200 29 184 31 166 39C150 46 134 49 118 57L119 60C135 52 151 49 167 42C185 34 201 32 219 27C237 22 253 15 274 16Z"/><path d="M188 33c2 4 0 8-3 12l1 1c3-4 5-8 3-13z"/></g>'
-      + [[250, 22], [230, 27], [208, 33], [186, 37], [160, 46], [136, 54], [112, 64]].map(([x, y]) => { const h = mr(4, 8).toFixed(1); return `<path d="M${x} ${y + 3}l1.4 ${h}l1.4-${h}z" fill="#DBEAF5" stroke="#B9CFE2" stroke-width=".4"/>`; }).join('')
-      + mapleLeaf(172, 72, 5, 20, '#A0522D') + mapleLeaf(120, 64, 4.5, -30, '#B0643A');
-  }
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'corner-hang'); svg.setAttribute('viewBox', '-22 0 44 92'); svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
   svg.innerHTML = `<defs>
-    <linearGradient id="ca-bark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8A634C"/><stop offset=".5" stop-color="#5E3F2F"/><stop offset="1" stop-color="#40291E"/></linearGradient>
-    <radialGradient id="ca-glass" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".97"/><stop offset=".55" stop-color="#DCF0F9" stop-opacity=".8"/><stop offset="1" stop-color="#8DBFD8" stop-opacity=".9"/></radialGradient>
-    <linearGradient id="ca-tz" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${tz[1]}"/><stop offset="1" stop-color="${tz[0]}"/></linearGradient>
-    <linearGradient id="ca-goldb" x1="0" x2="1"><stop offset="0" stop-color="#A87A22"/><stop offset=".4" stop-color="#F3D27A"/><stop offset="1" stop-color="#B8862C"/></linearGradient>
-    <clipPath id="ca-dome"><path d="M-15 30C-15 10-9 1 0 1C9 1 15 10 15 30Z"/></clipPath>
-    <filter id="ca-tex" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7" result="n"/><feColorMatrix in="n" type="saturate" values="0" result="g"/><feComponentTransfer in="g" result="g2"><feFuncR type="linear" slope=".42" intercept=".7"/><feFuncG type="linear" slope=".42" intercept=".7"/><feFuncB type="linear" slope=".42" intercept=".7"/></feComponentTransfer><feBlend in="SourceGraphic" in2="g2" mode="multiply" result="m"/><feComposite in="m" in2="SourceGraphic" operator="in"/></filter>
-    <filter id="ca-soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="1.6" flood-color="#3A2018" flood-opacity=".22"/></filter>
-  </defs><g class="corner-swing"><g class="corner-maple" filter="url(#ca-soft)">${back}<g filter="url(#ca-tex)">${bark}</g>${front}</g>${xmas ? xmasBell(150, 51) : furinArt(kind, 150, 51)}</g>`;
+    <radialGradient id="ch-glass" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".97"/><stop offset=".55" stop-color="#DCF0F9" stop-opacity=".85"/><stop offset="1" stop-color="#8DBFD8" stop-opacity=".95"/></radialGradient>
+    <linearGradient id="ch-tz" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${tz[1]}"/><stop offset="1" stop-color="${tz[0]}"/></linearGradient>
+    <linearGradient id="ch-goldb" x1="0" x2="1"><stop offset="0" stop-color="#A87A22"/><stop offset=".4" stop-color="#F3D27A"/><stop offset="1" stop-color="#B8862C"/></linearGradient>
+    <clipPath id="ch-dome"><path d="M-15 30C-15 10-9 1 0 1C9 1 15 10 15 30Z"/></clipPath></defs>${xmas ? xmasBell() : furinArt(kind)}`;
   return svg;
+}
+// v0.15.2 (asked 2026-11-24): the maple is painted once on a canvas, in the same hand as the welcome
+// splash's branch (tapered bark with light on its top edge, leaves with their own shading and veins), and
+// only the whole picture sways, so scrolling Inicio stays smooth. Leaves by season; bare with snow in winter.
+const LEAVES = {
+  sakura: [['#5E9E3C', '#B8E07A'], ['#6FAE45', '#C7E890'], ['#4F8E34', '#9ED066'], ['#A8452F', '#E39066']],
+  hotaru: [['#2A632A', '#5DA24A'], ['#347A33', '#6CB257'], ['#235A24', '#4E9540']],
+  momiji: [['#8E1E16', '#E2533A'], ['#A82A1A', '#F08A2C'], ['#B9541F', '#F4B23C'], ['#7E1A16', '#D8462F']],
+};
+export const HANG_AT = { x: 166, y: 55 }; // where the furin hangs, in the 270 x 156 picture
+function mapleLeafPath(ctx, s) {
+  const n = 7; const a0 = -Math.PI / 2;
+  const lobe = (k) => a0 + (k - 3) * 0.42; const len = (k) => s * (1 - 0.12 * Math.abs(k - 3));
+  const P = (a, r) => [Math.cos(a) * r, Math.sin(a) * r];
+  ctx.beginPath(); ctx.moveTo(...P(lobe(0) - 0.3, s * 0.34));
+  for (let k = 0; k < n; k++) {
+    const a = lobe(k); const L = len(k);
+    ctx.bezierCurveTo(...P(a - 0.34, L * 0.5), ...P(a - 0.12, L * 0.88), ...P(a, L));
+    ctx.bezierCurveTo(...P(a + 0.12, L * 0.88), ...P(a + 0.34, L * 0.5), ...P(a + 0.21, s * 0.36));
+  }
+  ctx.quadraticCurveTo(0, s * 0.42, ...P(lobe(0) - 0.3, s * 0.34)); ctx.closePath();
+  return { tips: Array.from({ length: n }, (_, k) => P(lobe(k), len(k) * 0.86)) };
+}
+function paintLeaf(ctx, x, y, s, rot, pair, flip, dark) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(flip, 1);
+  const g = ctx.createLinearGradient(0, s * 0.3, 0, -s);
+  g.addColorStop(0, dark ? shade(pair[0], 0.75) : pair[0]); g.addColorStop(1, dark ? shade(pair[1], 0.78) : pair[1]);
+  const { tips } = mapleLeafPath(ctx, s);
+  ctx.fillStyle = g; ctx.fill();
+  ctx.shadowColor = 'transparent'; ctx.lineWidth = 0.4; ctx.strokeStyle = 'rgba(40,15,10,.18)'; ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.38)'; ctx.lineWidth = 0.45;
+  for (const [tx, ty] of tips) { ctx.beginPath(); ctx.moveTo(0, s * 0.12); ctx.lineTo(tx, ty); ctx.stroke(); }
+  ctx.restore();
+}
+function paintMaple(canvas, kind) {
+  const W = 270; const H = 156; const k = Math.min(3, devicePixelRatio || 1) * 1.15;
+  canvas.width = Math.round(W * k); canvas.height = Math.round(H * k);
+  const ctx = canvas.getContext('2d'); if (!ctx) return;
+  ctx.scale(k, k); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  mseed = 11;
+  const pal = LEAVES[kind] || null; // null: winter, bare
+  const P0 = [280, 20]; const P1 = [228, 16]; const P2 = [176, 46]; const P3 = [104, 70];
+  const main = (u) => { const v = 1 - u; return [0, 1].map((i) => v ** 3 * P0[i] + 3 * v * v * u * P1[i] + 3 * v * u * u * P2[i] + u ** 3 * P3[i]); };
+  const bark = '#4A3024'; const barkLight = '#A88670';
+  const limbs = []; const leaves = [];
+  const stroke = (pts, w0, w1) => {
+    const n = pts.length - 1;
+    for (let i = 0; i < n; i++) {
+      const w = w0 + (w1 - w0) * (i / n); const [ax, ay] = pts[i]; const [bx, by] = pts[i + 1];
+      ctx.strokeStyle = bark; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+    }
+  };
+  const light = (pts, w0, w1, color, alpha, off, scale) => {
+    const n = pts.length - 1; ctx.save(); ctx.shadowColor = 'transparent'; ctx.globalAlpha = alpha; ctx.strokeStyle = color;
+    for (let i = 0; i < n; i++) {
+      const w = w0 + (w1 - w0) * (i / n); if (w < 1.4) continue;
+      const [ax, ay] = pts[i]; const [bx, by] = pts[i + 1]; const nx = -(by - ay); const ny = bx - ax; const nl = Math.hypot(nx, ny) || 1; const o = -w * off;
+      ctx.lineWidth = Math.max(0.6, w * scale); ctx.beginPath(); ctx.moveTo(ax + (nx / nl) * o, ay + (ny / nl) * o); ctx.lineTo(bx + (nx / nl) * o, by + (ny / nl) * o); ctx.stroke();
+    }
+    ctx.restore();
+  };
+  const leafAt = (x, y, dir, size, front) => {
+    const pl = mr(2.5, 4.5); const lx = x + Math.cos(dir) * (pl + size * 0.3); const ly = y + Math.sin(dir) * (pl + size * 0.3);
+    if (Math.hypot(lx - HANG_AT.x, ly - HANG_AT.y - 12) < 15) return; // keep the furin in sight
+    leaves.push({ x: lx, y: ly, px: x, py: y, s: size, rot: dir + Math.PI / 2 + mr(-0.25, 0.25), pair: pal ? pal[Math.floor(mr(0, pal.length))] : null, flip: mr(0.62, 1) * (mr(0, 1) < 0.5 ? -1 : 1), front });
+  };
+  const grow = (P, dir, len, bend, w, depth) => {
+    const pts = [P]; let [x, y] = P;
+    for (let i = 1; i <= 10; i++) { const q = i / 10; const a = dir + bend * q + 0.1 * Math.sin(q * 7 + depth * 2) + 0.04 * q; x += (Math.cos(a) * len) / 10; y += (Math.sin(a) * len) / 10; pts.push([x, y]); }
+    limbs.push([pts, w, Math.max(0.5, w * 0.3)]);
+    for (let i = 3; i <= 10; i += 2) { const [ax, ay] = pts[i]; const side = i % 4 === 1 ? 1 : -1; const d = Math.atan2(pts[i][1] - pts[i - 1][1], pts[i][0] - pts[i - 1][0]); leafAt(ax, ay, d + side * mr(0.7, 1.2) + 0.25, mr(7, 9.5), mr(0, 1) < 0.55); }
+    const [tx, ty] = pts[10]; const d = Math.atan2(ty - pts[9][1], tx - pts[9][0]);
+    for (let j = 0; j < 3; j++) leafAt(tx, ty, d + (j - 1) * 0.75 + mr(-0.2, 0.2), mr(7, 10), true);
+    if (depth < 2 && len > 26) { const i = 5 + Math.floor(mr(0, 3)); const [ax, ay] = pts[i]; const dd = Math.atan2(pts[i][1] - pts[i - 1][1], pts[i][0] - pts[i - 1][0]); grow([ax, ay], dd + (mr(0, 1) < 0.5 ? -1 : 1) * mr(0.5, 0.9), len * mr(0.38, 0.5), -bend * 0.6, w * 0.55, depth + 1); }
+  };
+  const mainPts = Array.from({ length: 25 }, (_, i) => main(i / 24));
+  [0.1, 0.19, 0.28, 0.37, 0.46, 0.56, 0.66, 0.76, 0.86, 0.95].forEach((u, i) => {
+    const [ax, ay] = main(u); const [bx, by] = main(Math.min(1, u + 0.02)); const d = Math.atan2(by - ay, bx - ax);
+    const up = i % 3 === 0 ? -1 : 1; const big = i % 3 !== 2;
+    grow([ax, ay], d + up * (up < 0 ? mr(0.4, 0.65) : mr(0.55, 1.0)), (big ? mr(34, 50) : mr(22, 32)) * (up < 0 ? 0.7 : 1), -up * mr(0.15, 0.4), big ? mr(2.6, 3.4) : mr(1.8, 2.3), 1);
+  });
+  for (let i = 0; i < 6; i++) { const [x, y] = main(1 - i * 0.03); leafAt(x, y, Math.PI * (0.65 + i * 0.12), mr(7.5, 10), true); }
+  // shade: a soft drop shadow under everything, then the light on the bark
+  ctx.shadowColor = 'rgba(50,25,15,.22)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 1.6;
+  if (pal) for (const L of leaves.filter((l) => !l.front)) paintLeaf(ctx, L.x, L.y, L.s * 0.92, L.rot, L.pair, L.flip, true);
+  ctx.shadowColor = 'rgba(50,25,15,.22)';
+  stroke(mainPts, 9, 1.6); for (const [pts, w0, w1] of limbs) stroke(pts, w0, w1);
+  light(mainPts, 9, 1.6, barkLight, 0.5, 0.28, 0.22); for (const [pts, w0, w1] of limbs) light(pts, w0, w1, barkLight, 0.45, 0.28, 0.22);
+  // bark texture: a few short darker marks along the trunk
+  ctx.save(); ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(30,15,10,.45)'; ctx.lineWidth = 0.7;
+  for (let i = 1; i < 14; i++) { const [x, y] = main(i / 16); ctx.beginPath(); ctx.moveTo(x - 2, y + mr(-2, 2)); ctx.lineTo(x + 2.5, y + mr(-2, 2)); ctx.stroke(); }
+  ctx.restore();
+  if (pal) {
+    ctx.save(); ctx.shadowColor = 'transparent'; ctx.strokeStyle = '#5A3A2A'; ctx.lineWidth = 0.5;
+    for (const L of leaves) { ctx.beginPath(); ctx.moveTo(L.px, L.py); ctx.lineTo(L.x, L.y); ctx.stroke(); }
+    ctx.restore();
+    ctx.shadowColor = 'rgba(50,25,15,.2)';
+    for (const L of leaves.filter((l) => l.front)) paintLeaf(ctx, L.x, L.y, L.s, L.rot, L.pair, L.flip, false);
+  } else {
+    // winter: snow resting on top of the bark, and a couple of dry leaves that stayed
+    ctx.shadowColor = 'rgba(80,100,130,.25)'; ctx.shadowBlur = 1.5; ctx.shadowOffsetY = 0.6;
+    light(mainPts, 9, 1.6, '#FFFFFF', 1, 0.4, 0.42); for (const [pts, w0, w1] of limbs) light(pts, w0, w1, '#FFFFFF', 0.95, 0.4, 0.42);
+    ctx.shadowColor = 'transparent';
+    leaves.filter((_, i) => i % 23 === 4).slice(0, 3).forEach((L) => paintLeaf(ctx, L.x, L.y, L.s * 0.8, L.rot, ['#7A4A2A', '#B0784A'], L.flip, false));
+  }
+}
+function mapleArt(kind, xmas = false) {
+  const box = document.createElement('div');
+  box.className = 'corner-swing corner-day';
+  const canvas = document.createElement('canvas');
+  canvas.className = 'corner-maple'; canvas.setAttribute('aria-hidden', 'true');
+  paintMaple(canvas, kind);
+  const hang = hangArt(kind, xmas);
+  // placed where it hangs; it sways on its own (only its picture moves, so it stays cheap)
+  hang.style.left = `${((HANG_AT.x - 22) / 270) * 100}%`;
+  hang.style.top = `${(HANG_AT.y / 156) * 100}%`;
+  hang.style.width = `${(44 / 270) * 100}%`;
+  box.append(canvas, hang);
+  return box;
 }
