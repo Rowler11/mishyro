@@ -346,7 +346,11 @@ export async function decorateHome(body) {
 
 /** Any other screen: one pet, different per screen and day, peeking over a card or asleep at the end. */
 export async function companion(node, id) {
-  if (!node || !id || SKIP.has(id) || node.querySelector('.kitty-perch, .kitty-nap, .empty-pet')) return;
+  if (!node || !id || SKIP.has(id) || node.querySelector('.kitty-perch, .kitty-nap')) return;
+  // v0.21.0: a pet already waiting on an empty state is this screen's pet; extra ones (built in the same tick) step aside.
+  const waiting = [...node.querySelectorAll('.empty-art-pet')];
+  waiting.slice(1).forEach((w) => w.replaceWith(util.el('div', { class: 'empty-art', 'aria-hidden': 'true' }, util.icon('jp-sakura', { size: 96, cls: 'empty-icon' }), util.el('span', { class: 'empty-ring' }))));
+  if (waiting.length) return;
   if (!(await showPets())) return;
   const pets = await livePets();
   if (!pets.length || !node.isConnected) return;
@@ -408,12 +412,16 @@ export async function stroll(scene, scope, { chance = 0.6, delay = 1800, flow = 
 // A pet sits where the icon of an empty screen used to be. The list is cached so ui.emptyState() can
 // draw it synchronously; it refreshes when pets or the "Que se paseen por la app" setting change.
 let emptyCache = [];
+let lastEmpty = null;
 const WAIT_LINES = ['¡Miau! Aquí espero contigo.', 'Me quedo cuidando este lugar.', 'Cuando tengan algo, me avisan.', 'Mientras tanto, ¿un mimo?'];
 async function refreshEmptyCache() {
   try { emptyCache = (await showPets()) ? await livePets() : []; } catch { emptyCache = []; }
 }
 function emptyPet(key) {
-  if (!emptyCache.length) return null;
+  // One pet per screen (decided 2026-11-24): if one already waits here, the next empty state keeps its icon.
+  if (!emptyCache.length || document.querySelector('main .empty-pet')) return null;
+  // ...also when one was just built for this same screen and is not on the page yet
+  if (lastEmpty && !lastEmpty.el.isConnected && lastEmpty.hash === location.hash && performance.now() - lastEmpty.at < 1500) return null;
   const h = hash(`${key}|${util.localDay()}`);
   const index = h % emptyCache.length; const pet = emptyCache[index];
   const name = pet.name || '';
@@ -425,7 +433,9 @@ function emptyPet(key) {
       btn.classList.remove('is-mimo'); void btn.offsetWidth; btn.classList.add('is-mimo');
       { const v = voiceOf(pet); if (v) sounds.play(v); } util.haptic('select');
     } }, util.el('span', { class: 'kitty-body' }, kittyArt(pet, { index })), bubbleEl);
-  return util.el('div', { class: 'empty-art empty-art-pet' }, btn);
+  const art = util.el('div', { class: 'empty-art empty-art-pet' }, btn);
+  lastEmpty = { el: art, hash: location.hash, at: performance.now() };
+  return art;
 }
 export async function primeEmptyStates() {
   await refreshEmptyCache();

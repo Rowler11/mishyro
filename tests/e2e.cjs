@@ -2546,13 +2546,20 @@ async function exampleContent(page, { reload = true } = {}) {
     let seenPerch = false; let seenNap = false; let onePer = true;
     for (const r of ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']) {
       await go(r, 'main h1'); await page.waitForTimeout(900);
-      const n = await page.locator('main .kitty-perch, main .kitty-nap').count();
+      const n = await page.locator('main .kitty-perch, main .kitty-nap, main .empty-pet').count();
       if (n !== 1) onePer = false;
       if (await page.locator('main .kitty-perch').count()) seenPerch = true;
       if (await page.locator('main .kitty-nap').count()) seenNap = true;
     }
     ok('18 Pantallas: en cada una aparece una sola mascota', onePer);
     ok('18 Pantallas: unas veces asomada y otras dormida al final', seenPerch && seenNap);
+    // v0.21.0: a pet waits on empty screens and talks with its name when tapped
+    await go('/ajustes', '.list-row'); await page.waitForTimeout(300);
+    await page.evaluate(async () => { const ui = await import('./js/core/ui.js'); document.querySelector('main').append(ui.emptyState({ title: 'Vacío de prueba', text: 'Texto ficticio' }), ui.emptyState({ title: 'Otro vacío', text: 'Texto ficticio' })); });
+    ok('21 Vacío: un gatito espera en lugar del ícono', (await page.locator('main .empty .empty-pet').count()) === 1);
+    await page.locator('main .empty-pet').click(); await page.waitForTimeout(250);
+    ok('21 Vacío: al tocarlo habla con su nombre', /^\S+: /.test(await page.locator('main .empty-pet-bubble').innerText()));
+    ok('21 Vacío: una sola mascota por pantalla (el segundo vacío deja su ícono)', (await page.locator('main .empty-pet').count()) === 1 && (await page.locator('main .empty .empty-icon').count()) === 1);
     await go('/ajustes', '.list-row'); await page.waitForTimeout(900);
     ok('18 Ajustes: ahí no aparecen', (await page.locator('.kitty-perch, .kitty-nap').count()) === 0);
     const napRoute = await page.evaluate(async () => { const r = ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']; return r; });
