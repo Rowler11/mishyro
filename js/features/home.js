@@ -441,7 +441,7 @@ export async function render() {
   // branch (two hanging chōchin at night) in the corner shakes and lets a few more go when tapped.
   let amb = fx.ambient(page);
   const corner = el('div', { class: 'home-corner', 'aria-hidden': 'true' });
-  const drawCorner = () => { corner.dataset.kind = fx.ambientKind(); corner.replaceChildren(fx.cornerArt(corner.dataset.kind)); };
+  const drawCorner = () => { corner.dataset.kind = fx.ambientKind(); corner.replaceChildren(fx.cornerArt(corner.dataset.kind, { xmas: corner.dataset.xmas === '1' })); };
   drawCorner();
   corner.addEventListener('click', () => {
     if (util.prefersReducedMotion()) return;
@@ -512,7 +512,11 @@ export async function render() {
     ui.stagger(body);
     // Seasonal decoration while an event is on (San Valentín hearts, Tanabata lanterns…).
     page.querySelector('.season-deco')?.remove();
-    import('./eventos.js').then((m) => m.decoration()).then((d) => { if (d) page.prepend(d); }).catch(() => {});
+    import('./eventos.js').then((m) => m.decoration()).then((d) => {
+      if (d) page.prepend(d);
+      const xmas = d?.classList.contains('deco-lights') ? '1' : ''; // novenas and Navidad: a gold bell on the maple
+      if ((corner.dataset.xmas || '') !== xmas) { corner.dataset.xmas = xmas; drawCorner(); }
+    }).catch(() => {});
 
     // First visit of a new day: petals over the counter; on a milestone day, confetti once.
     if (counter && recall('petalDay') !== util.localDay()) { remember('petalDay', util.localDay()); playPetals(counter.petals); }
