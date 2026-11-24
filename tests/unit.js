@@ -6,6 +6,9 @@ import * as cryptoBox from '../js/core/crypto.js';
 import * as backup from '../js/core/backup.js';
 import * as seed from '../js/core/seed.js';
 import * as V from '../js/core/vault.js';
+import * as T from '../js/core/temporadas.js';
+import { titleLetters } from '../js/core/letters.js';
+import { activeEvents, forStyle } from '../js/features/eventos.js';
 
 const KEY = 'unittest';
 const results = [];
@@ -241,5 +244,38 @@ await test('vault: only matches in yes or maybe are revealed', () => {
 
 db.close();
 await new Promise((res) => { const r = indexedDB.deleteDatabase(`${KEY}-db`); r.onsuccess = r.onerror = res; });
+// ---------- v0.16.0: seasons, lunar festivals and styles ----------
+await test('sekkiOn finds the solar term, across the new year and in the south', () => {
+  eq(T.sekkiOn(new Date(2026, 10, 24)).name, 'Nieve menor');
+  eq(T.sekkiOn(new Date(2026, 0, 3)).name, 'Solsticio de invierno');
+  eq(T.sekkiOn(new Date(2026, 0, 3)).from.getFullYear(), 2025);
+  eq(T.sekkiOn(new Date(2026, 0, 5)).name, 'Frío menor');
+  eq(T.sekkiOn(new Date(2026, 11, 31)).to.getDate(), 4);
+  eq(T.sekkiOn(new Date(2026, 10, 24), 'sur').name, 'Los granos se llenan');
+  eq(T.SEKKI.length, 24);
+  ok(T.SEKKI.every((s) => s[4].length === 2 && s[3]), 'every term has a line and two plans');
+});
+await test('festivalDate uses checked dates (Intl is a day off in 2027)', () => {
+  eq(util.localDay(T.festivalDate('cny', 2027)), '2027-02-06');
+  eq(util.localDay(T.festivalDate('faroles', 2027)), '2027-02-20');
+  eq(util.localDay(T.festivalDate('qixi', 2026)), '2026-08-19');
+  eq(util.localDay(T.festivalDate('luna', 2026)), '2026-09-25');
+  ok(T.festivalDate('luna', 2040), 'falls back to Intl after the table');
+});
+await test('lunar events: Año Nuevo chino lasts its days, styles filter the list', () => {
+  const evs = [{ id: 'a', name: 'Año Nuevo chino', rule: { type: 'lunar', key: 'cny', days: 7 }, style: 'cn' }, { id: 'b', name: 'Tsukimi', rule: { type: 'lunar', key: 'luna' }, style: 'jp' }, { id: 'c', name: 'X', rule: { type: 'fixed', month: 1, day: 1 } }];
+  eq(activeEvents(evs, new Date(2027, 1, 12)).map((x) => x.event.id), ['a']);
+  eq(activeEvents(evs, new Date(2027, 1, 13)).length, 0);
+  eq(activeEvents(evs, new Date(2026, 8, 25)).map((x) => x.event.id), ['b']);
+  eq(forStyle(evs, 'rojo').map((e) => e.id), ['a', 'c']);
+  eq(forStyle(evs, 'jp').map((e) => e.id), ['b', 'c']);
+});
+await test('title letters follow the style', () => {
+  eq(titleLetters('今', 'jp'), { text: '今', lang: 'ja' });
+  eq(titleLetters('今', 'azul'), { text: '今天', lang: 'zh-Hans' });
+  eq(titleLetters('手紙', 'rojo').text, '情书');
+  eq(titleLetters('?', 'rojo').text, '?');
+});
+
 window.__results = results;
 document.getElementById('out').textContent = results.map((r) => `${r.ok ? 'PASS' : 'FAIL'} ${r.name}${r.ok ? '' : `\n  ${r.error}`}`).join('\n');

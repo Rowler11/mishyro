@@ -1,5 +1,19 @@
 # Cambios
 
+## 0.17.0 (Dos estilos chinos y las 24 estaciones del año)
+
+Nuevo
+- Estilo de la app en Ajustes > Apariencia: Japonés (el de siempre), Palacio rojo y Porcelana azul. Cada uno tiene día y noche y cambia al instante.
+- Palacio rojo: bermellón, dorado y jade, nubes de la suerte de fondo, greca dorada bajo el contador, sellos cuadrados, puertas de luna en Más y, en Inicio, una rama de ciruelo con dos farolillos de seda (福 y 爱) que de noche se encienden.
+- Porcelana azul: azul cobalto sobre blanco, como la porcelana china, con una rama de ciruelo pintada delante de la luna.
+- En los estilos chinos, los títulos llevan su palabra en chino (今天, 情书, 更多…) y la flor del encabezado es un ciruelo. Lo que cae en Inicio son pétalos de ciruelo, u hojas en verano y otoño.
+- Las 24 estaciones del año: en Inicio aparece la estación de turno (cambia cada 15 días más o menos), con una línea sobre ella y una idea para hacer juntos. "Otra idea" muestra la siguiente.
+- Fiestas según el estilo: con el japonés, Shōgatsu y Tsukimi (además de Hanami y Tanabata); con los chinos, Año Nuevo chino, Festival de los faroles, Qixi (el San Valentín chino) y Fiesta del Medio Otoño. Las fechas lunares están revisadas año por año.
+
+Cambios
+- Las letras japonesas junto a cada título se ven más grandes.
+- En Apariencia, "Japonés" pasa a llamarse "Letras de los títulos" y sirve para los dos idiomas.
+
 ## 0.15.1 (Inicio con arce japonés y furin, hojas por encima; Navidad a la japonesa)
 
 - De día, la esquina de Inicio tiene una rama frondosa de arce japonés (ya no se parece a la sakura de la entrada) con un furin de vidrio colgando que se mece con el viento. Al tocarla se sacude.

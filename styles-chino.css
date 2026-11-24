@@ -51,14 +51,14 @@
 :root[data-style="azul"] .ja { font-family: 'Noto Serif SC', var(--font-serif); color: var(--accent); font-weight: 700; letter-spacing: .12em; }
 
 /* counter: a gold key-fret band (回纹) and a jade-disc ring instead of the brush ensō */
-:root[data-style="rojo"] .counter-card, :root[data-style="azul"] .counter-card { border: 1px solid color-mix(in srgb, var(--ornament) 45%, transparent); }
+:root[data-style="rojo"] .counter-card, :root[data-style="azul"] .counter-card { border: 1px solid color-mix(in srgb, var(--ornament, var(--gold)) 45%, transparent); }
 :root[data-style="rojo"] .counter-card::after, :root[data-style="azul"] .counter-card::after {
-  height: 12px; bottom: 6px; background: var(--ornament); opacity: .6;
+  height: 12px; bottom: 6px; background: var(--ornament, var(--gold)); opacity: .6;
   -webkit-mask: url('./icons/patterns/huiwen.svg') repeat-x 0 0 / 14px 12px; mask: url('./icons/patterns/huiwen.svg') repeat-x 0 0 / 14px 12px;
 }
-:root[data-style="rojo"] .counter-ring-track, :root[data-style="azul"] .counter-ring-track { stroke: var(--ornament); stroke-opacity: .4; stroke-width: 4; filter: none; }
+:root[data-style="rojo"] .counter-ring-track, :root[data-style="azul"] .counter-ring-track { stroke: var(--ornament, var(--gold)); stroke-opacity: .4; stroke-width: 4; filter: none; }
 :root[data-style="rojo"] .counter-ring-arc, :root[data-style="azul"] .counter-ring-arc { filter: none; stroke-width: 9; stroke-linecap: butt; }
-:root[data-style="rojo"] .counter-ring-echo, :root[data-style="azul"] .counter-ring-echo { stroke: var(--ornament); stroke-opacity: .9; filter: none; stroke-width: 1.4; }
+:root[data-style="rojo"] .counter-ring-echo, :root[data-style="azul"] .counter-ring-echo { stroke: var(--ornament, var(--gold)); stroke-opacity: .9; filter: none; stroke-width: 1.4; }
 
 /* seals: square Chinese chops with a double border */
 :root[data-style="rojo"] :is(.counter-seal, .seal-sq, .intro-seal), :root[data-style="azul"] :is(.counter-seal, .seal-sq, .intro-seal) {
@@ -68,8 +68,8 @@
 :root[data-style="azul"][data-theme="night"] :is(.counter-seal, .seal-sq) { color: #0F131C; box-shadow: inset 0 0 0 2px var(--accent-2), inset 0 0 0 3.5px rgb(15 19 28 / .55); }
 
 /* Más: the shoji doors become a moon gate (月门); the circle splits when the doors open */
-:root[data-style="rojo"] .door, :root[data-style="azul"] .door { --door-moon: color-mix(in srgb, var(--ornament) 70%, transparent); --door-moon-2: color-mix(in srgb, var(--ornament) 32%, transparent); }
-:root[data-style="rojo"] .door-frame, :root[data-style="azul"] .door-frame { border-color: color-mix(in srgb, var(--ornament) 40%, var(--border)); }
+:root[data-style="rojo"] .door, :root[data-style="azul"] .door { --door-moon: color-mix(in srgb, var(--ornament, var(--gold)) 70%, transparent); --door-moon-2: color-mix(in srgb, var(--ornament, var(--gold)) 32%, transparent); }
+:root[data-style="rojo"] .door-frame, :root[data-style="azul"] .door-frame { border-color: color-mix(in srgb, var(--ornament, var(--gold)) 40%, var(--border)); }
 :root[data-style="rojo"] .door-panel, :root[data-style="azul"] .door-panel { background-size: auto; background-position: 0 0; }
 :root[data-style="rojo"] .door-panel-l, :root[data-style="azul"] .door-panel-l {
   border-right-color: transparent;
@@ -80,7 +80,7 @@
 }
 
 /* soft gold edge on cards */
-:root[data-style="rojo"] .card, :root[data-style="azul"] .card { border-color: color-mix(in srgb, var(--ornament) 26%, var(--border)); }
+:root[data-style="rojo"] .card, :root[data-style="azul"] .card { border-color: color-mix(in srgb, var(--ornament, var(--gold)) 26%, var(--border)); }
 
 /* ---------- Ajustes: style previews ---------- */
 .style-previews { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
@@ -107,3 +107,12 @@
 .tp-s-azul.tp-night :is(.tp-seal, .tp-btn) { background: #94B1E8; color: #0F131C; }
 :is(.tp-s-rojo, .tp-s-azul) .tp-seal { border-radius: 3px; }
 .theme-preview.tp-on.tp-on { border-color: var(--accent); }
+
+/* ---------- Inicio's corner in the Chinese styles (day and night share the size) ---------- */
+:root[data-style="rojo"] .home-corner, :root[data-style="azul"] .home-corner { width: 240px; height: 139px; top: calc(var(--space-4) * -1); right: calc(var(--space-4) * -1); }
+@media (min-width: 820px) { :root[data-style="rojo"] .home-corner, :root[data-style="azul"] .home-corner { width: 300px; height: 173px; top: calc(var(--space-6) * -1); } }
+:root[data-motion="on"]:is([data-style="rojo"], [data-style="azul"]) .home-corner[data-kind="night"] .corner-swing { transform-origin: 100% 0; transform-box: view-box; animation-duration: 6s; }
+.home-corner .cs-lantern { transform-box: fill-box; transform-origin: 50% 0; }
+:root[data-motion="on"] .home-corner .cs-lantern { animation: furin-sway 4.2s ease-in-out infinite; }
+:root[data-motion="on"] .home-corner .cs-lantern.is-second { animation-duration: 3.4s; animation-delay: -1.3s; }
+:root[data-seasonal="off"] .home-corner .cs-lantern { animation: none !important; }

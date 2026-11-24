@@ -2,6 +2,7 @@
 // Inicio while an event is on, with its decoration, message and activities. Each mesiversario
 // (day 2) brings its own card and a monthly challenge. From the page you can go back to past ones.
 import { ui, util, db, profile, CONFIG } from '../core.js';
+import { festivalDate } from '../core/temporadas.js';
 
 const { el, icon } = util;
 /** replaceChildren that skips null/false (native replaceChildren would print "null"). */
@@ -33,7 +34,11 @@ export function activeEvents(events, day, ctx = {}) {
     else if (r.type === 'range' && md(m, d) >= md(r.from.month, r.from.day) && md(m, d) <= md(r.to.month, r.to.day)) out.push({ event: ev, period: String(y), name: ev.name });
     else if (r.type === 'nth' && r.month === m && nthWeekday(y, m, r.weekday, r.n) === d) out.push({ event: ev, period: String(y), name: ev.name });
     else if (r.type === 'monthly' && r.day === d && !isAnniversary && start && day > start) out.push({ event: ev, period: `${y}-${String(m).padStart(2, '0')}`, name: ev.name });
-    else if (r.type === 'profile' && r.field === 'startDate' && isAnniversary) out.push({ event: ev, period: String(y), name: ev.name });
+    else if (r.type === 'lunar') { // v0.16.0: festivals of the lunar calendar (Año Nuevo chino, Qixi, Medio Otoño, Tsukimi)
+      const f0 = festivalDate(r.key, y);
+      const off = f0 ? Math.round((new Date(y, m - 1, d) - f0) / 864e5) : -1;
+      if (off >= 0 && off < (r.days || 1)) out.push({ event: ev, period: String(y), name: ev.name });
+    } else if (r.type === 'profile' && r.field === 'startDate' && isAnniversary) out.push({ event: ev, period: String(y), name: ev.name });
     else if (r.type === 'profile' && r.field === 'birth') {
       for (const b of ctx.birthdays || []) {
         const bd = util.parseDay(b.date);
@@ -67,9 +72,14 @@ export function monthlyChallenge(ev, period) {
 }
 
 // ---------- data ----------
+/** v0.16.0: events marked style 'jp' or 'cn' only show with that family of styles; the rest always. */
+export const forStyle = (events, style = document.documentElement.dataset.style) => {
+  const fam = style === 'rojo' || style === 'azul' ? 'cn' : 'jp';
+  return events.filter((e) => !e.style || e.style === fam);
+};
 async function eventsList() {
   const fromStore = (await db.query('content', { index: 'kind', range: IDBKeyRange.only('seasonalEvent') }).catch(() => [])).filter((e) => !e.deleted && !e.hidden);
-  return fromStore.length ? fromStore : (CONFIG.seasonalEvents || []);
+  return forStyle(fromStore.length ? fromStore : (CONFIG.seasonalEvents || []));
 }
 async function ctxData() {
   const dates = (await db.query('specialDates').catch(() => [])).filter((d) => !d.deleted && d.kind === 'birthday' && profile.PEOPLE.includes(d.personOrPetId));
@@ -135,7 +145,7 @@ export function decoLayer(kind, count = 12, { onCard = false } = {}) {
   const n = kind === 'lights' ? 14 : kind === 'lanterns' ? 5 : kind === 'candles' ? 7 : count;
   for (let i = 0; i < n; i++) {
     const s = el('span', { class: 'deco-bit', style: { '--x': `${Math.round(((i + 0.5) / n) * 100)}%`, '--d': `${(i * 377) % 2400}ms`, '--s': `${0.7 + ((i * 7) % 5) / 10}` } });
-    if (kind === 'lanterns') s.append(icon('jp-chochin', { size: 28 }));
+    if (kind === 'lanterns') s.append(icon(/^(rojo|azul)$/.test(document.documentElement.dataset.style || '') ? 'cn-lantern' : 'jp-chochin', { size: 28 }));
     add(layer, s);
   }
   if (still) layer.classList.add('is-still');

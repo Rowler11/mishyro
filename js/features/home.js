@@ -12,6 +12,7 @@ import { ui, util, db, profile, seed, sync, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
 import * as dates from '../core/dates.js';
 import * as fx from '../core/fx.js';
+import { sekkiOn } from '../core/temporadas.js';
 
 const { el, icon } = util;
 let seasonShown = false; // the season effect plays the first time Inicio opens in each session
@@ -189,6 +190,28 @@ function todayEvents(data, start, receiver) {
     out.push({ kind: d.kind, title: d.kind === 'birthday' ? `¡Feliz cumpleaños${who ? `, ${who}` : ''}!` : d.name, text: next.years ? `${d.kind === 'birthday' ? 'Cumple' : 'Cumple'} ${plural(next.years, 'año', 'años')}.` : 'Es hoy.' });
   }
   return out;
+}
+
+// ---------- 2b. season (v0.16.0, chosen 2026-11-24): the current one of the 24 solar terms ----------
+// icon by term: winter from 'Comienza el invierno' (21) to 'Frío mayor' (1), then spring, summer and autumn
+const termIcon = (i) => (i >= 21 || i <= 1 ? 'snowflake' : i <= 7 ? 'sprout' : i <= 13 ? 'sun' : 'leaf');
+function seasonCard() {
+  const t = sekkiOn(new Date(), CONFIG.seasonalHemisphere);
+  const fmt = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' });
+  let k = Number(recall('sekkiPlan') || 0) % t.plans.length;
+  const idea = el('p', { class: 'season-idea-text' }, t.plans[k]);
+  const other = ui.button({ label: 'Otra idea', iconName: 'refresh-cw', variant: 'ghost', small: true, onClick: () => {
+    k = (k + 1) % t.plans.length; remember('sekkiPlan', String(k)); idea.textContent = t.plans[k];
+  } });
+  return el('article', { class: 'card home-card season-card', 'aria-labelledby': 'season-title' },
+    el('div', { class: 'season-head' },
+      el('span', { class: 'season-seal', 'aria-hidden': 'true' }, icon(termIcon(t.index), { size: 20 })),
+      el('div', {},
+        el('p', { class: 'card-kicker' }, 'Estación del año'),
+        el('h2', { class: 'season-title', id: 'season-title' }, t.name),
+        el('p', { class: 'muted small' }, `Del ${fmt.format(t.from)} al ${fmt.format(t.to)}`))),
+    el('p', { class: 'muted' }, t.line),
+    el('div', { class: 'season-idea' }, el('span', { class: 'season-idea-kicker' }, 'Para hacer juntos'), idea, other));
 }
 
 function celebrationCard(events) {
@@ -441,7 +464,7 @@ export async function render() {
   // branch (two hanging chōchin at night) in the corner shakes and lets a few more go when tapped.
   let amb = fx.ambient(page);
   const corner = el('div', { class: 'home-corner', 'aria-hidden': 'true' });
-  const drawCorner = () => { corner.dataset.kind = fx.ambientKind(); corner.replaceChildren(fx.cornerArt(corner.dataset.kind, { xmas: corner.dataset.xmas === '1' })); };
+  const drawCorner = () => { corner.dataset.kind = fx.ambientKind(); corner.dataset.style = document.documentElement.dataset.style || 'jp'; corner.replaceChildren(fx.cornerArt(corner.dataset.kind, { xmas: corner.dataset.xmas === '1' })); };
   drawCorner();
   corner.addEventListener('click', () => {
     if (util.prefersReducedMotion()) return;
@@ -452,10 +475,10 @@ export async function render() {
   corner.addEventListener('animationend', (e) => { if (e.animationName === 'corner-shake') corner.classList.remove('is-shaking'); });
   page.prepend(corner);
   const cornerWatch = new MutationObserver(() => {
-    if (corner.dataset.kind !== fx.ambientKind()) drawCorner();
+    if (corner.dataset.kind !== fx.ambientKind() || corner.dataset.style !== (document.documentElement.dataset.style || 'jp')) drawCorner();
     if (document.documentElement.dataset.seasonal !== 'off' && !page.querySelector('.ambient-canvas')) amb = fx.ambient(page); // switched back on
   });
-  cornerWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-seasonal'] });
+  cornerWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-seasonal', 'data-style'] });
   let cleanups = [];
   const cleanupAll = () => { cleanups.forEach((fn) => fn()); cleanups = []; };
 
@@ -497,6 +520,7 @@ export async function render() {
       guide,
       love,
       celebrationCard(events),
+      seasonCard(),
       meeting,
       slides.length ? daySwitcher(slides) : null,
       plant,
