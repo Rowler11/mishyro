@@ -220,6 +220,10 @@ code { font-size: .8em; color: var(--text-2); }
 .page-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-bottom: var(--space-2); }
 .page-titles { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2) var(--space-3); flex: 1; min-width: min-content; }
 .page-title { font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem); }
+/* the title letters next to it, larger (asked 2026-11-24: "como en el chino") */
+.page-titles .ja { font-size: clamp(1.4rem, 1.15rem + 1vw, 1.8rem); line-height: 1.2; }
+.flower-pair { display: contents; }
+.flower-cn { display: none; }
 .page-actions { display: flex; gap: var(--space-2); }
 .brush-divider { height: 10px; background: url('./icons/patterns/brush.svg') no-repeat center / 100% 100%; opacity: .55; }
 
@@ -3337,6 +3341,17 @@ a.game-champ::after { content: '›'; margin-left: 2px; color: var(--accent); }
 :root[data-motion="off"] .love-heart svg, :root[data-motion="off"] .love-heart.is-pop svg, :root[data-motion="off"] .love-mini { animation: none !important; }
 .sched-prefs { padding-top: var(--space-2); border-top: 1px solid var(--border); }
 .sched-prefs[hidden] { display: none; }
+
+/* v0.17.0: the season card on Inicio (one of the 24 solar terms, with an idea to do together) */
+.season-card { gap: var(--space-2); }
+.season-head { display: flex; align-items: center; gap: var(--space-3); }
+.season-seal { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); }
+.season-head .card-kicker { margin: 0; }
+.season-title { font-size: 1.2rem; }
+.season-idea { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); padding: var(--space-3); border-radius: var(--radius-m); background: var(--surface-2); }
+.season-idea-kicker { flex-basis: 100%; font-size: .78rem; font-weight: 700; color: var(--text-2); }
+.season-idea-text { flex: 1 1 12rem; font-weight: 500; }
+:root[data-style="rojo"] .season-seal, :root[data-style="azul"] .season-seal { border-radius: 3px; background: var(--accent); color: var(--accent-ink); }
 
 /* ---------- Gatitos de acuarela (v0.16.0) ---------- */
 .kitty { position: relative; display: grid; justify-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; -webkit-tap-highlight-color: transparent; border-radius: 18px; font: 600 .85rem var(--font-ui); }

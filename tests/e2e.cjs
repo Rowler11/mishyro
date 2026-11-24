@@ -106,7 +106,7 @@ async function exampleContent(page, { reload = true } = {}) {
     // Names come from the store (seed), not from the repo
     const chip = await page.locator('.chip-appbar .profile-text').textContent();
     ok('profile: names come from the imported seed', chip === 'Ana', chip);
-    ok('appbar: avatar shows the initial and the flower has no tile', (await page.locator('.chip-appbar .profile-initial').textContent()) === 'A' && (await page.locator('.appbar .flower').count()) === 1 && (await page.locator('.appbar .logo').count()) === 0);
+    ok('appbar: avatar shows the initial and the flower has no tile', (await page.locator('.chip-appbar .profile-initial').textContent()) === 'A' && (await page.locator('.appbar .flower-jp').count()) === 1 && (await page.locator('.appbar .logo').count()) === 0);
     ok('setup flow: no console errors or native dialogs', errors.length === 0, errors.join(' | '));
     await ctx.close();
   }
@@ -2203,6 +2203,24 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('11 Ajustes: 6 entradas', (await page.locator('nav.list .list-row').count()) === 6);
     await go('/ajustes/movimiento', '#movimiento');
     ok('11 Apariencia: incluye Movimiento y sonido', (await page.locator('.page-title').innerText()) === 'Apariencia' && (await page.getByText('Vibración suave').count()) === 1);
+    // v0.16.0 (0.17.0): visual styles. Palacio rojo and Porcelana azul change tokens, title letters and Inicio's corner.
+    ok('17 Apariencia: tres estilos para elegir', (await page.locator('.style-preview').count()) === 3 && (await page.locator('.style-preview[aria-pressed="true"]').innerText()).includes('Japonés'));
+    await page.locator('.style-preview', { hasText: 'Palacio rojo' }).click();
+    await page.waitForFunction(() => document.documentElement.dataset.style === 'rojo');
+    ok('17 estilo rojo: tokens y recuerdo para el arranque', (await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim().toUpperCase())) === (await page.evaluate(() => (document.documentElement.dataset.theme === 'night' ? '#15100E' : '#FBF3E8'))) && (await page.evaluate(() => JSON.parse(localStorage.getItem('aishiteru.theme')).style)) === 'rojo');
+    await go('/inicio', '.counter-card');
+    await page.waitForSelector('.home-corner svg');
+    ok('17 estilo rojo: título en chino, flor de ciruelo y esquina china', (await page.locator('.page-titles .ja').innerText()) === '今天' && (await page.locator('.page-titles .ja').getAttribute('lang')) === 'zh-Hans' && (await page.locator('.flower-cn').first().isVisible()) && (await page.locator('.home-corner svg [id^="cs-rojo-"]').count()) > 0);
+    ok('17 Inicio: tarjeta de la estación del año con idea para los dos', (await page.locator('.season-card .season-title').count()) === 1 && (await page.locator('.season-idea-text').innerText()).length > 5);
+    const idea0 = await page.locator('.season-idea-text').innerText();
+    await page.locator('.season-card').getByRole('button', { name: 'Otra idea' }).click();
+    ok('17 Inicio: Otra idea cambia la idea', (await page.locator('.season-idea-text').innerText()) !== idea0);
+    await page.evaluate(async () => { const { db, theme } = await import('./js/core.js'); await db.setSettings('appearance', { style: 'azul' }); theme.apply({ style: 'azul' }); });
+    await page.waitForFunction(() => document.querySelector('.home-corner svg [id^="cs-azul-"]'));
+    ok('17 estilo azul: cambia en vivo sin recargar', (await page.locator('.page-titles .ja').innerText()) === '今天');
+    await page.evaluate(async () => { const { db, theme } = await import('./js/core.js'); await db.setSettings('appearance', { style: 'jp' }); theme.apply({ style: 'jp' }); });
+    await page.waitForFunction(() => document.querySelector('.page-titles .ja')?.textContent === '今');
+    ok('17 volver al japonés: todo como antes', (await page.locator('.flower-jp').first().isVisible()) && (await page.locator('.home-corner svg [id^="cs-"]').count()) === 0);
     await go('/ajustes/permisos', '.perm-row');
     ok('11 Ajustes: Permisos dentro de Privacidad', (await page.locator('.hub-tab.is-on').innerText()) === 'Permisos');
     await go('/ajustes/sincronizar', '.settings-page');
