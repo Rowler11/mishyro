@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.21.0 (Más premium)
+
+Nuevo
+- Cuando una sección está vacía o algo falla, uno de sus gatitos se sienta a esperar en lugar del ícono. Si lo tocas, maúlla y te dice algo con su nombre. Si apagaron "Que se paseen por la app" en Mascotas, vuelve el ícono de siempre.
+- En Palacio rojo y Porcelana azul, la pantalla de carga dice 我爱你 (wǒ ài nǐ, "te amo" en chino) con la letra de cada estilo, y su rama de ciruelo aparece arriba. El corazón de pétalos también se forma con 我爱你.
+- Al mantener presionado el ícono de la app, los atajos (Enviar amor, Pregunta de hoy y Pensando en ti) tienen sus propios dibujitos.
+
+Cambios
+- Todo responde al toque: botones, íconos, chips, pestañas y opciones se hunden un poco al tocarlos.
+- La vibración cambia según lo que pasa: un toque corto al cambiar de pestaña, uno doble al guardar, un latido al enviar amor y otro distinto si algo sale mal. Se apaga en Ajustes > Apariencia > Vibración suave.
+- La cortina de privacidad (en la vista de apps recientes) ahora es un vidrio esmerilado con el sello: no deja leer nada y se ve más fina. Con alto contraste sigue siendo un fondo liso.
 ## 0.20.0 (Tutorial con los animalitos, peluches y voces)
 
 Nuevo
