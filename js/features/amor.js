@@ -156,3 +156,44 @@ export async function homeCard({ onChange } = {}) {
   }
   return card;
 }
+
+// ---------- Inicio "Sereno" (chosen 2026-11-24): the love counter as a slim strip ----------
+// It lives at the bottom of the days-together card: the send button, who sent today and the streak.
+// "Ver más" (the streak) opens the full card in a sheet: stats, level and how points are earned.
+export async function homeStrip({ onChange } = {}) {
+  const me = profile.active();
+  const other = profile.partnerOf(me);
+  const list = await sends();
+  const st = streakOf(list);
+  const mine = st.today.has(me); const theirs = st.today.has(other);
+  const nick = profile.nick(other) || 'tu amor';
+  const label = el('span', {}, mine ? 'Amor enviado' : 'Enviar amor');
+  const btn = el('button', { class: `love-send${mine ? ' is-sent' : ''}`, type: 'button', 'aria-pressed': mine ? 'true' : 'false',
+    'aria-label': mine ? 'Ya enviaste amor hoy' : `Enviar amor a ${nick}` }, icon('heart', { size: 16 }), label);
+  btn.addEventListener('click', async () => {
+    if (btn.classList.contains('is-sent')) { ui.toast(theirs ? 'Hoy ya se enviaron amor los dos 💗' : 'Ya le enviaste amor hoy. Mañana puedes enviar otro.'); return; }
+    btn.disabled = true;
+    try {
+      if (await send(me)) {
+        util.haptic([10, 50, 10]);
+        btn.classList.add('is-sent', 'is-pop'); btn.setAttribute('aria-pressed', 'true'); label.textContent = 'Amor enviado';
+        burst(btn);
+        ui.toast(theirs ? `¡Los dos enviaron amor hoy! Racha de ${st.current + 1} ${st.current + 1 === 1 ? 'día' : 'días'} 🔥` : `Le enviaste amor a ${nick} 💗`, { tone: 'success' });
+        setTimeout(() => onChange?.(), util.prefersReducedMotion() ? 0 : 1300);
+      }
+    } catch (e) { console.error(e); ui.toast('No se pudo enviar. Intenta otra vez.', { tone: 'error' }); }
+    btn.disabled = false;
+  });
+  const dot = (p, on) => el('span', { class: `love-dot${on ? ' is-on' : ''}` }, el('span', { class: 'love-dot-mark', 'aria-hidden': 'true' }), p === me ? 'Tú' : profile.nick(p) || 'Tu amor',
+    el('span', { class: 'sr-only' }, on ? ': envió amor hoy' : ': aún no envía amor hoy'));
+  const streak = el('button', { class: 'love-streak-btn', type: 'button', 'aria-label': `Racha de amor: ${st.current} ${st.current === 1 ? 'día' : 'días'}. Ver más` },
+    icon('flame', { size: 15 }), ` ${st.current} ${st.current === 1 ? 'día' : 'días'}`);
+  streak.addEventListener('click', async () => {
+    const card = await homeCard({ onChange });
+    ui.openModal({ title: 'Contador de amor', kind: 'sheet', body: card, actions: [{ label: 'Cerrar', variant: 'ghost' }] });
+  });
+  const strip = el('div', { class: 'love-strip', role: 'group', 'aria-label': 'Contador de amor' },
+    btn, el('span', { class: 'love-dots' }, dot(me, mine), dot(other, theirs)), streak);
+  if (/[?&]amor=1/.test(location.hash)) setTimeout(() => { strip.scrollIntoView({ block: 'center' }); btn.focus({ preventScroll: true }); }, 400);
+  return strip;
+}

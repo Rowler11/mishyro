@@ -1,5 +1,16 @@
 # Cambios
 
+## 0.18.0 (Inicio despejado)
+
+- Inicio respira: quedan el contador de días, sus favoritos, lo de hoy, lo que viene y "Para hoy" (con 3 avisos a la vista y "Ver más" para el resto).
+- El Contador de amor ya no ocupa media pantalla: es una franja dentro del contador de días con el botón "Enviar amor", quién envió hoy y la racha. Al tocar la racha se abre todo el detalle (puntos, nivel y cómo se ganan).
+- Se fueron las estrellas de accesos rápidos y "Prueben hoy"; sus favoritos quedan arriba.
+- La rama del rincón de Inicio (arce, ciruelo o porcelana) es más pequeña.
+- La estación del año ahora vive en Calendario, con su idea para hacer juntos.
+- Nuestro jardín tiene su propia pantalla (en Más > Nosotros y se puede poner en Favoritos).
+- La app ya no hace zoom al pellizcar; el tamaño de letra se cambia en Ajustes > Apariencia.
+- Las letras japonesas (o chinas) de los títulos son más pequeñas y aparecen con un fundido suave; la raya de pincel de abajo se dibuja completa, sin cortes.
+
 ## 0.17.1 (Inicio más fluido y arce en alta calidad)
 
 - Inicio ya no se traba: la rama se pinta una sola vez en alta resolución en vez de recalcular sus filtros en cada cuadro, y la animación va a 60 cuadros por segundo.

@@ -12,7 +12,6 @@ import { ui, util, db, profile, seed, sync, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
 import * as dates from '../core/dates.js';
 import * as fx from '../core/fx.js';
-import { sekkiOn } from '../core/temporadas.js';
 
 const { el, icon } = util;
 let seasonShown = false; // the season effect plays the first time Inicio opens in each session
@@ -190,28 +189,6 @@ function todayEvents(data, start, receiver) {
     out.push({ kind: d.kind, title: d.kind === 'birthday' ? `¡Feliz cumpleaños${who ? `, ${who}` : ''}!` : d.name, text: next.years ? `${d.kind === 'birthday' ? 'Cumple' : 'Cumple'} ${plural(next.years, 'año', 'años')}.` : 'Es hoy.' });
   }
   return out;
-}
-
-// ---------- 2b. season (v0.16.0, chosen 2026-11-24): the current one of the 24 solar terms ----------
-// icon by term: winter from 'Comienza el invierno' (21) to 'Frío mayor' (1), then spring, summer and autumn
-const termIcon = (i) => (i >= 21 || i <= 1 ? 'snowflake' : i <= 7 ? 'sprout' : i <= 13 ? 'sun' : 'leaf');
-function seasonCard() {
-  const t = sekkiOn(new Date(), CONFIG.seasonalHemisphere);
-  const fmt = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' });
-  let k = Number(recall('sekkiPlan') || 0) % t.plans.length;
-  const idea = el('p', { class: 'season-idea-text' }, t.plans[k]);
-  const other = ui.button({ label: 'Otra idea', iconName: 'refresh-cw', variant: 'ghost', small: true, onClick: () => {
-    k = (k + 1) % t.plans.length; remember('sekkiPlan', String(k)); idea.textContent = t.plans[k];
-  } });
-  return el('article', { class: 'card home-card season-card', 'aria-labelledby': 'season-title' },
-    el('div', { class: 'season-head' },
-      el('span', { class: 'season-seal', 'aria-hidden': 'true' }, icon(termIcon(t.index), { size: 20 })),
-      el('div', {},
-        el('p', { class: 'card-kicker' }, 'Estación del año'),
-        el('h2', { class: 'season-title', id: 'season-title' }, t.name),
-        el('p', { class: 'muted small' }, `Del ${fmt.format(t.from)} al ${fmt.format(t.to)}`))),
-    el('p', { class: 'muted' }, t.line),
-    el('div', { class: 'season-idea' }, el('span', { class: 'season-idea-kicker' }, 'Para hacer juntos'), idea, other));
 }
 
 function celebrationCard(events) {
@@ -427,13 +404,17 @@ async function todayCard() {
   if (week?.rec && !week.rec.doneAt && week.challenge) rows.push({ href: '#/retos', icon: 'flag', title: `Reto de la semana: ${week.challenge.title}`, sub: week.challenge.text });
   if (!mine) rows.push({ href: '#/animo', icon: 'smile', title: '¿Cómo amaneces?', sub: 'Marca tu ánimo en un toque.' });
   if (!rows.length) return null;
-  return el('section', { class: 'home-card today-card', 'aria-labelledby': 'today-title' },
-    el('h2', { class: 'card-kicker', id: 'today-title' }, 'Para hoy'),
-    el('ul', { class: 'today-list' }, rows.map((r) => el('li', {},
+  // Three rows at most (Inicio "Sereno"); the rest wait behind "Ver N más".
+  const SHOWN = 3;
+  const list = el('ul', { class: 'today-list' }, rows.map((r, i) => el('li', { hidden: i >= SHOWN || null },
       el('a', { class: 'today-row', href: r.href },
         el('span', { class: 'section-icon' }, icon(r.icon, { size: 20 })),
         el('span', { class: 'today-text' }, el('span', { class: 'today-title' }, r.title), r.sub ? el('span', { class: 'muted small clamp-2' }, r.sub) : null),
-        icon('chevron-right', { size: 18, cls: 'list-chevron' }))))));
+        icon('chevron-right', { size: 18, cls: 'list-chevron' })))));
+  const more = rows.length > SHOWN ? el('button', { class: 'btn btn-ghost btn-small today-more', type: 'button' }, `Ver ${rows.length - SHOWN} más`) : null;
+  more?.addEventListener('click', () => { list.querySelectorAll('li[hidden]').forEach((li) => { li.hidden = false; }); more.remove(); });
+  return el('section', { class: 'home-card today-card', 'aria-labelledby': 'today-title' },
+    el('h2', { class: 'card-kicker', id: 'today-title' }, 'Para hoy'), list, more);
 }
 
 // ---------- 10. backup reminder ----------
@@ -507,29 +488,24 @@ export async function render() {
     const pet = await import('./mascotas.js').then((m) => m.homeCard({ onChange: build })).catch(() => null);
     const acc = await import('./home-accesos.js');
     const favs = await acc.favoritesCard().catch((e) => { console.error(e); return null; });
-    const homeMap = await import('./mapa.js').then((m) => m.homeCard()).catch(() => null);
-    const plant = await import('./planta.js').then((m) => m.homeCard({ onChange: build })).catch((e) => { console.error(e); return null; });
     const guide = await import('./guia.js').then((m) => m.homeCard({ onChange: build })).catch(() => null);
-    const love = await import('./amor.js').then((m) => m.homeCard({ onChange: build })).catch((e) => { console.error(e); return null; });
+    // Inicio "Sereno" (chosen 2026-11-24): love is a slim strip inside the counter, no quick-action
+    // stars, no season card (now in Calendario); the garden and the map have their own screens.
+    const love = counter ? await import('./amor.js').then((m) => m.homeStrip({ onChange: build })).catch((e) => { console.error(e); return null; }) : null;
+    if (love) counter.card.append(love);
     const both = bothLine(recv);
     cleanups.push(both.cleanup);
     body.replaceChildren(...[
       counter ? counter.card : noStartCard(),
       both.node,
-      acc.quickActions(),
-      guide,
-      love,
       celebrationCard(events),
-      seasonCard(),
       meeting,
-      slides.length ? daySwitcher(slides) : null,
-      plant,
-      pet,
       favs,
-      homeMap,
+      guide,
+      slides.length ? daySwitcher(slides) : null,
+      pet,
       comingCard(data, start),
       today,
-      acc.discoverCard(),
       weekend,
       backupCard(data.meta),
     ].filter(Boolean));
