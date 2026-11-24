@@ -10,6 +10,7 @@ import * as ics from '../core/ics.js';
 import { MOODS } from './animo.js';
 import * as ciclo from './ciclo.js';
 import { toTrash, TRASH_NOTE } from './papelera.js';
+import { sekkiOn } from '../core/temporadas.js';
 
 const { el, icon } = util;
 const fmtMonthName = new Intl.DateTimeFormat('es-CO', { month: 'long' });
@@ -105,6 +106,32 @@ export function editor(existing, { day, onSaved, prefill = {} }) {
 const COUPLE = { weekday: 6, name: 'Día de novios', ...(CONFIG.coupleDay || {}) };
 const WEEKDAY_NAME = ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'][COUPLE.weekday] || 'sábados';
 const isCoupleDay = (key) => util.parseDay(key).getDay() === COUPLE.weekday;
+
+const SEKKI_KEY = `${CONFIG.storageKey}.home.sekkiPlan`; // same key as when it lived on Inicio
+const seasonPick = { get: () => { try { return localStorage.getItem(SEKKI_KEY); } catch { return null; } }, set: (k) => { try { localStorage.setItem(SEKKI_KEY, String(k)); } catch { /* private mode */ } } };
+// ---------- season (v0.17.0): the current one of the 24 solar terms ----------
+// Moved here from Inicio on 2026-11-24 (Inicio "Sereno": "quitarla de Inicio, dejar en Calendario").
+// icon by term: winter from 'Comienza el invierno' (21) to 'Frío mayor' (1), then spring, summer and autumn
+const termIcon = (i) => (i >= 21 || i <= 1 ? 'snowflake' : i <= 7 ? 'sprout' : i <= 13 ? 'sun' : 'leaf');
+function seasonCard() {
+  const t = sekkiOn(new Date(), CONFIG.seasonalHemisphere);
+  const fmt = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' });
+  let k = Number(seasonPick.get() || 0) % t.plans.length;
+  const idea = el('p', { class: 'season-idea-text' }, t.plans[k]);
+  const other = ui.button({ label: 'Otra idea', iconName: 'refresh-cw', variant: 'ghost', small: true, onClick: () => {
+    k = (k + 1) % t.plans.length; seasonPick.set(k); idea.textContent = t.plans[k];
+  } });
+  return el('article', { class: 'card paper-card season-card', 'aria-labelledby': 'season-title' },
+    el('div', { class: 'season-head' },
+      el('span', { class: 'season-seal', 'aria-hidden': 'true' }, icon(termIcon(t.index), { size: 20 })),
+      el('div', {},
+        el('p', { class: 'card-kicker' }, 'Estación del año'),
+        el('h2', { class: 'season-title', id: 'season-title' }, t.name),
+        el('p', { class: 'muted small' }, `Del ${fmt.format(t.from)} al ${fmt.format(t.to)}`))),
+    el('p', { class: 'muted' }, t.line),
+    el('div', { class: 'season-idea' }, el('span', { class: 'season-idea-kicker' }, 'Para hacer juntos'), idea, other));
+}
+
 
 export async function render(ctx = {}) {
   const page = el('section', { class: 'page calendario' });
@@ -241,6 +268,7 @@ export async function render(ctx = {}) {
     body.replaceChildren(...[
       el('section', { class: 'card paper-card cal-card' }, nav, chips, grid()),
       dayPanel,
+      seasonCard(),
       upcoming.length ? el('section', { class: 'stack-tight' }, el('h2', { class: 'card-kicker' }, 'Próximas citas'),
         el('ul', { class: 'cal-list' }, upcoming.map((e) => eventItem(e, { showDay: true })))) : null,
       past.length ? el('details', { class: 'card paper-card cal-history' },

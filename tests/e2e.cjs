@@ -1970,7 +1970,8 @@ async function exampleContent(page, { reload = true } = {}) {
     const pol = await page.evaluate(async () => (await import('./js/config.js')).CONFIG.legalTexts.find((t) => t.id === 'cfg:legal:privacidad').body);
     ok('7 privacidad: explica la sincronización cifrada y cómo borrar la nube', /extremo a extremo/.test(pol) && /Borrar todo del servidor/.test(pol));
     const vp = await page.$eval('meta[name="viewport"]', (m) => m.content);
-    ok('7 accesibilidad: se permite el zoom', !/user-scalable=no|maximum-scale/.test(vp), vp);
+    // v0.19.0: pinch zoom off on purpose (asked 2026-11-24); the text size lives in Ajustes > Apariencia.
+    ok('19 sin zoom: el viewport no deja pellizcar', /user-scalable=no/.test(vp) && /maximum-scale=1/.test(vp), vp);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.keyboard.press('?');
     const sc = await page.locator('.overlay').innerText().catch(() => '');
@@ -2174,9 +2175,9 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.getByRole('button', { name: 'Saltar' }).click();
     await page.waitForFunction(() => location.hash === '#/inicio');
     const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(400); };
-    await go('/inicio', '.quick-actions');
-    ok('11 Inicio: 4 accesos rápidos', (await page.locator('.quick-action').count()) === 4);
-    ok('11 Inicio: 6 favoritos y "Prueben hoy"', (await page.locator('.fav-tile:not(.fav-add)').count()) === 6 && (await page.locator('.discover-card').count()) === 1);
+    await go('/inicio', '.fav-card');
+    // Inicio "Sereno" (2026-11-24): no quick-action stars, no "Prueben hoy", no season card; favorites stay.
+    ok('19 Inicio: sin accesos rápidos ni "Prueben hoy", con 6 favoritos', (await page.locator('.quick-action').count()) === 0 && (await page.locator('.discover-card, .season-card, .garden-card, .love-card').count()) === 0 && (await page.locator('.fav-tile:not(.fav-add)').count()) === 6);
     ok('11 Inicio: sin "null"', !/\bnull\b/.test(await page.locator('main').innerText()));
     await page.locator('.fav-card').getByRole('button', { name: 'Editar' }).click();
     const favDlg = page.getByRole('dialog', { name: 'Sus favoritos' });
@@ -2184,16 +2185,12 @@ async function exampleContent(page, { reload = true } = {}) {
     await favDlg.getByRole('button', { name: 'Guardar' }).click();
     await page.waitForTimeout(400);
     ok('11 Inicio: quitar un favorito deja "Agregar"', (await page.locator('.fav-tile:not(.fav-add)').count()) === 5 && (await page.locator('.fav-add').count()) === 1);
-    await page.locator('.quick-action', { hasText: 'Escribir carta' }).click();
-    await page.getByRole('dialog', { name: /Carta para/ }).waitFor();
-    ok('11 Inicio: "Escribir carta" abre el editor', true);
-    await page.keyboard.press('Escape');
     // Más and hubs
     await go('/mas/nosotros', '.section-card');
     const nos = await page.locator('.section-card-name').allInnerTexts();
-    ok('11 Más: Nosotros sin Fechas, Recordatorios ni Encuentro sueltos', nos.join('|') === 'Calendario|Insignias y premios|Ánimo', nos.join('|'));
+    ok('11 Más: Nosotros sin Fechas, Recordatorios ni Encuentro sueltos', nos.join('|') === 'Calendario|Insignias y premios|Ánimo|Nuestro jardín', nos.join('|'));
     const total = await page.evaluate(async () => { const r = await import('./js/routes.js'); return r.GROUPS.flatMap((g) => g.sections.filter((s) => !s.moment && r.listed(s.id))).length; });
-    ok('11 Más: 22 secciones (v0.14.0: Rasca y gana vive dentro de Insignias)', total === 22, String(total));
+    ok('11 Más: 23 secciones (v0.19.0: Nuestro jardín tiene pantalla propia)', total === 23, String(total));
     await page.locator('a[href="#/calendario"]').click();
     await page.waitForSelector('.hub-tabs');
     ok('11 Calendario: pestañas Mes, Fechas, Avisos y botón Próximo encuentro', (await page.locator('.hub-tab').allInnerTexts()).join('|') === 'Mes|Fechas|Avisos' && (await page.locator('a[href="#/encuentro"]').count()) >= 1);
@@ -2214,10 +2211,13 @@ async function exampleContent(page, { reload = true } = {}) {
     await go('/inicio', '.counter-card');
     await page.waitForSelector('.home-corner svg');
     ok('17 estilo rojo: título en chino, flor de ciruelo y esquina china', (await page.locator('.page-titles .ja').innerText()) === '今天' && (await page.locator('.page-titles .ja').getAttribute('lang')) === 'zh-Hans' && (await page.locator('.flower-cn').first().isVisible()) && (await page.locator('.home-corner svg [id^="cs-rojo-"]').count()) > 0);
-    ok('17 Inicio: tarjeta de la estación del año con idea para los dos', (await page.locator('.season-card .season-title').count()) === 1 && (await page.locator('.season-idea-text').innerText()).length > 5);
+    await go('/calendario', '.season-card');
+    ok('19 Calendario: tarjeta de la estación del año con idea para los dos', (await page.locator('.season-card .season-title').count()) === 1 && (await page.locator('.season-idea-text').innerText()).length > 5);
     const idea0 = await page.locator('.season-idea-text').innerText();
     await page.locator('.season-card').getByRole('button', { name: 'Otra idea' }).click();
-    ok('17 Inicio: Otra idea cambia la idea', (await page.locator('.season-idea-text').innerText()) !== idea0);
+    ok('19 Calendario: Otra idea cambia la idea', (await page.locator('.season-idea-text').innerText()) !== idea0);
+    await go('/inicio', '.counter-card');
+    await page.waitForSelector('.home-corner svg');
     await page.evaluate(async () => { const { db, theme } = await import('./js/core.js'); await db.setSettings('appearance', { style: 'azul' }); theme.apply({ style: 'azul' }); });
     await page.waitForFunction(() => document.querySelector('.home-corner svg [id^="cs-azul-"]'));
     ok('17 estilo azul: cambia en vivo sin recargar', (await page.locator('.page-titles .ja').innerText()) === '今天');
@@ -2264,21 +2264,21 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('14 Empezar: el resumen dice que cartas, cupones y recuerdos empiezan vacíos', /empiezan vacíos/.test(await page.locator('main').textContent()));
     for (const n of ['Todo bien', 'Ahora no', 'Continuar', 'Terminar', 'Saltar']) await page.getByRole('button', { name: n }).click();
     await page.waitForFunction(() => location.hash === '#/inicio');
-    await page.waitForSelector('.garden-card');
+    await page.waitForSelector('.guide-card');
     const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(300); };
     // Guide
     ok('14 Guía: Inicio muestra "Primeros pasos" con 8 pasos y 3 sugeridos', /de 8$/.test((await page.locator('.guide-card .guide-count').textContent()).trim()) && (await page.locator('.guide-step').count()) === 3);
     await go('/cartas', '.page');
     ok('14 Guía: la primera vez una sección muestra su pista', (await page.locator('.guide-hint').count()) === 1);
     await page.locator('.guide-hint').getByRole('button', { name: 'Entendido' }).click();
-    await go('/inicio', '.garden-card'); await go('/cartas', '.page');
+    await go('/inicio', '.counter-card'); await go('/cartas', '.page');
     ok('14 Guía: con "Entendido" la pista no vuelve', (await page.locator('.guide-hint').count()) === 0);
     await go('/inicio', '.guide-card');
     await page.locator('.guide-card').getByRole('button', { name: 'Ocultar' }).click();
     await page.waitForFunction(() => !document.querySelector('.guide-card'));
     ok('14 Guía: "Ocultar" la quita de Inicio', true);
-    // Garden
-    await page.waitForSelector('.garden-card');
+    // Garden (its own screen since v0.19.0)
+    await go('/jardin', '.garden-card');
     ok('14 Jardín: empieza sin flores', /0 flores/.test(await page.locator('.garden-card .guide-count').textContent()));
     await page.locator('.garden-card').getByRole('button', { name: 'Plantar hoy' }).click();
     ok('14 Jardín: se puede elegir entre 7 flores', (await page.locator('.garden-pick').count()) === 7);
@@ -2288,14 +2288,14 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('14 Jardín: la flor elegida queda guardada para los dos teléfonos', g?.david === 'lirio', JSON.stringify(g));
     ok('14 Jardín: hoy ya no ofrece plantar otra vez', /Hoy plantaste: Lirio/.test(await page.locator('.garden-card').textContent()) && (await page.locator('.garden-card').getByRole('button', { name: 'Plantar hoy' }).count()) === 0);
     await page.evaluate(async () => { const db = await import('./js/core/db.js'); await db.put('memories', { id: 't14:m', title: 'Recuerdo ficticio', date: '2026-05-05', mediaIds: [] }); });
-    await go('/ajustes', '.list-row'); await go('/inicio', '.garden-card');
+    await go('/ajustes', '.list-row'); await go('/jardin', '.garden-card');
     ok('14 Jardín: un recuerdo planta una sakura', /2 flores/.test(await page.locator('.garden-card .guide-count').textContent()));
     // Paper pets
     await page.locator('.garden-card .pet').click();
     await page.waitForSelector('.pet-bubble');
     ok('14 Mascotas: el panda se llama Jorge y habla al tocarlo', /^Jorge: /.test(await page.locator('.pet-bubble').textContent()));
     await page.evaluate(async () => { const pets = await import('./js/core/pets.js'); await pets.saveNames({ panda: 'Bambú' }); });
-    await go('/ajustes', '.list-row'); await go('/inicio', '.garden-card');
+    await go('/ajustes', '.list-row'); await go('/jardin', '.garden-card');
     ok('14 Mascotas: el nombre se puede cambiar', /Bambú/.test(await page.locator('.garden-card .pet').getAttribute('aria-label')));
     // Juegos, Liga, Modos, Insignias
     await go('/juegos', '.hub-tabs');
@@ -2373,21 +2373,22 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.getByRole('button', { name: 'Importar' }).click();
     for (const n of ['Todo bien', 'Ahora no', 'Continuar', 'Terminar', 'Saltar']) await page.getByRole('button', { name: n }).click();
     await page.waitForFunction(() => location.hash === '#/inicio');
-    await page.waitForSelector('.love-card');
+    await page.waitForSelector('.love-strip');
     const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(300); };
     const loves = () => page.evaluate(async () => { const db = await import('./js/core/db.js'); return (await db.query('streaks')).filter((r) => r.type === 'love').map((r) => r.id); });
-    ok('15 Amor: Inicio tiene su tarjeta "Contador de amor" con la racha en 0', /0 días/.test(await page.locator('.love-card .love-streak').textContent()));
-    ok('15 Amor: el corazón grande dice "Enviar amor"', (await page.getByRole('button', { name: /^Enviar amor a / }).count()) === 1);
-    await page.locator('.love-heart').click();
-    await page.waitForFunction(() => document.querySelector('.love-heart')?.getAttribute('aria-pressed') === 'true');
+    // v0.19.0 (Inicio "Sereno"): a slim strip inside the days card; the full card opens from the streak.
+    ok('19 Amor: franja dentro del contador con la racha en 0', (await page.locator('.counter-card .love-strip').count()) === 1 && /0 días/.test(await page.locator('.love-streak-btn').textContent()));
+    ok('15 Amor: el botón dice "Enviar amor"', (await page.getByRole('button', { name: /^Enviar amor a / }).count()) === 1);
+    await page.locator('.love-send').click();
+    await page.waitForFunction(() => document.querySelector('.love-send')?.getAttribute('aria-pressed') === 'true');
     const today = await page.evaluate(async () => (await import('./js/core/util.js')).localDay());
     ok('15 Amor: al tocarlo se guarda un envío para hoy, a nombre de quien lo envía', JSON.stringify(await loves()) === JSON.stringify([`love:${today}:david`]));
     await page.waitForTimeout(1600);
-    await page.waitForSelector('.love-card');
-    await page.locator('.love-heart').click();
+    await page.waitForSelector('.love-strip');
+    await page.locator('.love-send').click();
     await page.waitForTimeout(400);
     ok('15 Amor: solo se envía una vez al día por persona', (await loves()).length === 1);
-    ok('15 Amor: la tarjeta queda en "Amor enviado hoy"', /Amor enviado hoy/.test(await page.locator('.love-heart').textContent()));
+    ok('15 Amor: queda en "Amor enviado"', /Amor enviado/.test(await page.locator('.love-send').textContent()));
     // Partner's sends and three earlier days of both: a 4-day streak; a gap before them does not count.
     await page.evaluate(async () => {
       const db = await import('./js/core/db.js'); const util = await import('./js/core/util.js');
@@ -2396,15 +2397,21 @@ async function exampleContent(page, { reload = true } = {}) {
       await put(0, 'sofia'); for (const n of [1, 2, 3]) { await put(n, 'david'); await put(n, 'sofia'); }
       for (const n of [5, 6]) { await put(n, 'david'); await put(n, 'sofia'); } // older run of 2, day 4 missing
     });
-    await go('/ajustes', '.page'); await go('/inicio', '.love-card');
-    ok('15 Amor: racha de días seguidos en que los dos enviaron amor', /4 días/.test(await page.locator('.love-card .love-streak').textContent()));
+    await go('/ajustes', '.page'); await go('/inicio', '.love-strip');
+    ok('15 Amor: racha de días seguidos en que los dos enviaron amor', /4 días/.test(await page.locator('.love-streak-btn').textContent()));
+    ok('19 Amor: la franja marca que hoy enviaron los dos', (await page.locator('.love-dot.is-on').count()) === 2);
+    const openLove = async () => { await page.locator('.love-streak-btn').click(); await page.getByRole('dialog', { name: 'Contador de amor' }).waitFor(); };
+    await openLove();
     ok('15 Amor: cuenta el total enviado entre los dos', /12\s*Amor enviado/.test(await page.locator('.love-stats').innerText()));
     ok('15 Amor: dice cuando hoy lo enviaron los dos', /se enviaron amor los dos/.test(await page.locator('.love-hint').textContent()));
     const pts = Number((await page.locator('.love-stat strong').nth(2).textContent()).trim());
+    await page.keyboard.press('Escape');
     await page.evaluate(async () => { const db = await import('./js/core/db.js'); await db.put('content', { kind: 'letter', title: 'Carta ficticia', body: 'Texto ficticio', status: 'draft', author: 'david', visibility: 'shared', owner: 'both' }); });
-    await go('/ajustes', '.page'); await go('/inicio', '.love-card');
+    await go('/ajustes', '.page'); await go('/inicio', '.love-strip');
+    await openLove();
     ok('15 Amor: los puntos suben con lo que hacen juntos (una carta = +10)', Number((await page.locator('.love-stat strong').nth(2).textContent()).trim()) === pts + 10, `${pts}`);
     ok('15 Amor: muestra el nivel y cuánto falta para el siguiente', /Nivel \S+\. Faltan \d+ puntos para "/.test(await page.locator('.love-card').textContent()));
+    await page.keyboard.press('Escape');
     const streak = await page.evaluate(async () => {
       const m = await import('./js/features/amor.js');
       const L = (day, by) => ({ day, by });

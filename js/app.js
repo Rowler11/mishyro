@@ -24,6 +24,7 @@ const load = {
   permisos: () => import('./features/permisos.js'),
   listas: () => import('./features/listas.js'),
   mascotas: () => import('./features/mascotas.js'),
+  jardin: () => import('./features/jardin.js'),
   recetas: () => import('./features/recetas.js'),
   alcancia: () => import('./features/alcancia.js'),
   gastos: () => import('./features/gastos.js'),
