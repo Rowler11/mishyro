@@ -274,9 +274,11 @@ export async function homeCard({ onChange } = {}) {
     if (kind === 'treat' && m.treat >= TREATS_PER_DAY) { move(h); h.talk(pick(REACT.full)); return; }
     react(h, kind);
     h.talk(fill(pick(kind === 'pet' ? REACT.pet[speciesKey(p.species)] : REACT[kind]), p));
-    try { await addMimo(p, kind); } catch (e) { console.error(e); }
-    mimos = mimosOf(await db.query('petRecords'), today); paint();
+    // Count it right away (fast taps see the real total) and write one tap at a time.
+    m[kind] += 1; m.by.add(profile.active()); mimos[p.id] = m; paint();
+    writes = writes.then(() => addMimo(p, kind)).catch((e) => console.error(e));
   }
+  let writes = Promise.resolve();
 
   // The care bubble: the most urgent thing among all pets, said by the pet who needs it.
   const dismissed = recall(DISMISS_KEY, {});
@@ -324,7 +326,11 @@ export async function stroll(scene, scope, { chance = 0.6, delay = 1800, flow = 
   const w = lane.clientWidth || 300;
   const size = k.offsetWidth || 52;
   const stop = Math.round(w * (0.35 + Math.random() * 0.3));
-  if (util.prefersReducedMotion() || !k.animate) { k.style.transform = `translateX(${stop}px)`; return; }
+  if (util.prefersReducedMotion() || !k.animate) {
+    k.style.transform = `translateX(${stop}px)`;
+    setTimeout(() => lane.remove(), 15000); // it sits a while and then it is gone, no walking
+    return;
+  }
   const walk = (from, to, ms) => { k.classList.add('is-walking'); if (to < from) k.classList.add('is-left'); else k.classList.remove('is-left'); const a = k.animate([{ transform: `translateX(${from}px)` }, { transform: `translateX(${to}px)` }], { duration: ms, easing: 'ease-in-out', fill: 'forwards' }); return a.finished.then(() => k.classList.remove('is-walking')); };
   const fromLeft = Math.random() < 0.5;
   const start = fromLeft ? -size - 8 : w + 8;
