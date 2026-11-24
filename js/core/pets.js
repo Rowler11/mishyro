@@ -5,6 +5,7 @@
 import * as db from './db.js';
 import * as profile from './profile.js';
 import { el, haptic, prefersReducedMotion } from './util.js';
+import * as sounds from './sounds.js';
 
 export const PETS = {
   panda: { name: 'Jorge', kind: 'el panda', trait: 'Tranquilo y dormilón, experto en abrazos y en bambú.' },
@@ -79,11 +80,12 @@ export function wire(host, id, { partners = [] } = {}) {
   const poke = () => {
     haptic(10);
     move(host);
+    sounds.play(id);
     last[id] = pick(LINES[id], last[id]);
     bubble(host, nameOf(id), fill(last[id]));
     // A friend on the same scene answers after a moment.
     const other = partners.map((p) => p()).find(Boolean);
-    if (other && other.host !== host) setTimeout(() => { move(other.host); bubble(other.host, nameOf(other.id), fill(pick(REPLIES[other.id]))); }, 2600);
+    if (other && other.host !== host) setTimeout(() => { move(other.host); sounds.play(other.id); bubble(other.host, nameOf(other.id), fill(pick(REPLIES[other.id]))); }, 2600);
   };
   host.addEventListener('click', poke);
   host.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); poke(); } });

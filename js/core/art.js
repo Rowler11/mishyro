@@ -12,59 +12,107 @@ function svg(viewBox, body, cls) {
   t.innerHTML = body;
   return t;
 }
-const cheeks = (y) => `<ellipse cx="40" cy="${y}" rx="5" ry="3" fill="#F4A6B6" opacity=".7"/><ellipse cx="80" cy="${y}" rx="5" ry="3" fill="#F4A6B6" opacity=".7"/>`;
+
+// ---------- Peluches de acuarela (v0.20.0, option B chosen 2026-11-24) ----------
+// The six paper friends redrawn as round watercolor plushies: painted fur (soft radial gradients),
+// shiny eyes and a few brush hairs. Same groups as before (art-head, art-eyes, art-tail, art-ears,
+// art-arm, art-bamboo, art-wing-l/r), so every place that animates or wires them keeps working.
+const FUR = {
+  fox: { hi: '#FFB27A', base: '#EE8A50', lo: '#C9632F', belly: '#FFFFFF', belly2: '#F3E3D2', ear: '#3E2622', hair: '#B9552A', eye: ['#5A3B2E', '#1E1210'] },
+  cat: { hi: '#FFF8EC', base: '#F3E5CF', lo: '#D6BE9C', belly: '#FFFFFF', belly2: '#F6EDE0', ear: '#6B4A3A', point: '#6B4A3A', hair: '#B89A78', eye: ['#9CC7F2', '#3A6FB0'] },
+  rabbit: { hi: '#FFFFFF', base: '#F7F1EC', lo: '#DDD0C6', belly: '#FFFFFF', belly2: '#F8F1EC', ear: '#F4AFC0', hair: '#C9B8AC', eye: ['#5A3B2E', '#1E1210'] },
+  tanuki: { hi: '#C9AA8C', base: '#A7856A', lo: '#7A5D48', belly: '#F6EBDD', belly2: '#E3D0BA', ear: '#3E2F27', mask: '#3E2F27', hair: '#6A5040', eye: ['#5A3B2E', '#1E1210'] },
+  panda: { hi: '#FFFFFF', base: '#F6F3EF', lo: '#DCD6CF', belly: '#FFFFFF', belly2: '#F2EEE9', ear: '#2E2A2B', mask: '#2E2A2B', hair: '#BDB6AE', eye: ['#3A3536', '#0E0B0B'] },
+};
+const HEAD = 'M100 44c-40 0-62 26-62 54 0 26 26 44 62 44s62-18 62-44c0-28-22-54-62-54z';
+const BODY = 'M58 184c-10-40 6-72 42-72s52 32 42 72z';
+const mirror = (inner) => `${inner}<g transform="translate(200 0) scale(-1 1)">${inner}</g>`;
+
+function plush(kind) {
+  const c = FUR[kind]; const k = `pl${++uid}`;
+  const defs = `<defs>
+    <radialGradient id="${k}f" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="${c.hi}"/><stop offset=".65" stop-color="${c.base}"/><stop offset="1" stop-color="${c.lo}"/></radialGradient>
+    <radialGradient id="${k}b" cx=".5" cy=".3" r=".8"><stop offset="0" stop-color="${c.belly}"/><stop offset="1" stop-color="${c.belly2}"/></radialGradient>
+    <radialGradient id="${k}e" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="${c.eye[0]}"/><stop offset="1" stop-color="${c.eye[1]}"/></radialGradient>
+    <radialGradient id="${k}s"><stop offset="0" stop-color="#5A3A30" stop-opacity=".22"/><stop offset="1" stop-color="#5A3A30" stop-opacity="0"/></radialGradient>
+    <radialGradient id="${k}m" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${c.point || c.mask || c.lo}" stop-opacity=".85"/><stop offset="1" stop-color="${c.point || c.mask || c.lo}" stop-opacity="0"/></radialGradient>
+  </defs>`;
+  const F = `url(#${k}f)`; const B = `url(#${k}b)`; const E = `url(#${k}e)`;
+  const shadow = `<ellipse cx="100" cy="188" rx="64" ry="7" fill="url(#${k}s)"/>`;
+  // tails and things behind the body
+  const back = {
+    fox: `<g class="art-tail"><path d="M134 170c34 6 54-22 44-52-4 18-20 30-38 30" fill="${F}"/><path d="M168 130c8-8 10-12 10-12 4 14 0 26-8 34-4-8-4-16-2-22z" fill="${B}"/></g>`,
+    cat: `<g class="art-tail"><path d="M136 176c34 2 44-30 30-50" fill="none" stroke="${c.point}" stroke-width="12" stroke-linecap="round"/><path d="M164 132c-2-4-4-6-6-7" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/></g>`,
+    rabbit: `<g class="art-tail"><circle cx="142" cy="170" r="14" fill="${B}"/><circle cx="138" cy="166" r="5" fill="#fff" opacity=".8"/></g>`,
+    tanuki: `<g class="art-tail"><path d="M130 176c30 10 52-6 50-34-2-10-12-14-20-8-10 8-18 22-30 26z" fill="${F}"/><path d="M160 136c6-4 14-2 18 4l-4 10c-4-6-10-8-16-6zM146 158c8-4 18-4 26 0l-6 10c-6-3-14-3-20-2z" fill="${c.mask}" opacity=".85"/></g>`,
+    panda: `<g class="art-bamboo"><rect x="160" y="86" width="9" height="98" rx="4" fill="#8DBF6A"/><rect x="158" y="112" width="13" height="3" rx="1.5" fill="#6E9F4E"/><rect x="158" y="146" width="13" height="3" rx="1.5" fill="#6E9F4E"/><path d="M168 96c10-10 22-12 30-10-8 8-18 12-30 10z" fill="#A6D184"/><path d="M162 120c-10-6-14-14-14-22 8 4 12 12 14 22z" fill="#93C46F"/></g>`,
+  }[kind];
+  // ears (drawn before the head, so the head covers their base)
+  const ears = {
+    fox: mirror(`<path d="M52 70C40 46 42 24 50 14c14 6 28 22 34 40z" fill="${F}"/><path d="M56 58c-6-14-6-26-2-32 8 6 16 16 20 28z" fill="${c.ear}"/>`),
+    cat: mirror(`<path d="M50 72C42 54 42 38 46 26c12 4 26 14 38 28z" fill="${F}"/><path d="M54 62c-5-11-5-20-3-27 7 4 15 10 21 18z" fill="${c.point}"/>`),
+    rabbit: `<g class="art-ears">${mirror(`<ellipse cx="78" cy="30" rx="13" ry="38" transform="rotate(-12 78 30)" fill="${F}"/><ellipse cx="78" cy="32" rx="6" ry="28" transform="rotate(-12 78 32)" fill="${c.ear}" opacity=".85"/>`)}</g>`,
+    tanuki: mirror(`<circle cx="56" cy="56" r="17" fill="${c.mask}"/><circle cx="57" cy="57" r="8" fill="${c.hi}" opacity=".7"/>`),
+    panda: mirror(`<circle cx="54" cy="52" r="20" fill="${c.ear}"/><circle cx="50" cy="47" r="6" fill="#fff" opacity=".12"/>`),
+  }[kind];
+  // the lighter lower face
+  const muzzle = kind === 'fox'
+    ? `<path d="M100 142c-30 0-52-12-58-32 14 6 30 4 40-6 6 10 12 14 18 14s12-4 18-14c10 10 26 12 40 6-6 20-28 32-58 32z" fill="${B}"/>`
+    : `<ellipse cx="100" cy="120" rx="30" ry="20" fill="${B}"/>`;
+  const marks = {
+    fox: '', rabbit: '',
+    cat: `<ellipse cx="100" cy="112" rx="30" ry="24" fill="url(#${k}m)"/>`,
+    tanuki: `<path d="M48 92c10-12 30-14 44-4 4 4 4 10 0 14-14 8-34 8-44 0-4-3-4-7 0-10zM152 92c-10-12-30-14-44-4-4 4-4 10 0 14 14 8 34 8 44 0 4-3 4-7 0-10z" fill="${c.mask}" opacity=".9"/>`,
+    panda: mirror(`<ellipse cx="76" cy="98" rx="15" ry="19" transform="rotate(28 76 98)" fill="${c.mask}"/>`),
+  }[kind];
+  const eye = (x) => (kind === 'panda'
+    ? `<circle cx="${x}" cy="96" r="7.5" fill="#FBF8F4"/><circle cx="${x + 1}" cy="96.5" r="5.5" fill="${E}"/><circle cx="${x + 3}" cy="94" r="2.2" fill="#fff"/>`
+    : `<ellipse cx="${x}" cy="96" rx="9" ry="11" fill="${E}"/>${kind === 'cat' ? `<ellipse cx="${x}" cy="97" rx="3" ry="8" fill="#1E2A3A"/>` : ''}<circle cx="${x + 3}" cy="91" r="3.6" fill="#fff"/><circle cx="${x - 3}" cy="100" r="1.6" fill="#fff" opacity=".8"/>`);
+  const nose = { fox: '#3A1F18', cat: '#C77C84', rabbit: '#E9849C', tanuki: '#2A1E1A', panda: '#2E2A2B' }[kind];
+  const face = `<g class="art-eyes">${eye(78)}${eye(122)}</g>
+    <path d="M94 113c0-3 12-3 12 0 0 4-6 7-6 7s-6-3-6-7z" fill="${nose}"/>
+    <path d="M100 120c-2 5-8 6-10 3M100 120c2 5 8 6 10 3" stroke="#5A3328" stroke-opacity=".75" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    ${kind === 'rabbit' ? '<path d="M96 125h8v5c0 2-8 2-8 0z" fill="#fff" stroke="#D9CBC0" stroke-width=".8"/>' : ''}
+    <ellipse cx="62" cy="114" rx="10" ry="6" fill="#F7A0B5" opacity=".55"/><ellipse cx="138" cy="114" rx="10" ry="6" fill="#F7A0B5" opacity=".55"/>
+    ${kind === 'cat' || kind === 'tanuki' ? `<g stroke="${kind === 'cat' ? '#8C7464' : '#4A3A30'}" stroke-opacity=".5" stroke-width="1.2" stroke-linecap="round"><path d="M70 118l-22-4M70 123l-21 3M130 118l22-4M130 123l21 3"/></g>` : ''}`;
+  const hairs = `<g stroke="${c.hair}" stroke-width="1.4" stroke-linecap="round" opacity=".55" fill="none"><path d="M44 84l-6-2M42 92l-7 1M156 84l6-2M158 92l7 1M90 48l-2-6M100 46v-6M110 48l2-6"/></g>`;
+  const shine = '<path d="M70 60c10-10 22-14 30-14" stroke="#fff" stroke-opacity=".45" stroke-width="5" stroke-linecap="round" fill="none"/>';
+  const paws = kind === 'panda' || kind === 'tanuki'
+    ? `<ellipse cx="74" cy="182" rx="16" ry="10" fill="${c.mask}"/><ellipse cx="126" cy="182" rx="16" ry="10" fill="${c.mask}"/>`
+    : `<ellipse cx="74" cy="182" rx="15" ry="9" fill="${kind === 'cat' ? c.point : c.lo}"/><ellipse cx="126" cy="182" rx="15" ry="9" fill="${kind === 'cat' ? c.point : c.lo}"/>`;
+  const arms = kind === 'panda'
+    ? `<g class="art-arm"><ellipse cx="66" cy="148" rx="13" ry="22" transform="rotate(24 66 148)" fill="${c.mask}"/></g><ellipse cx="134" cy="148" rx="13" ry="22" transform="rotate(-24 134 148)" fill="${c.mask}"/>`
+    : '';
+  const body = `<path d="${BODY}" fill="${F}"/><path d="M78 184c-4-26 6-48 22-48s26 22 22 48z" fill="${B}"/>${arms}${paws}`;
+  return svg('0 0 200 200', `${defs}${shadow}${back}${body}<g class="art-head">${ears}<path d="${HEAD}" fill="${F}"/>${marks}${muzzle}${hairs}${face}${shine}</g>`, `creature plush ${kind}`);
+}
+
+/** Hana, the crane: a round watercolor bird; `color` tints her wings (the scenes use several). */
+function craneArt(color) {
+  const k = `cr${++uid}`;
+  return svg('0 0 210 150', `<defs>
+    <radialGradient id="${k}b" cx=".4" cy=".3" r=".8"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#EDE6E3"/></radialGradient>
+    <linearGradient id="${k}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="${color}"/></linearGradient></defs>
+    <g class="art-wing-l"><path d="M94 86C78 54 52 32 20 24c8 22 22 44 44 62z" fill="url(#${k}w)" opacity=".85"/><path d="M30 28c14 18 30 34 48 48" stroke="#fff" stroke-opacity=".6" stroke-width="2" fill="none" stroke-linecap="round"/></g>
+    <path d="M58 104c-14 4-26 2-36-6 12-2 22-6 30-12z" fill="#2E2A2B"/>
+    <g stroke="#9A8A82" stroke-width="2.4" stroke-linecap="round"><path d="M98 124l-4 22M112 124l4 22"/></g>
+    <ellipse cx="104" cy="98" rx="50" ry="32" fill="url(#${k}b)"/>
+    <path d="M140 86c10-14 14-30 14-44" stroke="#FBF8F6" stroke-width="13" stroke-linecap="round" fill="none"/>
+    <path d="M150 56c2-6 4-10 4-14" stroke="#2E2A2B" stroke-width="13" stroke-linecap="round" fill="none"/>
+    <circle cx="158" cy="36" r="15" fill="url(#${k}b)"/><ellipse cx="157" cy="24" rx="7" ry="4" fill="#D9384E"/>
+    <path d="M171 36l24 4-24 4z" fill="#D8B26A"/>
+    <g class="art-eyes"><circle cx="162" cy="35" r="3.4" fill="#1E1210"/><circle cx="163.3" cy="33.6" r="1.2" fill="#fff"/></g>
+    <ellipse cx="156" cy="42" rx="4.5" ry="2.6" fill="#F7A0B5" opacity=".6"/>
+    <g class="art-wing-r"><path d="M100 88c-2-32 8-60 30-80 10 28 6 58-12 82z" fill="url(#${k}w)"/><path d="M108 84c2-22 8-44 20-64" stroke="#fff" stroke-opacity=".6" stroke-width="2" fill="none" stroke-linecap="round"/></g>`, 'creature plush crane');
+}
 
 const DRAW = {
-  fox: () => svg('0 0 120 120', `
-    <g class="art-tail"><polygon points="86,108 114,74 102,112" fill="#E58B5B"/><polygon points="108,82 114,74 105,95" fill="#FFF4EA"/></g>
-    <polygon points="30,112 60,58 90,112" fill="#E58B5B"/><polygon points="60,58 90,112 60,112" fill="#CF7448"/><polygon points="48,112 60,80 72,112" fill="#FFF4EA"/>
-    <g class="art-head"><polygon points="30,16 50,42 28,50" fill="#E58B5B"/><polygon points="34,25 45,40 32,45" fill="#3B2A2A"/>
-    <polygon points="90,16 70,42 92,50" fill="#CF7448"/><polygon points="86,25 75,40 88,45" fill="#3B2A2A"/>
-    <polygon points="26,44 94,44 60,84" fill="#F09A68"/><polygon points="60,44 94,44 60,84" fill="#DE8456"/>
-    <polygon points="26,44 46,60 60,84" fill="#FFF4EA"/><polygon points="94,44 74,60 60,84" fill="#F2E2D4"/>
-    <g class="art-eyes"><ellipse cx="47" cy="57" rx="3" ry="3.6" fill="#3B2A2A"/><ellipse cx="73" cy="57" rx="3" ry="3.6" fill="#3B2A2A"/></g>
-    <polygon points="56,77 64,77 60,83" fill="#3B2A2A"/>${cheeks(66)}</g>`, 'creature fox'),
-  cat: () => svg('0 0 120 120', `
-    <g class="art-tail"><path d="M88 106 C110 104 112 80 100 70" stroke="#7A5642" stroke-width="7" fill="none" stroke-linecap="round"/></g>
-    <polygon points="32,112 60,62 88,112" fill="#F1E2CC"/><polygon points="60,62 88,112 60,112" fill="#E2CDB0"/>
-    <g class="art-head"><polygon points="30,20 52,40 28,52" fill="#7A5642"/><polygon points="90,20 68,40 92,52" fill="#5E402F"/>
-    <polygon points="26,46 60,34 94,46 82,80 60,88 38,80" fill="#F4E8D6"/><polygon points="60,34 94,46 82,80 60,88" fill="#E7D6BD"/>
-    <polygon points="46,66 60,60 74,66 66,84 54,84" fill="#8A6550"/>
-    <g class="art-eyes"><ellipse cx="46" cy="56" rx="4.2" ry="4.6" fill="#5B8FD6"/><ellipse cx="74" cy="56" rx="4.2" ry="4.6" fill="#5B8FD6"/>
-    <ellipse cx="46" cy="56" rx="1.4" ry="3.6" fill="#1F1A1A"/><ellipse cx="74" cy="56" rx="1.4" ry="3.6" fill="#1F1A1A"/></g>
-    <polygon points="57,70 63,70 60,74" fill="#3B2A2A"/></g>`, 'creature cat'),
-  rabbit: () => svg('0 0 120 120', `
-    <g class="art-ears"><polygon points="44,8 54,46 38,46" fill="#F7F2EE"/><polygon points="45,16 51,42 42,42" fill="#F4B6C2"/>
-    <polygon points="76,8 66,46 82,46" fill="#E9E1DA"/><polygon points="75,16 69,42 78,42" fill="#EBA3B3"/></g>
-    <polygon points="30,112 60,66 90,112" fill="#F7F2EE"/><polygon points="60,66 90,112 60,112" fill="#E9E1DA"/>
-    <g class="art-head"><polygon points="32,58 60,40 88,58 78,84 42,84" fill="#FBF7F3"/><polygon points="60,40 88,58 78,84 60,84" fill="#ECE4DD"/>
-    <g class="art-eyes"><ellipse cx="48" cy="62" rx="3" ry="3.4" fill="#3B2A2A"/><ellipse cx="72" cy="62" rx="3" ry="3.4" fill="#3B2A2A"/></g>
-    <polygon points="57,70 63,70 60,74" fill="#E07A93"/>${cheeks(72).replace(/cx="40"/, 'cx="42"').replace(/cx="80"/, 'cx="78"')}</g>`, 'creature rabbit'),
-  tanuki: () => svg('0 0 120 120', `
-    <g class="art-tail"><polygon points="84,106 110,90 104,114" fill="#8A6A52"/><polygon points="100,94 110,90 106,100" fill="#4A3A30"/></g>
-    <polygon points="30,112 60,60 90,112" fill="#A7856A"/><polygon points="60,60 90,112 60,112" fill="#8F7058"/><polygon points="46,112 60,86 74,112" fill="#E9D8C4"/>
-    <g class="art-head"><polygon points="32,22 50,40 30,48" fill="#8F7058"/><polygon points="88,22 70,40 90,48" fill="#7A5D48"/>
-    <polygon points="26,46 60,36 94,46 84,78 60,86 36,78" fill="#B8977A"/><polygon points="60,36 94,46 84,78 60,86" fill="#A3836A"/>
-    <polygon points="32,52 52,50 54,66 38,68" fill="#4A3A30"/><polygon points="88,52 68,50 66,66 82,68" fill="#4A3A30"/>
-    <polygon points="48,70 60,66 72,70 60,84" fill="#F2E6D8"/>
-    <g class="art-eyes"><circle cx="45" cy="59" r="2.6" fill="#FFF"/><circle cx="75" cy="59" r="2.6" fill="#FFF"/></g>
-    <polygon points="57,72 63,72 60,76" fill="#2A1E1A"/></g>`, 'creature tanuki'),
-  panda: () => svg('0 0 120 120', `
-    <polygon points="28,112 60,60 92,112" fill="#F6F3EF"/><polygon points="60,60 92,112 60,112" fill="#E6E1DB"/>
-    <polygon points="28,112 40,92 50,112" fill="#2E2A2B"/><polygon points="92,112 80,92 70,112" fill="#2E2A2B"/>
-    <g class="art-arm"><polygon points="34,80 48,74 44,98" fill="#2E2A2B"/></g><polygon points="86,80 72,74 76,98" fill="#3A3536"/>
-    <g class="art-head"><circle cx="34" cy="28" r="10" fill="#2E2A2B"/><circle cx="86" cy="28" r="10" fill="#3A3536"/>
-    <polygon points="24,46 60,30 96,46 86,78 60,88 34,78" fill="#FBF8F4"/><polygon points="60,30 96,46 86,78 60,88" fill="#EDE8E2"/>
-    <polygon points="36,52 52,48 52,64 40,68" fill="#2E2A2B" transform="rotate(-8 46 58)"/><polygon points="84,52 68,48 68,64 80,68" fill="#2E2A2B" transform="rotate(8 74 58)"/>
-    <g class="art-eyes"><circle cx="46" cy="57" r="2.6" fill="#FFF"/><circle cx="74" cy="57" r="2.6" fill="#FFF"/></g>
-    <polygon points="56,70 64,70 60,75" fill="#2E2A2B"/>${cheeks(70)}</g>
-    <g class="art-bamboo"><rect x="96" y="58" width="5" height="50" rx="2" fill="#8DBF6A"/><rect x="95" y="74" width="7" height="2" fill="#6E9F4E"/><polygon points="101,62 114,54 104,66" fill="#A6D184"/></g>`, 'creature panda'),
-  crane: (color = '#F3B7C5') => svg('0 0 140 100', `
-    <g class="art-wing-l"><polygon points="70,56 22,8 56,60" fill="${color}"/><polygon points="70,56 40,26 56,60" fill="#fff" opacity=".35"/></g>
-    <g class="art-wing-r"><polygon points="70,56 122,6 86,60" fill="#E58FA6"/></g>
-    <polygon points="38,62 70,50 102,62 70,74" fill="#F7CBD6"/><polygon points="38,62 102,62 70,74" fill="#E7A2B5"/>
-    <polygon points="44,62 52,62 18,28" fill="#F7CBD6"/><polygon points="18,28 8,34 21,33" fill="#E7A2B5"/>
-    <polygon points="94,62 102,62 132,32" fill="#E7A2B5"/>`, 'creature crane'),
+  fox: () => plush('fox'),
+  cat: () => plush('cat'),
+  rabbit: () => plush('rabbit'),
+  tanuki: () => plush('tanuki'),
+  panda: () => plush('panda'),
+  crane: (color = '#F3B7C5') => craneArt(color),
   lily: () => {
     const id = `lily${++uid}`;
     return svg('0 0 100 100', `

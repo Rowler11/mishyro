@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.19.0';
+const CACHE_VERSION = 'aishiteru-v0.20.0';
 const SHELL = [
   './',
   './styles.css',
@@ -30,7 +30,7 @@ const SHELL = [
   './js/core/art.js',
   './js/core/scene.js',
   './js/core/pets.js', './js/core/kitty.js',
-  './js/features/guia.js',
+  './js/features/guia.js', './js/features/tour.js', './js/core/sounds.js',
   './js/features/planta.js', './js/features/jardin.js',
   './js/features/kamishibai.js',
   './js/features/amor.js',

@@ -1,5 +1,17 @@
 # Cambios
 
+## 0.20.0 (Tutorial con los animalitos, peluches y voces)
+
+Nuevo
+- Recorrido por la app: la primera vez que abres Inicio, la pantalla se oscurece y los animalitos te muestran lo principal. Lo que te explican se ilumina, ellos caminan hasta ahí y te hablan en un globito. En los pasos clave tocas tú lo iluminado (Más, un grupo) y el recorrido te sigue.
+- "Saltar tutorial" está siempre arriba a la derecha y lo cierra en cualquier momento (también sin las pistas de cada sección).
+- Cada sección se explica sola la primera vez que entras: su animalito te dice para qué sirve y te muestra el botón para empezar.
+- Voces de los animalitos: Kitsu chilla, Mochi maúlla, Dango hace "pip", Ponpoko toca su panza como tambor, Jorge masca bambú y Hana canta como grulla. Sus gatitos maúllan (o ladran, si es un perro) y ronronean con mimos. Se apagan en Ajustes > Apariencia > Voces de los animalitos.
+
+Cambios
+- Los seis animalitos están redibujados como peluches de acuarela: redonditos, con pelaje pintado, ojos con brillo y más detalle.
+- "Primeros pasos" ahora es solo para dejar la app lista (ver el recorrido, unir los teléfonos, PIN y avisos cariñosos) y se va sola de Inicio cuando terminas.
+- En Ajustes > Acerca de > Legal y ayuda: "Ver el recorrido" lo repite entero, y "Solo las secciones" vuelve a explicar cada sección.
 ## 0.19.0 (Inicio despejado)
 
 - Inicio respira: quedan el contador de días, sus favoritos, lo de hoy, lo que viene y "Para hoy" (con 3 avisos a la vista y "Ver más" para el resto).
