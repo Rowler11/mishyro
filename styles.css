@@ -2294,7 +2294,7 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .cyc-actions { display: flex; gap: 2px; }
 .cyc-history > summary, .cyc-settings > summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
 .cyc-priv-line { display: inline-flex; align-items: center; gap: 4px; }
-.pet-home-card { display: flex; align-items: center; gap: var(--space-2); }
+.pet-home-card:not(.kitty-card) { display: flex; align-items: center; gap: var(--space-2); }
 .pet-home-link { flex: 1; display: flex; align-items: center; gap: var(--space-3); color: inherit; text-decoration: none; min-width: 0; min-height: 44px; }
 .pet-home-photo { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex: none; display: grid; place-items: center; background: var(--surface-2); }
 .pet-home-photo img { width: 100%; height: 100%; object-fit: cover; }
@@ -3337,3 +3337,103 @@ a.game-champ::after { content: '›'; margin-left: 2px; color: var(--accent); }
 :root[data-motion="off"] .love-heart svg, :root[data-motion="off"] .love-heart.is-pop svg, :root[data-motion="off"] .love-mini { animation: none !important; }
 .sched-prefs { padding-top: var(--space-2); border-top: 1px solid var(--border); }
 .sched-prefs[hidden] { display: none; }
+
+/* ---------- Gatitos de acuarela (v0.16.0) ---------- */
+.kitty { position: relative; display: grid; justify-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--text); cursor: pointer; -webkit-tap-highlight-color: transparent; border-radius: 18px; font: 600 .85rem var(--font-ui); }
+.kitty:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.kitty-body { position: relative; display: block; width: 100%; aspect-ratio: 1; }
+.kitty-body > svg, .kitty-art { width: 100%; height: 100%; display: block; overflow: visible; }
+.kitty-name { padding: 1px 10px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 86%, transparent); border: 1px solid var(--border); line-height: 1.4; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kitty[aria-pressed="true"] .kitty-name { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+/* Idle life: tail, blink, breathing. Origins sit on the joints of the drawing. */
+.kitty-art .k-tail { transform-origin: 80px 104px; animation: k-tail 3.8s ease-in-out infinite; }
+.kitty-art .k-body { transform-origin: 60px 111px; animation: k-breathe 4.2s ease-in-out infinite; }
+.kitty-art .k-head { transform-origin: 60px 66px; transition: transform 300ms var(--ease-spring); }
+.kitty-art .k-eyes { transform-origin: 60px 46px; animation: k-blink 5.5s infinite; }
+.kitty-art .k-eyes-happy, .kitty-art .k-mouth-open { opacity: 0; transition: opacity 150ms; }
+.kitty-art .k-ear-l { transform-origin: 40px 34px; } .kitty-art .k-ear-r { transform-origin: 80px 34px; }
+.kitty-art .k-paw { transform-origin: 71px 110px; }
+.kitty-art .k-bell { transform-origin: 60px 70px; }
+.kitty:nth-child(2n) .kitty-art .k-tail { animation-duration: 4.6s; animation-delay: -1.2s; }
+.kitty:nth-child(3n) .kitty-art .k-eyes { animation-delay: -2.3s; }
+.kitty.is-twitch .k-ear-l { animation: k-ear 450ms ease-in-out; }
+.kitty.is-petted .k-eyes { opacity: 0; animation: none; }
+.kitty.is-petted .k-eyes-happy { opacity: 1; }
+.kitty.is-petted .k-head { transform: rotate(-7deg); }
+.kitty.is-petted .kitty-body { animation: k-purr 220ms linear 8; }
+.kitty.is-eating .k-head { animation: k-chew 400ms ease-in-out 4; }
+.kitty.is-eating .k-mouth-open { opacity: 1; }
+.kitty.is-playing .kitty-body { animation: k-pounce 900ms var(--ease-spring); transform-origin: 50% 100%; }
+.kitty.is-playing .k-paw { animation: k-paw 450ms ease-in-out 3; }
+.kitty.is-playing .k-bell, .kitty.is-poked .k-bell { animation: k-bell 300ms ease-in-out 3; }
+.kitty.is-poked .kitty-body { animation: pet-hop 900ms var(--ease-spring); transform-origin: 50% 100%; }
+@keyframes k-tail { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(9deg); } }
+@keyframes k-breathe { 0%, 100% { transform: none; } 50% { transform: scale(1.012, 1.02); } }
+@keyframes k-blink { 0%, 93%, 100% { transform: none; } 95% { transform: scaleY(.08); } }
+@keyframes k-ear { 50% { transform: rotate(-14deg); } }
+@keyframes k-purr { 0%, 100% { transform: none; } 50% { transform: translateX(.8px); } }
+@keyframes k-chew { 50% { transform: translateY(3px) rotate(2deg); } }
+@keyframes k-pounce { 0%, 100% { transform: none; } 30% { transform: scale(1.06, .9); } 55% { transform: translateY(-16px) scale(.96, 1.06); } 80% { transform: translateY(0) scale(1.04, .95); } }
+@keyframes k-paw { 50% { transform: translate(-2px, -14px) rotate(-18deg); } }
+@keyframes k-bell { 25% { transform: rotate(14deg); } 75% { transform: rotate(-14deg); } }
+/* Hearts, a fish treat or the feather toy float out of the pet. */
+.kitty-fx { position: absolute; left: calc(50% + var(--dx, 0px)); top: 18%; z-index: 4; color: var(--accent); pointer-events: none; animation: k-float 1500ms var(--d, 0ms) ease-out both; }
+.kitty-fx-treat { top: 46%; animation-name: k-treat; }
+.kitty-fx-play { top: -6%; animation-name: k-feather; }
+@keyframes k-float { 0% { transform: translate(-50%, 6px) scale(.6); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(-50%, -46px) scale(1.1); opacity: 0; } }
+@keyframes k-treat { 0% { transform: translate(-50%, -30px); opacity: 0; } 25% { transform: translate(-50%, 0); opacity: 1; } 75% { opacity: 1; transform: translate(-50%, 0) scale(.7); } 100% { opacity: 0; transform: translate(-50%, 0) scale(.2); } }
+@keyframes k-feather { 0% { transform: translate(-80%, 0) rotate(-20deg); opacity: 0; } 15% { opacity: 1; } 50% { transform: translate(-10%, -10px) rotate(20deg); } 85% { opacity: 1; transform: translate(-70%, 4px) rotate(-12deg); } 100% { opacity: 0; } }
+
+/* Inicio: a little tatami room with a shoji wall. */
+.kitty-card { display: grid; gap: var(--space-2); overflow: visible; }
+.kitty-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.kitty-title-link { color: inherit; text-decoration: none; min-height: 44px; display: flex; align-items: center; }
+.kitty-title-link .card-title { margin: 0; }
+.kitty-room { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: var(--space-2); padding: 34px var(--space-3) 10px; border-radius: var(--radius-md, 14px); min-height: 150px;
+  background:
+    linear-gradient(to top, #E3D6A8 0 26%, transparent 26%),
+    repeating-linear-gradient(90deg, transparent 0 54px, #E6D5C6 54px 56px),
+    linear-gradient(#FBF3EC, #F6E8DF 74%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent); }
+.kitty-room::after { content: ''; position: absolute; inset: auto 0 0; height: 26%; border-radius: 0 0 var(--radius-md, 14px) var(--radius-md, 14px); pointer-events: none;
+  background: repeating-linear-gradient(90deg, rgba(160, 140, 80, .12) 0 2px, transparent 2px 7px), linear-gradient(to bottom, rgba(120, 100, 50, .18) 0 3px, transparent 3px); }
+:root[data-theme="night"] .kitty-room { background: linear-gradient(to top, #4A4232 0 26%, transparent 26%), repeating-linear-gradient(90deg, transparent 0 54px, #3A2F33 54px 56px), linear-gradient(#2A2226, #241D21 74%); }
+.kitty-room .kitty { z-index: 1; flex: 0 1 112px; min-width: 0; }
+.kitty-room .kitty::before { content: ''; position: absolute; left: 10%; right: 10%; bottom: 24px; height: 14px; border-radius: 50%; background: var(--accent-soft); opacity: .9; z-index: -1; }
+.kitty-room .kitty[aria-pressed="true"]::before { background: color-mix(in srgb, var(--accent) 38%, var(--accent-soft)); }
+.kitty-room.kitty-n4 .kitty, .kitty-room.kitty-n5 .kitty { flex-basis: 84px; }
+.kitty-room .pet-bubble { width: max-content; max-width: min(228px, 62vw); }
+.kitty-line { margin: 0; color: var(--text-2); }
+.kitty-line strong { color: var(--text); }
+.kitty-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+.kitty-actions .btn { align-self: auto; flex-direction: column; gap: 2px; min-height: 56px; padding: 6px 4px; font-size: .8rem; border-radius: 16px; }
+.kitty-care { display: grid; gap: var(--space-2); padding: 10px 12px; border-radius: 14px 14px 14px 4px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-2); animation: pet-say 260ms var(--ease-spring) both; }
+.kitty-care p { margin: 0; font-size: .9rem; line-height: 1.4; }
+.kitty-care-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+/* Strolls: a lane over the scene; only the pet itself takes taps. */
+.kitty-lane { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.kitty-lane.is-flow { position: relative; inset: auto; grid-column: 1 / -1; height: 0; transition: height 300ms ease; }
+.kitty-lane.is-flow.is-open { height: 56px; }
+.kitty-walker { position: absolute; left: 0; bottom: 0; width: 56px; pointer-events: auto; }
+.kitty-walker.is-left .kitty-body { transform: scaleX(-1); }
+.kitty-walker.is-walking .kitty-art { animation: k-trot 380ms ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes k-trot { 0%, 100% { transform: none; } 50% { transform: translateY(-5px) rotate(2deg); } }
+.kitty-lane .pet-bubble { width: max-content; max-width: min(228px, 62vw); }
+/* Mascotas: drawing in the hero and the coat picker. */
+.pet-hero-kitty { display: block; width: 90%; height: 90%; }
+.pet-pick-photo .kitty-art { width: 88%; height: 88%; }
+.coat-box { border: 1px solid var(--border); border-radius: var(--radius-md, 14px); padding: var(--space-3); margin: 0; display: grid; gap: var(--space-3); }
+.coat-box legend { padding: 0 6px; font-weight: 600; }
+.coat-top { display: flex; align-items: center; gap: var(--space-3); }
+.coat-top p { margin: 0; }
+.coat-preview { flex: none; width: 92px; height: 92px; }
+.coat-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: var(--space-2); }
+.coat-pick { display: grid; justify-items: center; gap: 2px; min-height: 44px; padding: 6px 2px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); font: 500 .75rem var(--font-ui); cursor: pointer; }
+.coat-pick[aria-checked="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+.coat-pick:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.coat-pick .kitty-swatch { width: 40px; height: 36px; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .kitty-art .k-tail, .kitty-art .k-body, .kitty-art .k-eyes, .kitty .kitty-body, .kitty .k-head, .kitty .k-paw, .kitty .k-bell, .kitty-walker .kitty-art { animation: none !important; }
+  .kitty.is-petted .k-head { transform: none; }
+  .kitty-care { animation: none; }
+}

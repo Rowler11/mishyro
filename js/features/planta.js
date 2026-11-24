@@ -135,6 +135,7 @@ export async function homeCard({ onChange } = {}) {
   fill.style.width = `${pct}%`;
   const pandaHost = wire(el('span', { class: 'garden-panda' }, draw('panda')), 'panda');
   const stage = el('div', { class: 'garden-stage', 'data-bubble-root': '' }, gardenSvg(list), pandaHost);
+  import('./gatitos.js').then((m) => m.stroll(stage, 'jardin', { chance: 0.5 })).catch(() => {});
 
   const plant = async (kind) => {
     const rec = (await db.get('streaks', ID).catch(() => null)) || { id: ID, type: 'garden', days: {}, visibility: 'shared', owner: 'both' };
