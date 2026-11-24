@@ -71,12 +71,38 @@ function appearance(ctx = {}, { focusMotion = false } = {}) {
     const previews = el('div', { class: 'theme-previews', 'aria-hidden': 'true' });
     const preview = () => {
       const now = theme.resolveTheme(theme.current().theme);
-      previews.replaceChildren(...['day', 'night'].map((t) => el('div', { class: `theme-preview tp-${t}${now === t ? ' tp-on' : ''}` },
-        el('span', { class: 'tp-seal' }, '愛'), el('span', { class: 'tp-title' }, t === 'day' ? 'Sakura de día' : 'Sakura de noche'),
+      const st = theme.styleOf(theme.current());
+      const nm = { jp: 'Sakura', rojo: 'Palacio', azul: 'Porcelana' }[st];
+      previews.replaceChildren(...['day', 'night'].map((t) => el('div', { class: `theme-preview tp-${t} tp-s-${st}${now === t ? ' tp-on' : ''}` },
+        el('span', { class: 'tp-seal' }, st === 'jp' ? '愛' : '爱'), el('span', { class: 'tp-title' }, `${nm} de ${t === 'day' ? 'día' : 'noche'}`),
         el('span', { class: 'tp-line' }), el('span', { class: 'tp-line short' }), el('span', { class: 'tp-btn' }))));
     };
     preview();
+    // v0.16.0: the visual style (Japonés, Palacio rojo, Porcelana azul), chosen 2026-11-24.
+    const STYLE_INFO = [
+      { value: 'jp', name: 'Japonés', icon: 'brand-sakura', colors: ['#C2405F', '#6B4E8C', '#C9A46A'], hint: 'Sakura, sellos redondos y olas.' },
+      { value: 'rojo', name: 'Palacio rojo', icon: 'brand-plum', colors: ['#B42A26', '#C8972E', '#2E6A5C'], hint: 'Bermellón, dorado, jade y farolillos.' },
+      { value: 'azul', name: 'Porcelana azul', icon: 'brand-plum', colors: ['#26478E', '#B23A30', '#B39556'], hint: 'Azul cobalto sobre porcelana blanca.' },
+    ];
+    const styleHint = el('p', { class: 'muted', 'aria-live': 'polite' });
+    const styleCards = el('div', { class: 'style-previews', role: 'group', 'aria-label': 'Estilo de la app' });
+    const drawStyles = (cur) => {
+      styleHint.textContent = STYLE_INFO.find((x) => x.value === cur)?.hint || '';
+      styleCards.replaceChildren(...STYLE_INFO.map((x) => {
+        const b = el('button', { type: 'button', class: `style-preview sp-${x.value}`, 'aria-pressed': String(cur === x.value), 'data-style-pick': x.value },
+          el('span', { class: 'sp-mark' }, util.icon(x.icon, { size: 30 })),
+          el('span', { class: 'sp-name' }, x.name),
+          el('span', { class: 'sp-swatches', 'aria-hidden': 'true' }, ...x.colors.map((c) => el('i', { style: { '--c': c } }))));
+        b.addEventListener('click', async () => { await save({ style: x.value }); drawStyles(x.value); util.haptic(10); });
+        return b;
+      }));
+    };
+    drawStyles(theme.styleOf(s));
     wrap.append(
+      el('div', { class: 'card stack' },
+        el('h2', { class: 'card-title' }, 'Estilo'),
+        el('p', { class: 'muted' }, 'Cómo se ve toda la app. Cada estilo tiene su versión de día y de noche, y lo pueden cambiar cuando quieran.'),
+        styleCards, styleHint),
       el('div', { class: 'card stack' },
         el('h2', { class: 'card-title' }, 'Tema'),
         el('p', { class: 'muted' }, `Automático: tema claro de día (de ${theme.DAY_START}:00 a ${theme.NIGHT_START}:00) y oscuro de noche.`),
@@ -89,8 +115,8 @@ function appearance(ctx = {}, { focusMotion = false } = {}) {
         ui.toggle({ label: 'Fuente de alta legibilidad', hint: 'Atkinson Hyperlegible para todo el texto.', checked: s.legibleFont, onChange: (v) => save({ legibleFont: v }) }),
         el('div', { class: 'field' }, el('label', { class: 'field-label', for: 'text-scale' }, 'Tamaño del texto'), el('div', { class: 'range-row' }, scale, scaleOut))),
       el('div', { class: 'card stack' },
-        el('h2', { class: 'card-title' }, 'Japonés'),
-        ui.toggle({ label: 'Mostrar textos en japonés', hint: 'Son decorativos: la app se entiende igual solo en español.', checked: s.japanese, onChange: (v) => save({ japanese: v }) })));
+        el('h2', { class: 'card-title' }, 'Letras de los títulos'),
+        ui.toggle({ label: 'Mostrar letras junto a cada título', hint: 'Japonesas o chinas, según el estilo. Son decorativas: la app se entiende igual solo en español.', checked: s.japanese, onChange: (v) => save({ japanese: v }) })));
   });
   const motionPart = motion(ctx);
   if (focusMotion) motionPart.ready.then(() => requestAnimationFrame(() => motionPart.node.scrollIntoView({ block: 'start' })));

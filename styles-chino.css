@@ -1,0 +1,109 @@
+/* Aishiteru · Chinese styles (v0.16.0, chosen 2026-11-24): "Palacio rojo" (data-style="rojo") and
+   "Porcelana azul" (data-style="azul"), each with day and night. They only change tokens and
+   ornaments on top of styles.css; the Japanese style (data-style="jp") is untouched.
+   High contrast keeps priority, so every token block skips data-contrast="high". */
+
+/* ---------- Palacio rojo: cinnabar, gold and jade on rice paper ---------- */
+:root[data-style="rojo"]:not([data-contrast="high"]) {
+  --bg: #FBF3E8; --surface: #FFFDF8; --surface-2: #F6E7D6; --border: #EBD7BF; --border-strong: #D9BC98;
+  --text: #2B1A14; --text-2: #75594B;
+  --accent: #B42A26; --accent-ink: #FFFFFF; --accent-soft: #F6D6CB; --accent-2: #2E6A5C; --gold: #B88A28;
+  --focus: #2E6A5C; --paper: #FFFBF2; --pat: #B42A26; --ornament: #C8972E;
+}
+:root[data-style="rojo"][data-theme="night"]:not([data-contrast="high"]) {
+  --bg: #15100E; --surface: #211915; --surface-2: #2B201B; --border: #3E2E26; --border-strong: #5A4236;
+  --text: #F6ECE4; --text-2: #C2AEA2;
+  --accent: #E3735F; --accent-ink: #15100E; --accent-soft: #40241D; --accent-2: #E3C27A; --gold: #E3C27A;
+  --focus: #E3C27A; --paper: #231A16; --pat: #E3C27A; --ornament: #E3C27A;
+}
+
+/* ---------- Porcelana azul: cobalt on white porcelain, red seals ---------- */
+:root[data-style="azul"]:not([data-contrast="high"]) {
+  --bg: #F4F6F9; --surface: #FFFFFF; --surface-2: #E6ECF5; --border: #D9E1EE; --border-strong: #B8C5DB;
+  --text: #16213A; --text-2: #56627A;
+  --accent: #26478E; --accent-ink: #FFFFFF; --accent-soft: #DAE3F3; --accent-2: #B23A30; --gold: #8E7440;
+  --focus: #26478E; --paper: #FCFDFF; --pat: #26478E; --ornament: #B39556;
+}
+:root[data-style="azul"][data-theme="night"]:not([data-contrast="high"]) {
+  --bg: #0F131C; --surface: #171D2A; --surface-2: #1F2737; --border: #2C3649; --border-strong: #435069;
+  --text: #EEF2F9; --text-2: #AEB8CB;
+  --accent: #94B1E8; --accent-ink: #0F131C; --accent-soft: #25324D; --accent-2: #E59A8E; --gold: #D2BA84;
+  --focus: #94B1E8; --paper: #18202E; --pat: #94B1E8; --ornament: #D2BA84;
+}
+
+/* the warm washi grain stays, cooled for porcelain */
+:root[data-style="azul"]:not([data-theme="night"]) { --grain: none; }
+
+/* ---------- shared Chinese ornaments ---------- */
+/* auspicious clouds (祥云) instead of seigaiha, drawn in the style's color */
+:root[data-style="rojo"] body::before, :root[data-style="azul"] body::before {
+  background: var(--pat, var(--accent)); opacity: .085;
+  -webkit-mask: url('./icons/patterns/xiangyun.svg') repeat 0 0 / 96px 64px; mask: url('./icons/patterns/xiangyun.svg') repeat 0 0 / 96px 64px;
+}
+:root[data-style="rojo"][data-contrast="high"] body::before, :root[data-style="azul"][data-contrast="high"] body::before { opacity: 0; }
+
+/* the header flower becomes a plum blossom */
+:root[data-style="rojo"] .flower-jp, :root[data-style="azul"] .flower-jp { display: none; }
+:root[data-style="rojo"] .flower-cn, :root[data-style="azul"] .flower-cn { display: inline-block; }
+
+/* title letters: brush (rojo) or porcelain serif (azul), in the accent */
+:root[data-style="rojo"] .ja { font-family: 'Ma Shan Zheng', 'Noto Serif SC', var(--font-serif); color: var(--accent); font-weight: 400; letter-spacing: .1em; }
+:root[data-style="azul"] .ja { font-family: 'Noto Serif SC', var(--font-serif); color: var(--accent); font-weight: 700; letter-spacing: .12em; }
+
+/* counter: a gold key-fret band (回纹) and a jade-disc ring instead of the brush ensō */
+:root[data-style="rojo"] .counter-card, :root[data-style="azul"] .counter-card { border: 1px solid color-mix(in srgb, var(--ornament) 45%, transparent); }
+:root[data-style="rojo"] .counter-card::after, :root[data-style="azul"] .counter-card::after {
+  height: 12px; bottom: 6px; background: var(--ornament); opacity: .6;
+  -webkit-mask: url('./icons/patterns/huiwen.svg') repeat-x 0 0 / 14px 12px; mask: url('./icons/patterns/huiwen.svg') repeat-x 0 0 / 14px 12px;
+}
+:root[data-style="rojo"] .counter-ring-track, :root[data-style="azul"] .counter-ring-track { stroke: var(--ornament); stroke-opacity: .4; stroke-width: 4; filter: none; }
+:root[data-style="rojo"] .counter-ring-arc, :root[data-style="azul"] .counter-ring-arc { filter: none; stroke-width: 9; stroke-linecap: butt; }
+:root[data-style="rojo"] .counter-ring-echo, :root[data-style="azul"] .counter-ring-echo { stroke: var(--ornament); stroke-opacity: .9; filter: none; stroke-width: 1.4; }
+
+/* seals: square Chinese chops with a double border */
+:root[data-style="rojo"] :is(.counter-seal, .seal-sq, .intro-seal), :root[data-style="azul"] :is(.counter-seal, .seal-sq, .intro-seal) {
+  border-radius: 2px; transform: none; box-shadow: inset 0 0 0 2px var(--accent), inset 0 0 0 3.5px color-mix(in srgb, var(--accent-ink) 70%, transparent);
+}
+:root[data-style="azul"] :is(.counter-seal, .seal-sq) { background: var(--accent-2); box-shadow: inset 0 0 0 2px var(--accent-2), inset 0 0 0 3.5px rgb(255 255 255 / .7); }
+:root[data-style="azul"][data-theme="night"] :is(.counter-seal, .seal-sq) { color: #0F131C; box-shadow: inset 0 0 0 2px var(--accent-2), inset 0 0 0 3.5px rgb(15 19 28 / .55); }
+
+/* Más: the shoji doors become a moon gate (月门); the circle splits when the doors open */
+:root[data-style="rojo"] .door, :root[data-style="azul"] .door { --door-moon: color-mix(in srgb, var(--ornament) 70%, transparent); --door-moon-2: color-mix(in srgb, var(--ornament) 32%, transparent); }
+:root[data-style="rojo"] .door-frame, :root[data-style="azul"] .door-frame { border-color: color-mix(in srgb, var(--ornament) 40%, var(--border)); }
+:root[data-style="rojo"] .door-panel, :root[data-style="azul"] .door-panel { background-size: auto; background-position: 0 0; }
+:root[data-style="rojo"] .door-panel-l, :root[data-style="azul"] .door-panel-l {
+  border-right-color: transparent;
+  background-image: radial-gradient(circle at 100% 42%, transparent 0 38px, var(--door-moon) 38px 39.5px, transparent 40px 43px, var(--door-moon-2) 43px 44px, transparent 44.5px);
+}
+:root[data-style="rojo"] .door-panel-r, :root[data-style="azul"] .door-panel-r {
+  background-image: radial-gradient(circle at 0% 42%, transparent 0 38px, var(--door-moon) 38px 39.5px, transparent 40px 43px, var(--door-moon-2) 43px 44px, transparent 44.5px);
+}
+
+/* soft gold edge on cards */
+:root[data-style="rojo"] .card, :root[data-style="azul"] .card { border-color: color-mix(in srgb, var(--ornament) 26%, var(--border)); }
+
+/* ---------- Ajustes: style previews ---------- */
+.style-previews { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.style-preview { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: var(--space-3) var(--space-2); min-height: 112px; border-radius: var(--radius-m); border: 2px solid var(--sp-border); background: var(--sp-bg); color: var(--sp-text); font: inherit; text-align: left; cursor: pointer; }
+.style-preview[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+.style-preview:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sp-jp { --sp-bg: #FBF4F3; --sp-text: #2A1E22; --sp-border: #EFD9DC; --sp-accent: #C2405F; }
+.sp-rojo { --sp-bg: #FBF3E8; --sp-text: #2B1A14; --sp-border: #EBD7BF; --sp-accent: #B42A26; }
+.sp-azul { --sp-bg: #F4F6F9; --sp-text: #16213A; --sp-border: #D9E1EE; --sp-accent: #26478E; }
+.sp-mark { display: block; width: 30px; height: 30px; color: var(--sp-accent); }
+.sp-mark .icon { fill: var(--sp-accent); stroke: none; }
+.sp-name { font-family: var(--font-serif); font-weight: 700; font-size: .92rem; line-height: 1.2; }
+.sp-swatches { display: flex; gap: 4px; margin-top: auto; }
+.sp-swatches i { width: 14px; height: 14px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .08); }
+
+/* the day/night previews follow the chosen style */
+.tp-s-rojo.tp-day { background: #FBF3E8; color: #2B1A14; border-color: #EBD7BF; }
+.tp-s-rojo.tp-night { background: #15100E; color: #F6ECE4; border-color: #3E2E26; }
+.tp-s-rojo.tp-day :is(.tp-seal, .tp-btn) { background: #B42A26; color: #FFFFFF; }
+.tp-s-rojo.tp-night :is(.tp-seal, .tp-btn) { background: #E3735F; color: #15100E; }
+.tp-s-azul.tp-day { background: #F4F6F9; color: #16213A; border-color: #D9E1EE; }
+.tp-s-azul.tp-night { background: #0F131C; color: #EEF2F9; border-color: #2C3649; }
+.tp-s-azul.tp-day :is(.tp-seal, .tp-btn) { background: #26478E; color: #FFFFFF; }
+.tp-s-azul.tp-night :is(.tp-seal, .tp-btn) { background: #94B1E8; color: #0F131C; }
+:is(.tp-s-rojo, .tp-s-azul) .tp-seal { border-radius: 3px; }
+.theme-preview.tp-on.tp-on { border-color: var(--accent); }

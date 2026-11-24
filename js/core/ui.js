@@ -225,7 +225,8 @@ export function enso({ cls = 'enso-loader' } = {}) {
 /** The app logo (sakura with a heart), same file as the installed icon. */
 /** Sakura mark without the app-icon tile: takes the theme accent (used in the app bar and rail). */
 export function flower({ size = 30 } = {}) {
-  return icon('brand-sakura', { size, cls: 'flower' });
+  // v0.16.0: the Chinese styles show a plum blossom (梅花); CSS shows the one that matches data-style.
+  return el('span', { class: 'flower-pair' }, icon('brand-sakura', { size, cls: 'flower flower-jp' }), icon('brand-plum', { size, cls: 'flower flower-cn' }));
 }
 
 export function logo({ size = 40, label = '', bloom = false } = {}) {
