@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.15.1 (Inicio con glicinia y hojas por encima)
+
+- Las hojas, pétalos y nieve de Inicio son más grandes y caen por encima de las tarjetas, sin estorbar los toques. Los faroles de noche siguen detrás.
+- De día, Inicio ya no tiene una rama parecida a la de la entrada: ahora cuelga glicinia lila y rosada, con racimos que se mecen uno por uno y se sacuden al tocarlos. De noche siguen los dos chōchin.
+
 ## 0.15.0 (Contador de amor y avisos a su hora)
 
 Nuevo

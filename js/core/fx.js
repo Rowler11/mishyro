@@ -228,9 +228,14 @@ export function ambient(host) {
   host.prepend(c);
   const ctx = c.getContext('2d');
   if (!ctx) { c.remove(); return none; }
+  // v0.15.1: leaves fall over the cards; the night's big paper lanterns stay behind them.
+  const back = document.createElement('canvas');
+  back.className = 'ambient-canvas is-back'; back.setAttribute('aria-hidden', 'true');
+  host.prepend(back);
+  const bctx = back.getContext('2d') || ctx;
   const dpr = Math.min(2, devicePixelRatio || 1);
   let W = 0; let H = 0;
-  const size = () => { W = innerWidth; H = innerHeight; c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); };
+  const size = () => { W = innerWidth; H = innerHeight; for (const k of [c, back]) { k.width = Math.round(W * dpr); k.height = Math.round(H * dpr); } };
   size();
   let kind = ambientKind(); let night = kind === 'night'; let pal = COLORS(night ? 'hotaru' : kind, night, tokens().gold);
   const n = innerWidth > 1100 ? 8 : 7; // few, decided with the user
@@ -241,7 +246,7 @@ export function ambient(host) {
       k, extra, born: now,
       x: at ? at.x + R(-24, 24) : R(-0.05, 1.05) * W,
       y: at ? at.y + R(-12, 12) : k === 'hotaru' ? R(0.1, 0.95) * H : top ? R(-70, -10) : R(0, H),
-      s: k === 'snow' ? R(2, 4.5) : k === 'hotaru' ? R(2, 3.2) : k === 'momiji' ? R(7, 11) : R(5, 8.5),
+      s: k === 'snow' ? R(3, 6) : k === 'hotaru' ? R(2.4, 3.6) : k === 'momiji' ? R(13, 19) : R(10, 15), // v0.15.1: bigger, they fall over the cards
       v: k === 'hotaru' ? R(-0.006, 0.006) : k === 'snow' ? R(0.022, 0.04) : R(0.03, 0.055),
       drift: k === 'hotaru' ? R(-0.006, 0.006) : R(-0.018, 0.004),
       ph: R(0, 6.28), spin: R(-0.002, 0.002), flip: R(400, 900), pulse: R(1600, 2800),
@@ -270,6 +275,7 @@ export function ambient(host) {
     if (now - prev < 32) return; // ~30 fps is plenty for slow leaves and saves battery
     const dt = Math.min(64, now - (prev || now)); prev = now;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    bctx.setTransform(dpr, 0, 0, dpr, 0, 0); bctx.clearRect(0, 0, W, H);
     wind *= 0.9;
     for (let i = bits.length - 1; i >= 0; i--) {
       const b = bits[i]; const t = now - b.born;
@@ -278,9 +284,10 @@ export function ambient(host) {
         b.y += b.v * dt;
         if (b.y < -70) { bits[i] = make('lantern'); continue; }
         const x = b.x + Math.sin(t / 2600 + b.ph) * 10 + wind * 6;
-        ctx.translate(x, b.y); ctx.rotate(Math.sin(t / 2600 + b.ph) * 0.06);
-        ctx.globalAlpha = Math.min(1, t / 1500) * Math.min(1, (b.y + 70) / 170) * 0.85;
-        lantern(ctx, b.s, t, b.ph); continue;
+        bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        bctx.translate(x, b.y); bctx.rotate(Math.sin(t / 2600 + b.ph) * 0.06);
+        bctx.globalAlpha = Math.min(1, t / 1500) * Math.min(1, (b.y + 70) / 170) * 0.85;
+        lantern(bctx, b.s, t, b.ph); continue;
       }
       if (b.k === 'hotaru') { b.x += (b.drift + wind * 0.02) * dt + Math.sin(t / 1200 + b.ph) * 0.15; b.y += b.v * dt + Math.cos(t / 1500 + b.ph) * 0.12; }
       else { b.x += (b.drift + wind * 0.04) * dt + Math.sin(t / 900 + b.ph) * 0.25; b.y += b.v * dt; }
@@ -294,7 +301,7 @@ export function ambient(host) {
         const g = ctx.createRadialGradient(0, 0, 0, 0, 0, b.s * 4); g.addColorStop(0, b.color); g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, b.s * 4, 0, 6.29); ctx.fill(); continue;
       }
-      ctx.globalAlpha = fadeIn * (b.k === 'snow' ? 0.85 : 0.75);
+      ctx.globalAlpha = fadeIn * (b.k === 'snow' ? 0.9 : 0.88);
       if (b.k === 'snow') { ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(0, 0, b.s, 0, 6.29); ctx.fill(); continue; }
       ctx.rotate(b.ph + b.spin * t + wind * 0.3); ctx.scale(Math.max(0.15, Math.abs(Math.cos(t / b.flip + b.ph))), 1);
       if (b.k === 'momiji') leaf(ctx, b.s, b.color); else petal(ctx, b.s, b.color);
@@ -316,7 +323,7 @@ export function ambient(host) {
     stop() {
       if (stopped) return; stopped = true; pause(); mo.disconnect();
       removeEventListener('resize', size); removeEventListener('scroll', onScroll, { capture: true }); document.removeEventListener('visibilitychange', onVis);
-      c.remove();
+      c.remove(); back.remove();
     },
     burst(x, y) {
       if (stopped) return;
@@ -342,47 +349,43 @@ export function cornerArt(kind = ambientKind()) {
     svg.innerHTML = `<defs>${defs}</defs>${lantern(78, 64, 44, 1)}${lantern(128, 46, 34, 2)}`;
     return svg;
   }
-  // v0.12.1: a fuller branch that comes in from the screen's top right edge, with limbs and twigs
-  // (seeded, so it looks the same every time) and the season's blossoms in clusters at their tips.
-  const pal = COLORS(kind, false, '#C9A46A') || COLORS('sakura', false);
-  let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-  const wood = '#6B4A3E';
+  // v0.15.1: by day Inicio has hanging wisteria (fuji) instead of a branch, so it does not look like
+  // the welcome splash's sakura branch. Seeded, so it is the same drawing every time.
+  return wisteriaArt(svg);
+}
+
+function wisteriaArt(svg) {
+  svg.setAttribute('viewBox', '0 0 230 120');
+  let seed = 11; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
   const f = (n) => n.toFixed(1);
-  let wood_ = ''; const spots = [];
-  const limb = (x, y, ang, len, w, depth) => {
-    const bend = (rnd() - 0.5) * 0.5;
-    const mx = x + Math.cos(ang) * len * 0.5 + Math.cos(ang + Math.PI / 2) * len * bend * 0.3;
-    const my = y + Math.sin(ang) * len * 0.5 + Math.sin(ang + Math.PI / 2) * len * bend * 0.3;
-    const ex = x + Math.cos(ang + bend) * len; const ey = y + Math.sin(ang + bend) * len;
-    wood_ += `<path d="M${f(x)} ${f(y)}Q${f(mx)} ${f(my)} ${f(ex)} ${f(ey)}" stroke-width="${f(w)}"/>`;
-    spots.push([ex, ey, depth + 1]); // blossoms at the tip
-    if (depth < 3) {
-      const kids = depth === 1 ? 2 : 1 + (rnd() < 0.5 ? 1 : 0);
-      for (let i = 0; i < kids; i++) {
-        const u = 0.45 + rnd() * 0.45; const side = i % 2 ? -1 : 1;
-        const kx = x + (ex - x) * u; const ky = y + (ey - y) * u;
-        limb(kx, ky, ang + side * (0.5 + rnd() * 0.5), len * (0.45 + rnd() * 0.2), Math.max(1, w * 0.55), depth + 1);
+  const mix = (a, b, t) => { const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); const x = p(a); const y = p(b); return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * t)).join(',')})`; };
+  const TONES = [['#E6D5F3', '#8E6CC0'], ['#FBD9E3', '#D2708F'], ['#EFE2F7', '#A98BD3']];
+  // the vine: comes in from beyond the right edge and runs left along the top
+  const vine = 'M236 4C206 10 186 2 160 9S118 18 96 12 58 6 34 13';
+  let leaves = '';
+  for (let i = 0; i < 16; i++) {
+    const x = 40 + i * 12 + rnd() * 6; const y = 7 + Math.sin(i * 1.3) * 4 + rnd() * 3;
+    leaves += `<ellipse cx="${f(x)}" cy="${f(y)}" rx="5.4" ry="2.3" transform="rotate(${f(-40 + rnd() * 80)} ${f(x)} ${f(y)})" fill="${i % 3 ? '#8DAA6E' : '#A7BF86'}"/>`;
+  }
+  // racemes: short over the title (left), long on the right
+  const anchors = [[46, 12, 22], [64, 10, 32], [82, 11, 28], [100, 13, 44], [118, 14, 38], [136, 13, 58], [153, 10, 50], [170, 8, 68], [187, 7, 56], [204, 8, 72], [221, 6, 52]];
+  let hang = '';
+  anchors.forEach(([x, y, len], i) => {
+    const [top, tip] = TONES[i % TONES.length];
+    let fl = '';
+    const n = Math.round(len / 2.4);
+    for (let k = 0; k < n; k++) {
+      const t = k / (n - 1); const w = (1 - t) * 7 + 1.5;
+      const yy = y + 4 + t * len;
+      for (const side of [-1, 0, 1]) {
+        if ((t > 0.85 && side) || (side === 0 && k % 2)) continue;
+        const xx = x + side * w * (0.4 + rnd() * 0.45) + Math.sin(t * 3) * 1.5;
+        fl += `<ellipse cx="${f(xx)}" cy="${f(yy)}" rx="${f(3.6 - t * 1.5)}" ry="${f(2.7 - t * 0.9)}" fill="${mix(top, tip, Math.min(1, t * 1.15))}"/>`;
       }
     }
-  };
-  // the main limb: from beyond the top right corner down and to the left
-  const trunk = [[176, -6], [140, 14], [104, 34], [66, 56], [30, 82]];
-  wood_ += `<path d="M176 -6C150 6 122 22 104 34S56 64 28 84" stroke-width="5.5"/><path d="M176 -6C150 6 122 22 104 34S56 64 28 84" stroke-width="1.4" stroke="#9A7A6C" transform="translate(-.8 -1.4)"/>`;
-  // side limbs: some droop down and to the left, others reach up-left, so it reads as a real branch
-  [[150, 9, 1.75, 42], [128, 20, 3.55, 36], [106, 33, 2.05, 40], [90, 42, 3.75, 32], [70, 53, 1.9, 30], [50, 66, 3.6, 24]].forEach(([x, y, a, l], i) => limb(x, y, a, l, i < 2 ? 3.2 : 2.6, 1));
-  for (const [x, y] of [trunk[4]]) spots.push([x, y, 2]);
-  const bloom = (x, y, i, sc) => {
-    const col = pal[i % pal.length];
-    if (kind === 'momiji') return `<path transform="translate(${f(x)} ${f(y)}) rotate(${(i * 47) % 360}) scale(${sc})" fill="${col}" d="M0-9 2-3 8-5 4 0 7 6 1 3 0 9-1 3-7 6-4 0-8-5-2-3Z"/>`;
-    if (kind === 'snow') return `<circle cx="${f(x)}" cy="${f(y - 2)}" r="${f(2.4 + sc * 2)}" fill="#FFFFFF" stroke="${pal[0]}" stroke-width=".7"/>`;
-    if (kind === 'hotaru') return `<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(4 + sc * 2)}" ry="2.4" transform="rotate(${-20 - (i * 23) % 70} ${f(x)} ${f(y)})" fill="${i % 3 ? '#7C9461' : '#93AA74'}"/>`;
-    return `<g transform="translate(${f(x)} ${f(y)}) scale(${f(sc * 0.6)})">${[0, 72, 144, 216, 288].map((r) => `<ellipse cx="0" cy="-6" rx="4.4" ry="6.4" fill="${col}" transform="rotate(${r + i * 11})"/>`).join('')}<circle r="2" fill="#C9A46A"/></g>`;
-  };
-  let tips = '';
-  spots.forEach(([x, y, d], i) => {
-    const n = d >= 3 ? 3 : 2; // clusters at the tips, so the wood still shows between them
-    for (let k = 0; k < n; k++) tips += bloom(x + (rnd() - 0.5) * 10, y + (rnd() - 0.5) * 8, i * 3 + k, (kind === 'momiji' ? 0.5 : 0.55) + rnd() * 0.3);
+    hang += `<g class="wis-raceme"><path d="M${x} ${y}L${f(x + 0.5)} ${f(y + len * 0.9)}" stroke="#7E8F5E" stroke-width=".7"/>${fl}</g>`;
   });
-  svg.innerHTML = `<g class="corner-swing"><g fill="none" stroke="${wood}" stroke-linecap="round">${wood_}</g>${tips}</g>`;
+  svg.innerHTML = `<g class="corner-swing"><path d="${vine}" fill="none" stroke="#7A5B4C" stroke-width="2.6" stroke-linecap="round"/>${hang}${leaves}</g>`;
   return svg;
 }
+

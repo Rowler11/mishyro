@@ -2911,7 +2911,8 @@ audio.rec-media { background: transparent; max-height: none; }
 
 /* ===================== v0.12.0: más vida en Inicio ===================== */
 /* Inicio's living background: a canvas behind the cards (fx.ambient), never over text */
-.ambient-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.ambient-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; } /* v0.15.1: over the cards, never catches taps */
+.ambient-canvas.is-back { z-index: 0; }
 @media (prefers-reduced-motion: reduce) { .ambient-canvas { display: none; } }
 :root[data-motion="off"] .ambient-canvas { display: none; }
 
@@ -2929,6 +2930,16 @@ audio.rec-media { background: transparent; max-height: none; }
 @keyframes corner-sway { 0%, 100% { transform: rotate(0deg); } 35% { transform: rotate(2.2deg); } 70% { transform: rotate(-1.2deg); } }
 @keyframes corner-shake { 15% { transform: rotate(6deg); } 35% { transform: rotate(-4deg); } 55% { transform: rotate(3deg); } 75% { transform: rotate(-1.5deg); } 100% { transform: rotate(0); } }
 :root[data-seasonal="off"] .home-corner .corner-swing { animation: none !important; }
+/* v0.15.1: hanging wisteria by day (wider than the old branch; the racemes sway one by one) */
+.home-corner:not([data-kind="night"]) { width: 230px; height: 120px; top: calc(var(--space-4) * -1); right: calc(var(--space-4) * -1); transform-origin: 50% 0; }
+@media (min-width: 820px) { .home-corner:not([data-kind="night"]) { width: 300px; height: 156px; top: calc(var(--space-6) * -1); } }
+:root[data-motion="on"] .home-corner:not([data-kind="night"]) .corner-swing { animation: none; }
+:root[data-motion="on"] .home-corner .wis-raceme { transform-box: fill-box; transform-origin: 50% 0; animation: wis-sway 5.2s ease-in-out infinite; }
+.home-corner .wis-raceme:nth-of-type(2n) { animation-delay: -1.3s; animation-duration: 6s; }
+.home-corner .wis-raceme:nth-of-type(3n) { animation-delay: -2.6s; animation-duration: 4.6s; }
+.home-corner .wis-raceme:nth-of-type(5n) { animation-delay: -3.4s; }
+@keyframes wis-sway { 0%, 100% { transform: rotate(-2.5deg); } 50% { transform: rotate(3deg); } }
+:root[data-seasonal="off"] .home-corner .wis-raceme { animation: none !important; }
 
 /* screen titles: the Japanese word is painted with the brush, then a short stroke is drawn under it */
 .page-head .ja { position: relative; display: inline-block; }
