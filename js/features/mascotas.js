@@ -359,7 +359,7 @@ export async function render() {
           pet.traits?.length ? el('div', {}, el('dt', {}, 'Personalidad'), el('dd', { class: 'tag-row' }, pet.traits.map((t) => el('span', { class: 'tag' }, t)))) : null,
           row('Favoritos', pet.favorites), row('Notas', pet.notes)) : empty('Completen su perfil: personalidad, cosas favoritas y señas.')],
         ui.button({ label: 'Editar perfil', iconName: 'pencil', small: true, variant: 'ghost', onClick: () => petEditor(pet, { onSaved: reload, onDeleted: reload }) })),
-        ui.toggle({ label: 'Tarjeta en Inicio', checked: !homePrefs.petHidden, hint: 'Todos juntos: se mueven, hablan, reciben mimos y piden sus cuidados.', onChange: (v) => db.setSettings('home', { petHidden: !v }) })];
+        ui.toggle({ label: 'Que se paseen por la app', checked: !homePrefs.petHidden, hint: 'Se asoman sobre las tarjetas o duermen al final de las pantallas. Tócalos para que hablen y darles mimos.', onChange: (v) => db.setSettings('home', { petHidden: !v }) })];
       },
       salud: () => {
         const health = [...byType('vaccine'), ...byType('deworm')];
@@ -512,16 +512,6 @@ export async function render() {
 }
 
 /** Original maneki-neko (raised paw), a small decorative line drawing. */
-/**
- * Inicio card (Fase 4B): photo, days at home or the next birthday/arrival, and a dose that is due.
- * One pet (the first that is not in memory); hidden with "Ocultar" (per device, Ajustes de Inicio).
- */
-
-/** Inicio card (v0.16.0): all the pets together, alive (see gatitos.js). */
-export async function homeCard(opts = {}) {
-  return (await import('./gatitos.js')).homeCard(opts);
-}
-
 export function maneki({ size = 56 } = {}) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 64 64'); svg.setAttribute('width', size); svg.setAttribute('height', size);

@@ -1399,12 +1399,15 @@ async function exampleContent(page, { reload = true } = {}) {
     const excluded = await page.evaluate(async () => { const r = await import('./js/features/resumen.js'); const s = await r.stats({ from: '2000-01-01', to: '2999-12-31', kind: 'year' }); return JSON.stringify(s).includes('ficticia'); });
     ok('4B ciclo: never in the Resumen', !excluded);
 
-    // Inicio: pet card with the days at home; hidden from Mascotas
+    // Inicio (v0.18.0): the pet peeks over a card; "Que se paseen por la app" in Mascotas hides it
     await page.evaluate(async () => { const db = await import('./js/core/db.js'); await db.put('pets', { id: 'e2e-pet', name: 'Michi', species: 'gato', arrival: { y: 2026, m: 1, d: 1 }, visibility: 'shared', owner: 'both', createdAt: '2000-01-01T00:00:00Z' }); });
-    await go('/inicio', '.pet-home-card');
-    ok('4B inicio: pet card', /Michi/.test(await page.locator('.pet-home-card').innerText()));
-    await page.getByRole('button', { name: /Ocultar la tarjeta de/ }).click(); await page.waitForTimeout(800);
-    ok('4B inicio: pet card can be hidden', (await page.locator('.pet-home-card').count()) === 0);
+    await go('/inicio', '.kitty-perch');
+    ok('4B inicio: the pet peeks over a card', (await page.locator('.kitty-perch .kitty[data-pet="e2e-pet"]').count()) === 1);
+    await go('/mascotas', '.pet-hero');
+    await page.getByText('Que se paseen por la app').click(); await page.waitForTimeout(500);
+    await go('/inicio', '.counter-card'); await page.waitForTimeout(1200);
+    ok('4B inicio: the pets can be hidden from Mascotas', (await page.locator('.kitty-perch, .kitty-nap').count()) === 0);
+    await page.evaluate(async () => { const db = await import('./js/core/db.js'); await db.setSettings('home', { petHidden: false }); });
 
     // Rasca y gana: a gift card is revealed without scratching
     await page.evaluate(async () => { const r = await import('./js/features/rasca.js'); await r.createCard({ to: 'sofia', from: 'david', origin: 'gift' }); });
@@ -1967,8 +1970,8 @@ async function exampleContent(page, { reload = true } = {}) {
     const pol = await page.evaluate(async () => (await import('./js/config.js')).CONFIG.legalTexts.find((t) => t.id === 'cfg:legal:privacidad').body);
     ok('7 privacidad: explica la sincronización cifrada y cómo borrar la nube', /extremo a extremo/.test(pol) && /Borrar todo del servidor/.test(pol));
     const vp = await page.$eval('meta[name="viewport"]', (m) => m.content);
-    // v0.18.0: pinch zoom off on purpose (asked 2026-11-24); the text size lives in Ajustes > Apariencia.
-    ok('18 sin zoom: el viewport no deja pellizcar', /user-scalable=no/.test(vp) && /maximum-scale=1/.test(vp), vp);
+    // v0.19.0: pinch zoom off on purpose (asked 2026-11-24); the text size lives in Ajustes > Apariencia.
+    ok('19 sin zoom: el viewport no deja pellizcar', /user-scalable=no/.test(vp) && /maximum-scale=1/.test(vp), vp);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.keyboard.press('?');
     const sc = await page.locator('.overlay').innerText().catch(() => '');
@@ -2174,7 +2177,7 @@ async function exampleContent(page, { reload = true } = {}) {
     const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(400); };
     await go('/inicio', '.fav-card');
     // Inicio "Sereno" (2026-11-24): no quick-action stars, no "Prueben hoy", no season card; favorites stay.
-    ok('18 Inicio: sin accesos rápidos ni "Prueben hoy", con 6 favoritos', (await page.locator('.quick-action').count()) === 0 && (await page.locator('.discover-card, .season-card, .garden-card, .love-card').count()) === 0 && (await page.locator('.fav-tile:not(.fav-add)').count()) === 6);
+    ok('19 Inicio: sin accesos rápidos ni "Prueben hoy", con 6 favoritos', (await page.locator('.quick-action').count()) === 0 && (await page.locator('.discover-card, .season-card, .garden-card, .love-card').count()) === 0 && (await page.locator('.fav-tile:not(.fav-add)').count()) === 6);
     ok('11 Inicio: sin "null"', !/\bnull\b/.test(await page.locator('main').innerText()));
     await page.locator('.fav-card').getByRole('button', { name: 'Editar' }).click();
     const favDlg = page.getByRole('dialog', { name: 'Sus favoritos' });
@@ -2187,7 +2190,7 @@ async function exampleContent(page, { reload = true } = {}) {
     const nos = await page.locator('.section-card-name').allInnerTexts();
     ok('11 Más: Nosotros sin Fechas, Recordatorios ni Encuentro sueltos', nos.join('|') === 'Calendario|Insignias y premios|Ánimo|Nuestro jardín', nos.join('|'));
     const total = await page.evaluate(async () => { const r = await import('./js/routes.js'); return r.GROUPS.flatMap((g) => g.sections.filter((s) => !s.moment && r.listed(s.id))).length; });
-    ok('11 Más: 23 secciones (v0.18.0: Nuestro jardín tiene pantalla propia)', total === 23, String(total));
+    ok('11 Más: 23 secciones (v0.19.0: Nuestro jardín tiene pantalla propia)', total === 23, String(total));
     await page.locator('a[href="#/calendario"]').click();
     await page.waitForSelector('.hub-tabs');
     ok('11 Calendario: pestañas Mes, Fechas, Avisos y botón Próximo encuentro', (await page.locator('.hub-tab').allInnerTexts()).join('|') === 'Mes|Fechas|Avisos' && (await page.locator('a[href="#/encuentro"]').count()) >= 1);
@@ -2209,10 +2212,10 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.waitForSelector('.home-corner svg');
     ok('17 estilo rojo: título en chino, flor de ciruelo y esquina china', (await page.locator('.page-titles .ja').innerText()) === '今天' && (await page.locator('.page-titles .ja').getAttribute('lang')) === 'zh-Hans' && (await page.locator('.flower-cn').first().isVisible()) && (await page.locator('.home-corner svg [id^="cs-rojo-"]').count()) > 0);
     await go('/calendario', '.season-card');
-    ok('18 Calendario: tarjeta de la estación del año con idea para los dos', (await page.locator('.season-card .season-title').count()) === 1 && (await page.locator('.season-idea-text').innerText()).length > 5);
+    ok('19 Calendario: tarjeta de la estación del año con idea para los dos', (await page.locator('.season-card .season-title').count()) === 1 && (await page.locator('.season-idea-text').innerText()).length > 5);
     const idea0 = await page.locator('.season-idea-text').innerText();
     await page.locator('.season-card').getByRole('button', { name: 'Otra idea' }).click();
-    ok('18 Calendario: Otra idea cambia la idea', (await page.locator('.season-idea-text').innerText()) !== idea0);
+    ok('19 Calendario: Otra idea cambia la idea', (await page.locator('.season-idea-text').innerText()) !== idea0);
     await go('/inicio', '.counter-card');
     await page.waitForSelector('.home-corner svg');
     await page.evaluate(async () => { const { db, theme } = await import('./js/core.js'); await db.setSettings('appearance', { style: 'azul' }); theme.apply({ style: 'azul' }); });
@@ -2274,7 +2277,7 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.locator('.guide-card').getByRole('button', { name: 'Ocultar' }).click();
     await page.waitForFunction(() => !document.querySelector('.guide-card'));
     ok('14 Guía: "Ocultar" la quita de Inicio', true);
-    // Garden (its own screen since v0.18.0)
+    // Garden (its own screen since v0.19.0)
     await go('/jardin', '.garden-card');
     ok('14 Jardín: empieza sin flores', /0 flores/.test(await page.locator('.garden-card .guide-count').textContent()));
     await page.locator('.garden-card').getByRole('button', { name: 'Plantar hoy' }).click();
@@ -2373,8 +2376,8 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.waitForSelector('.love-strip');
     const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(300); };
     const loves = () => page.evaluate(async () => { const db = await import('./js/core/db.js'); return (await db.query('streaks')).filter((r) => r.type === 'love').map((r) => r.id); });
-    // v0.18.0 (Inicio "Sereno"): a slim strip inside the days card; the full card opens from the streak.
-    ok('18 Amor: franja dentro del contador con la racha en 0', (await page.locator('.counter-card .love-strip').count()) === 1 && /0 días/.test(await page.locator('.love-streak-btn').textContent()));
+    // v0.19.0 (Inicio "Sereno"): a slim strip inside the days card; the full card opens from the streak.
+    ok('19 Amor: franja dentro del contador con la racha en 0', (await page.locator('.counter-card .love-strip').count()) === 1 && /0 días/.test(await page.locator('.love-streak-btn').textContent()));
     ok('15 Amor: el botón dice "Enviar amor"', (await page.getByRole('button', { name: /^Enviar amor a / }).count()) === 1);
     await page.locator('.love-send').click();
     await page.waitForFunction(() => document.querySelector('.love-send')?.getAttribute('aria-pressed') === 'true');
@@ -2396,7 +2399,7 @@ async function exampleContent(page, { reload = true } = {}) {
     });
     await go('/ajustes', '.page'); await go('/inicio', '.love-strip');
     ok('15 Amor: racha de días seguidos en que los dos enviaron amor', /4 días/.test(await page.locator('.love-streak-btn').textContent()));
-    ok('18 Amor: la franja marca que hoy enviaron los dos', (await page.locator('.love-dot.is-on').count()) === 2);
+    ok('19 Amor: la franja marca que hoy enviaron los dos', (await page.locator('.love-dot.is-on').count()) === 2);
     const openLove = async () => { await page.locator('.love-streak-btn').click(); await page.getByRole('dialog', { name: 'Contador de amor' }).waitFor(); };
     await openLove();
     ok('15 Amor: cuenta el total enviado entre los dos', /12\s*Amor enviado/.test(await page.locator('.love-stats').innerText()));
@@ -2473,31 +2476,52 @@ async function exampleContent(page, { reload = true } = {}) {
       await db.put('pets', { id: 't16c', name: 'Canela', species: 'gato', coat: 'calico', visibility: 'shared', owner: 'both', createdAt: '2000-01-03T00:00:00Z' });
       await db.put('petRecords', { id: 't16v', petId: 't16b', type: 'vaccine', date: '2026-01-01', data: { product: 'Vacuna ficticia', next: inDays(-2) }, visibility: 'shared', owner: 'both' });
     });
-    await go('/ajustes', '.list-row'); await go('/inicio', '.kitty-card');
-    ok('16 Inicio: salen todas las mascotas juntas', (await page.locator('.kitty-card .kitty').count()) === 3);
-    ok('16 Inicio: cada una con su dibujo y su pelaje', await page.evaluate(() => [...document.querySelectorAll('.kitty-card .kitty-art')].length === 3));
+    await go('/ajustes', '.list-row'); await go('/inicio', '.kitty-perch');
+    await page.waitForTimeout(400);
+    ok('18 Inicio: ya no hay tarjeta propia de las mascotas', (await page.locator('.kitty-card, .kitty-room').count()) === 0);
+    ok('18 Inicio: cada mascota se asoma sobre una tarjeta distinta', (await page.locator('.kitty-perch .kitty-peek').count()) === 3 && await page.evaluate(() => new Set([...document.querySelectorAll('.kitty-perch > .card')]).size === 3));
+    ok('16 Inicio: cada una con su dibujo y su pelaje', await page.evaluate(() => [...document.querySelectorAll('.kitty-perch .kitty-art')].length === 3));
+    ok('18 Inicio: la cabeza queda por encima de la tarjeta, sin tapar su contenido', await page.evaluate(() => [...document.querySelectorAll('.kitty-perch')].every((w) => { const k = w.querySelector('.kitty-peek').getBoundingClientRect(); const c = w.querySelector(':scope > .card').getBoundingClientRect(); return k.top < c.top - 30; })));
     ok('16 Cuidados: la mascota pide su vacuna vencida en un globito', /Tinta: .*Vacuna ficticia/.test(await page.locator('.kitty-care').innerText()));
+    ok('18 Cuidados: el globito va justo encima de quien lo pide', await page.evaluate(() => document.querySelector('.kitty-care').nextElementSibling?.querySelector('.kitty[data-pet="t16b"]') != null));
     await page.locator('.kitty-care').getByRole('button', { name: 'Ver la página de Tinta' }).click();
     await page.waitForSelector('.pet-hero');
     ok('16 Cuidados: el globito lleva a su página, en Salud', /Tinta/.test(await page.locator('.pet-name').innerText()) && /Salud/.test(await page.locator('.chip[aria-selected="true"]').innerText()));
-    await go('/inicio', '.kitty-card');
+    ok('18 Mascotas: no se asoma ninguna en su propia página', (await page.locator('.kitty-perch, .kitty-nap').count()) === 0);
+    await go('/inicio', '.kitty-perch');
     await page.locator('.kitty-care').getByRole('button', { name: 'Ya lo vi, ocultar por hoy' }).click();
     ok('16 Cuidados: se puede ocultar por hoy', (await page.locator('.kitty-care').count()) === 0);
-    await page.locator('.kitty', { hasText: 'Nube' }).click();
-    await page.waitForSelector('.kitty-room .pet-bubble');
-    ok('16 Hablar: al tocarla habla con su nombre', /^Nube: /.test(await page.locator('.kitty-room .pet-bubble').innerText()));
-    ok('16 Hablar: la tocada queda elegida', (await page.locator('.kitty[aria-pressed="true"]').innerText()).includes('Nube'));
+    await page.locator('.kitty[data-pet="t16a"]').click();
+    await page.waitForSelector('.kitty-perch .pet-bubble');
+    ok('16 Hablar: al tocarla habla con su nombre', /^Nube: /.test(await page.locator('.kitty-perch .pet-bubble').innerText()));
+    ok('18 Menú: al tocarla salen sus mimos', await page.locator('.kitty-menu').isVisible());
     await page.getByRole('button', { name: 'Acariciar a Nube' }).click(); await page.waitForTimeout(300);
     for (let i = 0; i < 4; i++) { await page.getByRole('button', { name: 'Darle un premio a Nube' }).click(); await page.waitForTimeout(250); }
     await page.getByRole('button', { name: 'Jugar con Nube' }).click(); await page.waitForTimeout(400);
     const m = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const g = await import('./js/features/gatitos.js'); const x = g.mimosOf(await db.query('petRecords'))['t16a']; return x && { pet: x.pet, treat: x.treat, play: x.play }; });
     ok('16 Mimos: se guardan los de hoy (premios hasta 3)', m && m.pet === 1 && m.treat === 3 && m.play === 1, JSON.stringify(m));
-    ok('16 Mimos: la línea dice cuántos recibió hoy', /hoy: 5 mimos/.test(await page.locator('.kitty-line').innerText()));
     await page.getByRole('button', { name: 'Anotar una travesura de Nube' }).click();
     await page.getByLabel('¿Qué hizo?').fill('Se metió en una caja ficticia');
     await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(500);
     const tr = await page.evaluate(async () => (await (await import('./js/core/db.js')).query('petRecords')).find((r) => r.data?.mischief));
     ok('16 Travesura: queda como momento de la mascota', tr && tr.type === 'moment' && tr.petId === 't16a');
+    // Other screens: one pet per screen, peeking over a card or asleep at the end
+    let seenPerch = false; let seenNap = false; let onePer = true;
+    for (const r of ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']) {
+      await go(r, 'main h1'); await page.waitForTimeout(900);
+      const n = await page.locator('main .kitty-perch, main .kitty-nap').count();
+      if (n !== 1) onePer = false;
+      if (await page.locator('main .kitty-perch').count()) seenPerch = true;
+      if (await page.locator('main .kitty-nap').count()) seenNap = true;
+    }
+    ok('18 Pantallas: en cada una aparece una sola mascota', onePer);
+    ok('18 Pantallas: unas veces asomada y otras dormida al final', seenPerch && seenNap);
+    await go('/ajustes', '.list-row'); await page.waitForTimeout(900);
+    ok('18 Ajustes: ahí no aparecen', (await page.locator('.kitty-perch, .kitty-nap').count()) === 0);
+    const napRoute = await page.evaluate(async () => { const r = ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']; return r; });
+    for (const r of napRoute) { await go(r, 'main h1'); await page.waitForTimeout(900); if (await page.locator('main .kitty-nap').count()) break; }
+    await page.locator('main .kitty-nap .kitty').click(); await page.waitForTimeout(300);
+    ok('18 Dormida: al tocarla se despierta, habla y abre sus mimos', (await page.locator('main .kitty-nap .kitty.is-asleep').count()) === 0 && (await page.locator('main .kitty-nap .pet-bubble').count()) === 1 && await page.locator('main .kitty-nap .kitty-menu').isVisible());
     // Editor: coat picker and collar
     await go('/mascotas', '.pet-hero');
     await page.locator('.pet-pick', { hasText: 'Nube' }).click(); await page.waitForTimeout(300);

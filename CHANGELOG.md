@@ -1,6 +1,6 @@
 # Cambios
 
-## 0.18.0 (Inicio despejado)
+## 0.19.0 (Inicio despejado)
 
 - Inicio respira: quedan el contador de días, sus favoritos, lo de hoy, lo que viene y "Para hoy" (con 3 avisos a la vista y "Ver más" para el resto).
 - El Contador de amor ya no ocupa media pantalla: es una franja dentro del contador de días con el botón "Enviar amor", quién envió hoy y la racha. Al tocar la racha se abre todo el detalle (puntos, nivel y cómo se ganan).
@@ -10,6 +10,13 @@
 - Nuestro jardín tiene su propia pantalla (en Más > Nosotros y se puede poner en Favoritos).
 - La app ya no hace zoom al pellizcar; el tamaño de letra se cambia en Ajustes > Apariencia.
 - Las letras japonesas (o chinas) de los títulos son más pequeñas y aparecen con un fundido suave; la raya de pincel de abajo se dibuja completa, sin cortes.
+## 0.18.0 (Los gatitos por toda la app)
+
+- Las mascotas ya no tienen su tarjeta propia en Inicio: ahora cada una se asoma por el borde de una tarjeta distinta, con la cabeza y las patitas afuera.
+- En las demás pantallas aparece una de ellas, distinta en cada pantalla y cada día: a veces asomada sobre una tarjeta y a veces dormida en un cojín al final.
+- Al tocarla, habla y abre un menú pequeño con Mimo, Premio, Jugar y Travesura. Los mimos se siguen sumando entre los dos teléfonos.
+- Cuando a una le toca una vacuna o se le acaba algo, lo dice en un globito justo encima de ella.
+- En Mascotas, "Que se paseen por la app" las muestra u oculta.
 
 ## 0.17.1 (Inicio más fluido y arce en alta calidad)
 

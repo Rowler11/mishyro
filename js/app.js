@@ -246,11 +246,22 @@ async function render(route) {
   addScene(node, route);
   addHint(node, route);
   const swapped = swapView(main, node);
+  addCompanion(node, route);
   // Focus the new view's search box or title once it is in place.
   if (!app.firstRender) swapped.then(() => requestAnimationFrame(() => (main.querySelector('[data-autofocus]') || main.querySelector('h1') || main).focus({ preventScroll: true })));
   if (app.firstRender) preloadSections();
   app.firstRender = false;
   if (app.keepScroll != null) { const y = app.keepScroll; app.keepScroll = null; requestAnimationFrame(() => window.scrollTo({ top: y })); } else window.scrollTo({ top: 0 });
+}
+
+/** v0.18.0: one of their pets shows up on the screen (peeking over a card or asleep at the end). */
+function addCompanion(node, route) {
+  const def = route.def;
+  if (def.layer || def.lock || route.path.startsWith('/ajustes') || !node?.querySelector) return;
+  setTimeout(() => {
+    if (router.currentRoute() !== route || !node.isConnected) return;
+    import('./features/gatitos.js').then((m) => m.companion(node, def.id)).catch((e) => console.error(e));
+  }, 700);
 }
 
 /** Paper scene under the title of the sections of Más (v0.13.0). */

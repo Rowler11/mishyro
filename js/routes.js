@@ -20,7 +20,7 @@ export const GROUPS = [
     { id: 'animo', title: 'Medidor de ánimo', jp: '気分', romaji: 'kibun', icon: 'smile', phase: '3', module: 'animo', blurb: 'Cómo amanece cada uno.' },
     { id: 'resumen', title: 'Resumen del año', jp: '年間', romaji: 'nenkan', icon: 'sparkles', phase: '4A', module: 'resumen', moment: true, blurb: 'Su año en historias, con modo Wrapped.' },
     { id: 'recordatorios', title: 'Recordatorios', jp: 'お知らせ', romaji: 'oshirase', icon: 'bell', phase: '3', module: 'recordatorios', blurb: 'Avisos suaves y calendario del teléfono.' },
-    { id: 'jardin', title: 'Nuestro jardín', jp: '庭', romaji: 'niwa', icon: 'flower-2', phase: '0.18', module: 'jardin', blurb: 'Se llena de flores con lo que hacen juntos.' },
+    { id: 'jardin', title: 'Nuestro jardín', jp: '庭', romaji: 'niwa', icon: 'flower-2', phase: '0.19', module: 'jardin', blurb: 'Se llena de flores con lo que hacen juntos.' },
     { id: 'encuentro', title: 'Próximo encuentro', jp: '次回', romaji: 'jikai', icon: 'plane', phase: '4A', module: 'encuentro', blurb: 'La cuenta regresiva para verse.' },
   ] },
   { id: 'recuerdos', title: 'Recuerdos', jp: '思い出', romaji: 'omoide', sections: [
