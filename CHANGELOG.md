@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.21.0 (Logo en HD)
+
+Cambios
+- Logo nuevo "Doble flor": la misma sakura con corazón, ahora en alta definición, con una segunda capa de pétalos rosados detrás, pétalos con su muesca, degradado suave y estambres dorados.
+- Se ve en el ícono de la app (también el redondo de Android), en la pestaña del navegador, la bienvenida, el bloqueo, Acerca de y la flor del encabezado del estilo Japonés.
+- En el teléfono, el ícono de la pantalla de inicio puede tardar en cambiar: Android lo actualiza solo al rato; si no, quita y vuelve a instalar la app.
+
 ## 0.20.0 (Tutorial con los animalitos, peluches y voces)
 
 Nuevo
