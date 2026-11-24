@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.15.2 (Inicio más fluido y arce en alta calidad)
+
+- Inicio ya no se traba: la rama se pinta una sola vez en alta resolución en vez de recalcular sus filtros en cada cuadro, y la animación va a 60 cuadros por segundo.
+- Las hojas que caen ya no se mueven raro al subir o bajar: el viento del scroll es más suave y ya no las hace girar de golpe.
+- La rama de arce es más pequeña y más detallada (corteza con luz, ramitas, hojas con nervaduras y sombra suave), y el furin o la campana de Navidad se ven más grandes y claros.
+
 ## 0.15.1 (Inicio con arce japonés y furin, hojas por encima; Navidad a la japonesa)
 
 - De día, la esquina de Inicio tiene una rama frondosa de arce japonés (ya no se parece a la sakura de la entrada) con un furin de vidrio colgando que se mece con el viento. Al tocarla se sacude.
