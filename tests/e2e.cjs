@@ -2336,6 +2336,98 @@ async function exampleContent(page, { reload = true } = {}) {
     await ctx.close();
   }
 
+  // ---------- v0.15.0: Contador de amor and scheduled notices ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errs = watch(page);
+    await page.addInitScript(() => { window.alert = window.confirm = window.prompt = () => { throw new Error('native dialog'); }; });
+    await page.goto(BASE);
+    await page.getByRole('link', { name: 'Empezar desde cero' }).click();
+    await page.getByRole('button', { name: /David/ }).click();
+    await page.setInputFiles('#seed-file', SEED);
+    await page.getByRole('button', { name: 'Importar' }).click();
+    for (const n of ['Todo bien', 'Ahora no', 'Continuar', 'Terminar', 'Saltar']) await page.getByRole('button', { name: n }).click();
+    await page.waitForFunction(() => location.hash === '#/inicio');
+    await page.waitForSelector('.love-card');
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(300); };
+    const loves = () => page.evaluate(async () => { const db = await import('./js/core/db.js'); return (await db.query('streaks')).filter((r) => r.type === 'love').map((r) => r.id); });
+    ok('15 Amor: Inicio tiene su tarjeta "Contador de amor" con la racha en 0', /0 días/.test(await page.locator('.love-card .love-streak').textContent()));
+    ok('15 Amor: el corazón grande dice "Enviar amor"', (await page.getByRole('button', { name: /^Enviar amor a / }).count()) === 1);
+    await page.locator('.love-heart').click();
+    await page.waitForFunction(() => document.querySelector('.love-heart')?.getAttribute('aria-pressed') === 'true');
+    const today = await page.evaluate(async () => (await import('./js/core/util.js')).localDay());
+    ok('15 Amor: al tocarlo se guarda un envío para hoy, a nombre de quien lo envía', JSON.stringify(await loves()) === JSON.stringify([`love:${today}:david`]));
+    await page.waitForTimeout(1600);
+    await page.waitForSelector('.love-card');
+    await page.locator('.love-heart').click();
+    await page.waitForTimeout(400);
+    ok('15 Amor: solo se envía una vez al día por persona', (await loves()).length === 1);
+    ok('15 Amor: la tarjeta queda en "Amor enviado hoy"', /Amor enviado hoy/.test(await page.locator('.love-heart').textContent()));
+    // Partner's sends and three earlier days of both: a 4-day streak; a gap before them does not count.
+    await page.evaluate(async () => {
+      const db = await import('./js/core/db.js'); const util = await import('./js/core/util.js');
+      const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return util.localDay(x); };
+      const put = (n, who) => db.put('streaks', { id: `love:${d(n)}:${who}`, type: 'love', by: who, day: d(n), visibility: 'shared', owner: 'both' });
+      await put(0, 'sofia'); for (const n of [1, 2, 3]) { await put(n, 'david'); await put(n, 'sofia'); }
+      for (const n of [5, 6]) { await put(n, 'david'); await put(n, 'sofia'); } // older run of 2, day 4 missing
+    });
+    await go('/ajustes', '.page'); await go('/inicio', '.love-card');
+    ok('15 Amor: racha de días seguidos en que los dos enviaron amor', /4 días/.test(await page.locator('.love-card .love-streak').textContent()));
+    ok('15 Amor: cuenta el total enviado entre los dos', /12\s*Amor enviado/.test(await page.locator('.love-stats').innerText()));
+    ok('15 Amor: dice cuando hoy lo enviaron los dos', /se enviaron amor los dos/.test(await page.locator('.love-hint').textContent()));
+    const pts = Number((await page.locator('.love-stat strong').nth(2).textContent()).trim());
+    await page.evaluate(async () => { const db = await import('./js/core/db.js'); await db.put('content', { kind: 'letter', title: 'Carta ficticia', body: 'Texto ficticio', status: 'draft', author: 'david', visibility: 'shared', owner: 'both' }); });
+    await go('/ajustes', '.page'); await go('/inicio', '.love-card');
+    ok('15 Amor: los puntos suben con lo que hacen juntos (una carta = +10)', Number((await page.locator('.love-stat strong').nth(2).textContent()).trim()) === pts + 10, `${pts}`);
+    ok('15 Amor: muestra el nivel y cuánto falta para el siguiente', /Nivel \S+\. Faltan \d+ puntos para "/.test(await page.locator('.love-card').textContent()));
+    const streak = await page.evaluate(async () => {
+      const m = await import('./js/features/amor.js');
+      const L = (day, by) => ({ day, by });
+      return [m.streakOf([L('2026-11-20', 'david'), L('2026-11-20', 'sofia'), L('2026-11-21', 'david'), L('2026-11-21', 'sofia')], '2026-11-22').current,
+        m.streakOf([L('2026-11-21', 'david'), L('2026-11-21', 'sofia'), L('2026-11-22', 'david')], '2026-11-22').current,
+        m.streakOf([L('2026-11-20', 'david'), L('2026-11-20', 'sofia')], '2026-11-22').current,
+        m.streakOf([L('2026-11-01', 'david'), L('2026-11-01', 'sofia'), L('2026-11-02', 'david'), L('2026-11-02', 'sofia'), L('2026-11-03', 'david'), L('2026-11-03', 'sofia')], '2026-11-22').best];
+    });
+    ok('15 Amor: la racha sigue viva hasta que termina el día y se corta si falta uno', JSON.stringify(streak) === '[2,1,0,3]', JSON.stringify(streak));
+    // Scheduled notices: the plan this device would hand to the server.
+    const plan = await page.evaluate(async () => {
+      const m = await import('./js/features/avisos.js'); const sync = await import('./js/core/sync.js');
+      const items = await m.plan();
+      const day = (x) => new Date(x.at).toDateString();
+      const todayStr = new Date().toDateString();
+      return { kinds: [...new Set(items.map((x) => x.k.split(':').slice(0, 2).join(':')))], n: items.length, future: items.every((x) => x.at > Date.now()),
+        loveToday: items.some((x) => x.k === 'loveRemind' && day(x) === todayStr), love: items.filter((x) => x.k === 'loveRemind').length,
+        hour: new Date(items.find((x) => x.k === 'loveRemind').at).getHours(), prefs: sync.noticePrefs(), noContent: items.every((x) => Object.keys(x).join() === 'at,k') };
+    });
+    ok('15 Avisos: el plan incluye mesiversario y recordatorio de amor', plan.kinds.includes('r:monthiversary') && plan.kinds.includes('loveRemind'), plan.kinds.join(', '));
+    ok('15 Avisos: todo es a futuro y no lleva contenido (solo hora y tipo)', plan.future && plan.noContent);
+    ok('15 Avisos: "¿Ya enviaste amor hoy?" no se programa hoy si ya lo enviaste', !plan.loveToday && plan.love >= 20);
+    ok('15 Avisos: el recordatorio de amor va a las 20:00 por defecto', plan.hour === 20 && plan.prefs.loveAt === '20:00');
+    const planOff = await page.evaluate(async () => {
+      const db = await import('./js/core/db.js');
+      const all = await db.query('reminders'); for (const r of all.filter((x) => x.kind === 'monthiversary')) await db.put('reminders', { ...r, enabled: false });
+      const ev = { id: 'ev-aviso', title: 'Plan ficticio', start: (() => { const x = new Date(); x.setDate(x.getDate() + 5); return `${x.toISOString().slice(0, 10)}T19:00`; })(), remind: '1h', visibility: 'shared', owner: 'both' };
+      await db.put('events', ev);
+      const m = await import('./js/features/avisos.js');
+      const items = await m.plan();
+      const e = items.find((x) => x.k === 'r:event:0');
+      return { month: items.some((x) => x.k.startsWith('r:monthiversary')), ev: e ? new Date(e.at).getHours() : null };
+    });
+    ok('15 Avisos: lo apagado en Recordatorios no se programa', !planOff.month);
+    ok('15 Avisos: un plan del Calendario con aviso de 1 hora llega una hora antes', planOff.ev === 18, String(planOff.ev));
+    ok('15 Avisos: sin equipos unidos no se envía nada al servidor', (await page.evaluate(async () => (await import('./js/core/sync.js')).scheduleNotices([{ at: Date.now() + 3600000, k: 'loveRemind' }]))) === null);
+    // App shortcut and the service worker's fixed words.
+    const man = await page.evaluate(async () => (await (await fetch('manifest.webmanifest')).json()).shortcuts.map((s) => `${s.name}|${s.url}`));
+    ok('15 Atajo: el ícono tiene "Enviar amor" al mantenerlo presionado', man.includes('Enviar amor|./#/inicio?amor=1'), man.join(', '));
+    const swText = await page.evaluate(async () => (await fetch('sw.js')).text());
+    ok('15 Avisos: el service worker tiene textos fijos para amor y recordatorios', /loveRemind:/.test(swText) && /love:/.test(swText) && /function noticeText/.test(swText) && /monthiversary:/.test(swText));
+    ok('15 sin desplazamiento lateral', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    const real = errs.filter((e) => !/ERR_TUNNEL_CONNECTION_FAILED|ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED/.test(e));
+    ok('v0.15.0: no page errors or native dialogs', real.length === 0, real.join(' | '));
+    await ctx.close();
+  }
+
   await browser.close();
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed`);

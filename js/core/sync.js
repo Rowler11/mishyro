@@ -245,6 +245,7 @@ function notifyKind(store, r, prev) {
   if (store === 'timeCapsules' && !prev) return 'capsule';
   if (store === 'songs' && !prev && r.by === me) return 'song';
   if (store === 'questionsDaily' && r.kind === 'asker' && !prev && r.askedBy === me) return 'question';
+  if (store === 'streaks' && r.type === 'love' && !prev && r.by === me) return 'love';
   return null;
 }
 const marker = (store, r) => (store === 'letters' ? r.status : store === 'content' && r.kind === 'coupon' ? (r.sentAt ? 'sent' : '') : undefined);
@@ -776,7 +777,27 @@ export async function disableNotifications() {
   try { await api('sub', { method: 'DELETE' }); } catch { /* offline */ }
   try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); await sub?.unsubscribe(); } catch { /* none */ }
   await db.rawDelete('settings', NOTIFY_ID).catch(() => {});
-  cfg.notify = false; await saveCfg(); emit();
+  cfg.notify = false; lastSched = ''; await saveCfg(); emit();
+}
+
+// Scheduled notices (v0.15.0): this device hands the server its own list of { at, p } for the next
+// weeks. Each p is sealed like any notice, so the server learns only when to knock.
+export const noticePrefs = () => ({ reminders: true, love: true, loveAt: '20:00', ...(cfg?.sched || {}) });
+export async function setNoticePrefs(patch) { cfg.sched = { ...noticePrefs(), ...patch }; await saveCfg(); emit(); }
+let lastSched = '';
+/** items: [{ at: epoch ms, k: kind }]. Returns how many went, or null when this device has no notices. */
+export async function scheduleNotices(items) {
+  if (!isLinked() || !cfg.notify || !keys.has('space') || !navigator.onLine) return null;
+  const now = Date.now();
+  const list = items.filter((it) => it.at > now && it.at < now + 390 * 86400000).sort((a, b) => a.at - b.at).slice(0, 80);
+  const sig = JSON.stringify(list);
+  if (sig === lastSched) return list.length;
+  const aes = await aesKey(await notifyKey());
+  const out = [];
+  for (const it of list) out.push({ at: it.at, p: b64u(await seal(aes, te.encode(JSON.stringify({ k: it.k })))) });
+  await api('sched', { method: 'PUT', body: { items: out } });
+  lastSched = sig;
+  return out.length;
 }
 
 /** Ids of settings records that belong to sync and must never go into a backup file. */

@@ -81,6 +81,7 @@ export class Space extends DurableObject {
       CREATE TABLE IF NOT EXISTS chunks (id TEXT NOT NULL, n INTEGER NOT NULL, data BLOB NOT NULL, PRIMARY KEY (id, n));
       CREATE TABLE IF NOT EXISTS subs (dev TEXT PRIMARY KEY, sub TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT);
+      CREATE TABLE IF NOT EXISTS sched (dev TEXT NOT NULL, at INTEGER NOT NULL, p TEXT NOT NULL);
     `);
     // Keep-alive pings never wake the object (and are not billed as requests).
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'));
@@ -111,7 +112,8 @@ export class Space extends DurableObject {
       if (a === 'devices' && b && method === 'DELETE') return this.removeDevice(b);
       if (a === 'vapid' && method === 'GET') return json({ key: (await this.vapid()).publicKey });
       if (a === 'sub' && method === 'PUT') return this.subscribe(request, dev);
-      if (a === 'sub' && method === 'DELETE') { this.sql.exec('DELETE FROM subs WHERE dev = ?', dev); return json({ ok: true }); }
+      if (a === 'sched' && method === 'PUT') return this.schedule(request, dev, url);
+      if (a === 'sub' && method === 'DELETE') { this.sql.exec('DELETE FROM subs WHERE dev = ?', dev); this.sql.exec('DELETE FROM sched WHERE dev = ?', dev); await this.arm(); return json({ ok: true }); }
       if (a === 'space' && method === 'DELETE') return this.destroy(request);
       return fail(404, 'not_found');
     } catch (e) {
@@ -189,10 +191,12 @@ export class Space extends DurableObject {
     this.broadcast({ t: 'devices' });
     return json({ ok: true });
   }
-  removeDevice(id) {
+  async removeDevice(id) {
     this.sql.exec('DELETE FROM devices WHERE id = ?', id);
     this.sql.exec('DELETE FROM invites'); // a code made just before the removal must not let it back in
     this.sql.exec('DELETE FROM subs WHERE dev = ?', id);
+    this.sql.exec('DELETE FROM sched WHERE dev = ?', id);
+    await this.arm();
     for (const ws of this.ctx.getWebSockets()) {
       if (ws.deserializeAttachment()?.dev === id) { try { ws.close(4001, 'removed'); } catch { /* gone */ } }
     }
@@ -328,6 +332,33 @@ export class Space extends DurableObject {
     if (!s || !str(s.endpoint, 1024) || !PUSH_HOSTS.test(s.endpoint) || !str(s.keys?.p256dh, 200) || !str(s.keys?.auth, 64)) return fail(400, 'bad sub');
     this.sql.exec('INSERT OR REPLACE INTO subs (dev, sub) VALUES (?, ?)', dev, JSON.stringify({ endpoint: s.endpoint, keys: { p256dh: s.keys.p256dh, auth: s.keys.auth } }));
     return json({ ok: true });
+  }
+  // Scheduled caring notices (v0.15.0): each device sends its own list of { at, p } for itself. p is
+  // sealed with the space's notify key, so the server only knows when to knock, never what it says.
+  async schedule(request, dev, url) {
+    const body = await readJSON(request, 64 * 1024);
+    if (!Array.isArray(body.items) || body.items.length > 80) return fail(400, 'bad items');
+    const now = Date.now(); const max = now + 400 * 86400000;
+    for (const it of body.items) if (!Number.isFinite(it?.at) || it.at < now - 60000 || it.at > max || !str(it.p, 512)) return fail(400, 'bad item');
+    this.sql.exec('DELETE FROM sched WHERE dev = ?', dev);
+    for (const it of body.items) this.sql.exec('INSERT INTO sched (dev, at, p) VALUES (?, ?, ?)', dev, Math.round(it.at), it.p);
+    this.sql.exec("INSERT OR REPLACE INTO kv (k, v) VALUES ('origin', ?)", url.origin);
+    await this.arm();
+    return json({ ok: true, count: body.items.length });
+  }
+  async arm() {
+    const next = this.sql.exec('SELECT MIN(at) AS m FROM sched').one().m;
+    if (next == null) await this.ctx.storage.deleteAlarm(); else await this.ctx.storage.setAlarm(Math.max(Date.now() + 1000, next));
+  }
+  async alarm() {
+    const now = Date.now() + 30000;
+    const due = this.sql.exec('SELECT rowid AS id, dev, p FROM sched WHERE at <= ?', now).toArray();
+    const origin = this.sql.exec("SELECT v FROM kv WHERE k = 'origin'").toArray()[0]?.v || '';
+    for (const d of due) {
+      this.sql.exec('DELETE FROM sched WHERE rowid = ?', d.id);
+      await this.notify([d.dev], d.p, origin);
+    }
+    await this.arm();
   }
   async notify(to, payload, origin) {
     const v = await this.vapid();

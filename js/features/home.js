@@ -487,6 +487,7 @@ export async function render() {
     const homeMap = await import('./mapa.js').then((m) => m.homeCard()).catch(() => null);
     const plant = await import('./planta.js').then((m) => m.homeCard({ onChange: build })).catch((e) => { console.error(e); return null; });
     const guide = await import('./guia.js').then((m) => m.homeCard({ onChange: build })).catch(() => null);
+    const love = await import('./amor.js').then((m) => m.homeCard({ onChange: build })).catch((e) => { console.error(e); return null; });
     const both = bothLine(recv);
     cleanups.push(both.cleanup);
     body.replaceChildren(...[
@@ -494,6 +495,7 @@ export async function render() {
       both.node,
       acc.quickActions(),
       guide,
+      love,
       celebrationCard(events),
       meeting,
       slides.length ? daySwitcher(slides) : null,

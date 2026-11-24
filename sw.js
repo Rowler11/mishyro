@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.14.0';
+const CACHE_VERSION = 'aishiteru-v0.15.0';
 const SHELL = [
   './',
   './styles.css',
@@ -29,6 +29,8 @@ const SHELL = [
   './js/features/guia.js',
   './js/features/planta.js',
   './js/features/kamishibai.js',
+  './js/features/amor.js',
+  './js/features/avisos.js',
   './js/core/fx.js',
   './js/core/sync.js',
   './js/features/sync.js',
@@ -160,7 +162,29 @@ const NOTICES = {
   capsule: ['Una cápsula del tiempo', 'Hay una cápsula nueva para ustedes', '#/inicio'],
   song: ['Te dedicaron una canción', 'Escúchala en Canciones 🎵', '#/canciones'],
   question: ['Una pregunta para ti', 'Te espera en Preguntas', '#/preguntas'],
+  love: ['Te llegó amor', 'Te mandaron amor hoy 💗 ¿Le devuelves uno?', '#/inicio'],
+  loveRemind: ['¿Ya enviaste amor hoy?', 'Un toque al corazón y su racha sigue 💗', '#/inicio'],
 };
+// Scheduled notices (v0.15.0) come as "r:<kind>:<days before>". Their words are fixed here, so the
+// notice never carries a name, a title or anything else they wrote.
+const REMIND = {
+  monthiversary: ['es su mesiversario', '🌸', '#/inicio'],
+  anniversary: ['es su aniversario', '💞', '#/inicio'],
+  birthday: ['es un cumpleaños especial', '🎂', '#/fechas'],
+  pet: ['es un día especial de su mascota', '🐾', '#/mascotas'],
+  weeklyDate: ['tienen su cita de la semana', '🗓️', '#/calendario'],
+  custom: ['tienen un recordatorio', '🔔', '#/recordatorios'],
+  event: ['tienen un plan juntos', '🗓️', '#/calendario'],
+};
+function noticeText(kind) {
+  if (NOTICES[kind]) return NOTICES[kind];
+  const [tag, what, days] = String(kind || '').split(':');
+  const r = tag === 'r' && REMIND[what];
+  if (!r) return ['Aishiteru', 'Hay algo nuevo para ti 💗', '#/inicio'];
+  const d = Number(days) || 0;
+  const when = d === 0 ? 'Hoy' : d === 1 ? 'Mañana' : `En ${d} días`;
+  return [`${when} ${r[0]}`, `Un detalle para no olvidarlo ${r[1]}`, r[2]];
+}
 function readNotifyKey() {
   return new Promise((resolve) => {
     const req = indexedDB.open('aishiteru-db');
@@ -189,7 +213,7 @@ async function noticeKind(text) {
 self.addEventListener('push', (event) => {
   event.waitUntil((async () => {
     const kind = await noticeKind(event.data ? event.data.text() : '');
-    const [title, body, hash] = NOTICES[kind] || ['Aishiteru', 'Hay algo nuevo para ti 💗', '#/inicio'];
+    const [title, body, hash] = noticeText(kind);
     await self.registration.showNotification(title, {
       body, tag: kind || 'aishiteru', icon: './icons/icon-192.png', badge: './icons/icon-192.png',
       data: { url: new URL(`./${hash}`, self.registration.scope).href },
