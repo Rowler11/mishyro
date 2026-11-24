@@ -346,7 +346,7 @@ export async function decorateHome(body) {
 
 /** Any other screen: one pet, different per screen and day, peeking over a card or asleep at the end. */
 export async function companion(node, id) {
-  if (!node || !id || SKIP.has(id) || node.querySelector('.kitty-perch, .kitty-nap')) return;
+  if (!node || !id || SKIP.has(id) || node.querySelector('.kitty-perch, .kitty-nap, .empty-pet')) return;
   if (!(await showPets())) return;
   const pets = await livePets();
   if (!pets.length || !node.isConnected) return;
@@ -402,4 +402,33 @@ export async function stroll(scene, scope, { chance = 0.6, delay = 1800, flow = 
   } catch { /* the page changed */ }
   if (flow && lane.isConnected) { lane.classList.remove('is-open'); await new Promise((r) => setTimeout(r, 320)); }
   lane.remove();
+}
+
+// ---------- empty states (v0.21.0, option A) ----------
+// A pet sits where the icon of an empty screen used to be. The list is cached so ui.emptyState() can
+// draw it synchronously; it refreshes when pets or the "Que se paseen por la app" setting change.
+let emptyCache = [];
+const WAIT_LINES = ['¡Miau! Aquí espero contigo.', 'Me quedo cuidando este lugar.', 'Cuando tengan algo, me avisan.', 'Mientras tanto, ¿un mimo?'];
+async function refreshEmptyCache() {
+  try { emptyCache = (await showPets()) ? await livePets() : []; } catch { emptyCache = []; }
+}
+function emptyPet(key) {
+  if (!emptyCache.length) return null;
+  const h = hash(`${key}|${util.localDay()}`);
+  const index = h % emptyCache.length; const pet = emptyCache[index];
+  const name = pet.name || '';
+  const bubbleEl = util.el('span', { class: 'empty-pet-bubble', role: 'status' });
+  const btn = util.el('button', { class: 'empty-pet', type: 'button', 'aria-label': name ? `${name}, tócalo para un mimo` : 'Gatito, tócalo para un mimo',
+    onClick: () => {
+      const n = +(btn.dataset.n || 0) + 1; btn.dataset.n = String(n);
+      bubbleEl.textContent = `${name ? `${name}: ` : ''}${WAIT_LINES[(h + n) % WAIT_LINES.length]}`;
+      btn.classList.remove('is-mimo'); void btn.offsetWidth; btn.classList.add('is-mimo');
+      { const v = voiceOf(pet); if (v) sounds.play(v); } util.haptic('select');
+    } }, util.el('span', { class: 'kitty-body' }, kittyArt(pet, { index })), bubbleEl);
+  return util.el('div', { class: 'empty-art empty-art-pet' }, btn);
+}
+export async function primeEmptyStates() {
+  await refreshEmptyCache();
+  ui.setEmptyArt(emptyPet);
+  db.onChange((store) => { if (store === 'pets' || store === 'settings' || store == null) refreshEmptyCache(); });
 }

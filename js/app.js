@@ -4,6 +4,7 @@ import { CONFIG, db, router, theme, ui, security, seed, profile, util, cryptoBox
 import { TABS, GROUPS, HIDDEN, SETTINGS_PAGES, HUBS } from './routes.js';
 import { scene as sceneFor } from './core/scene.js';
 import { bouquet } from './core/art.js';
+import { cornerArt } from './core/fx.js';
 import * as guia from './features/guia.js';
 import * as tour from './features/tour.js';
 
@@ -240,7 +241,7 @@ async function render(route) {
     console.error(e);
     db.logError(e?.message, e?.stack, CONFIG.appVersion);
     node = el('section', { class: 'page' }, ui.pageHeader({ title: 'Algo salió mal' }),
-      ui.emptyState({ title: 'No pudimos abrir esta parte', text: 'No se perdió nada. Intenta de nuevo.', art: 'omamori', action: { label: 'Reintentar', onClick: () => router.refresh() } }));
+      ui.emptyState({ title: 'No pudimos abrir esta parte', text: 'Algo se enredó, pero no se perdió nada. Intenta de nuevo.', art: 'omamori', action: { label: 'Reintentar', onClick: () => router.refresh() } }));
   }
   clearTimeout(skeleton);
   addHubTabs(node, route);
@@ -325,12 +326,15 @@ function splash({ ready = Promise.resolve(), intro = null, mode = 'daily' } = {}
     const who = 'sofia'; // The app is a gift for her: the loading screen says "Para <her name>" on every phone (Rowler, 2026-11-21).
     const reduced = util.prefersReducedMotion();
     const full = !reduced && (intro ?? introDue(mode));
+    const cnStyle = ['rojo', 'azul'].includes(document.documentElement.dataset.style); // v0.21.0: 我爱你 in the Chinese styles
     const layer = el('div', { class: `splash${full ? ' splash-intro' : ''}`, role: 'status', 'aria-label': 'Aishiteru' },
       // A bouquet of lilies, Sofía's flower, opens as the name appears (chosen 2026-11-22).
+      cnStyle ? el('div', { class: 'splash-corner', 'aria-hidden': 'true' }, cornerArt()) : null,
       el('div', { class: 'splash-heart splash-bouquet', 'aria-hidden': 'true' }, bouquet()),
       el('p', { class: 'splash-for' }, `Para ${profile.nick(who)}`),
-      ja('愛してる', 'aishiteru'),
-      el('small', { class: 'splash-romaji', 'aria-hidden': 'true' }, 'aishiteru'),
+      ...(cnStyle
+        ? [el('span', { class: 'ja', lang: 'zh-Hans', 'data-jp-ok': '' }, '我爱你'), el('small', { class: 'splash-romaji', 'aria-hidden': 'true' }, 'wǒ ài nǐ')]
+        : [ja('愛してる', 'aishiteru'), el('small', { class: 'splash-romaji', 'aria-hidden': 'true' }, 'aishiteru')]),
       el('button', { class: 'btn btn-ghost btn-small splash-skip', type: 'button' }, 'Saltar'));
     let t = 0;
     let stop = () => {};
@@ -500,6 +504,7 @@ async function start() {
   db.emptyExpiredTrash().catch(() => {}); // Papelera: what is older than 30 days goes for good
   await profile.load();
   await import('./core/pets.js').then((m) => m.load()).catch(() => {});
+  const emptyPets = import('./features/gatitos.js').then((m) => m.primeEmptyStates()).catch(() => {}); // v0.21.0: a pet waits on empty screens
   db.onChange((store) => { if (store === 'pets') profile.load(); if (store === 'letters' || store === 'content') updateLetterDot(); });
   await applySettings();
   ui.installRipple();
@@ -530,6 +535,7 @@ async function start() {
   });
   buildShell();
   await startSync(); // before the first view, so Sincronización knows this device is linked
+  await Promise.race([emptyPets, new Promise((r) => setTimeout(r, 400))]);
   await router.start({ render, navigate: onNavigate });
   appReady();
   registerServiceWorker();

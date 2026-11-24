@@ -3570,3 +3570,21 @@ button.list-row:active, a.list-row:active, label.list-row:active { background: v
   }
 }
 :root[data-contrast="high"] .curtain { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* v0.21.0: a pet waits on empty screens (option A) */
+.empty-art-pet { width: 170px; height: 150px; }
+.empty-pet { position: relative; display: grid; place-items: end center; width: 150px; height: 150px; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.empty-pet .kitty-body { display: block; width: 124px; animation: float 5s var(--ease-in-out) infinite; }
+.empty-pet .kitty-body > svg { width: 100%; height: auto; display: block; }
+.empty-pet::after { content: ''; position: absolute; bottom: 2px; left: 50%; width: 92px; height: 10px; margin-left: -46px; border-radius: 50%; background: color-mix(in srgb, var(--text) 10%, transparent); }
+.empty-pet.is-mimo .kitty-body { animation: empty-pet-hop .5s var(--ease-spring); }
+@keyframes empty-pet-hop { 40% { transform: translateY(-10px) rotate(-3deg); } }
+.empty-pet-bubble:empty { display: none; }
+.empty-pet-bubble { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: max-content; max-width: 220px; padding: 6px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1); font: 500 .82rem var(--font-ui); color: var(--text); animation: rise var(--dur-3) var(--ease-out) both; }
+.empty-pet:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; border-radius: 24px; }
+:root[data-motion="off"] .empty-pet .kitty-body { animation: none; }
+
+/* v0.21.0: the Chinese styles' plum branch (and lanterns or moon) over the loading screen */
+.splash-corner { position: absolute; top: env(safe-area-inset-top); right: 0; width: min(78vw, 420px); pointer-events: none; animation: rise var(--dur-5) var(--ease-out) both; }
+.splash-corner > svg { width: 100%; height: auto; display: block; }
+.splash-intro:not(.show) .splash-corner { visibility: hidden; }

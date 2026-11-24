@@ -198,10 +198,17 @@ function redThread() {
   for (const [cx, cy] of [[14, 70], [146, 64]]) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', '4.5'); svg.append(c); }
   return svg;
 }
+// v0.21.0 (option A, 2026-11-24): one of their pets waits in empty, error and "nothing yet" states.
+// The provider lives in features/gatitos.js and answers synchronously from a cache (no flash of the icon).
+let emptyArtProvider = null;
+export const setEmptyArt = (fn) => { emptyArtProvider = fn; };
+
 export function emptyState({ title, text, art = 'sakura', action } = {}) {
-  return el('div', { class: 'empty' },
-    art === 'thread' ? el('div', { class: 'empty-art', 'aria-hidden': 'true' }, redThread())
-      : el('div', { class: 'empty-art', 'aria-hidden': 'true' }, icon(ART[art] || art, { size: 96, cls: 'empty-icon' }), el('span', { class: 'empty-ring' })),
+  let petArt = null;
+  try { petArt = art !== 'thread' && emptyArtProvider ? emptyArtProvider(`${title}|${text || ''}`) : null; } catch { petArt = null; }
+  return el('div', { class: `empty${petArt ? ' empty-with-pet' : ''}` },
+    petArt || (art === 'thread' ? el('div', { class: 'empty-art', 'aria-hidden': 'true' }, redThread())
+      : el('div', { class: 'empty-art', 'aria-hidden': 'true' }, icon(ART[art] || art, { size: 96, cls: 'empty-icon' }), el('span', { class: 'empty-ring' }))),
     el('h2', { class: 'empty-title' }, title),
     text ? el('p', { class: 'empty-text' }, text) : null,
     action ? el('button', { class: 'btn btn-primary', type: 'button', onClick: action.onClick }, action.label) : null);
