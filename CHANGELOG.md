@@ -14,6 +14,20 @@ Cambios
 - Las letras japonesas junto a cada título se ven más grandes.
 - En Apariencia, "Japonés" pasa a llamarse "Letras de los títulos" y sirve para los dos idiomas.
 
+## 0.16.0 (sus mascotas cobran vida)
+
+Nuevo
+- Las mascotas que agregan en Mascotas ahora tienen su propio dibujo en acuarela: eligen el pelaje (siamés, negro, blanco, gris, naranja, atigrado, calicó, carey, blanco y negro o crema) y un collar con cascabel. Parpadean, mueven la cola y las orejas.
+- En Inicio salen todas juntas en un cuartito de tatami (antes solo la primera), un poco más arriba. Al tocar una, habla según la personalidad y las cosas favoritas que escribieron en su perfil, la hora del día y sus fechas especiales.
+- Mimos: Acariciar (ronronea y suelta corazones), Premio (hasta 3 al día) y Jugar con la pluma. Se ve cuántos mimos recibió hoy y si la mimaron los dos; se sincroniza entre los dos teléfonos.
+- Travesura: anotan rápido lo que hizo, con foto si quieren. Queda en Momentos de su página y en la Galería.
+- Cuando le toca una vacuna o desparasitación, se acaba la comida o la arena, o falta su medicina del día, la mascota lo pide en un globito tierno que lleva a su página. Se puede ocultar por hoy.
+- De vez en cuando una de ellas pasea por Juegos, Mi espacio y el jardín. Si la tocan, se queda un ratito más.
+
+Notas
+- Si ya tenían raza o color escrito, el dibujo adivina el pelaje; se cambia en Editar.
+- Con "reducir movimiento" los dibujos se quedan quietos y no pasean.
+
 ## 0.15.1 (Inicio con arce japonés y furin, hojas por encima; Navidad a la japonesa)
 
 - De día, la esquina de Inicio tiene una rama frondosa de arce japonés (ya no se parece a la sakura de la entrada) con un furin de vidrio colgando que se mece con el viento. Al tocarla se sacude.

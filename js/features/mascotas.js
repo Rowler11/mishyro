@@ -8,7 +8,8 @@ import { ui, util, db, profile, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
 import * as ics from '../core/ics.js';
 import { openViewer } from '../core/viewer.js';
-import { photoField, dropOldMedia, mediaImg, moneyField, barChart, lineChart, tagsInput, petArt, lastMonths, monthLabel, monthOf, isQuotaError } from './hogar-kit.js';
+import { kittyArt, coatSwatch, COATS, COLLARS, coatId } from '../core/kitty.js';
+import { photoField, dropOldMedia, mediaImg, moneyField, barChart, lineChart, tagsInput, lastMonths, monthLabel, monthOf, isQuotaError } from './hogar-kit.js';
 
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -194,6 +195,20 @@ function petEditor(existing, { onSaved, onDeleted }) {
   const traits = tagsInput({ value: p.traits, placeholder: 'Curiosa, dormilona, conversadora' });
   const favorites = ui.input({ value: p.favorites || '', maxlength: 160, placeholder: 'Juguetes, comida, lugares' });
   const notes = ui.textarea({ rows: 3, maxlength: 1000 }); notes.value = p.notes || '';
+  let coat = coatId(p);
+  const collar = el('select', { class: 'input' }, el('option', { value: '' }, 'Automático'), COLLARS.map((c) => el('option', { value: c.id }, c.label)));
+  collar.value = COLLARS.some((c) => c.id === p.collar) ? p.collar : '';
+  const preview = el('span', { class: 'coat-preview', 'aria-hidden': 'true' });
+  const paintPreview = () => preview.replaceChildren(kittyArt({ species, coat, collar: collar.value || undefined, breed: breed.value, color: color.value }));
+  const coatGroup = el('div', { class: 'coat-picker', role: 'radiogroup', 'aria-label': 'Pelaje del dibujo' },
+    COATS.map((c) => el('button', { class: 'coat-pick', type: 'button', role: 'radio', 'aria-checked': String(c.id === coat), 'data-coat': c.id, onClick: (e) => {
+      coat = c.id; coatGroup.querySelectorAll('.coat-pick').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.coat === coat))); paintPreview();
+      e.currentTarget.focus();
+    } }, coatSwatch(c.id), el('span', {}, c.label))));
+  collar.addEventListener('change', paintPreview);
+  const look = el('fieldset', { class: 'coat-box' }, el('legend', {}, 'Su dibujo en la app'),
+    el('div', { class: 'coat-top' }, preview, el('p', { class: 'muted small' }, 'Así aparece en Inicio y de paseo por la app. Elige el pelaje que más se le parezca.')),
+    coatGroup, ui.field({ label: 'Collar con cascabel', control: collar }));
   const memorial = el('input', { type: 'checkbox', checked: !!p.memorial });
   const memorialDate = ui.input({ type: 'date', value: p.memorial?.date || '', max: util.localDay() });
   const memBox = el('div', { class: 'stack', hidden: !p.memorial }, ui.field({ label: 'Fecha (opcional)', control: memorialDate }));
@@ -203,10 +218,10 @@ function petEditor(existing, { onSaved, onDeleted }) {
   const err = el('p', { class: 'field-error form-error', role: 'alert' });
   const body = el('form', { class: 'stack', onSubmit: (e) => e.preventDefault() },
     photo.node, fName,
-    ui.segmented({ label: 'Especie', value: species, options: SPECIES, onChange: (v) => { species = v; } }),
+    ui.segmented({ label: 'Especie', value: species, options: SPECIES, onChange: (v) => { species = v; paintPreview(); } }),
     ui.field({ label: 'Raza', control: breed }), ui.field({ label: 'Sexo', control: sex }),
     birth, arrival, ui.field({ label: 'Color y señas', control: color }), ui.field({ label: 'Microchip (opcional)', control: chip }),
-    ui.field({ label: 'Personalidad', control: traits }), ui.field({ label: 'Cosas favoritas', control: favorites }), ui.field({ label: 'Notas', control: notes }),
+    look, ui.field({ label: 'Personalidad', control: traits, hint: 'Con esto sabe qué decir cuando lo tocan.' }), ui.field({ label: 'Cosas favoritas', control: favorites }), ui.field({ label: 'Notas', control: notes }),
     existing ? el('details', { class: 'pet-memorial-box' }, el('summary', {}, 'En memoria'),
       el('p', { class: 'muted small' }, 'Para una mascota que ya no está. Se conserva con todo lo que guardaron, sin recordatorios ni conteos.'),
       el('label', { class: 'check-inline' }, memorial, el('span', {}, 'Está en nuestra memoria')), memBox) : null,
@@ -218,6 +233,7 @@ function petEditor(existing, { onSaved, onDeleted }) {
       await db.purge('pets', p.id); modal.close(); onDeleted?.();
     } }) : null,
     err);
+  paintPreview();
   const modal = ui.openModal({
     title: existing ? `Editar a ${p.name}` : 'Agregar mascota', size: 'md', body,
     actions: [{ label: 'Cancelar', variant: 'ghost' }, { label: 'Guardar', variant: 'primary', onClick: async () => {
@@ -226,7 +242,7 @@ function petEditor(existing, { onSaved, onDeleted }) {
       const id = p.id || util.uuid();
       try {
         const mediaId = await photo.commit('pets', id);
-        const rec = { ...p, id, name: name.value.trim(), species, breed: breed.value.trim(), sex: sex.value, birth: birth.value(), arrival: arrival.value(), color: color.value.trim(), microchip: chip.value.trim(), mediaId, traits: traits.tags(), favorites: favorites.value.trim(), notes: notes.value.trim(), memorial: memorial.checked ? { date: memorialDate.value || '' } : null, visibility: 'shared', owner: 'both' };
+        const rec = { ...p, id, name: name.value.trim(), species, breed: breed.value.trim(), sex: sex.value, birth: birth.value(), arrival: arrival.value(), color: color.value.trim(), microchip: chip.value.trim(), mediaId, traits: traits.tags(), favorites: favorites.value.trim(), notes: notes.value.trim(), memorial: memorial.checked ? { date: memorialDate.value || '' } : null, coat, collar: collar.value, visibility: 'shared', owner: 'both' };
         await db.put('pets', rec);
         await dropOldMedia([p.mediaId], [mediaId]);
         photo.revoke(); onSaved(rec); return true;
@@ -273,6 +289,7 @@ export async function render() {
   const urls = new Set();
   let selected = null; try { selected = sessionStorage.getItem(KEY); } catch { /* private mode */ }
   let tab = 'perfil';
+  try { const t = sessionStorage.getItem('aishiteru.pet.tab'); if (t) { tab = t; sessionStorage.removeItem('aishiteru.pet.tab'); } } catch { /* private mode */ }
   const add = () => petEditor(null, { onSaved: (rec) => { selected = rec.id; remember(); ui.toast(`${rec.name} ya es parte de la familia.`, { tone: 'success' }); load(); } });
   const remember = () => { try { sessionStorage.setItem(KEY, selected || ''); } catch { /* ignore */ } };
   page.append(ui.pageHeader({ title: 'Mascotas', jp: 'ペット', romaji: 'petto', back: '/mas', actions: [ui.newButton('Mascota', add)] }));
@@ -303,7 +320,7 @@ export async function render() {
     // ---- selector ----
     const selector = list.length < 2 ? null : el('div', { class: 'pet-selector', role: 'group', 'aria-label': 'Elegir mascota' },
       list.map((p) => el('button', { class: `pet-pick${p.id === pet.id ? ' is-on' : ''}${p.memorial ? ' is-memorial' : ''}`, type: 'button', 'aria-pressed': String(p.id === pet.id), onClick: () => { selected = p.id; remember(); tab = 'perfil'; load(); } },
-        el('span', { class: 'pet-pick-photo' }, p.mediaId ? mediaImg(p.mediaId, { alt: '', urls }) : petArt(p.species, { size: 34 })),
+        el('span', { class: 'pet-pick-photo' }, p.mediaId ? mediaImg(p.mediaId, { alt: '', urls }) : kittyArt(p, { index: list.indexOf(p) })),
         el('span', {}, p.name))));
 
     // ---- hero ----
@@ -312,7 +329,7 @@ export async function render() {
     const nextArr = pet.memorial ? null : time.nextOccurrence(pet.arrival, {});
     const upcoming = [next && { label: 'cumpleaños', ...next }, nextArr && { label: 'día que llegó a casa', ...nextArr }].filter(Boolean).sort((a, b) => a.days - b.days)[0];
     const hero = el('article', { class: `card paper-card pet-hero${pet.memorial ? ' is-memorial' : ''}` },
-      el('div', { class: 'pet-hero-photo' }, pet.mediaId ? el('button', { type: 'button', class: 'pet-hero-btn', 'aria-label': `Ver la foto de ${pet.name}`, onClick: () => openViewer([{ mediaId: pet.mediaId, alt: pet.name, caption: pet.name }]) }, mediaImg(pet.mediaId, { alt: '', urls })) : petArt(pet.species, { size: 88, label: SPECIES.find((s) => s.value === pet.species)?.label || 'Mascota' })),
+      el('div', { class: 'pet-hero-photo' }, pet.mediaId ? el('button', { type: 'button', class: 'pet-hero-btn', 'aria-label': `Ver la foto de ${pet.name}`, onClick: () => openViewer([{ mediaId: pet.mediaId, alt: pet.name, caption: pet.name }]) }, mediaImg(pet.mediaId, { alt: '', urls })) : el('span', { class: 'pet-hero-kitty', role: 'img', 'aria-label': `Dibujo de ${pet.name}` }, kittyArt(pet, { index: list.indexOf(pet) }))),
       el('div', { class: 'pet-hero-text' },
         el('h2', { class: 'pet-name' }, pet.name),
         el('p', { class: 'muted' }, [SPECIES.find((s) => s.value === pet.species)?.label, pet.breed, pet.sex === 'hembra' ? 'hembra' : pet.sex === 'macho' ? 'macho' : ''].filter(Boolean).join(' · ')),
@@ -342,7 +359,7 @@ export async function render() {
           pet.traits?.length ? el('div', {}, el('dt', {}, 'Personalidad'), el('dd', { class: 'tag-row' }, pet.traits.map((t) => el('span', { class: 'tag' }, t)))) : null,
           row('Favoritos', pet.favorites), row('Notas', pet.notes)) : empty('Completen su perfil: personalidad, cosas favoritas y señas.')],
         ui.button({ label: 'Editar perfil', iconName: 'pencil', small: true, variant: 'ghost', onClick: () => petEditor(pet, { onSaved: reload, onDeleted: reload }) })),
-        ui.toggle({ label: 'Tarjeta en Inicio', checked: !homePrefs.petHidden, hint: 'Foto, días en casa y la próxima dosis.', onChange: (v) => db.setSettings('home', { petHidden: !v }) })];
+        ui.toggle({ label: 'Tarjeta en Inicio', checked: !homePrefs.petHidden, hint: 'Todos juntos: se mueven, hablan, reciben mimos y piden sus cuidados.', onChange: (v) => db.setSettings('home', { petHidden: !v }) })];
       },
       salud: () => {
         const health = [...byType('vaccine'), ...byType('deworm')];
@@ -475,12 +492,14 @@ export async function render() {
             el('div', { class: 'grow' },
               el('p', { class: 'muted small' }, util.formatDay(r.date)),
               ml ? el('span', { class: 'tag' }, ml.title) : null,
+              r.data.mischief ? el('span', { class: 'tag' }, 'Travesura') : null,
               r.data.title ? el('strong', { class: 'pet-moment-title' }, r.data.title) : null,
               r.data.note ? el('p', { class: 'small' }, r.data.note) : null,
               el('div', { class: 'list-item-actions' },
                 r.mediaIds?.length && !r.fromCapsule ? el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': 'Enviar a la Cápsula', title: 'Enviar a la Cápsula', onClick: () => toCapsule(r) }, icon('hourglass', { size: 16 })) : null,
                 ...recActions(r).children)));
-        })) : empty('Fotos con fecha, hitos y notas: su línea de tiempo.')], addBtn('moment'))];
+        })) : empty('Fotos con fecha, hitos, notas y travesuras: su línea de tiempo.')],
+        el('div', { class: 'btn-row' }, addBtn('moment'), ui.button({ label: 'Anotar travesura', iconName: 'camera', small: true, variant: 'ghost', onClick: () => import('./gatitos.js').then((m) => m.mischiefEditor(pet, { onSaved: reload })) })))];
       },
     };
 
@@ -497,32 +516,10 @@ export async function render() {
  * Inicio card (Fase 4B): photo, days at home or the next birthday/arrival, and a dose that is due.
  * One pet (the first that is not in memory); hidden with "Ocultar" (per device, Ajustes de Inicio).
  */
-/** Days at home that get a little cake on Inicio (besides every 1000). */
-const PET_ROUND = [100, 365, 500];
 
-export async function homeCard({ onChange } = {}) {
-  const prefs = await db.getSettings('home', { petHidden: false });
-  if (prefs.petHidden) return null;
-  const pets = (await db.query('pets')).filter((p) => !p.deleted && !p.memorial && p.name);
-  if (!pets.length) return null;
-  const pet = pets.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))[0];
-  const recs = (await db.query('petRecords')).filter((r) => !r.deleted && r.petId === pet.id && (r.type === 'vaccine' || r.type === 'deworm'));
-  const due = latestByProduct(recs).map((r) => ({ r, st: doseStatus(r.data?.next) })).filter((x) => x.st === 'overdue' || x.st === 'soon').sort((a, b) => a.r.data.next.localeCompare(b.r.data.next))[0];
-  const home = daysHome(pet.arrival);
-  const next = [time.nextOccurrence(pet.birth, {}) && { label: 'Cumpleaños', ...time.nextOccurrence(pet.birth, {}) }, time.nextOccurrence(pet.arrival, {}) && { label: 'Aniversario en casa', ...time.nextOccurrence(pet.arrival, {}) }].filter(Boolean).sort((a, b) => a.days - b.days)[0];
-  const urls = new Set();
-  const line = next && next.days <= 30 ? (next.days === 0 ? `${next.label}: ¡hoy!` : `${next.label} en ${next.days} ${next.days === 1 ? 'día' : 'días'}`)
-    : home !== null ? `${home.toLocaleString('es-CO')} días en casa` : ageText(pet.birth) || '';
-  const petRound = home !== null && home > 0 && (PET_ROUND.includes(home) || home % 1000 === 0);
-  const hide = async () => { await db.setSettings('home', { petHidden: true }); ui.toast(`Listo. Vuelve a mostrar a ${pet.name} desde Mascotas.`); onChange?.(); };
-  return el('section', { class: 'home-card pet-home-card', 'aria-labelledby': 'pet-home-title' },
-    el('a', { class: 'pet-home-link', href: '#/mascotas' },
-      el('span', { class: 'pet-home-photo' }, pet.mediaId ? mediaImg(pet.mediaId, { alt: '', urls }) : petArt(pet.species, { size: 56 })),
-      el('span', { class: 'pet-home-text' },
-        el('span', { class: 'pet-home-name', id: 'pet-home-title' }, pet.name),
-        petRound ? el('span', { class: 'pet-home-round' }, icon('cake', { size: 16 }), ` ¡Hoy cumple ${home.toLocaleString('es-CO')} días en casa!`) : line ? el('span', {}, line) : null,
-        due ? el('span', { class: `badge ${due.st === 'overdue' ? 'badge-danger' : 'badge-warn'}` }, `${due.r.data.product}: ${due.st === 'overdue' ? 'vencida' : `el ${fmtDM.format(util.parseDay(due.r.data.next))}`}`) : null)),
-    el('button', { class: 'icon-btn', type: 'button', 'aria-label': `Ocultar la tarjeta de ${pet.name} en Inicio`, onClick: hide }, icon('eye-off', { size: 18 })));
+/** Inicio card (v0.16.0): all the pets together, alive (see gatitos.js). */
+export async function homeCard(opts = {}) {
+  return (await import('./gatitos.js')).homeCard(opts);
 }
 
 export function maneki({ size = 56 } = {}) {

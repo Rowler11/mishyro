@@ -48,7 +48,7 @@ const pick = (arr, avoid) => { const list = arr.filter((x) => x !== avoid); retu
 const last = {};
 
 // The bubble lives on the nearest [data-bubble-root] (the scene, which clips its drawings), above the creature.
-function bubble(host, who, text) {
+export function bubble(host, who, text, { ms = 4200 } = {}) {
   const root = host.closest('[data-bubble-root]') || host;
   root.querySelectorAll('.pet-bubble').forEach((x) => x.remove()); // one voice at a time, like a dialogue
   const b = el('span', { class: 'pet-bubble', role: 'status', 'data-for': host.dataset.petId }, el('strong', {}, `${who}: `), text);
@@ -59,9 +59,9 @@ function bubble(host, who, text) {
   }
   root.append(b);
   clearTimeout(host._bubbleT);
-  host._bubbleT = setTimeout(() => { b.classList.add('is-leaving'); setTimeout(() => b.remove(), 300); }, 4200);
+  host._bubbleT = setTimeout(() => { b.classList.add('is-leaving'); setTimeout(() => b.remove(), 300); }, ms);
 }
-function move(host) {
+export function move(host) {
   if (prefersReducedMotion()) return;
   host.classList.remove('is-poked'); void host.offsetWidth; host.classList.add('is-poked');
   setTimeout(() => host.classList.remove('is-poked'), 1000);

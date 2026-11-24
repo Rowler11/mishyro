@@ -126,6 +126,7 @@ async function room(page) {
     el('span', { class: 'game-hero-dice', 'aria-hidden': 'true' }, draw('dice')),
     el('div', { class: 'game-hero-text' },
       el('h2', { class: 'game-hero-title', id: 'game-hero-title' }, '¿Qué jugamos?'), summary, surprise));
+  import('./gatitos.js').then((m) => m.stroll(hero, 'juegos', { flow: true })).catch(() => {});
   add(page,
     hero,
     champ.played ? el('a', { class: 'game-champ', href: '#/liga' }, icon('crown', { size: 18 }), champ.best ? `Va ganando el mes: ${profile.name(champ.best)} (${champ.wins[champ.best]} a ${champ.wins[profile.partnerOf(champ.best)]})` : `Este mes van empatados (${champ.wins[profile.PEOPLE[0]]} a ${champ.wins[profile.PEOPLE[1]]})`) : null,

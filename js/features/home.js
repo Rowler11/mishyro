@@ -524,13 +524,13 @@ export async function render() {
       meeting,
       slides.length ? daySwitcher(slides) : null,
       plant,
+      pet,
       favs,
       homeMap,
       comingCard(data, start),
       today,
       acc.discoverCard(),
       weekend,
-      pet,
       backupCard(data.meta),
     ].filter(Boolean));
     ui.stagger(body);

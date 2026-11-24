@@ -242,6 +242,47 @@ await test('vault: only matches in yes or maybe are revealed', () => {
   eq(V.matches({ a: 'si', b: 'no', c: 'quiza', d: 'si' }, { a: 'si', b: 'si', c: 'si', d: 'no' }), [{ id: 'a', both: 'si' }, { id: 'c', both: 'quiza' }]);
 });
 
+// ---------- v0.16.0: pets come alive ----------
+const K = await import('../js/core/kitty.js');
+const G = await import('../js/features/gatitos.js');
+await test('kitty: coat guessed from breed or color', () => {
+  eq(K.guessCoat({ breed: 'Siamés' }), 'siames'); eq(K.guessCoat({ color: 'negro con manchas blancas' }), 'bicolor');
+  eq(K.guessCoat({ color: 'Naranja' }), 'naranja'); eq(K.guessCoat({ color: 'tricolor' }), 'calico'); eq(K.guessCoat({}), 'atigrado');
+  eq(K.coatId({ coat: 'gris', breed: 'Siamés' }), 'gris'); eq(K.coatId({ coat: 'inventado', color: 'blanco' }), 'blanco');
+});
+await test('gatitos: lines follow personality, favorites and special days', () => {
+  const noon = new Date(2026, 10, 24, 13);
+  const l = G.linesFor({ traits: ['Dormilona'], favorites: 'ratón de tela, cajas' }, noon);
+  ok(l.includes('Zzz… cinco minutitos más.'), 'trait line'); ok(l.includes('¿Jugamos con ratón de tela?'), 'favorite line');
+  ok(!l.some((x) => /Desayunamos/.test(x)), 'no morning line at noon');
+  eq(G.linesFor({ birth: { y: 2026, m: 11, d: 24 } }, noon), ['¡Hoy es mi cumpleaños! ¿Me cantan?']);
+  eq(G.favoriteOf({ favorites: 'cajas; sol' }), 'cajas');
+});
+await test('gatitos: care asks for due doses, medicines and refills, most urgent first', () => {
+  const pet = { id: 'p' };
+  const recs = [
+    { id: 'a', petId: 'p', type: 'vaccine', date: '2026-01-01', data: { product: 'V1', next: '2026-11-20' } },
+    { id: 'b', petId: 'p', type: 'deworm', date: '2026-10-01', data: { product: 'D1', next: '2026-11-27' } },
+    { id: 'c', petId: 'p', type: 'deworm', date: '2026-10-01', data: { product: 'D2', next: '2027-01-27' } },
+    { id: 'd', petId: 'p', type: 'medication', date: '2026-11-20', data: { name: 'M1', checks: {} } },
+    { id: 'e', petId: 'p', type: 'supply', date: '2026-11-01', data: { item: 'Arena', lastsDays: 24 } },
+    { id: 'f', petId: 'otra', type: 'vaccine', date: '2026-01-01', data: { product: 'X', next: '2026-01-02' } },
+  ];
+  const c = G.careFor(pet, recs, { today: '2026-11-24', hour: 10 });
+  eq(c.map((x) => x.key.split(':')[0] + ':' + x.level), ['dose:0', 'med:1', 'dose:2', 'supply:2']);
+  eq(G.careFor(pet, recs, { today: '2026-11-24', hour: 6 }).some((x) => x.key.startsWith('med')), false);
+  eq(G.careFor({ id: 'p', memorial: {} }, recs, { today: '2026-11-24' }), []);
+});
+await test('gatitos: mimos add up per pet and person, only today', () => {
+  const r = [
+    { type: 'mimos', petId: 'p', date: '2026-11-24', by: 'david', data: { pet: 2, treat: 1, play: 0 } },
+    { type: 'mimos', petId: 'p', date: '2026-11-24', by: 'sofia', data: { pet: 1, treat: 0, play: 1 } },
+    { type: 'mimos', petId: 'p', date: '2026-11-23', by: 'sofia', data: { pet: 9 } },
+  ];
+  const m = G.mimosOf(r, '2026-11-24').p;
+  eq([m.pet, m.treat, m.play, m.by.size], [3, 1, 1, 2]);
+});
+
 db.close();
 await new Promise((res) => { const r = indexedDB.deleteDatabase(`${KEY}-db`); r.onsuccess = r.onerror = res; });
 // ---------- v0.16.0: seasons, lunar festivals and styles ----------
