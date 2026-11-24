@@ -171,6 +171,7 @@ const NOTICES = {
   song: ['Te dedicaron una canción', 'Escúchala en Canciones 🎵', '#/canciones'],
   question: ['Una pregunta para ti', 'Te espera en Preguntas', '#/preguntas'],
   love: ['Te llegó amor', 'Te mandaron amor hoy 💗 ¿Le devuelves uno?', '#/inicio'],
+  beat: ['Te llegó un latido', 'Ábrela y siéntelo 💓', '#/inicio'],
   loveRemind: ['¿Ya enviaste amor hoy?', 'Un toque al corazón y su racha sigue 💗', '#/inicio'],
 };
 // Scheduled notices (v0.15.0) come as "r:<kind>:<days before>". Their words are fixed here, so the
@@ -224,6 +225,7 @@ self.addEventListener('push', (event) => {
     const [title, body, hash] = noticeText(kind);
     await self.registration.showNotification(title, {
       body, tag: kind || 'aishiteru', icon: './icons/icon-192.png', badge: './icons/icon-192.png',
+      ...(kind === 'beat' ? { vibrate: [55, 110, 85, 610, 55, 110, 85, 610, 55, 110, 85], renotify: true } : {}), // v0.22.0: the notice itself beats
       data: { url: new URL(`./${hash}`, self.registration.scope).href },
     });
   })());

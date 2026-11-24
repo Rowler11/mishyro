@@ -487,6 +487,7 @@ async function startSync() {
   });
   await sync.start().catch((e) => db.logError(`sync: ${e?.message}`, e?.stack, CONFIG.appVersion));
   import('./features/avisos.js').then((m) => m.start()).catch(() => {}); // scheduled caring notices (v0.15.0)
+  import('./features/latido.js').then((m) => m.watch()).catch(() => {}); // v0.22.0: their heartbeat, felt here
 }
 
 // ---------- start ----------

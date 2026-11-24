@@ -3588,3 +3588,24 @@ button.list-row:active, a.list-row:active, label.list-row:active { background: v
 .splash-corner { position: absolute; top: env(safe-area-inset-top); right: 0; width: min(78vw, 420px); pointer-events: none; animation: rise var(--dur-5) var(--ease-out) both; }
 .splash-corner > svg { width: 100%; height: auto; display: block; }
 .splash-intro:not(.show) .splash-corner { visibility: hidden; }
+
+/* v0.22.0 Latido: hold the days ring, and their heartbeat fills the screen on the other phone */
+.latido-target { cursor: pointer; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; border-radius: 50%; -webkit-tap-highlight-color: transparent; }
+.latido-target:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+.latido-target.is-holding { transform: scale(.96); transition: transform var(--dur-2) var(--ease-out); }
+.latido-target.is-beat { animation: latido-beat .5s var(--ease-out); }
+.latido-target.is-holding::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; box-shadow: 0 0 0 2px var(--accent), 0 0 24px color-mix(in srgb, var(--accent) 45%, transparent); opacity: .7; pointer-events: none; }
+.latido-count { position: absolute; top: -4px; left: -4px; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font: 700 .78rem var(--font-ui); pointer-events: none; }
+.latido-count:empty { display: none; }
+@keyframes latido-beat { 0% { transform: scale(.96); } 18% { transform: scale(1.04); } 34% { transform: scale(.98); } 50% { transform: scale(1.06); } 100% { transform: scale(.96); } }
+.latido-layer { position: fixed; inset: 0; z-index: 97; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3); padding: var(--space-5);
+  background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 62%), color-mix(in srgb, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); animation: fade-in var(--dur-3) var(--ease-out) both; text-align: center; }
+.latido-layer.leaving { animation: fade-out var(--dur-2) forwards; }
+.latido-heart { width: 140px; color: var(--accent); filter: drop-shadow(0 8px 28px color-mix(in srgb, var(--accent) 45%, transparent)); }
+.latido-heart svg { display: block; width: 100%; height: auto; fill: currentColor; }
+.latido-heart.is-beat { animation: latido-beat .7s var(--ease-out); }
+.latido-title { margin: 0; font: 700 1.5rem var(--font-serif); }
+.latido-sub { margin: 0; color: var(--text-2); }
+.latido-close { margin-top: var(--space-4); }
+:root[data-motion="off"] .latido-target.is-beat, :root[data-motion="off"] .latido-heart.is-beat { animation: none; }
