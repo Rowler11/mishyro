@@ -2431,6 +2431,76 @@ async function exampleContent(page, { reload = true } = {}) {
     await ctx.close();
   }
 
+  // ---------- v0.16.0: real pets come alive (fictitious pets) ----------
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const errs = watch(page);
+    await page.addInitScript(() => { window.alert = window.confirm = window.prompt = () => { throw new Error('native dialog'); }; });
+    await completeSetup(page);
+    const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 15000 }); await page.waitForTimeout(300); };
+    await page.evaluate(async () => {
+      const db = await import('./js/core/db.js'); const u = await import('./js/core/util.js');
+      for (const p of await db.query('pets')) await db.purge('pets', p.id);
+      const inDays = (n) => u.localDay(new Date(Date.now() + n * 864e5));
+      await db.put('pets', { id: 't16a', name: 'Nube', species: 'gato', breed: 'Siamés', sex: 'hembra', traits: ['dormilona'], favorites: 'ratón de tela', arrival: { y: 2026, m: 1, d: 1 }, visibility: 'shared', owner: 'both', createdAt: '2000-01-01T00:00:00Z' });
+      await db.put('pets', { id: 't16b', name: 'Tinta', species: 'gato', color: 'negro', visibility: 'shared', owner: 'both', createdAt: '2000-01-02T00:00:00Z' });
+      await db.put('pets', { id: 't16c', name: 'Canela', species: 'gato', coat: 'calico', visibility: 'shared', owner: 'both', createdAt: '2000-01-03T00:00:00Z' });
+      await db.put('petRecords', { id: 't16v', petId: 't16b', type: 'vaccine', date: '2026-01-01', data: { product: 'Vacuna ficticia', next: inDays(-2) }, visibility: 'shared', owner: 'both' });
+    });
+    await go('/ajustes', '.list-row'); await go('/inicio', '.kitty-card');
+    ok('16 Inicio: salen todas las mascotas juntas', (await page.locator('.kitty-card .kitty').count()) === 3);
+    ok('16 Inicio: cada una con su dibujo y su pelaje', await page.evaluate(() => [...document.querySelectorAll('.kitty-card .kitty-art')].length === 3));
+    ok('16 Cuidados: la mascota pide su vacuna vencida en un globito', /Tinta: .*Vacuna ficticia/.test(await page.locator('.kitty-care').innerText()));
+    await page.locator('.kitty-care').getByRole('button', { name: 'Ver la página de Tinta' }).click();
+    await page.waitForSelector('.pet-hero');
+    ok('16 Cuidados: el globito lleva a su página, en Salud', /Tinta/.test(await page.locator('.pet-name').innerText()) && /Salud/.test(await page.locator('.chip[aria-selected="true"]').innerText()));
+    await go('/inicio', '.kitty-card');
+    await page.locator('.kitty-care').getByRole('button', { name: 'Ya lo vi, ocultar por hoy' }).click();
+    ok('16 Cuidados: se puede ocultar por hoy', (await page.locator('.kitty-care').count()) === 0);
+    await page.locator('.kitty', { hasText: 'Nube' }).click();
+    await page.waitForSelector('.kitty-room .pet-bubble');
+    ok('16 Hablar: al tocarla habla con su nombre', /^Nube: /.test(await page.locator('.kitty-room .pet-bubble').innerText()));
+    ok('16 Hablar: la tocada queda elegida', (await page.locator('.kitty[aria-pressed="true"]').innerText()).includes('Nube'));
+    await page.getByRole('button', { name: 'Acariciar a Nube' }).click(); await page.waitForTimeout(300);
+    for (let i = 0; i < 4; i++) { await page.getByRole('button', { name: 'Darle un premio a Nube' }).click(); await page.waitForTimeout(250); }
+    await page.getByRole('button', { name: 'Jugar con Nube' }).click(); await page.waitForTimeout(400);
+    const m = await page.evaluate(async () => { const db = await import('./js/core/db.js'); const g = await import('./js/features/gatitos.js'); const x = g.mimosOf(await db.query('petRecords'))['t16a']; return x && { pet: x.pet, treat: x.treat, play: x.play }; });
+    ok('16 Mimos: se guardan los de hoy (premios hasta 3)', m && m.pet === 1 && m.treat === 3 && m.play === 1, JSON.stringify(m));
+    ok('16 Mimos: la línea dice cuántos recibió hoy', /hoy: 5 mimos/.test(await page.locator('.kitty-line').innerText()));
+    await page.getByRole('button', { name: 'Anotar una travesura de Nube' }).click();
+    await page.getByLabel('¿Qué hizo?').fill('Se metió en una caja ficticia');
+    await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(500);
+    const tr = await page.evaluate(async () => (await (await import('./js/core/db.js')).query('petRecords')).find((r) => r.data?.mischief));
+    ok('16 Travesura: queda como momento de la mascota', tr && tr.type === 'moment' && tr.petId === 't16a');
+    // Editor: coat picker and collar
+    await go('/mascotas', '.pet-hero');
+    await page.locator('.pet-pick', { hasText: 'Nube' }).click(); await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'Editar a Nube' }).click();
+    await page.waitForSelector('.coat-picker');
+    ok('16 Editor: el pelaje se adivina por la raza (siamés)', (await page.locator('.coat-pick[aria-checked="true"]').innerText()).includes('Siamés'));
+    await page.locator('.coat-pick', { hasText: 'Naranja' }).click();
+    await page.getByLabel('Collar con cascabel').selectOption('verde');
+    await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(500);
+    const saved = await page.evaluate(async () => { const p = await (await import('./js/core/db.js')).get('pets', 't16a'); return `${p.coat}|${p.collar}`; });
+    ok('16 Editor: guarda el pelaje y el collar', saved === 'naranja|verde', saved);
+    await page.locator('.chip', { hasText: 'Momentos' }).click(); await page.waitForTimeout(300);
+    ok('16 Momentos: la travesura sale con su etiqueta', /Travesura/.test(await page.locator('.pet-timeline').innerText()));
+    // Strolls: open their own path, never over the content
+    await page.evaluate(async () => { const g = await import('./js/features/gatitos.js'); location.hash = '#/juegos'; await new Promise((r) => setTimeout(r, 600)); g.stroll(document.querySelector('.game-hero'), 't16', { chance: 1, delay: 0, flow: true }); });
+    await page.waitForSelector('.game-hero .kitty-walker', { timeout: 5000 });
+    await page.waitForTimeout(600);
+    const lane = await page.evaluate(() => { const l = document.querySelector('.game-hero .kitty-lane').getBoundingClientRect(); const b = document.querySelector('.game-hero .btn').getBoundingClientRect(); return l.top >= b.bottom - 1; });
+    ok('16 Paseo: en Juegos camina por su caminito, debajo del botón', lane);
+    await page.locator('.game-hero .kitty-walker').click(); await page.waitForTimeout(300);
+    ok('16 Paseo: si la tocan, habla', (await page.locator('.game-hero .pet-bubble').count()) === 1);
+    ok('16 Memoria: una mascota "En memoria" no sale en Inicio', await page.evaluate(async () => { const db = await import('./js/core/db.js'); const p = await db.get('pets', 't16c'); await db.put('pets', { ...p, memorial: { date: '' } }); const g = await import('./js/features/gatitos.js'); return (await g.livePets()).length === 2; }));
+    ok('16 sin desplazamiento lateral', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    const real = errs.filter((e) => !/ERR_TUNNEL_CONNECTION_FAILED|ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED/.test(e));
+    ok('v0.16.0: no page errors or native dialogs', real.length === 0, real.join(' | '));
+    await ctx.close();
+  }
+
   await browser.close();
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed`);

@@ -168,6 +168,7 @@ export async function render() {
           el('p', { class: 'own-desk-line' }, lineOfDay(today))),
         buddy),
       nextReminder ? el('p', { class: 'own-desk-note small' }, icon('bell', { size: 14 }), ` ${nextReminder.date === today ? 'Hoy' : fmtShort.format(util.parseDay(nextReminder.date))}: ${nextReminder.title || nextReminder.body || 'Recordatorio'}`) : null);
+    import('./gatitos.js').then((m) => m.stroll(desk, 'jibun', { flow: true })).catch(() => {});
     const drawers = el('div', { class: 'own-drawers', role: 'group', 'aria-label': 'Cajones' },
       [{ id: 'all', short: 'Todo', icon: 'layout-grid' }, ...KINDS].map((k) => {
         const n = k.id === 'all' ? items.length : counts[k.id];
