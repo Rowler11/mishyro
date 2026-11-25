@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.26.1 (Revisión de carga y animaciones)
+
+Cambiado
+- Se revisaron 50 pantallas al entrar desde la app y 10 al abrirla (teléfono y PC, también simulando un teléfono 6 veces más lento): ninguna salta al cargar, todas entran con su animación suave y se dibujan una sola vez.
+- Las fotos ya no aparecen de golpe ni a pedazos: se muestran con un fundido suave cuando terminan de cargar (Cápsula, Galería, Mapa, Mascotas y el resto).
+
 ## 0.26.0 (App para cualquier pareja y foto de perfil)
 
 Nuevo
