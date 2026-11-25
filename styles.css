@@ -4228,7 +4228,9 @@ a.game-tile:hover { border-color: var(--ink); }
 /* v0.32.3 (Rowler: the day/night sky "no se acomoda y da un salto"): Inicio's sky and living background are
    position: fixed, and a transform on the page (the 10px slide of the entrance) makes them relative to the page
    for 200 ms and then snap to the screen when it ends. Inicio enters with a fade only, so they never jump. */
-:root .home.view-enter, :root[data-dir="back"] .home.view-enter { animation-name: fade-in; }
+:root .home.view-enter, :root[data-dir="back"] .home.view-enter { animation-name: home-in; }
+/* v0.32.7: from .6, not from 0: the old screen is already gone, so a fade from nothing showed an empty frame. */
+@keyframes home-in { from { opacity: .6; } }
 
 /* v0.32.4: the corner branch sways a little each time a leaf lets go of it. */
 @keyframes corner-letgo { 0%, 100% { transform: rotate(0); } 35% { transform: rotate(-1.6deg); } 70% { transform: rotate(.6deg); } }

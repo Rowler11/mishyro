@@ -313,7 +313,18 @@ function addHubTabs(node, route) {
 function swapView(main, node, { quiet = false } = {}) {
   // A plain CSS entrance instead of a view transition: it never blocks taps, so switching is instant.
   main.replaceChildren(node);
-  if (!quiet && !app.firstRender && !util.prefersReducedMotion()) node.classList?.add('view-enter');
+  if (!quiet && !app.firstRender && !util.prefersReducedMotion() && node.classList) {
+    // v0.32.7: the entrance class goes away once it has played. While it stayed, the next tap changed
+    // html[data-dir] (forward/back) before the new view was ready, which swapped the animation's name on
+    // the view still on screen and replayed its entrance: the old screen vanished and faded back in, then
+    // the new one came in. That was the flicker when coming back to Inicio.
+    node.classList.add('view-enter');
+    // Wait for the page and its cards (they rise a little later) before taking it off, so nothing jumps.
+    requestAnimationFrame(() => {
+      const all = node.getAnimations?.({ subtree: true }).filter((a) => /^(shoji-in|shoji-in-back|home-in|rise)$/.test(a.animationName || '')) || [];
+      Promise.allSettled(all.map((a) => a.finished)).then(() => node.classList.remove('view-enter'));
+    });
+  }
   return Promise.resolve();
 }
 

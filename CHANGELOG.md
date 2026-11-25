@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.32.7 (Adiós al parpadeo al volver a Inicio)
+
+Arreglado
+- Al tocar Inicio desde otra sección, la pantalla que dejabas desaparecía, volvía a aparecer con un fundido y luego entraba Inicio: un doble parpadeo. La causa: la animación de entrada de cada pantalla se quedaba puesta y, al cambiar de dirección (ir hacia atrás en las pestañas), se repetía sobre la pantalla vieja. Ahora la entrada se quita en cuanto termina, e Inicio aparece con un fundido corto que no deja ningún cuadro vacío.
+
 ## 0.32.6 (Pantalla de carga más linda y latido que se acelera)
 
 Mejorado
