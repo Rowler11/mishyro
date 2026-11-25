@@ -247,7 +247,7 @@ function notifyKind(store, r, prev) {
   if (store === 'songs' && !prev && r.by === me) return 'song';
   if (store === 'questionsDaily' && r.kind === 'asker' && !prev && r.askedBy === me) return 'question';
   if (store === 'streaks' && r.type === 'love' && !prev && r.by === me) return 'love';
-  if (store === 'streaks' && r.type === 'beat' && !prev && r.by === me) return 'beat'; // v0.22.0 Latido
+  if (store === 'streaks' && r.type === 'beat' && !prev && r.by === me) return `beat:${Math.max(1, Math.min(15, Number(r.beats) || 1))}`; // v0.22.0 Latido; v0.31.0: how many, so her phone beats as many times
   if (store === 'streaks' && r.type === 'greet' && !prev && r.by === me) return r.kind === 'pm' ? 'greetPm' : 'greetAm';
   if (store === 'streaks' && r.type === 'hug' && !prev && r.by === me) return 'hug';
   if (store === 'streaks' && r.type === 'dayphoto' && !prev && r.by === me) return 'dayphoto'; // v0.28.0

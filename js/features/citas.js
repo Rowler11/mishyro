@@ -353,7 +353,7 @@ export async function weekendCard(now = new Date()) {
   const pool = eligible(data.ideas.filter((i) => ['tarde', 'dia'].includes(i.duration)), data.states, new Set());
   if (!pool.length) return null;
   const picks = draw(pool, data.states, 3);
-  return el('section', { class: 'home-card weekend-card', 'aria-labelledby': 'weekend-title' },
+  return el('section', { class: 'card home-card weekend-card', 'aria-labelledby': 'weekend-title' },
     el('h2', { class: 'card-kicker', id: 'weekend-title' }, 'Planeemos el finde'),
     el('ul', { class: 'today-list' }, picks.map((i) => el('li', {}, el('a', { class: 'today-row', href: '#/citas' },
       el('span', { class: 'section-icon' }, icon('dices', { size: 20 })),

@@ -56,7 +56,7 @@ export function homeCard() {
   const me = profile.active(); const to = profile.partnerOf(me);
   const am = isMorning();
   const b = (iconName, label, onClick) => el('button', { class: 'toque-btn', type: 'button', onClick }, icon(iconName, { size: 22 }), el('span', {}, label));
-  return el('section', { class: 'home-card toques-card', 'aria-labelledby': 'toques-title' },
+  return el('section', { class: 'card home-card toques-card', 'aria-labelledby': 'toques-title' },
     el('h2', { class: 'card-kicker', id: 'toques-title' }, `Para ${profile.nick(to)}`),
     el('div', { class: 'toques-row' },
       b(am ? 'sun' : 'moon', am ? 'Buenos días' : 'Buenas noches', sendGreeting),

@@ -378,7 +378,7 @@ function comingCard(data, start) {
   if (!list.length) return null;
   // A tear-off calendar page per date (Inicio A): the big number is what is left.
   const left = (n) => (n < 60 ? [String(n), n === 1 ? 'día · mañana' : 'días'] : n < 365 ? [String(Math.round(n / 30.4)), 'meses'] : [String(Math.round(n / 365)), Math.round(n / 365) === 1 ? 'año' : 'años']);
-  return el('section', { class: 'home-card coming-card', 'aria-labelledby': 'coming-title' },
+  return el('section', { class: 'card home-card coming-card', 'aria-labelledby': 'coming-title' },
     el('h2', { class: 'card-kicker', id: 'coming-title' }, 'Lo que viene'),
     el('ul', { class: 'mekuri-row' }, list.map((r) => {
       const [num, unit] = left(r.days);
@@ -433,7 +433,7 @@ async function todayCard() {
         icon('chevron-right', { size: 18, cls: 'list-chevron' })))));
   const more = rows.length > SHOWN ? el('button', { class: 'btn btn-ghost btn-small today-more', type: 'button' }, `Ver ${rows.length - SHOWN} más`) : null;
   more?.addEventListener('click', () => { list.querySelectorAll('li[hidden]').forEach((li) => { li.hidden = false; }); more.remove(); });
-  return el('section', { class: 'home-card today-card', 'aria-labelledby': 'today-title' },
+  return el('section', { class: 'card home-card today-card', 'aria-labelledby': 'today-title' },
     el('h2', { class: 'card-kicker', id: 'today-title' }, 'Para hoy'), list, more);
 }
 
@@ -442,7 +442,7 @@ function backupCard(meta) {
   const last = meta.lastBackupAt ? time.parseStart(meta.lastBackupAt) : null;
   const days = last ? util.daysBetween(last, new Date()) : null;
   if (days !== null && days < 14) return null; // docs/03: remind after 14 days
-  return el('aside', { class: 'home-card backup-card', 'aria-labelledby': 'backup-title' },
+  return el('aside', { class: 'card home-card backup-card', 'aria-labelledby': 'backup-title' },
     icon('hard-drive', { size: 20 }),
     el('p', { class: 'backup-text', id: 'backup-title' }, days === null ? 'Hagan una copia de sus datos.' : `Su última copia fue hace ${days} días.`),
     el('a', { class: 'backup-link', href: '#/ajustes/copia' }, 'Hacer copia'));
@@ -543,6 +543,7 @@ export async function render() {
     const today = await todayCard().catch((e) => { console.error(e); return null; });
     const toques = counter && sync.isLinked() ? await import('./toques.js').then((m) => m.homeCard()).catch(() => null) : null;
     const dayphoto = counter && sync.isLinked() ? await import('./foto-dia.js').then((m) => m.homeCard({ onChange: build })).catch((e) => { console.error(e); return null; }) : null;
+    const now = counter ? await import('./ahora.js').then((m) => m.homeCard({ onChange: () => {} })).catch((e) => { console.error(e); return null; }) : null; // v0.31.0
     const meeting = await import('./encuentro.js').then((m) => m.homeCard()).catch(() => null);
     const weekend = await import('./citas.js').then((m) => m.weekendCard()).catch(() => null);
     const acc = await import('./home-accesos.js');
@@ -560,6 +561,7 @@ export async function render() {
     const custom = el('button', { class: 'btn btn-ghost btn-small home-customize', type: 'button', onClick: () => lay.openEditor({ onSaved: build }) }, icon('sliders-horizontal', { size: 16 }), 'Personalizar Inicio');
     body.replaceChildren(...lay.arrange([
       { id: 'counter', keep: true, node: counter ? counter.card : noStartCard() },
+      { id: 'now', node: now },
       { id: 'both', node: both.node },
       { id: 'celebration', node: celebrationCard(events) },
       { id: 'meeting', node: meeting },

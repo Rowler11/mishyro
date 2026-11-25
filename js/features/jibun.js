@@ -84,7 +84,7 @@ function editor(existing, { onSaved, kind: startKind = 'note' }) {
     if (kind === 'future' && !util.isValidDay(openOn.value)) { fOpen.setError('Elige el día en que se abre.'); return false; }
     // First "Solo yo" of this person without a PIN: offer it (docs/04). Saving goes on either way.
     if (!security.hasKey(`person:${me}`)) {
-      const any = (await db.query('personal')).some((r) => r.owner === me && r.kind !== 'prefs');
+      const any = (await db.query('personal')).some((r) => r.owner === me && !['prefs', 'sleep', 'dream'].includes(r.kind));
       if (!any) await security.offerPersonalPin(me, profile.name(profile.partnerOf(me)));
     }
     const rec = { ...x, kind, title: title.value.trim(), body: text.value.trim(), date: ['diary', 'reminder'].includes(kind) ? date.value : x.date || util.localDay(),
@@ -146,7 +146,7 @@ export async function render() {
     const me = profile.active();
     await security.refreshKeys();
     const hasPin = security.hasKey(`person:${me}`);
-    const all = (await db.query('personal')).filter((r) => r.owner === me && r.visibility === 'self');
+    const all = (await db.query('personal')).filter((r) => r.owner === me && r.visibility === 'self' && r.kind !== 'sleep' && r.kind !== 'dream'); // v0.31.0: Dormir y soñar keeps its own
     const prefs = all.find((r) => r.kind === 'prefs');
     const items = all.filter((r) => r.kind !== 'prefs');
     const color = COLORS.find((c) => c.id === prefs?.color) || COLORS[me === 'david' ? 1 : 0];

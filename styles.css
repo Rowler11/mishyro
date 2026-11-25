@@ -4032,3 +4032,91 @@ label.dayphoto-slot { cursor: pointer; }
 .pet-card-stat dd { margin: 0; font: 700 1rem var(--font-serif); }
 .pet-card-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); }
 @media (min-width: 820px) { .dayphoto-row { grid-template-columns: repeat(2, minmax(0, 160px)); } }
+
+/* v0.31.0 Ahora mismo: both statuses side by side on Inicio */
+.now-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.now-half { display: flex; align-items: center; gap: var(--space-3); min-width: 0; padding: var(--space-3); border-radius: 16px; border: 1px solid var(--border); background: var(--surface); text-align: left; font: inherit; color: inherit; }
+button.now-half { cursor: pointer; transition: transform var(--dur-1, .12s) var(--ease-out), border-color var(--dur-2, .2s); }
+button.now-half:active { transform: scale(.98); }
+button.now-half:hover { border-color: var(--accent); }
+.now-half.is-blank { border-style: dashed; background: transparent; }
+.now-badge { position: relative; flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.now-badge.is-empty { background: transparent; border: 1px dashed var(--border-strong); color: var(--text-2); }
+.now-emoji { font-size: 1.4rem; line-height: 1; }
+.now-badge-mood { position: absolute; right: -4px; bottom: -4px; font-size: .95rem; line-height: 1; background: var(--surface); border-radius: 50%; padding: 2px; box-shadow: 0 1px 3px rgb(0 0 0 / .15); }
+.now-text { display: grid; min-width: 0; gap: 1px; }
+.now-who { font-size: .74rem; color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; }
+.now-what { font-size: .98rem; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.now-what.is-empty { font-weight: 600; color: var(--text-2); }
+.now-line { font-size: .82rem; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.now-when { font-size: .74rem; color: var(--text-2); }
+@media (max-width: 360px) { .now-row { grid-template-columns: 1fr; } }
+.now-label { margin: var(--space-2) 0 0; font-weight: 600; font-size: .9rem; }
+.now-acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: var(--space-2); }
+.now-act { display: grid; justify-items: center; gap: 4px; padding: var(--space-2) 6px; min-height: 64px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: 500 .78rem var(--font-ui); text-align: center; cursor: pointer; line-height: 1.2; }
+.now-act .icon { color: var(--accent); }
+.now-act.is-on { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.now-act-new { border-style: dashed; color: var(--text-2); }
+.now-moods { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.now-mood { display: grid; justify-items: center; gap: 2px; padding: 8px 2px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font: inherit; color: var(--text-2); }
+.now-mood > span { font-size: 1.5rem; line-height: 1; }
+.now-mood small { font-size: .68rem; }
+.now-mood.is-on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.now-recent-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.now-recent-chip { display: inline-flex; align-items: center; gap: 6px; }
+.now-icons { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.now-icon { aspect-ratio: 1; display: grid; place-items: center; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+.now-icon.is-on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+
+/* v0.31.0 Dormir y soñar */
+.dormir > .segmented { margin-bottom: var(--space-3); }
+.sleep-times { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.sleep-total { margin: 0; font-family: var(--font-serif); font-size: 1.1rem; color: var(--accent); }
+.sleep-quality { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.sleep-big { margin: 0; font-family: var(--font-serif); font-size: 1.8rem; }
+.sleep-chart { width: 100%; max-width: 520px; height: auto; display: block; margin: var(--space-2) auto; }
+.sleep-grid { stroke: var(--border); stroke-dasharray: 3 4; }
+.sleep-axis { font: 500 10px var(--font-ui); fill: var(--text-2); }
+.sleep-bar.radar-0 { fill: var(--accent); }
+.sleep-bar.radar-1 { fill: var(--accent-2); }
+.sleep-facts { display: grid; grid-template-columns: auto 1fr; gap: 4px var(--space-3); margin: 0; font-size: .9rem; }
+.sleep-facts dt { color: var(--text-2); }
+.sleep-facts dd { margin: 0; font-weight: 600; }
+.sleep-list { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: grid; gap: var(--space-2); }
+.sleep-row { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) 0; border-top: 1px solid var(--border); }
+.sleep-row-main { display: grid; flex: 1; min-width: 0; }
+.sleep-row-acts, .dream-acts { display: flex; gap: 2px; margin-left: auto; }
+.dream-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.dream-filters .chip.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.dream-card { display: grid; gap: var(--space-2); }
+.dream-head { display: flex; align-items: center; gap: var(--space-2); }
+.dream-title { margin: 0; font-family: var(--font-serif); font-size: 1.15rem; }
+.dream-text { margin: 0; white-space: pre-wrap; line-height: 1.5; }
+.dream-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.dream-tag { padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); font: 500 .8rem var(--font-ui); color: var(--text-2); cursor: pointer; }
+.dream-tag.is-on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.dream-tags.is-static .dream-tag { cursor: default; }
+.dream-foot { display: flex; align-items: center; gap: var(--space-2); min-height: 32px; }
+.dream-foot .btn.is-on { background: var(--accent-soft); }
+
+/* v0.31.0 Juegos con unidad (Rowler: "todo en la pantalla, sin rotativos, nada pastel, estilo asiático"):
+   every game in a visible grid, tiles are the same paper as the rest of the app and only the stamp and a
+   thin ink line carry color, taken from the style (accent, accent-2, gold), so the 3 styles look right. */
+.game-tile { --ink: var(--accent); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1); }
+.game-tile::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--ink); opacity: .85; }
+.game-tile.tone-1, .game-tile.tone-4 { --tone: var(--surface); --ink: var(--accent); }
+.game-tile.tone-2, .game-tile.tone-5 { --tone: var(--surface); --ink: var(--accent-2); }
+.game-tile.tone-3, .game-tile.tone-6 { --tone: var(--surface); --ink: var(--gold); }
+:root[data-theme="night"] .game-tile[class*="tone-"] { --tone: var(--surface); }
+.game-stamp { background: color-mix(in srgb, var(--ink) 12%, var(--surface)); color: var(--ink); border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent); }
+.game-tape { display: none; }
+.game-ghost { color: var(--ink); opacity: .08; }
+a.game-tile:hover { border-color: var(--ink); }
+.game-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); overflow: visible; margin: 0; padding: 0; scroll-snap-type: none; }
+.game-row > li { width: auto; }
+@media (min-width: 820px) { .game-row { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-3); } .game-row > li { width: auto; } }
+@media (max-width: 340px) { .game-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.game-tile.is-mini { min-height: 104px; }
+.game-hero { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1); }
+.game-hero::after { content: ''; position: absolute; inset: auto 0 0 0; height: 4px; background: linear-gradient(90deg, var(--accent), var(--gold)); opacity: .8; }
+:root[data-theme="night"] .game-hero { background: var(--surface); }

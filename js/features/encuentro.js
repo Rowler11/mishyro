@@ -40,7 +40,7 @@ export async function homeCard() {
   if (!m) return null;
   const line = countdownLine(m);
   if (!line) return null;
-  return el('a', { class: 'home-card meeting-card', href: '#/encuentro' },
+  return el('a', { class: 'card home-card meeting-card', href: '#/encuentro' },
     el('span', { class: 'section-icon' }, icon('plane', { size: 20 })),
     el('span', { class: 'today-text' }, el('span', { class: 'today-title' }, line), el('span', { class: 'muted small' }, `${fmtLong.format(util.parseDay(m.date))}${m.note ? ` · ${m.note}` : ''}`)),
     icon('chevron-right', { size: 18, cls: 'list-chevron' }));

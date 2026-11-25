@@ -9,11 +9,11 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.30.0',
+  version: '0.31.0',
   items: [
-    'Fotos: ahora puedes encuadrarlas (mover, acercar y girar) al subirlas, y "Recortar" cualquier foto ya guardada.',
-    'Latido rediseñado: mantén el círculo de los días; a los 5, 10 y 15 latidos pasa algo especial. Tócalo una vez para ver cómo funciona.',
-    'Los animalitos hablan arriba, se reparten con vida por las pantallas, charlan entre ellos y al mantenerlos muestran su tarjeta.',
+    'Inicio: "Ahora mismo" muestra qué hace y cómo se siente cada uno. Toca el tuyo para contarlo; dura 24 horas.',
+    'Nuevo en Más: "Dormir y soñar". Anota cómo dormiste y cuenta tus sueños en texto o con tu voz (los graciosos llevan 😂).',
+    'Inicio y Juegos con un solo estilo: todas las tarjetas iguales y todos los juegos a la vista.',
   ],
   ],
 };

@@ -74,6 +74,7 @@ const load = {
   insignias: () => import('./features/insignias.js'),
   resumen: () => import('./features/resumen.js'),
   lenguajes: () => import('./features/lenguajes.js'),
+  dormir: () => import('./features/dormir.js'),
   gratitud: () => import('./features/gratitud.js'),
   yoru: () => import('./features/yoru.js'),
 };

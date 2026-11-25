@@ -2195,9 +2195,9 @@ async function exampleContent(page, { reload = true } = {}) {
     // Más and hubs
     await go('/mas/nosotros', '.section-card');
     const nos = await page.locator('.section-card-name').allInnerTexts();
-    ok('11 Más: Nosotros sin Fechas, Recordatorios ni Encuentro sueltos', nos.join('|') === 'Calendario|Insignias y premios|Ánimo|Nuestro jardín', nos.join('|'));
+    ok('11 Más: Nosotros sin Fechas, Recordatorios ni Encuentro sueltos', nos.join('|') === 'Calendario|Insignias y premios|Ánimo|Dormir y soñar|Nuestro jardín', nos.join('|'));
     const total = await page.evaluate(async () => { const r = await import('./js/routes.js'); return r.GROUPS.flatMap((g) => g.sections.filter((s) => !s.moment && r.listed(s.id))).length; });
-    ok('11 Más: 23 secciones (v0.19.0: Nuestro jardín tiene pantalla propia)', total === 23, String(total));
+    ok('11 Más: 24 secciones (v0.31.0: se suma Dormir y soñar)', total === 24, String(total));
     await page.locator('a[href="#/calendario"]').click();
     await page.waitForSelector('.hub-tabs');
     ok('11 Calendario: pestañas Mes, Fechas, Avisos y botón Próximo encuentro', (await page.locator('.hub-tab').allInnerTexts()).join('|') === 'Mes|Fechas|Avisos' && (await page.locator('a[href="#/encuentro"]').count()) >= 1);
@@ -2653,6 +2653,23 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('16 Paseo: si la tocan, habla', (await page.locator('.pet-say-layer .pet-bubble').count()) === 1);
     ok('16 Memoria: una mascota "En memoria" no sale en Inicio', await page.evaluate(async () => { const db = await import('./js/core/db.js'); const p = await db.get('pets', 't16c'); await db.put('pets', { ...p, memorial: { date: '' } }); const g = await import('./js/features/gatitos.js'); return (await g.livePets()).length === 2; }));
     ok('16 sin desplazamiento lateral', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    // v0.31.0: Ahora mismo on Inicio, Dormir y soñar, Juegos all in view
+    await page.evaluate(() => { location.hash = '#/inicio'; }); await page.waitForSelector('.now-card');
+    await page.locator('.now-half.is-mine').click(); await page.waitForSelector('.now-modal');
+    await page.locator('.now-act', { hasText: 'Estudiando' }).click(); await page.locator('.now-mood').nth(3).click();
+    await page.locator('.now-modal').getByRole('button', { name: 'Listo' }).click(); await page.waitForTimeout(600);
+    ok('31 Ahora mismo: tu estado sale en Inicio con "ahora"', /Estudiando/.test(await page.locator('.now-half.is-mine').innerText()) && /ahora/.test(await page.locator('.now-half.is-mine').innerText()));
+    ok('31 Ahora mismo: todas las tarjetas de Inicio con el mismo papel', await page.evaluate(() => [...document.querySelectorAll('.home-cards > .home-card')].every((c) => c.classList.contains('card'))));
+    await page.evaluate(() => { location.hash = '#/dormir'; }); await page.waitForSelector('.dormir');
+    await page.getByRole('button', { name: 'Anotar mi noche' }).click(); await page.locator('.sleep-quality .now-mood').nth(3).click();
+    await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(600);
+    ok('31 Dormir: la noche queda anotada con sus horas', /8 h/.test(await page.locator('.sleep-big').innerText()));
+    await page.locator('label', { hasText: 'Sueños' }).click(); await page.getByRole('button', { name: 'Contar un sueño' }).click();
+    await page.getByLabel('Título').fill('Sueño ficticio'); await page.locator('.dream-tag', { hasText: 'Gracioso' }).click();
+    await page.getByRole('button', { name: 'Guardar' }).click(); await page.waitForTimeout(600);
+    ok('31 Sueños: el sueño queda con su etiqueta', (await page.locator('.dream-card', { hasText: 'Sueño ficticio' }).count()) === 1);
+    await page.evaluate(() => { location.hash = '#/juegos'; }); await page.waitForSelector('.game-row'); await page.waitForTimeout(300);
+    ok('31 Juegos: todos a la vista, sin filas que se deslizan', await page.evaluate(() => [...document.querySelectorAll('.game-row')].every((r) => r.scrollWidth <= r.clientWidth + 1 && getComputedStyle(r).display === 'grid')));
     const real = errs.filter((e) => !/ERR_TUNNEL_CONNECTION_FAILED|ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED/.test(e));
     ok('v0.16.0: no page errors or native dialogs', real.length === 0, real.join(' | '));
     await ctx.close();
