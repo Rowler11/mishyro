@@ -3644,8 +3644,6 @@ p, .muted, .small { text-wrap: pretty; }
 .empty-art-pet[data-bubble-root] { position: relative; }
 :root[data-motion="off"] .empty-paper > svg { animation: none; }
 
-.viewer-media { transform-origin: center; will-change: transform; touch-action: pan-x pan-y; }
-.viewer-slide { overflow: hidden; }
 
 /* v0.23.0: a sky that follows the hour behind Inicio. It borrows each style's accent so it never fights the palette. */
 .home-sky { position: fixed; top: 0; left: 0; right: 0; height: 46vh; max-height: 420px; z-index: -1; pointer-events: none;
