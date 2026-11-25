@@ -373,9 +373,11 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('cupones: cancelling the confirmation leaves it unused', (await masaje.getByRole('button', { name: 'Canjear' }).count()) === 1);
     await masaje.getByRole('button', { name: 'Canjear' }).click();
     await page.getByRole('dialog', { name: '¿Canjear este cupón?' }).getByRole('button', { name: 'Canjear' }).click();
-    await page.waitForSelector('.kippu.is-redeemed .hanko');
-    const status = await page.locator('.kippu.is-redeemed .kippu-meta').textContent();
-    ok('cupones: redeeming stamps the hanko and saves "Canjeado el ..." in es-CO', /^Canjeado el \d{1,2} de [a-z]+ de \d{4} a las /.test(status.trim()), status);
+    // v0.32.0: canjear plays its moment on the stage; it ends with "Listo".
+    await page.locator('.stage-layer .kpx').waitFor();
+    await page.locator('.stage-layer').getByRole('button', { name: 'Listo' }).click();
+    await page.waitForFunction(() => !document.querySelector('.stage-layer'));
+    ok('cupones v0.32: canjear shows the stamp moment and closes with Listo', true);
     await page.waitForFunction(() => !document.querySelector('.kippu.is-redeemed'), null, { timeout: 4000 });
     ok('cupones: after its stamp, the used coupon leaves "Para ti"', (await page.locator('.kippu').count()) === 2);
     await page.reload();
@@ -383,6 +385,8 @@ async function exampleContent(page, { reload = true } = {}) {
     const tab = (name) => page.locator('.cupones-tabs label.segmented-option', { hasText: name }).click();
     await page.waitForTimeout(250);
     ok('cupones: the redeemed state persists after reload, under "Los que usaste"', (await page.locator('.kippu.is-redeemed').count()) === 1 && /Los que usaste/.test(await page.locator('.cupones-body').textContent()));
+    const status = await page.locator('.kippu.is-redeemed .kippu-meta').textContent();
+    ok('cupones: redeeming stamps the hanko and saves "Canjeado el ..." in es-CO', (await page.locator('.kippu.is-redeemed .hanko').count()) === 1 && /^Canjeado el \d{1,2} de [a-z]+ de \d{4} a las /.test(status.trim()), status);
     await page.getByRole('button', { name: 'Reiniciar cupones' }).click();
     await page.getByRole('dialog', { name: '¿Reiniciar los cupones?' }).getByRole('button', { name: 'Reiniciar' }).click();
     await page.waitForTimeout(400);
@@ -1216,6 +1220,10 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('4A cápsula del tiempo: Inicio says it opens today', (await page.locator('.today-row', { hasText: /cápsula del tiempo/ }).count()) === 1);
     await go('/capsula-tiempo', '.tc-env-btn');
     await page.locator('.tc-env-btn:not([disabled])').first().click();
+    // v0.32.0: the first opening is a moment of its own: the box opens, then "Leerla".
+    await page.locator('.stage-layer .tcx-box').waitFor();
+    await page.locator('.stage-layer').getByRole('button', { name: 'Leerla' }).click({ timeout: 6000 });
+    ok('4A cápsula v0.32: the box opens on the stage before reading', true);
     await page.waitForSelector('.tc-paper');
     ok('4A cápsula del tiempo: opens on its day', (await page.locator('.tc-paper', { hasText: 'Mensaje ficticio' }).count()) === 1);
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
@@ -2523,7 +2531,9 @@ async function exampleContent(page, { reload = true } = {}) {
       await db.put('petRecords', { id: 't16v', petId: 't16b', type: 'vaccine', date: '2026-01-01', data: { product: 'Vacuna ficticia', next: inDays(-2) }, visibility: 'shared', owner: 'both' });
     });
     await go('/ajustes', '.list-row'); await go('/inicio', '.kitty-perch');
-    await page.waitForTimeout(400);
+    // v0.32.0: the pets wait behind their cards until the entrance is over, then rise.
+    await page.waitForFunction(() => !document.querySelector('.kitty-perch.is-hold'), null, { timeout: 8000 });
+    await page.waitForTimeout(1500);
     ok('18 Inicio: ya no hay tarjeta propia de las mascotas', (await page.locator('.kitty-card, .kitty-room').count()) === 0);
     ok('18 Inicio: cada mascota se asoma sobre una tarjeta distinta', (await page.locator('.kitty-perch .kitty-peek').count()) === 3 && await page.evaluate(() => new Set([...document.querySelectorAll('.kitty-perch > .card')]).size === 3));
     ok('16 Inicio: cada una con su dibujo y su pelaje', await page.evaluate(() => [...document.querySelectorAll('.kitty-perch .kitty-art')].length === 3));

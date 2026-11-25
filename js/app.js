@@ -4,7 +4,7 @@ import { CONFIG, db, router, theme, ui, security, seed, profile, util, cryptoBox
 import { TABS, GROUPS, HIDDEN, SETTINGS_PAGES, HUBS } from './routes.js';
 import { scene as sceneFor } from './core/scene.js';
 import { bouquet } from './core/art.js';
-import { cornerArt, whenClear } from './core/fx.js';
+import { cornerArt } from './core/fx.js';
 import * as guia from './features/guia.js';
 import * as tour from './features/tour.js';
 
@@ -265,12 +265,14 @@ function addCompanion(node, route, { quiet = false } = {}) {
   const def = route.def;
   if (def.layer || def.lock || route.path.startsWith('/ajustes') || !node?.querySelector) return;
   // v0.26.0: it peeks out from behind its card (or walks in from the edge) once the screen has settled.
-  const show = () => {
-    if (router.currentRoute() !== route || !node.isConnected) return;
-    import('./features/gatitos.js').then((m) => m.companion(node, def.id, { enter: !quiet })).catch((e) => console.error(e));
-  };
-  if (quiet) show(); else whenClear(8000).then(() => setTimeout(show, 500));
+  // v0.32.0: its place is taken in the same frame as the screen (nothing moves afterwards); only the
+  // friend's own entrance waits, in CSS.
+  if (router.currentRoute() !== route || !node.isConnected) return;
+  const put = (m) => { petsMod = m; return m.companion(node, def.id, { enter: !quiet }); };
+  if (petsMod) Promise.resolve(put(petsMod)).catch((e) => console.error(e)); // same frame: no task in between
+  else import('./features/gatitos.js').then(put).catch((e) => console.error(e));
 }
+let petsMod = null; // v0.32.0: gatitos.js once loaded
 
 /** Paper scene under the title of the sections of Más (v0.13.0). */
 function addScene(node, route) {

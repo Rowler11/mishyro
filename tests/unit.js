@@ -16,6 +16,7 @@ import { stageText } from '../js/features/latido.js';
 import { validState } from '../js/features/cupones.js';
 import * as NOW from '../js/features/ahora.js';
 import * as SLEEP from '../js/features/dormir.js';
+import * as TC from '../js/features/capsula-tiempo.js';
 
 const KEY = 'unittest';
 const results = [];
@@ -384,6 +385,16 @@ await test('dormir: hours across midnight and averages', () => {
   const s = SLEEP.summary([{ bed: '23:30', minutes: 450, quality: 4 }, { bed: '00:30', minutes: 390, quality: 3 }]);
   eq(s, { minutes: 420, quality: 3.5, bed: '00:00', nights: 2 });
   eq(SLEEP.summary([]), null);
+});
+
+await test('cápsula: "hace" text for the opening moment', () => {
+  eq(TC.sinceText('2026-11-25T08:00:00Z', '2026-11-25'), 'hoy');
+  eq(TC.sinceText('2026-11-24T08:00:00Z', '2026-11-25'), 'ayer');
+  eq(TC.sinceText('2026-11-01T08:00:00Z', '2026-11-25'), 'hace 24 días');
+  eq(TC.sinceText('2026-05-02T08:00:00Z', '2026-11-25'), 'hace 6 meses');
+  eq(TC.sinceText('2025-05-02T08:00:00Z', '2026-11-25'), 'hace 1 año');
+  eq(TC.sinceText('2023-01-02', '2026-11-25'), 'hace 3 años');
+  eq(TC.sinceText(null, '2026-11-25'), '');
 });
 
 window.__results = results;

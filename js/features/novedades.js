@@ -9,12 +9,10 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.31.0',
+  version: '0.32.0',
   items: [
-    'Inicio: "Ahora mismo" muestra qué hace y cómo se siente cada uno. Toca el tuyo para contarlo; dura 24 horas.',
-    'Nuevo en Más: "Dormir y soñar". Anota cómo dormiste y cuenta tus sueños en texto o con tu voz (los graciosos llevan 😂).',
-    'Inicio y Juegos con un solo estilo: todas las tarjetas iguales y todos los juegos a la vista.',
-  ],
+    'Abrir una carta, la Cápsula del tiempo o canjear un cupón ahora es un momento: la pantalla se oscurece, brilla y caen pétalos, como el corazón del Latido.',
+    'Inicio ya no da un salto al volver: los animalitos aparecen sin mover las tarjetas.',
   ],
 };
 

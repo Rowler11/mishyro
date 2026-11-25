@@ -300,8 +300,8 @@ function companionKitty(pet, index, root, { flow = false } = {}) {
 }
 
 /** Wrap a card so a pet can peek over its top edge (head and paws out, body hidden behind the card). */
-export function perch(card, pet, index, { side = 0.75, enter = false } = {}) {
-  const wrap = el('div', { class: `kitty-perch${enter ? ' is-enter' : ''}`, 'data-bubble-root': '', style: { '--kx': `${Math.round(side * 100)}%` } });
+export function perch(card, pet, index, { side = 0.75, enter = false, hold = false } = {}) {
+  const wrap = el('div', { class: `kitty-perch${enter ? ' is-enter' : ''}${hold ? ' is-hold' : ''}`, 'data-bubble-root': '', style: { '--kx': `${Math.round(side * 100)}%` } });
   card.replaceWith(wrap);
   const k = companionKitty(pet, index, wrap);
   k.classList.add('kitty-peek');
@@ -330,6 +330,33 @@ const solidCard = (c) => {
   return bg && bg !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(bg);
 };
 const showPets = async () => !(await db.getSettings('home', { petHidden: false }).catch(() => ({}))).petHidden;
+// v0.32.0 (Rowler: "al volver a Inicio tiene un meneo"): the friends used to be placed a moment after
+// the screen showed up, so their perch pushed the cards down. With what they need kept in memory, they
+// are placed in the same frame as the screen (nothing moves) and only the pet itself animates in.
+let petCast = null;
+async function loadCast() {
+  const show = await showPets();
+  const [pets, records] = show ? await Promise.all([livePets().catch(() => []), db.query('petRecords').catch(() => [])]) : [[], []];
+  return { show, pets, records };
+}
+async function castNow() {
+  if (!petCast) petCast = await loadCast();
+  return petCast;
+}
+/** Loads the pets ahead of time (at start) and keeps them fresh. */
+export function prime() {
+  if (!prime.on) { prime.on = true; db.onChange((store, id) => {
+    if (store !== 'pets' && store !== 'petRecords' && !(store === 'settings' && (id === 'home' || id == null))) return;
+    // Refreshed in the background, so the next screen still finds it in memory.
+    clearTimeout(prime.t); prime.t = setTimeout(() => { loadCast().then((c) => { petCast = c; }, () => { petCast = null; }); }, 120);
+  }); }
+  return castNow().catch(() => null);
+}
+/** Runs fn right away when the petCast is in memory (same frame), or once it loads. */
+function withCast(fn) {
+  if (petCast) return Promise.resolve(fn(petCast));
+  return castNow().then(fn);
+}
 
 /** The care bubble: the most urgent thing among all pets, said by the pet who needs it. */
 function careBubble(pets, records, today) {
@@ -345,17 +372,16 @@ function careBubble(pets, records, today) {
 }
 
 /** Inicio: every pet peeks over a different card (the one who needs care, with its bubble). */
-export async function decorateHome(body, { enter = false } = {}) {
-  if (!body) return;
-  if (!(await showPets())) return;
-  const pets = await livePets();
-  if (!pets.length || !body.isConnected || body.querySelector(':scope > .kitty-perch')) return;
+export function decorateHome(body, { enter = false, hold = null } = {}) {
+  if (!body) return Promise.resolve();
+  prime();
+  return withCast(({ show, pets, records }) => {
+  if (!show || !pets.length || !body.isConnected || body.querySelector(':scope > .kitty-perch')) return;
   const cards = [...body.children].filter((c) => (c.classList?.contains('card') || c.classList?.contains('home-card')) && !c.classList.contains('counter-card') && solidCard(c));
   // Inicio "Sereno" (v0.19.0) has fewer cards: when there are more pets than cards, the counter takes one too.
   const counter = body.querySelector(':scope > .counter-card');
   if (cards.length < pets.length && counter && solidCard(counter)) cards.unshift(counter);
   if (!cards.length) return;
-  const records = await db.query('petRecords').catch(() => []);
   const care = careBubble(pets, records, util.localDay());
   // Spread them down the screen: one every other card, starting on a different card each day.
   const day = Number(util.localDay().replace(/-/g, ''));
@@ -370,8 +396,11 @@ export async function decorateHome(body, { enter = false } = {}) {
     used.add(i);
     const card = cards[i];
     if (!card || card.closest('.kitty-perch')) return;
-    const k = perch(card, pet, pets.indexOf(pet), { side: [0.78, 0.2, 0.55, 0.36, 0.66][n % 5], enter });
+    const k = perch(card, pet, pets.indexOf(pet), { side: [0.78, 0.2, 0.55, 0.36, 0.66][n % 5], enter: enter && !hold, hold: !!hold });
     if (care && n === 0) { k.closest('.kitty-perch').before(care.node); setTimeout(() => { if (k.isConnected) move(k); }, 600); }
+  });
+  // The cards are still waiting for their entrance: the pets stay behind them until it is over.
+  if (hold) hold.then(() => body.querySelectorAll(':scope > .kitty-perch.is-hold').forEach((w) => { w.classList.remove('is-hold'); if (enter) w.classList.add('is-enter'); }));
   });
 }
 
@@ -429,9 +458,11 @@ export async function companion(node, id, { enter = true } = {}) {
   const waiting = [...node.querySelectorAll('.empty-art-pet')];
   waiting.slice(1).forEach((w) => w.replaceWith(util.el('div', { class: 'empty-art', 'aria-hidden': 'true' }, util.icon('jp-sakura', { size: 96, cls: 'empty-icon' }), util.el('span', { class: 'empty-ring' }))));
   if (waiting.length) return;
-  const showReal = await showPets();
-  const pets = showReal ? await livePets().catch(() => []) : [];
-  if (!node.isConnected) return;
+  prime();
+  return withCast(({ show, pets: all }) => place(node, id, enter, show ? all : []));
+}
+function place(node, id, enter, pets) {
+  if (!node.isConnected || node.querySelector('.kitty-perch, .kitty-nap, .amb-perch, .amb-rest')) return;
   const h = hash(`${id}|${util.localDay()}`);
   // Rowler's rule (2026-11-24): the real cats and the paper animals take turns.
   const cast = [...pets.map((pet, index) => ({ pet, index })), ...Object.keys(PAPER).map((pid) => ({ id: pid }))];

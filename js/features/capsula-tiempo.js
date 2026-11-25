@@ -7,6 +7,7 @@ import { ui, util, db, profile } from '../core.js';
 import { compressImage, isQuotaError } from '../core/images.js';
 import { openViewer } from '../core/viewer.js';
 import { toTrash, TRASH_NOTE } from './papelera.js';
+import * as stage from '../core/stage.js';
 
 const { el, icon } = util;
 const fmtDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -97,8 +98,73 @@ function writer({ onSaved }) {
   });
 }
 
+/** "hace 3 días", "hace 2 meses", "hace 1 año" (pure, unit-tested). */
+export function sinceText(fromISO, today = util.localDay()) {
+  const from = String(fromISO || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) return '';
+  const d = Math.max(0, util.daysBetween(util.parseDay(from), util.parseDay(today)));
+  if (d === 0) return 'hoy';
+  if (d === 1) return 'ayer';
+  if (d < 60) return `hace ${d} días`;
+  const m = Math.floor(d / 30.44);
+  if (m < 12) return `hace ${m} meses`;
+  const y = Math.floor(d / 365.25);
+  return y === 1 ? 'hace 1 año' : `hace ${y} años`;
+}
+
+// v0.32.0 (Rowler: "la calidad del corazón del Latido en más cosas"): the first opening of a capsule is
+// a moment of its own. The room goes dark and golden, the lacquered box glows three times, its lid
+// lifts, light and gold dust rise from inside and sakura petals fall. Then they read it.
+const BOX = `<svg class="tcx-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><defs>
+  <linearGradient id="tcxBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9B2C3E"/><stop offset="1" stop-color="#5E1624"/></linearGradient>
+  <linearGradient id="tcxLid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B43A4E"/><stop offset="1" stop-color="#7A1F30"/></linearGradient>
+  <linearGradient id="tcxGold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C99A3E"/><stop offset=".5" stop-color="#FFE3A3"/><stop offset="1" stop-color="#C99A3E"/></linearGradient>
+  <linearGradient id="tcxBeam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FFF1C9" stop-opacity=".95"/><stop offset="1" stop-color="#FFE3A3" stop-opacity="0"/></linearGradient>
+  <radialGradient id="tcxIn" cx=".5" cy=".2" r=".8"><stop offset="0" stop-color="#FFF6DA"/><stop offset="1" stop-color="#E8B45A"/></radialGradient></defs>
+  <path class="tcx-beam" d="M58 112 L142 112 L190 0 L10 0Z" fill="url(#tcxBeam)"/>
+  <ellipse cx="100" cy="182" rx="66" ry="7" fill="#000" opacity=".35"/>
+  <rect class="tcx-inside" x="44" y="104" width="112" height="14" rx="3" fill="url(#tcxIn)"/>
+  <g class="tcx-body"><rect x="40" y="108" width="120" height="70" rx="7" fill="url(#tcxBody)"/>
+    <rect x="40" y="108" width="120" height="6" fill="#000" opacity=".18"/>
+    <rect x="94" y="108" width="12" height="70" fill="url(#tcxGold)"/>
+    <path d="M52 172h96" stroke="#FFE3A3" stroke-opacity=".35" stroke-width="1.5"/>
+    <path d="M48 120c4-3 8-3 12 0" stroke="#fff" stroke-opacity=".22" stroke-width="2" fill="none" stroke-linecap="round"/></g>
+  <g class="tcx-lid"><rect x="34" y="88" width="132" height="24" rx="7" fill="url(#tcxLid)"/>
+    <rect x="34" y="106" width="132" height="6" rx="3" fill="#000" opacity=".15"/>
+    <rect x="94" y="88" width="12" height="24" fill="url(#tcxGold)"/>
+    <path d="M100 88c-14-16-34-14-30-2 3 8 20 5 30 2zM100 88c14-16 34-14 30-2-3 8-20 5-30 2z" fill="url(#tcxGold)"/>
+    <circle cx="100" cy="88" r="6" fill="#FFE3A3"/><circle cx="100" cy="88" r="2.4" fill="#C99A3E"/>
+    <path d="M44 94c10-3 20-3 30 0" stroke="#fff" stroke-opacity=".3" stroke-width="2" fill="none" stroke-linecap="round"/></g></svg>`;
+
+function openingStage(c) {
+  return new Promise((resolve) => {
+    const art = el('div', { class: 'tcx-box' }); art.innerHTML = BOX;
+    const since = sinceText(c.createdAt);
+    const s = stage.open({ label: 'Se abre tu cápsula del tiempo', tone: 'gold', art,
+      title: 'Tu cápsula del tiempo', sub: since ? `La sellaron ${since}. Hoy por fin se abre.` : 'Hoy por fin se abre.',
+      onClose: () => resolve() });
+    s.glow(0.3);
+    const reveal = () => {
+      art.classList.add('is-open'); s.glow(1);
+      s.flash(); s.dust(34); setTimeout(() => s.petals(16), 380);
+      util.haptic([20, 40, 60]); util.sound('chime');
+      s.set(c.title || 'Tu cápsula', `De ${profile.name(c.by)} · sellada el ${fmtDay.format(new Date(c.createdAt))}`);
+      s.actions(el('button', { class: 'btn btn-primary', type: 'button', onClick: () => s.close() }, icon('book-open', { size: 18 }), 'Leerla'));
+    };
+    if (util.prefersReducedMotion()) { reveal(); return; }
+    // three slow glows, like the box breathing before it opens
+    [0, 1, 2].forEach((i) => setTimeout(() => {
+      if (!s.layer.isConnected) return;
+      art.classList.remove('is-pulse'); void art.offsetWidth; art.classList.add('is-pulse');
+      s.glow(0.45 + i * 0.18); util.haptic(8);
+    }, 650 + i * 620));
+    setTimeout(() => { if (s.layer.isConnected) reveal(); }, 650 + 3 * 620 + 120);
+  });
+}
+
 async function openCapsule(c, me) {
   const first = !(c.openedBy || []).includes(me);
+  if (first) await openingStage(c);
   if (first) await db.put('timeCapsules', { ...c, openedBy: [...(c.openedBy || []), me], opened: true, openedAt: c.openedAt || util.nowISO() });
   let url = null;
   const pic = c.mediaId ? el('button', { class: 'tc-photo', type: 'button', 'aria-label': 'Ver la foto en grande', onClick: () => openViewer([{ mediaId: c.mediaId, alt: c.title, caption: c.title }]) }) : null;
@@ -113,7 +179,6 @@ async function openCapsule(c, me) {
     actions: [{ label: 'Cerrar', variant: 'primary' }],
     onClose: () => { if (url) URL.revokeObjectURL(url); },
   });
-  if (first) { ui.confetti({ count: 30 }); util.haptic([10, 30, 10]); util.sound('chime'); }
 }
 
 export async function render() {

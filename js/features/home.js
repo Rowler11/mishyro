@@ -13,6 +13,7 @@ import * as time from '../core/time.js';
 import * as dates from '../core/dates.js';
 import * as fx from '../core/fx.js';
 
+let petsMod = null; // v0.32.0: gatitos.js once loaded, to place the pets in the same frame
 const { el, icon } = util;
 let seasonShown = false; // the season effect plays the first time Inicio opens in each session
 const fmtLong = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -585,9 +586,16 @@ export async function render() {
     built = true;
     // v0.18.0: the pets have no card of their own; each one peeks over a different card.
     // v0.26.0: they peek out once the cards are in place (first time with their entrance; redraws stay still).
-    const enterPets = firstBuild;
-    (enterPets ? fx.whenClear(8000).then(() => new Promise((r) => setTimeout(r, 650))) : Promise.resolve())
-      .then(() => import('./gatitos.js')).then((m) => body.isConnected && m.decorateHome(body, { enter: enterPets })).catch((e) => console.error(e));
+    // v0.32.0: their perches are placed now, in the same frame as the cards, so nothing gets pushed down
+    // later; only the pets wait behind their cards until the entrance is over.
+    const enterPets = firstBuild && !util.prefersReducedMotion();
+    const hold = enterPets ? fx.whenClear(8000).then(() => new Promise((r) => setTimeout(r, 650))) : null;
+    // Inicio is built before it is put on screen: the pets go in right before the first paint (rAF).
+    const pets = (m) => { petsMod = m; let tries = 0;
+      const go = () => { if (body.isConnected) m.decorateHome(body, { enter: enterPets, hold }).catch((e) => console.error(e)); else if (tries++ < 30) requestAnimationFrame(go); };
+      go(); };
+    if (petsMod) pets(petsMod);
+    else import('./gatitos.js').then(pets).catch((e) => console.error(e));
     // Seasonal decoration while an event is on (San Valentín hearts, Tanabata lanterns…).
     page.querySelector('.season-deco')?.remove();
     import('./eventos.js').then((m) => m.decoration()).then((d) => {
