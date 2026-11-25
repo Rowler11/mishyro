@@ -8,7 +8,9 @@
 import { ui, util, db, profile, sync } from '../core.js';
 
 const { el, icon } = util;
-const BEAT_MS = 820;           // one lub-dub, a calm heart
+// v0.32.6 (Rowler: "que vaya de lento a rápido, como si el ritmo estuviera subiendo"): the heart starts slow
+// and speeds up beat after beat, from about 1.2 s to 0.42 s between beats.
+export const gap = (n) => Math.round(1200 - (1200 - 420) * Math.pow(Math.min(1, Math.max(0, (n - 1) / (MAX_BEATS - 2))), 1.5));
 const HOLD_START = 300;        // a quick tap explains how it works
 export const MAX_BEATS = 15;
 export const MILESTONES = { 5: 'spark', 10: 'rise', 15: 'burst' };
@@ -28,7 +30,7 @@ function markPlayed(id) {
   const s = [...played(), id].slice(-40);
   try { localStorage.setItem(PLAYED_KEY, JSON.stringify(s)); } catch { /* private mode */ }
 }
-export const pattern = (beats) => Array.from({ length: beats }, (_, i) => (i ? [BEAT_MS - 250, ...LUB_DUB] : LUB_DUB)).flat();
+export const pattern = (beats) => Array.from({ length: beats }, (_, i) => (i ? [Math.max(120, gap(i) - 250), ...LUB_DUB] : LUB_DUB)).flat();
 const buzz = (p) => { if (document.documentElement.dataset.haptics === 'on' && navigator.vibrate) navigator.vibrate(p); };
 const reduced = () => util.prefersReducedMotion();
 
@@ -61,6 +63,7 @@ function stage({ title, sub }) {
       layer.style.setProperty('--glow', String(0.25 + Math.min(1, n / MAX_BEATS) * 0.75));
       layer.dataset.level = n >= 10 ? '3' : n >= 5 ? '2' : '1';
       if (reduced()) return;
+      layer.style.setProperty('--bd', `${Math.min(700, Math.round(gap(n) * 0.9))}ms`); // the beat gets shorter as it speeds up
       heart.classList.remove('is-beat'); void heart.offsetWidth; heart.classList.add('is-beat');
       ring.classList.remove('is-beat'); void ring.offsetWidth; ring.classList.add('is-beat');
     },
@@ -109,7 +112,8 @@ export function attachHold(target) {
     st?.beat(beats);
     st && (st.title.textContent = stageText(beats, { to: profile.nick(to) }));
     if (MILESTONES[beats]) { st?.milestone(beats); buzz(beats === 15 ? [60, 40, 60, 40, 220] : [40, 60, 90]); } else buzz(LUB_DUB);
-    if (beats >= MAX_BEATS) { clearInterval(beatTimer); setTimeout(release, reduced() ? 300 : 1300); }
+    if (beats >= MAX_BEATS) { clearTimeout(beatTimer); setTimeout(release, reduced() ? 300 : 1300); return; }
+    beatTimer = setTimeout(beat, gap(beats));
   };
   const open = () => {
     st = stage({ title: stageText(0, { to: profile.nick(to) }), sub: 'Sigue presionando… suelta para enviarlos' });
@@ -120,10 +124,10 @@ export function attachHold(target) {
     if (e.button > 0 || holding) return;
     if (e.pointerId != null) target.setPointerCapture?.(e.pointerId);
     beats = 0;
-    timer = setTimeout(() => { holding = true; target.classList.add('is-holding'); open(); beat(); beatTimer = setInterval(beat, BEAT_MS); }, HOLD_START);
+    timer = setTimeout(() => { holding = true; target.classList.add('is-holding'); open(); beat(); }, HOLD_START);
   };
   const release = async () => {
-    clearTimeout(timer); clearInterval(beatTimer);
+    clearTimeout(timer); clearTimeout(beatTimer);
     target.classList.remove('is-holding');
     if (!holding) return;
     holding = false; const n = beats; beats = 0;
@@ -135,7 +139,7 @@ export function attachHold(target) {
     s.sub.textContent = ok ? `${profile.nick(to)} los sentirá en su teléfono 💗` : n ? 'Ajustes › Sincronización' : '';
     setTimeout(() => { s.layer.classList.add('leaving'); setTimeout(() => s.layer.remove(), reduced() ? 0 : 320); }, n >= MAX_BEATS ? 2200 : 1500);
   };
-  const cancel = () => { clearTimeout(timer); clearInterval(beatTimer); target.classList.remove('is-holding'); if (st) { st.layer.remove(); st = null; } holding = false; beats = 0; };
+  const cancel = () => { clearTimeout(timer); clearTimeout(beatTimer); target.classList.remove('is-holding'); if (st) { st.layer.remove(); st = null; } holding = false; beats = 0; };
   target.addEventListener('pointerdown', press);
   target.addEventListener('pointerup', (e) => { if (!holding && !beats && e.button === 0) { clearTimeout(timer); explain(to); return; } release(); });
   target.addEventListener('pointercancel', cancel);
@@ -215,7 +219,7 @@ export function play(r) {
       }
       n++; s.beat(n); s.title.textContent = stageText(n, { from });
       if (MILESTONES[n]) s.milestone(n);
-      t = setTimeout(tick, BEAT_MS);
+      t = setTimeout(tick, gap(n));
     };
     s.layer.addEventListener('click', (e) => { if (!e.target.closest('.latido-back')) done(); });
     document.body.append(s.layer);

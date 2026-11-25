@@ -4234,3 +4234,39 @@ a.game-tile:hover { border-color: var(--ink); }
 @keyframes corner-letgo { 0%, 100% { transform: rotate(0); } 35% { transform: rotate(-1.6deg); } 70% { transform: rotate(.6deg); } }
 .home-corner.is-sway { transform-origin: 100% 0; animation: corner-letgo 1.1s ease-in-out; }
 :root[data-motion="off"] .home-corner.is-sway { animation: none; }
+
+/* ---------- v0.32.6 Pantalla de carga con más calidad (Rowler: "más linda, sin agregar cosas") ----------
+   Same composition (bouquet, "Para …", 愛してる): washi paper with a warm light breathing behind the bouquet,
+   a faint seigaiha that fades at the bottom, a brush stroke that paints itself under the name while the app
+   loads, finer typography and a soft exit. Only style tokens, so it fits the 3 styles, day and night. */
+.splash { background: var(--bg) var(--grain); overflow: hidden; }
+.splash::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--accent) 16%, transparent) 0, color-mix(in srgb, var(--gold) 8%, transparent) 26%, transparent 52%);
+  animation: splash-glow 4.8s var(--ease-in-out) infinite; }
+:root[data-theme="night"] .splash::before { background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--accent) 20%, transparent) 0, color-mix(in srgb, var(--gold) 6%, transparent) 28%, transparent 54%); }
+.splash::after { content: ''; position: absolute; inset: auto 0 0 0; height: 26vh; pointer-events: none; opacity: .32;
+  background: url('./icons/patterns/seigaiha.svg') repeat left bottom / 48px 24px;
+  -webkit-mask: linear-gradient(to top, #000, transparent); mask: linear-gradient(to top, #000, transparent); }
+@keyframes splash-glow { 50% { opacity: .7; transform: scale(1.04); } }
+.splash > :is(.splash-heart, .splash-for, .ja, .splash-romaji) { position: relative; z-index: 1; }
+.splash-heart.splash-bouquet { filter: drop-shadow(0 12px 22px color-mix(in srgb, var(--accent) 14%, transparent)); }
+.splash-bouquet .bouquet { transform-origin: 50% 100%; animation: bq-sway 5.5s var(--ease-in-out) 1.8s infinite; }
+@keyframes bq-sway { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-1.2deg); } 70% { transform: rotate(1deg); } }
+.splash-for { margin: var(--space-2) 0 var(--space-1); font-size: 1.85rem; letter-spacing: .01em; color: var(--text); }
+.splash-for::after { content: ''; position: absolute; left: -8%; right: -8%; bottom: -9px; height: 8px; background: var(--accent); opacity: .75;
+  -webkit-mask: url('./icons/patterns/brush.svg') no-repeat center / 100% 100%; mask: url('./icons/patterns/brush.svg') no-repeat center / 100% 100%;
+  transform: scaleX(0); transform-origin: 0 50%; animation: splash-ink 1.1s var(--ease-out) .5s forwards; }
+@keyframes splash-ink { to { transform: scaleX(1); } }
+.splash .ja { margin-top: var(--space-2); color: var(--accent); letter-spacing: .3em; padding-left: .3em; font-size: 1.15rem; }
+.splash-romaji { letter-spacing: .42em; padding-left: .42em; text-transform: uppercase; font-size: .66rem; opacity: .8; }
+.splash-skip { color: var(--text-2); }
+.splash.leaving { animation: splash-out .32s var(--ease-out) forwards; }
+.splash.leaving > :is(.splash-heart, .splash-for, .ja, .splash-romaji) { transition: transform .32s var(--ease-out); transform: scale(1.035); }
+@keyframes splash-out { to { opacity: 0; } }
+:root[data-motion="off"] .splash::before, :root[data-motion="off"] .splash-bouquet .bouquet { animation: none; }
+:root[data-motion="off"] .splash-for::after { animation: none; transform: none; }
+@media (prefers-reduced-motion: reduce) { .splash::before, .splash-bouquet .bouquet { animation: none; } .splash-for::after { animation: none; transform: none; } }
+.bouquet .bq-r0 { stop-color: color-mix(in srgb, var(--accent) 70%, #fff); } .bouquet .bq-r1 { stop-color: var(--accent); }
+.bouquet .bq-gold { stroke: var(--gold); } .bouquet .bq-band { stroke: var(--accent); } .bouquet .bq-knot { fill: var(--accent); }
+/* v0.32.6: the Latido speeds up, so each beat's animation follows its own pace. */
+.latido-heart.is-beat svg, .latido-ring.is-beat { animation-duration: var(--bd, 700ms); }

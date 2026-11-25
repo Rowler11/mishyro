@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.32.6 (Pantalla de carga más linda y latido que se acelera)
+
+Mejorado
+- Pantalla de carga: la misma composición, con más calidad. Papel washi con una luz cálida que respira detrás del ramo, ramo pintado con detalle (tallos y hojas con sombra y nervaduras, envoltura de papel con pliegues y borde dorado, moño de verdad con el color del estilo, sombra suave), lirios más finos, un trazo de pincel que se pinta bajo "Para …" mientras carga, letras más cuidadas, seigaiha suave abajo y una salida más suave. En los 3 estilos, de día y de noche.
+- Latido: el corazón empieza lento y se va acelerando, como si el ritmo subiera (de 1,2 s a 0,4 s entre latidos). En el otro teléfono se siente igual, con la vibración al mismo ritmo.
+
 ## 0.32.5 (Hojas más bonitas y más dispersas)
 
 Mejorado
