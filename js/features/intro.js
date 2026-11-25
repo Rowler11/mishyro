@@ -100,7 +100,8 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
   const mix = (a, b, k) => { const x = hex(a); const y = hex(b); return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * k)).join(',')})`; };
   const accent = norm(tok('--accent') || '#C2405F');
   const gold = norm(tok('--gold') || '#C9A46A');
-  const bark = norm(tok('--text-2') || '#7A6268');
+  // v0.32.8: a warmer, deeper bark (it was the grey of the text), so the branch reads as wood
+  const bark = mix(norm(tok('--text-2') || '#7A6268'), night ? '#6A4A44' : '#5A3A30', 0.6);
   const barkLight = mix(bark, '#ffffff', 0.45);
   const tipColor = mix(accent, '#ffffff', night ? 0.35 : 0.72);
   const moteColor = mix(gold, '#ffffff', 0.15);
@@ -149,6 +150,42 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
     const rr = size * (96 / 68);
     ctx.drawImage(blurry ? blurs[k] : flip < 0 ? backs[k] : sprites[k], -rr, -rr, rr * 2, rr * 2);
   };
+
+  // v0.32.8 (Rowler: more quality in the whole opening): each blossom is painted once into a sprite (five
+  // notched petals with their shading, a deeper heart, golden stamens and a soft shadow) and reused, so the
+  // branch looks finer and draws in one step per flower, which keeps the animation fluid on phones.
+  const blossom = (k) => {
+    const c = document.createElement('canvas'); const P = 112; c.width = c.height = P; const g = c.getContext('2d'); g.translate(P / 2, P / 2);
+    const s = 22;
+    g.shadowColor = 'rgba(60,20,30,.18)'; g.shadowBlur = 4; g.shadowOffsetY = 1.5;
+    for (let i = 0; i < 5; i++) {
+      g.save(); g.rotate((i * Math.PI * 2) / 5); g.translate(0, -s * 0.95);
+      const gr = g.createLinearGradient(0, s, 0, -s);
+      gr.addColorStop(0, mix(accent, '#ffffff', (night ? 0.1 : 0.35) + k * 0.08)); gr.addColorStop(0.55, mix(accent, '#ffffff', (night ? 0.42 : 0.72) + k * 0.05)); gr.addColorStop(1, mix(accent, '#ffffff', night ? 0.62 : 0.93));
+      g.fillStyle = gr; g.beginPath(); g.moveTo(0, s); g.bezierCurveTo(s * 0.95, s * 0.5, s * 0.8, -s * 0.75, s * 0.24, -s);
+      g.quadraticCurveTo(s * 0.08, -s * 0.84, 0, -s * 0.66); g.quadraticCurveTo(-s * 0.08, -s * 0.84, -s * 0.24, -s);
+      g.bezierCurveTo(-s * 0.8, -s * 0.75, -s * 0.95, s * 0.5, 0, s); g.fill();
+      g.restore();
+    }
+    g.shadowColor = 'transparent';
+    for (let i = 0; i < 5; i++) { // fine veins
+      g.save(); g.rotate((i * Math.PI * 2) / 5); g.globalAlpha = 0.22; g.strokeStyle = mix(accent, '#ffffff', 0.2); g.lineWidth = 0.7;
+      g.beginPath(); g.moveTo(0, -s * 0.2); g.quadraticCurveTo(s * 0.06, -s * 1.1, 0, -s * 1.55); g.stroke(); g.restore();
+    }
+    g.globalAlpha = 1;
+    const heart = g.createRadialGradient(0, 0, 0, 0, 0, s * 0.7);
+    heart.addColorStop(0, mix(accent, '#000000', 0.08)); heart.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = heart; g.beginPath(); g.arc(0, 0, s * 0.7, 0, 7); g.fill();
+    g.lineCap = 'round';
+    for (let i = 0; i < 11; i++) {
+      const a = i * 0.571 + k; const l = s * (0.42 + 0.14 * ((i * 7) % 3) / 2); const ex = Math.cos(a) * l; const ey = Math.sin(a) * l;
+      g.strokeStyle = mix(accent, '#ffffff', 0.15); g.lineWidth = 0.8; g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(ex * 0.5 + ey * 0.12, ey * 0.5 - ex * 0.12, ex, ey); g.stroke();
+      g.fillStyle = mix(gold, '#ffffff', 0.15); g.beginPath(); g.arc(ex, ey, 1.4, 0, 7); g.fill();
+    }
+    g.fillStyle = mix(gold, accent, 0.4); g.beginPath(); g.arc(0, 0, 2.2, 0, 7); g.fill();
+    return { c, half: P / 2, unit: s * 1.95 };
+  };
+  const blossoms = [0, 1, 2].map(blossom);
 
   // ---------- layout ----------
   const poly = heartOutline(420).map(([x, y]) => [cx + x * S, cy + y * S]);
@@ -277,13 +314,9 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
     };
     const flower = (x, y, sz, rot, bud) => {
       if (bud) { petal(x, y, sz * 0.38, rot, 0.55, alpha, 0, 1); return; }
-      for (let i = 0; i < 5; i++) { const a = rot + (i * Math.PI * 2) / 5; petal(x + Math.cos(a) * sz * 0.5, y + Math.sin(a) * sz * 0.5, sz * 0.6, a + Math.PI / 2, 1, alpha, i % 3, 1); }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = alpha; ctx.strokeStyle = accent; ctx.lineWidth = 0.6; ctx.fillStyle = gold;
-      for (let i = 0; i < 7; i++) {
-        const a = rot + i * 0.9; const ex = x + Math.cos(a) * sz * 0.4; const ey = y + Math.sin(a) * sz * 0.4;
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke(); ctx.beginPath(); ctx.arc(ex, ey, 0.8, 0, 7); ctx.fill();
-      }
-      ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(x, y, 1.4, 0, 7); ctx.fill();
+      const B = blossoms[Math.abs(Math.round(rot * 10)) % 3]; const k2 = (sz * 1.05) / B.unit;
+      ctx.setTransform(dpr * k2, 0, 0, dpr * k2, dpr * x, dpr * y); ctx.rotate(rot); ctx.globalAlpha = alpha;
+      ctx.drawImage(B.c, -B.half, -B.half);
     };
     stroke(Array.from({ length: 25 }, (_, i) => pt(i / 24)), 7.5, 1.2);
     const blooms = [];
@@ -400,8 +433,9 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
     const now = (performance.now() - start) / SLOW;
     T.dive = Math.max(T.drawn + SHINE, now); T.end = T.dive + DIVE; T.vanish = T.end + KEEP; T.gone = T.vanish + VANISH;
     const real = (story) => Math.max(0, story * SLOW - (performance.now() - start));
-    at(real(T.vanish + VANISH * 0.45), () => onWelcome?.());
-    at(real(T.vanish + VANISH * 0.85) + 650, () => seal.classList.add('on'));
+    // v0.32.8: the welcome comes once 愛してる has faded, so the two never overlap
+    at(real(T.gone) + 80, () => onWelcome?.());
+    at(real(T.gone) + 1100, () => seal.classList.add('on'));
     at(real(T.gone + HOLD), () => onDone?.());
   };
   Promise.race([ready, new Promise((res) => at(MAX_WAIT, res))]).then(beginDive, beginDive);
