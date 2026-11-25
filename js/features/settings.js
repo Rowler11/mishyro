@@ -26,11 +26,13 @@ function main({ app }) {
     if (taps >= 7) { taps = 0; router.go('/yoru'); }
   } }, ui.hanko({ size: 56 }));
 
-  const who = ui.segmented({
-    label: 'Quién usa la app', value: profile.active(),
-    options: [{ value: 'sofia', label: profile.name('sofia') }, { value: 'david', label: profile.name('david') }],
-    onChange: (v) => { profile.setActive(v); ui.toast(`Ahora usa la app: ${profile.name(v)}`); },
-  });
+  // v0.26.0: no switching between the two. Your card shows who you are here and opens your photo.
+  const me = profile.active(); const pic = profile.photo(me);
+  const meCard = el('a', { class: 'card card-link me-card', href: '#/ajustes/perfil' },
+    el('span', { class: 'avatar-preview me-avatar', 'aria-hidden': 'true' }, pic ? el('img', { src: pic, alt: '' }) : ([...profile.name(me)][0] || '?')),
+    el('span', { class: 'list-text' }, el('span', { class: 'list-title' }, profile.name(me)),
+      el('span', { class: 'muted small' }, pic ? 'Tu perfil: cambia tu foto y tus datos' : 'Tu perfil: pon tu foto y revisa tus datos')),
+    icon('chevron-right', { cls: 'list-chevron' }));
 
   // Joined pages (2026-11-21) show once, under the hub's name; their other parts are tabs inside.
   const rows = SETTINGS_PAGES.filter((p) => !p.hidden && listed(`ajustes/${p.id}`)).map((p) => ({ ...p, ...(HUBS.find((h) => h.id === `ajustes/${p.id}`) ? { title: HUBS.find((h) => h.id === `ajustes/${p.id}`).title, icon: HUBS.find((h) => h.id === `ajustes/${p.id}`).icon } : {}) })).map((p) => el('a', { class: 'list-row card-link', href: `#/ajustes/${p.id}` },
@@ -49,8 +51,7 @@ function main({ app }) {
     el('header', { class: 'page-head' },
       el('div', { class: 'page-titles' }, el('h1', { class: 'page-title', tabindex: '-1' }, 'Ajustes'), ja('設定', 'settei')),
       el('div', { class: 'page-actions' }, seal)),
-    el('div', { class: 'card stack' }, el('h2', { class: 'card-title' }, 'Quién usa la app'),
-      el('p', { class: 'muted' }, 'Sirve para saber quién escribe cada cosa y qué es "Solo yo". Se recuerda en este dispositivo.'), who),
+    meCard,
     install ? el('div', { class: 'card stack' }, el('p', {}, 'Instálala para abrirla como una app, también sin conexión.'), install) : null,
     el('nav', { class: 'list card', 'aria-label': 'Secciones de ajustes' }, rows),
     el('div', { class: 'card stack' },

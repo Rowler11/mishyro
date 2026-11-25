@@ -50,22 +50,29 @@ async function nosotros(box) {
   const [peopleRec, rel, dates] = await Promise.all([db.get('profile', 'people'), db.get('profile', 'relationship'), db.query('specialDates', { includeHidden: true })]);
   const people = peopleRec || {};
   const forms = {};
+  const { photoPicker } = await import('./avatar.js');
+  const photoBox = el('div', { class: 'stack' }, el('p', { class: 'field-label' }, 'Tu foto de perfil (opcional)'), photoPicker(profile.active()));
   const personCard = (who) => {
     const p = { ...(CONFIG.people[who] || {}), ...(people[who] || {}) };
     const shortName = textField('Nombre corto', p.shortName, { required: true, max: 24, hint: 'El que se ve en la app.' });
     const nickname = textField('Apodo', p.nickname, { max: 30, hint: 'Se usa en frases como "Buenos días, {apodo}".' });
     const fullName = textField('Nombre completo', p.fullName, { max: 80, hint: 'Solo se guarda en este dispositivo.' });
+    const role = el('select', { class: 'input' }, [el('option', { value: '' }, 'Sin elegir'),
+      ...profile.ROLES.map((r) => el('option', { value: r.id, selected: p.rel === r.id }, r.label))]);
+    const roleF = ui.field({ label: 'Es…', control: role, hint: 'Novia, esposo, mi señora… Ajusta cómo le hablan algunos textos.' });
     const birth = textField('Cumpleaños', p.birth, { type: 'date' });
     birth.control.max = today();
     // Favorite color: the birthday card in Fechas especiales wears it.
     const color = el('select', { class: 'input' }, [['', 'Sin elegir'], ['sakura', 'Sakura (rosa)'], ['fuji', 'Fuji (lila)'], ['matcha', 'Matcha (verde)'], ['kohaku', 'Kohaku (ámbar)']]
       .map(([v, l]) => el('option', { value: v, selected: (p.color || '') === v }, l)));
     const colorF = ui.field({ label: 'Color favorito', control: color, hint: 'Viste su tarjeta de cumpleaños.' });
-    forms[who] = { shortName, nickname, fullName, birth, color };
+    forms[who] = { shortName, nickname, fullName, birth, color, role };
     return el('section', { class: 'card stack' },
-      el('h2', { class: 'card-title perfil-person' }, el('span', { class: `person-dot dot-${who}`, 'aria-hidden': 'true' }), p.shortName || (who === 'sofia' ? 'Ella' : 'Él'),
-        profile.active() === who ? el('span', { class: 'badge' }, 'Usa este dispositivo') : null),
-      shortName.f, nickname.f, fullName.f, birth.f, colorF);
+      el('h2', { class: 'card-title perfil-person' }, el('span', { class: `person-dot dot-${who}`, 'aria-hidden': 'true' }), p.shortName || (who === profile.active() ? 'Tú' : 'Tu pareja'),
+        profile.active() === who ? el('span', { class: 'badge' }, 'Tú, en este equipo') : null),
+      // Each one changes only their own photo, on their own device (v0.26.0).
+      profile.active() === who ? photoBox : null,
+      shortName.f, roleF, nickname.f, fullName.f, birth.f, colorF);
   };
   const start = textField('Fecha en que empezamos', rel?.startDate ? String(rel.startDate).slice(0, 10) : '', { type: 'date', hint: 'El contador de Inicio cuenta desde aquí.' });
   start.control.max = today();
@@ -82,7 +89,7 @@ async function nosotros(box) {
     const next = { ...people, id: 'people' };
     for (const who of profile.PEOPLE) {
       const f = forms[who];
-      next[who] = { ...(people[who] || {}), shortName: f.shortName.value, nickname: f.nickname.value, fullName: f.fullName.value, birth: f.birth.value, color: f.color.value };
+      next[who] = { ...(people[who] || {}), shortName: f.shortName.value, nickname: f.nickname.value, fullName: f.fullName.value, birth: f.birth.value, color: f.color.value, rel: f.role.value };
     }
     await db.put('profile', next);
     await db.put('profile', { ...(rel || {}), id: 'relationship', startDate: start.value });
@@ -99,7 +106,7 @@ async function nosotros(box) {
   } });
 
   put(box,
-    el('div', { class: 'perfil-people' }, personCard('sofia'), personCard('david')),
+    el('div', { class: 'perfil-people' }, personCard(profile.active()), personCard(profile.partnerOf(profile.active()))),
     el('section', { class: 'card stack' }, el('h2', { class: 'card-title' }, 'Nuestra historia'), start.f),
     el('div', { class: 'btn-row perfil-save' }, save),
     el('section', { class: 'card stack' },
@@ -276,7 +283,13 @@ async function textos(box) {
         incomplete: seed.needsCompletion(def.fields.map(([k]) => r[k]).join(' ')),
         onEdit: () => textEditor(def, r, drawList),
         onToggleHidden: async () => { await db.put('content', { ...r, hidden: !r.hidden }, { userEdit: false }); ui.toast(r.hidden ? 'Vuelve a aparecer.' : 'Oculto: ya no aparece en la app.'); drawList(); },
-        onDelete: r.origin === 'user' ? async () => {
+        // v0.26.0: every reason can be deleted, also the ones from the seed or the app (to the Papelera).
+        onDelete: def.kind === 'reason' ? async () => {
+          const { toTrash, TRASH_NOTE } = await import('./papelera.js');
+          if (!(await ui.confirmDialog({ title: '¿Borrar esta razón?', message: TRASH_NOTE, confirmLabel: 'Borrar', danger: true }))) return;
+          await toTrash('content', r.id, { label: String(r.text || '').slice(0, 60), section: 'Razones', what: 'Razón borrada', onRestored: drawList });
+          drawList();
+        } : r.origin === 'user' ? async () => {
           if (!(await ui.confirmDialog({ title: '¿Borrar este texto?', message: 'No se puede deshacer.', confirmLabel: 'Borrar', danger: true }))) return;
           await db.purge('content', r.id); ui.toast('Borrado.'); drawList();
         } : null,

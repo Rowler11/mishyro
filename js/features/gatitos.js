@@ -276,8 +276,8 @@ function companionKitty(pet, index, root, { flow = false } = {}) {
 }
 
 /** Wrap a card so a pet can peek over its top edge (head and paws out, body hidden behind the card). */
-export function perch(card, pet, index, { side = 0.75 } = {}) {
-  const wrap = el('div', { class: 'kitty-perch', 'data-bubble-root': '', style: { '--kx': `${Math.round(side * 100)}%` } });
+export function perch(card, pet, index, { side = 0.75, enter = false } = {}) {
+  const wrap = el('div', { class: `kitty-perch${enter ? ' is-enter' : ''}`, 'data-bubble-root': '', style: { '--kx': `${Math.round(side * 100)}%` } });
   card.replaceWith(wrap);
   const k = companionKitty(pet, index, wrap);
   k.classList.add('kitty-peek');
@@ -291,8 +291,8 @@ export function perch(card, pet, index, { side = 0.75 } = {}) {
 }
 
 /** A pet asleep on a zabuton at the end of a screen. Tap: it wakes up a moment, talks and opens its menu. */
-export function nap(pet, index) {
-  const box = el('div', { class: 'kitty-nap', 'data-bubble-root': '' });
+export function nap(pet, index, { enter = false } = {}) {
+  const box = el('div', { class: `kitty-nap${enter ? ' is-enter' : ''}`, 'data-bubble-root': '' });
   const k = companionKitty(pet, index, box, { flow: true });
   k.classList.add('is-asleep');
   k.addEventListener('click', () => { k.classList.remove('is-asleep'); clearTimeout(k._sleepT); k._sleepT = setTimeout(() => k.classList.add('is-asleep'), 12000); });
@@ -321,11 +321,11 @@ function careBubble(pets, records, today) {
 }
 
 /** Inicio: every pet peeks over a different card (the one who needs care, with its bubble). */
-export async function decorateHome(body) {
+export async function decorateHome(body, { enter = false } = {}) {
   if (!body) return;
   if (!(await showPets())) return;
   const pets = await livePets();
-  if (!pets.length || !body.isConnected) return;
+  if (!pets.length || !body.isConnected || body.querySelector(':scope > .kitty-perch')) return;
   const cards = [...body.children].filter((c) => c.classList?.contains('card') && !c.classList.contains('counter-card') && solidCard(c));
   // Inicio "Sereno" (v0.19.0) has fewer cards: when there are more pets than cards, the counter takes one too.
   const counter = body.querySelector(':scope > .counter-card');
@@ -340,13 +340,13 @@ export async function decorateHome(body) {
   order.forEach((pet, n) => {
     const card = cards[(n * step + (care && n === 0 ? 0 : day % 2)) % cards.length];
     if (!card || card.closest('.kitty-perch')) return;
-    const k = perch(card, pet, pets.indexOf(pet), { side: [0.78, 0.2, 0.55, 0.36, 0.66][n % 5] });
+    const k = perch(card, pet, pets.indexOf(pet), { side: [0.78, 0.2, 0.55, 0.36, 0.66][n % 5], enter });
     if (care && n === 0) { k.closest('.kitty-perch').before(care.node); setTimeout(() => { if (k.isConnected) move(k); }, 600); }
   });
 }
 
 /** Any other screen: one pet, different per screen and day, peeking over a card or asleep at the end. */
-export async function companion(node, id) {
+export async function companion(node, id, { enter = true } = {}) {
   if (!node || !id || SKIP.has(id) || node.querySelector('.kitty-perch, .kitty-nap')) return;
   // v0.22.0: a pet already waiting on an empty state is this screen's pet; extra ones (built in the same tick) step aside.
   const waiting = [...node.querySelectorAll('.empty-art-pet')];
@@ -360,9 +360,9 @@ export async function companion(node, id) {
   // Cards, and the pill switch on top of a screen (Para ti · Escribimos…), are good places to peek from.
   const cards = [...node.querySelectorAll('.card, .segmented')].filter((c) => solidCard(c) && /flex|grid|block/.test(getComputedStyle(c.parentElement).display) && c.parentElement.children.length > 1).slice(0, 6);
   if (cards.length && (h >>> 4) % 3 !== 0) {
-    perch(cards[(h >>> 8) % cards.length], pet, index, { side: [0.78, 0.22, 0.6][(h >>> 12) % 3] });
+    perch(cards[(h >>> 8) % cards.length], pet, index, { side: [0.78, 0.22, 0.6][(h >>> 12) % 3], enter });
   } else {
-    node.append(nap(pet, index));
+    node.append(nap(pet, index, { enter }));
   }
 }
 

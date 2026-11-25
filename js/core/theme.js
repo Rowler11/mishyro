@@ -8,7 +8,7 @@ import { titleLetters } from './letters.js';
 
 export const APPEARANCE_DEFAULTS = { theme: 'auto', highContrast: false, textScale: 100, legibleFont: false, japanese: true, style: 'jp' };
 export const STYLES = ['jp', 'rojo', 'azul'];
-export const MOTION_DEFAULTS = { animations: true, haptics: true, sound: false, animalSound: true, intro: 'daily', seasonal: true }; // intro: 'daily' | 'always' (opening heart)
+export const MOTION_DEFAULTS = { animations: true, haptics: true, sound: true, animalSound: true, intro: 'daily', seasonal: true }; // intro: 'daily' | 'always' (opening heart)
 export const DAY_START = 6; export const NIGHT_START = 18;
 const THEME_COLORS = {
   jp: { day: '#FBF4F3', night: '#161214' }, rojo: { day: '#FBF3E8', night: '#15100E' }, azul: { day: '#F4F6F9', night: '#0F131C' },

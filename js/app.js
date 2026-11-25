@@ -4,7 +4,7 @@ import { CONFIG, db, router, theme, ui, security, seed, profile, util, cryptoBox
 import { TABS, GROUPS, HIDDEN, SETTINGS_PAGES, HUBS } from './routes.js';
 import { scene as sceneFor } from './core/scene.js';
 import { bouquet } from './core/art.js';
-import { cornerArt } from './core/fx.js';
+import { cornerArt, whenClear } from './core/fx.js';
 import * as guia from './features/guia.js';
 import * as tour from './features/tour.js';
 
@@ -112,8 +112,10 @@ function buildShell() {
     'aria-label': `${t.title}${cls === 'rail-link' ? '' : ''}`,
   }, el('span', { class: 'tab-icon' }, icon(t.icon)), el('span', { class: 'tab-name' }, t.title));
 
-  const profileChip = (cls) => el('button', { class: `profile-chip ${cls}`, type: 'button', onClick: switchProfile },
-    el('span', { class: 'profile-dot', 'aria-hidden': 'true' }), el('span', { class: 'profile-initial', 'aria-hidden': 'true' }), el('span', { class: 'profile-text' }));
+  // v0.26.0: no switching between the two any more. The avatar (photo, or the initial) opens Perfil,
+  // where the photo is changed. Who uses this device is chosen once, in the setup or by the join code.
+  const profileChip = (cls) => el('a', { class: `profile-chip ${cls}`, href: '#/ajustes/perfil', onClick: () => util.haptic('tap') },
+    el('span', { class: 'profile-avatar', 'aria-hidden': 'true' }), el('span', { class: 'profile-text' }));
   const searchBtn = el('a', { class: 'icon-btn search-btn', href: '#/buscar', 'aria-label': 'Buscar', title: 'Buscar · tecla /' }, icon('search'));
   const panicBtn = (cls) => el('button', { class: `icon-btn panic-btn ${cls}`, type: 'button', 'aria-label': 'Cubrir la app (pánico)', title: 'Cubrir la app · Esc dos veces', onClick: doPanic }, icon('eye-off'));
 
@@ -175,21 +177,18 @@ function updateLetterDot() {
 function updateProfileChips() {
   const who = profile.active();
   document.documentElement.dataset.profile = who;
+  const pic = profile.photo(who);
   document.querySelectorAll('.profile-chip').forEach((b) => {
     b.querySelector('.profile-text').textContent = profile.name(who);
-    b.querySelector('.profile-initial').textContent = [...profile.name(who)][0] || '?';
-    b.setAttribute('aria-label', `Usa la app: ${profile.name(who)}. Tocar para cambiar a ${profile.name(profile.partnerOf(who))}`);
+    const av = b.querySelector('.profile-avatar');
+    av.classList.toggle('has-photo', !!pic);
+    if (pic) {
+      const img = av.querySelector('img') || el('img', { alt: '', decoding: 'async' });
+      if (img.getAttribute('src') !== pic) img.setAttribute('src', pic);
+      if (!img.isConnected) av.replaceChildren(img);
+    } else av.textContent = [...profile.name(who)][0] || '?';
+    b.setAttribute('aria-label', `Tu perfil: ${profile.name(who)}. Cambiar tu foto y tus datos`);
   });
-}
-
-async function switchProfile() {
-  const next = profile.partnerOf(profile.active());
-  security.lockSensitive();
-  profile.setActive(next);
-  updateProfileChips();
-  ui.toast(`Ahora usa la app: ${profile.name(next)}`);
-  util.haptic(10);
-  router.refresh();
 }
 
 function doPanic() {
@@ -217,6 +216,9 @@ function onNavigate(route, prev) {
 async function render(route) {
   if (!shell) buildShell();
   const { main } = shell;
+  // v0.26.0: a redraw because something arrived from the other phone is quiet: no entrance, and the
+  // pet that was already there stays put instead of popping in again.
+  const quiet = app.quietRender; app.quietRender = false;
   updateNav(route);
   updateLetterDot();
   const def = route.def;
@@ -228,7 +230,7 @@ async function render(route) {
     if (router.currentRoute() !== route) return;
   }
   // Keep the current view until the next one is ready; show the skeleton only if it takes a while.
-  const skeleton = setTimeout(() => { if (router.currentRoute() === route) main.replaceChildren(ui.skeleton(3, { kind: 'cards' })); }, 250);
+  const skeleton = setTimeout(() => { if (!quiet && router.currentRoute() === route) main.replaceChildren(ui.skeleton(3, { kind: 'cards' })); }, 250);
   let node;
   try {
     const mod = await def.load();
@@ -247,8 +249,8 @@ async function render(route) {
   addHubTabs(node, route);
   addScene(node, route);
   addHint(node, route);
-  const swapped = swapView(main, node);
-  addCompanion(node, route);
+  const swapped = swapView(main, node, { quiet });
+  addCompanion(node, route, { quiet });
   // Focus the new view's search box or title once it is in place.
   if (!app.firstRender) swapped.then(() => requestAnimationFrame(() => (main.querySelector('[data-autofocus]') || main.querySelector('h1') || main).focus({ preventScroll: true })));
   if (app.firstRender) preloadSections();
@@ -257,13 +259,15 @@ async function render(route) {
 }
 
 /** v0.18.0: one of their pets shows up on the screen (peeking over a card or asleep at the end). */
-function addCompanion(node, route) {
+function addCompanion(node, route, { quiet = false } = {}) {
   const def = route.def;
   if (def.layer || def.lock || route.path.startsWith('/ajustes') || !node?.querySelector) return;
-  setTimeout(() => {
+  // v0.26.0: it peeks out from behind its card (or walks in from the edge) once the screen has settled.
+  const show = () => {
     if (router.currentRoute() !== route || !node.isConnected) return;
-    import('./features/gatitos.js').then((m) => m.companion(node, def.id)).catch((e) => console.error(e));
-  }, 700);
+    import('./features/gatitos.js').then((m) => m.companion(node, def.id, { enter: !quiet })).catch((e) => console.error(e));
+  };
+  if (quiet) show(); else whenClear(8000).then(() => setTimeout(show, 500));
 }
 
 /** Paper scene under the title of the sections of Más (v0.13.0). */
@@ -298,10 +302,10 @@ function addHubTabs(node, route) {
   requestAnimationFrame(() => nav.querySelector('.is-on')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
 }
 
-function swapView(main, node) {
+function swapView(main, node, { quiet = false } = {}) {
   // A plain CSS entrance instead of a view transition: it never blocks taps, so switching is instant.
   main.replaceChildren(node);
-  if (!app.firstRender && !util.prefersReducedMotion()) node.classList?.add('view-enter');
+  if (!quiet && !app.firstRender && !util.prefersReducedMotion()) node.classList?.add('view-enter');
   return Promise.resolve();
 }
 
@@ -323,15 +327,15 @@ function introDue(mode) {
 /** Welcome layer. `intro` forces the opening heart; otherwise it follows Ajustes > Movimiento. */
 function splash({ ready = Promise.resolve(), intro = null, mode = 'daily' } = {}) {
   return new Promise((resolve) => {
-    const who = 'sofia'; // The app is a gift for her: the loading screen says "Para <her name>" on every phone (Rowler, 2026-11-21).
+    // The app is a gift: the loading screen says "Para <who it is for>" on every phone (Rowler, 2026-11-21).
     const reduced = util.prefersReducedMotion();
     const full = !reduced && (intro ?? introDue(mode));
     const cnStyle = ['rojo', 'azul'].includes(document.documentElement.dataset.style); // v0.22.0: 我爱你 in the Chinese styles
     const layer = el('div', { class: `splash${full ? ' splash-intro' : ''}`, role: 'status', 'aria-label': 'Aishiteru' },
-      // A bouquet of lilies, Sofía's flower, opens as the name appears (chosen 2026-11-22).
+      // A bouquet of lilies opens as the name appears (chosen 2026-11-22).
       cnStyle ? el('div', { class: 'splash-corner', 'aria-hidden': 'true' }, cornerArt()) : null,
       el('div', { class: 'splash-heart splash-bouquet', 'aria-hidden': 'true' }, bouquet()),
-      el('p', { class: 'splash-for' }, `Para ${profile.nick(who)}`),
+      el('p', { class: 'splash-for' }, `Para ${profile.paraName() || 'ti'}`),
       ...(cnStyle
         ? [el('span', { class: 'ja', lang: 'zh-Hans', 'data-jp-ok': '' }, '我爱你'), el('small', { class: 'splash-romaji', 'aria-hidden': 'true' }, 'wǒ ài nǐ')]
         : [ja('愛してる', 'aishiteru'), el('small', { class: 'splash-romaji', 'aria-hidden': 'true' }, 'aishiteru')]),
@@ -464,6 +468,14 @@ async function wipeEverything() {
 app.wipeEverything = wipeEverything;
 
 async function applySettings() {
+  // v0.26.0: "Sonidos suaves" is on for new installs. Who already used the app keeps it as it was (off
+  // unless they turned it on), so the old default is written once for them.
+  const raw = await db.rawGet('settings', 'motion').catch(() => null);
+  if (!raw || !('sound' in raw)) {
+    const m = await db.getMeta();
+    if (m.setupDone && !m.soundDefaultKept) await db.setSettings('motion', { sound: false });
+    if (!m.soundDefaultKept) await db.setMeta({ soundDefaultKept: true });
+  }
   const [appearance, motion] = await Promise.all([
     db.getSettings('appearance', theme.APPEARANCE_DEFAULTS), db.getSettings('motion', theme.MOTION_DEFAULTS)]);
   theme.apply({ ...appearance, ...motion });
@@ -478,6 +490,7 @@ function fatal(message) {
     el('p', {}, 'Si estás en modo incógnito o sin espacio, prueba en una ventana normal o libera espacio.')));
 }
 
+let syncRedraw = 0;
 /** Live sync (Fase A): start it, and redraw the open view when changes arrive from the other devices. */
 async function startSync() {
   sync.onApplied((stores) => {
@@ -486,8 +499,16 @@ async function startSync() {
     const t = document.activeElement;
     const typing = t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
     if (!route || route.def.layer || ui.hasOpenModal() || typing || route.def.settingsPage) return;
-    app.keepScroll = window.scrollY;
-    router.refresh();
+    // v0.26.0: changes arrive in a few batches when the app opens; redraw once, quietly. Ajustes itself
+    // only shows your profile card from what comes from the other phone.
+    if (route.path === '/ajustes' && !stores.includes('profile')) return;
+    clearTimeout(syncRedraw);
+    syncRedraw = setTimeout(() => {
+      if (router.currentRoute() !== route || ui.hasOpenModal()) return;
+      app.keepScroll = window.scrollY;
+      app.quietRender = true;
+      router.refresh();
+    }, 350);
   });
   await sync.start().catch((e) => db.logError(`sync: ${e?.message}`, e?.stack, CONFIG.appVersion));
   import('./features/avisos.js').then((m) => m.start()).catch(() => {}); // scheduled caring notices (v0.15.0)

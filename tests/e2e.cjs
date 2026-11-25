@@ -25,10 +25,11 @@ function watch(page) {
 async function completeSetup(page) {
   await page.goto(BASE);
   await page.getByRole('link', { name: 'Empezar desde cero' }).click();
-  await page.getByRole('button', { name: /Sofía/ }).click();
   await page.setInputFiles('#seed-file', SEED);
   await page.getByRole('button', { name: 'Importar' }).click();
+  await page.getByRole('button', { name: /Ana/ }).click();
   await page.getByRole('button', { name: 'Todo bien' }).click();
+  await page.getByRole('button', { name: 'Luego' }).click();
   await page.getByRole('button', { name: 'Ahora no' }).click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Terminar' }).click();
@@ -72,9 +73,9 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.locator('.short-code').waitFor({ timeout: 15000 }).catch(() => {});
     ok('setup: first open on a PC shows only the QR and the short code', (await page.evaluate(() => location.hash)) === '#/unir' && (await page.locator('.qr-box').count()) === 1 && /^[A-Z2-9]{5}-[A-Z2-9]{5}$/.test(await page.locator('.short-code').innerText()) && (await page.getByText('¿Quién usa este dispositivo?').count()) === 0);
     await page.getByRole('link', { name: 'Empezar desde cero' }).click();
-    await page.getByRole('button', { name: /Sofía/ }).click();
     await page.setInputFiles('#seed-file', SEED);
     await page.getByRole('button', { name: 'Importar' }).click();
+    await page.getByRole('button', { name: /Ana/ }).click();
     await page.getByText('Revisen que todo esté bien').waitFor();
     await shot(page, 'setup-review-390');
     // close halfway and reopen: resumes at review, no duplicates
@@ -87,6 +88,7 @@ async function exampleContent(page, { reload = true } = {}) {
     });
     ok('setup: clean start, the file brings no letters, coupons, reasons or memories', counts.memories === 0 && counts.content === 0, JSON.stringify(counts));
     await page.getByRole('button', { name: 'Todo bien' }).click();
+    await page.getByRole('button', { name: 'Luego' }).click();
     await page.getByRole('button', { name: 'Ahora no' }).click();
     await page.getByRole('button', { name: 'Continuar' }).click();
     const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Descargar primera copia' }).click()]);
@@ -106,7 +108,7 @@ async function exampleContent(page, { reload = true } = {}) {
     // Names come from the store (seed), not from the repo
     const chip = await page.locator('.chip-appbar .profile-text').textContent();
     ok('profile: names come from the imported seed', chip === 'Ana', chip);
-    ok('appbar: avatar shows the initial and the flower has no tile', (await page.locator('.chip-appbar .profile-initial').textContent()) === 'A' && (await page.locator('.appbar .flower-jp').count()) === 1 && (await page.locator('.appbar .logo').count()) === 0);
+    ok('appbar: avatar shows the initial and the flower has no tile', (await page.locator('.chip-appbar .profile-avatar').textContent()) === 'A' && (await page.locator('.appbar .flower-jp').count()) === 1 && (await page.locator('.appbar .logo').count()) === 0);
     ok('setup flow: no console errors or native dialogs', errors.length === 0, errors.join(' | '));
     await ctx.close();
   }
@@ -953,10 +955,11 @@ async function exampleContent(page, { reload = true } = {}) {
     const errors = watch(page);
     await page.goto(BASE);
     await page.getByRole('link', { name: 'Empezar desde cero' }).click();
-    await page.getByRole('button', { name: /Sofía/ }).click();
     await page.setInputFiles('#seed-file', SEED);
     await page.getByRole('button', { name: 'Importar' }).click();
+    await page.getByRole('button', { name: /Ana/ }).click();
     await page.getByRole('button', { name: 'Todo bien' }).click();
+    await page.getByRole('button', { name: 'Luego' }).click();
     await page.getByRole('button', { name: 'Crear PIN' }).click();
     ok('pin: the pad has exactly 4 digits', (await page.locator('.pin-dot').count()) === 4);
     for (const pass of [0, 1]) { // 4 digits submit on their own
@@ -2162,11 +2165,12 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('11 volver a entrar: pide 12 palabras', await page.locator('.field-error', { hasText: 'Son 12 palabras' }).waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
     // Setup until the permissions step
     await page.getByRole('link', { name: 'Empezar desde cero' }).click();
-    ok('v0.13 PC: "Empezar desde cero" pasa directo a elegir quién', await page.getByText('¿Quién usa este dispositivo?').waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
-    await page.getByRole('button', { name: /Sofía/ }).click();
+    ok('v0.13 PC: "Empezar desde cero" pasa directo a sus datos', await page.getByText('Escribe tu nombre y el de tu pareja').waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
     await page.setInputFiles('#seed-file', SEED);
     await page.getByRole('button', { name: 'Importar' }).click();
+    await page.getByRole('button', { name: /Ana/ }).click();
     await page.getByRole('button', { name: 'Todo bien' }).click();
+    await page.getByRole('button', { name: 'Luego' }).click();
     await page.getByRole('button', { name: 'Ahora no' }).click();
     await page.getByText('Pídelos de una vez').waitFor();
     ok('11 permisos: un paso con los 4 y "Permitir todo"', (await page.locator('.perm-row').count()) === 4 && (await page.getByRole('button', { name: 'Permitir todo' }).count()) === 1);
@@ -2258,16 +2262,16 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.addInitScript(() => { window.alert = window.confirm = window.prompt = () => { throw new Error('native dialog'); }; });
     await page.goto(BASE);
     await page.getByRole('link', { name: 'Empezar desde cero' }).click();
-    await page.getByRole('button', { name: /David/ }).click();
     await page.setInputFiles('#seed-file', SEED);
     await page.getByRole('button', { name: 'Importar' }).click();
+    await page.getByRole('button', { name: /Leo/ }).click();
     ok('14 Empezar: el resumen dice que cartas, cupones y recuerdos empiezan vacíos', /empiezan vacíos/.test(await page.locator('main').textContent()));
-    for (const n of ['Todo bien', 'Ahora no', 'Continuar', 'Terminar', 'Saltar']) await page.getByRole('button', { name: n }).click();
+    for (const n of ['Todo bien', 'Luego', 'Ahora no', 'Continuar', 'Terminar', 'Saltar']) await page.getByRole('button', { name: n }).click();
     await page.waitForFunction(() => location.hash === '#/inicio');
     await page.waitForSelector('.guide-card');
     const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(300); };
     // Guide
-    ok('14 Guía: Inicio muestra "Primeros pasos" solo para configurar (4 pasos, con el recorrido)', /de 4$/.test((await page.locator('.guide-card .guide-count').textContent()).trim()) && (await page.locator('.guide-step', { hasText: 'Ver el recorrido' }).count()) === 1 && (await page.locator('.guide-step', { hasText: 'carta' }).count()) === 0);
+    ok('14 Guía: Inicio muestra "Primeros pasos" solo para configurar (6 pasos, con el recorrido y la foto)', /de 6$/.test((await page.locator('.guide-card .guide-count').textContent()).trim()) && (await page.locator('.guide-step', { hasText: 'Ver el recorrido' }).count()) === 1 && (await page.locator('.guide-step', { hasText: 'carta' }).count()) === 0);
     await go('/cartas', '.page');
     ok('14 Guía: la primera vez una sección muestra su pista', (await page.locator('.guide-hint').count()) === 1);
     await page.locator('.guide-hint').getByRole('button', { name: 'Entendido' }).click();
@@ -2405,10 +2409,10 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.addInitScript(() => { window.alert = window.confirm = window.prompt = () => { throw new Error('native dialog'); }; });
     await page.goto(BASE);
     await page.getByRole('link', { name: 'Empezar desde cero' }).click();
-    await page.getByRole('button', { name: /David/ }).click();
     await page.setInputFiles('#seed-file', SEED);
     await page.getByRole('button', { name: 'Importar' }).click();
-    for (const n of ['Todo bien', 'Ahora no', 'Continuar', 'Terminar', 'Saltar']) await page.getByRole('button', { name: n }).click();
+    await page.getByRole('button', { name: /Leo/ }).click();
+    for (const n of ['Todo bien', 'Luego', 'Ahora no', 'Continuar', 'Terminar', 'Saltar']) await page.getByRole('button', { name: n }).click();
     await page.waitForFunction(() => location.hash === '#/inicio');
     await page.waitForSelector('.love-strip');
     const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(300); };

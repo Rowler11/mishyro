@@ -1,11 +1,11 @@
-// First-open setup wizard (#/setup, 6 steps) and the 4-screen welcome story (#/setup/historia).
+// First-open setup wizard (#/setup, 8 steps) and the 4-screen welcome story (#/setup/historia).
 // Progress is saved in meta.setupStep, so closing halfway resumes without duplicating anything.
 import { ui, util, db, seed, security, backup, profile, router, cryptoBox, CONFIG } from '../core.js';
 
 const plural = (n, one, many) => `${n || 0} ${n === 1 ? one : many}`;
 
 const { el, icon, ja } = util;
-const STEPS = 7;
+const STEPS = 8;
 
 export function render(ctx) {
   if (ctx.route.path === '/setup/historia') return story(ctx);
@@ -41,7 +41,9 @@ function wizard({ app }) {
     requestAnimationFrame(() => card.querySelector('h1')?.focus({ preventScroll: true }));
   };
 
-  const draw = () => [null, welcome, who, data, review, pin, permissions, finish][step]();
+  // v0.26.0: the data come first (written by hand; the seed file is a secondary "Importar seed"), then
+  // "who" only after importing a file (typing makes you "Tú"), the review, and your photo.
+  const draw = () => [null, welcome, data, who, review, photo, pin, permissions, finish][step]();
 
   // 1. Welcome (2026-11-22): joining is the main door (Sofía, the PC, a new phone): only a QR or a code.
   // Starting from zero, with "who" and the data file, is only for the person who prepares the app.
@@ -61,24 +63,25 @@ function wizard({ app }) {
     null, { back: false });
   }
 
-  // 2. Who uses this device
+  // 3. Who uses this device (only after importing a seed file: its two names come from there)
   function who() {
     const pick = (id) => el('button', { class: `who-card${profile.hasChosen() && profile.active() === id ? ' on' : ''}`, type: 'button', onClick: () => {
-      profile.setActive(id); util.haptic(10); go(3);
+      profile.setActive(id); util.haptic(10); go(4);
     } }, el('span', { class: 'who-initial', 'aria-hidden': 'true' }, (profile.name(id) || '?').slice(0, 1)), el('span', { class: 'who-name' }, profile.name(id)));
     frame('¿Quién usa este dispositivo?', null, null, el('div', { class: 'stack' },
-      el('p', { class: 'muted' }, 'Así la app sabe quién escribe cada cosa. Se puede cambiar luego en un toque.'),
+      el('p', { class: 'muted' }, 'Así la app sabe quién escribe cada cosa. Elige bien: después queda fijo en este equipo.'),
       el('div', { class: 'who-grid' }, pick('sofia'), pick('david'))), null);
   }
 
-  // 3. Import seed or type data
-  function data() {
+  // 2. Your data, typed (main) or from a seed file (secondary, "Importar seed")
+  function seedImport() {
     const out = el('div', { class: 'stack', 'aria-live': 'polite' });
     const fileIn = el('input', { type: 'file', accept: 'application/json,.json', class: 'sr-only', id: 'seed-file' });
     const drop = el('label', { class: 'dropzone', for: 'seed-file' },
       icon('upload', { size: 32 }), el('span', { class: 'dropzone-title' }, 'Elegir seed-privado.json'),
       el('span', { class: 'muted small' }, 'o arrástralo aquí desde el PC'));
     const handle = async (file) => {
+      const box = out.closest('details'); if (box) box.open = true;
       out.replaceChildren(ui.skeleton(2));
       let obj;
       try { obj = await backup.readFile(file, 5 * 1024 * 1024); } catch (e) { out.replaceChildren(el('p', { class: 'error-text' }, e.message)); return; }
@@ -99,7 +102,7 @@ function wizard({ app }) {
         ui.button({ label: 'Importar', variant: 'primary', iconName: 'check', onClick: async () => {
           await seed.applySeed(obj); await profile.load();
           ui.toast('Datos iniciales importados.', { tone: 'success' });
-          go(4);
+          go(3);
         } })));
     };
     fileIn.addEventListener('change', () => fileIn.files[0] && handle(fileIn.files[0]));
@@ -107,26 +110,30 @@ function wizard({ app }) {
     drop.addEventListener('dragleave', () => drop.classList.remove('over'));
     drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) handle(f); });
 
-    frame('Sus datos', null, null, el('div', { class: 'stack' },
-      el('p', { class: 'muted' }, 'Importa el archivo privado con sus nombres, fechas y textos, o escríbelos a mano. Ese archivo nunca se sube a internet.'),
-      fileIn, drop, out,
-      el('div', { class: 'divider-text' }, el('span', {}, 'o')),
-      ui.button({ label: 'Escribirlos a mano', iconName: 'pencil', onClick: () => manual() }),
-      ui.button({ label: 'Mejor unir este equipo a otro', iconName: 'qr-code', variant: 'ghost', href: '#/unir' })), null);
+    return el('details', { class: 'card seed-import' },
+      el('summary', { class: 'card-title' }, icon('upload', { size: 18 }), ' Importar seed'),
+      el('div', { class: 'stack' },
+        el('p', { class: 'muted small' }, '¿Tienes un archivo de datos iniciales (seed)? Trae sus nombres, fechas y mascotas. Ese archivo nunca se sube a internet.'),
+        fileIn, drop, out));
   }
 
-  function manual() {
+  function data() {
     const people = {};
-    const mk = (id) => {
+    const roleSelect = (cur, def) => el('select', { class: 'input' }, [el('option', { value: '' }, 'Elegir…'),
+      ...profile.ROLES.map((r) => el('option', { value: r.id, selected: (cur || def) === r.id }, r.label))]);
+    const mk = (id, title, sub, defRole) => {
       const p = profile.person(id);
       const f = {
         short: ui.input({ value: p.shortName || '', required: true, autocomplete: 'off', maxlength: '40' }),
         nick: ui.input({ value: p.nickname || '', autocomplete: 'off', maxlength: '40' }),
+        rel: roleSelect(p.rel, defRole),
         birth: ui.input({ type: 'date', value: p.birth || '' }),
       };
       people[id] = f;
-      return el('fieldset', { class: 'card stack' }, el('legend', { class: 'card-title' }, p.shortName || profile.name(id)),
-        ui.field({ label: 'Nombre corto', control: f.short }), ui.field({ label: 'Apodo (opcional)', control: f.nick }),
+      return el('fieldset', { class: 'card stack' }, el('legend', { class: 'card-title' }, title), el('p', { class: 'muted small' }, sub),
+        ui.field({ label: 'Nombre', control: f.short }),
+        ui.field({ label: 'Es…', control: f.rel, hint: 'Novia, esposo, mi señora… Ajusta cómo le hablan algunos textos de la app.' }),
+        ui.field({ label: 'Apodo (opcional)', control: f.nick }),
         ui.field({ label: 'Cumpleaños (opcional)', control: f.birth, hint: 'Con el año, la app muestra la edad que cumple.' }));
     };
     const rel = (profile.startDate() || '').slice(0, 16);
@@ -134,8 +141,10 @@ function wizard({ app }) {
     const time = ui.input({ type: 'time', value: rel.slice(11, 16) || '00:00' });
     const dateField = ui.field({ label: 'Empezamos el', control: date, hint: 'Si no saben la hora, dejen 00:00.' });
     const pet = { name: ui.input({ maxlength: '40' }), species: ui.input({ maxlength: '30', placeholder: 'gato, perro…' }), breed: ui.input({ maxlength: '40' }), birth: ui.input({ type: 'date' }), arrival: ui.input({ type: 'date' }) };
+    const ME = profile.AUTHOR; const THEM = profile.RECIPIENT;
     const form = el('form', { class: 'stack', novalidate: true },
-      mk('sofia'), mk('david'),
+      mk(ME, 'Tú', 'Quien prepara la app en este teléfono.', 'novio'),
+      mk(THEM, 'Tu pareja', 'Para quien es la app: su nombre sale en Inicio.', 'novia'),
       el('fieldset', { class: 'card stack' }, el('legend', { class: 'card-title' }, 'Nuestra relación'), dateField, ui.field({ label: 'Hora', control: time })),
       el('details', { class: 'card' }, el('summary', { class: 'card-title' }, 'Mascota (opcional)'),
         el('div', { class: 'stack' }, ui.field({ label: 'Nombre', control: pet.name }), ui.field({ label: 'Especie', control: pet.species }), ui.field({ label: 'Raza', control: pet.breed }),
@@ -143,7 +152,7 @@ function wizard({ app }) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       let ok = true;
-      for (const id of ['sofia', 'david']) {
+      for (const id of [ME, THEM]) {
         const fld = people[id].short.closest('.field');
         if (!people[id].short.value.trim()) { fld.setError('Escribe un nombre.'); ok = false; } else fld.setError('');
       }
@@ -154,14 +163,17 @@ function wizard({ app }) {
         if (d > new Date()) { dateField.setError('La fecha no puede estar en el futuro.'); ok = false; } else { dateField.setError(''); startDate = util.toLocalISO(d); }
       }
       if (!ok) { form.querySelector('[aria-invalid="true"]')?.focus(); return; }
-      const val = (id) => ({ shortName: people[id].short.value.trim(), nickname: people[id].nick.value.trim(), birth: people[id].birth.value });
-      await seed.applyManual({ people: { sofia: val('sofia'), david: val('david') }, startDate, pet: { name: pet.name.value.trim(), species: pet.species.value.trim(), breed: pet.breed.value.trim(), birth: pet.birth.value, arrival: pet.arrival.value } });
+      const val = (id) => ({ shortName: people[id].short.value.trim(), nickname: people[id].nick.value.trim(), birth: people[id].birth.value, rel: people[id].rel.value });
+      await seed.applyManual({ people: { [THEM]: val(THEM), [ME]: val(ME) }, startDate, pet: { name: pet.name.value.trim(), species: pet.species.value.trim(), breed: pet.breed.value.trim(), birth: pet.birth.value, arrival: pet.arrival.value } });
+      profile.setActive(ME); // typing the data makes you "Tú"
       await profile.load();
       go(4);
     });
-    frame('Escribir los datos', null, null, form, [
-      ui.button({ label: 'Volver', variant: 'ghost', onClick: () => draw() }),
-      el('button', { class: 'btn btn-primary', type: 'button', onClick: () => form.requestSubmit() }, 'Guardar'),
+    frame('Sus datos', null, null, el('div', { class: 'stack' },
+      el('p', { class: 'muted' }, 'Escribe tu nombre y el de tu pareja. Todo se puede cambiar luego en Ajustes > Perfil y datos.'),
+      form, seedImport(),
+      ui.button({ label: 'Mejor unir este equipo a otro', iconName: 'qr-code', variant: 'ghost', href: '#/unir' })), [
+      el('button', { class: 'btn btn-primary', type: 'button', onClick: () => form.requestSubmit() }, 'Guardar y seguir'),
     ]);
   }
 
@@ -176,30 +188,41 @@ function wizard({ app }) {
     const row = (k, v) => [el('dt', {}, k), el('dd', {}, v)];
     const personRows = (id) => {
       const p = people[id] || {};
-      return el('div', { class: 'card' }, el('h2', { class: 'card-title' }, p.shortName || profile.name(id)),
-        el('dl', { class: 'facts' }, row('Apodo', missing(p.nickname)), row('Cumpleaños', missing(day(p.birth)))));
+      return el('div', { class: 'card' }, el('h2', { class: 'card-title' }, p.shortName || profile.name(id), id === profile.active() ? el('span', { class: 'badge' }, 'Tú') : null),
+        el('dl', { class: 'facts' }, row('Es', missing(profile.roleLabel(id))), row('Apodo', missing(p.nickname)), row('Cumpleaños', missing(day(p.birth)))));
     };
     frame('Revisen que todo esté bien', null, null, el('div', { class: 'stack' },
-      el('div', { class: 'grid-2' }, personRows('sofia'), personRows('david')),
+      el('div', { class: 'grid-2' }, personRows(profile.active()), personRows(profile.partnerOf(profile.active()))),
       el('div', { class: 'card' }, el('h2', { class: 'card-title' }, 'Relación'), el('dl', { class: 'facts' }, row('Empezamos el', missing(day(rel.startDate))))),
       el('div', { class: 'card' }, el('h2', { class: 'card-title' }, 'Mascotas'),
         pets.length ? el('ul', { class: 'plain' }, pets.map((p) => el('li', {}, `${p.name}${p.breed ? `, ${p.breed}` : ''}${p.birth?.m ? ` · nació el ${partialDay(p.birth)}` : ''}`))) : el('p', { class: 'muted' }, 'Ninguna por ahora.')),
       el('p', { class: 'muted small' }, 'Todo esto se puede cambiar después en Ajustes > Perfil y datos.')),
-    [ui.button({ label: 'Corregir a mano', variant: 'ghost', onClick: () => { step = 3; manual(); } }), ui.button({ label: 'Todo bien', variant: 'primary', onClick: () => go(5) })]);
+    [ui.button({ label: 'Corregir a mano', variant: 'ghost', onClick: () => go(2) }), ui.button({ label: 'Todo bien', variant: 'primary', onClick: () => go(5) })]);
   }
 
-  // 5. Optional app PIN + fingerprint
+  // 5. Your profile photo (v0.26.0), optional. Joined devices start here too.
+  async function photo() {
+    const { photoPicker } = await import('./avatar.js');
+    const me = profile.active();
+    frame('Tu foto de perfil', null, null, el('div', { class: 'stack' },
+      el('p', {}, `Aquí puedes poner tu foto, ${profile.name(me)}. Sale arriba, en el círculo de tu perfil; si no pones ninguna, sale tu inicial.`),
+      photoPicker(me),
+      el('p', { class: 'muted small' }, 'Se guarda en este equipo y viaja cifrada al de tu pareja. La cambias cuando quieras tocando tu círculo de arriba.')),
+    [ui.button({ label: 'Luego', variant: 'ghost', onClick: () => go(6) }), ui.button({ label: 'Listo', variant: 'primary', onClick: () => go(6) })]);
+  }
+
+  // 6. Optional app PIN + fingerprint
   async function pin() {
     if (security.hasKey('app')) {
       frame('PIN de la app', null, null, el('p', {}, 'Ya tienen un PIN de la app en este dispositivo. Se cambia en Ajustes > Centro de seguridad.'),
-        [ui.button({ label: 'Seguir', variant: 'primary', onClick: () => go(6) })]);
+        [ui.button({ label: 'Seguir', variant: 'primary', onClick: () => go(7) })]);
       return;
     }
     const intro = el('div', { class: 'stack' },
       el('p', {}, 'Es opcional. Si lo crean, la app lo pide al abrirse y cifra lo que marquen como privado.'),
       el('p', { class: 'muted small' }, 'Importante: si olvidan el PIN, lo privado no se puede recuperar. Nadie lo guarda, ni siquiera la app.'));
     frame('¿Proteger la app con un PIN?', null, null, intro, [
-      ui.button({ label: 'Ahora no', variant: 'ghost', onClick: () => go(6) }),
+      ui.button({ label: 'Ahora no', variant: 'ghost', onClick: () => go(7) }),
       ui.button({ label: 'Crear PIN', variant: 'primary', iconName: 'lock', onClick: () => createPinFlow() }),
     ]);
   }
@@ -227,30 +250,30 @@ function wizard({ app }) {
   }
 
   async function bioOffer(rawDek) {
-    if (!(await cryptoBox.biometricAvailable())) { ui.toast('PIN creado.', { tone: 'success' }); go(6); return; }
+    if (!(await cryptoBox.biometricAvailable())) { ui.toast('PIN creado.', { tone: 'success' }); go(7); return; }
     frame('¿Usar también la huella?', null, null, el('div', { class: 'stack' },
       el('p', {}, 'Podrán abrir la app con la huella o el rostro del teléfono.'),
       el('p', { class: 'muted small' }, 'Si el teléfono no permite usar la huella para cifrar, la huella solo abre la pantalla y lo privado sigue pidiendo el PIN. La app te dirá cuál es el caso.')),
-    [ui.button({ label: 'Solo PIN', variant: 'ghost', onClick: () => go(6) }),
+    [ui.button({ label: 'Solo PIN', variant: 'ghost', onClick: () => go(7) }),
       ui.button({ label: 'Usar huella', variant: 'primary', iconName: 'fingerprint', onClick: async () => {
         try {
           const bio = await security.enrollBiometric('app', rawDek);
           ui.toast(bio.prf ? 'Huella lista: abre la app y lo privado.' : 'Huella lista: abre la pantalla; lo privado pedirá el PIN.', { tone: 'success' });
         } catch { ui.toast('No se pudo registrar la huella. Pueden hacerlo luego en Ajustes.', { tone: 'error' }); }
-        go(6);
+        go(7);
       } })]);
   }
 
-  // 6. Permissions, all at once with one line on what each is for (2026-11-21)
+  // 7. Permissions, all at once with one line on what each is for (2026-11-21)
   async function permissions() {
     const { panel } = await import('./permisos.js');
     frame('Permisos', null, null, el('div', { class: 'stack' },
       el('p', { class: 'muted' }, 'Pídelos de una vez y no te volverán a interrumpir en cada sección. Puedes saltar los que no quieras: se cambian luego en Ajustes > Privacidad > Permisos.'),
       panel().node),
-    [ui.button({ label: 'Continuar', variant: 'primary', onClick: () => go(7) })]);
+    [ui.button({ label: 'Continuar', variant: 'primary', onClick: () => go(8) })]);
   }
 
-  // 7. Persistent storage + first backup
+  // 8. Persistent storage + first backup
   async function finish() {
     const status = el('p', { class: 'status-line', 'aria-live': 'polite' }, 'Revisando…');
     const persist = async () => {
@@ -284,7 +307,7 @@ function wizard({ app }) {
     step = m.setupDone ? 1 : Math.max(1, Math.min(STEPS, m.setupStep || 1));
     // On a PC the first open shows only the QR and the code (2026-11-22).
     if (step === 1 && !m.startFresh && !m.setupDone) { import('./sync.js').then((x) => { if (x.isDesktop()) router.go('/unir', { replace: true }); else draw(); }); return; }
-    if (step === 3 && profile.hasChosen() === false) step = 2;
+    if (step >= 4 && !profile.hasChosen()) step = 3;
     draw();
   });
   return root;

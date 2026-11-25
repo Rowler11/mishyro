@@ -1,5 +1,22 @@
 # Cambios
 
+## 0.26.0 (App para cualquier pareja y foto de perfil)
+
+Nuevo
+- Foto de perfil opcional: arriba, en el círculo, sale tu foto; si no pones ninguna, sale tu inicial. Se pone en la configuración inicial (paso "Tu foto de perfil"), en Ajustes > Perfil y datos, o tocando el círculo. Viaja cifrada al teléfono de tu pareja.
+- El recorrido con los animalitos y "Primeros pasos" muestran dónde cambiar tu foto.
+- Razones por las que te amo: ahora se puede borrar cualquier razón, también las que vinieron al inicio. Queda 30 días en la Papelera por si te arrepientes.
+
+Cambiado
+- La configuración de primera vez ya no trae nombres puestos: escribes tu nombre y el de tu pareja, y eliges qué es cada uno (novia, novio, esposa, esposo, mi señora, mi señor, ella, él). El rol ajusta cómo le hablan algunos textos.
+- Importar el archivo de datos (seed) sigue disponible, como opción secundaria "Importar seed" dentro de "Sus datos".
+- Inicio dice "Para" y el nombre de tu pareja (para quien es la app), igual en todos los teléfonos, como la pantalla de carga.
+- Se quitó el botón de arriba que cambiaba entre los dos y el selector "Quién usa la app" de Ajustes: cada equipo queda con su dueño desde la configuración o el código de unión. En su lugar, Ajustes muestra tu perfil.
+- "Sonidos suaves" viene encendido en instalaciones nuevas. Si ya usabas la app, se queda como lo tenías.
+- Carga más suave: Inicio espera a que se vaya la pantalla de bienvenida y entonces las tarjetas suben una a una y el círculo de días se pinta a la vista. Ya no se vuelve a armar ni a repintar cuando llegan cambios del otro teléfono.
+- Los gatitos ya no aparecen de golpe: se asoman desde detrás de su tarjeta y apoyan las patitas, o entran caminando desde el borde y se acomodan en su cojín.
+- Cuando llega algo del otro teléfono, la pantalla se actualiza una sola vez y sin animaciones, en vez de refrescarse varias veces al abrir.
+
 ## 0.25.1 (Sin zoom en fotos)
 
 Cambiado

@@ -12,7 +12,7 @@ import { JAPANESE_WORDS } from './config-japones.js';
 
 export const CONFIG = {
   // Versión visible de la app (Ajustes > Acerca de). Súbela junto con CACHE_VERSION en sw.js.
-  appVersion: '0.25.1',
+  appVersion: '0.26.0',
   // Prefijo de la base de datos y de las 2 preferencias en localStorage (tema y perfil activo).
   // Si lo cambias, también en theme-boot.js. Cambiarlo "empieza de cero" en cada dispositivo.
   storageKey: 'aishiteru',
@@ -20,11 +20,12 @@ export const CONFIG = {
   // Día fijo de la pareja: se marca solo en el Calendario cada semana (0 = domingo … 6 = sábado).
   coupleDay: { weekday: 6, name: 'Día de novios' },
 
-  // Perfiles. Los ids "sofia" y "david" son internos y no se cambian; los nombres
-  // visibles se cargan del seed privado o se escriben en el asistente.
+  // Perfiles. Los ids "sofia" y "david" son internos y no se cambian: "david" es quien prepara la app
+  // ("Tú" en el asistente) y "sofia" es para quien es ("Tu pareja"). Los nombres visibles y el rol
+  // (novia, esposo, mi señora…) los escribe cada pareja en el asistente o vienen del seed privado.
   people: {
-    sofia: { shortName: 'Sofía', role: 'partner' },
-    david: { shortName: 'David', role: 'author' },
+    sofia: { shortName: '', role: 'partner' },
+    david: { shortName: '', role: 'author' },
   },
 
   // Hitos de días juntos y su mensaje (se celebran en Inicio).
@@ -282,7 +283,7 @@ export const CONFIG = {
     { id: 'cfg:legal:licencias', title: 'Licencias y créditos', summary: 'Lucide (ISC), Leaflet (BSD-2), OpenStreetMap y CARTO (atribución), fuentes Shippori Mincho, Zen Maru Gothic, Atkinson Hyperlegible, Ma Shan Zheng y Noto Serif SC (OFL), ONNX Runtime Web (MIT), el modelo U²-Net (Apache 2.0), qrcode-generator (MIT), jsQR (Apache 2.0) y los términos de Spotify.', body: "La app usa piezas de terceros con licencias libres. Gracias a sus autores.\n\n- Íconos Lucide, licencia ISC.\n- Fuentes Shippori Mincho, Zen Maru Gothic, Atkinson Hyperlegible, Ma Shan Zheng y Noto Serif SC, licencia SIL Open Font License 1.1. Se sirven desde la propia app.\n- Mapa de lugares: Leaflet, licencia BSD-2, con mapas de CARTO (estilo Voyager) hechos con datos de OpenStreetMap (© colaboradores de OpenStreetMap, ODbL) y su atribución en el mapa.\n- Quitar el fondo de las estampillas: ONNX Runtime Web de Microsoft, licencia MIT, con el modelo U²-Net pequeño de Xuebin Qin y colaboradores, licencia Apache 2.0. Funciona dentro del teléfono; la foto no sale de él.\n- Códigos QR para unir equipos: qrcode-generator de Kazuhiko Arase, licencia MIT, y jsQR de Cosmo Wolfe, licencia Apache 2.0, para leer el código con la cámara. Todo pasa dentro del equipo.\n- Spotify: en Canciones se usa solo su reproductor oficial y su servicio público de nombres (oEmbed), según los términos de Spotify. La app no busca en Spotify ni guarda audio.\n\nLas ilustraciones japonesas y chinas, el logo de sakura y el resto del diseño son propios de esta app." },
     { id: 'cfg:legal:version', title: 'Versión y novedades', summary: 'Versión instalada, historial de cambios y cómo reportar un problema sin datos personales.', body: "Aquí está la versión instalada y cómo contar un problema sin compartir datos personales.\n\n## Reportar un problema\n\"Copiar reporte técnico\" copia la versión, el navegador, el tamaño de pantalla, cuántos elementos hay por sección (solo números) y los últimos errores técnicos. No incluye nombres, textos, fotos ni fechas de ustedes. Pueden pegarlo en un mensaje o en un correo." },
   ],
-  legalFooter: 'Estos textos no constituyen asesoría legal. David debe revisarlos y adaptarlos.',
+  legalFooter: 'Estos textos no constituyen asesoría legal. Quien prepara la app debe revisarlos y adaptarlos.',
 
   // Bancos que se completan en la fase donde se usan (docs/11 §5).
   // Plantillas del quiz "¿Cuánto me conoces?": cada uno elige una, escribe 4 opciones sobre sí y marca la correcta.

@@ -33,13 +33,14 @@ const STYLE = process.env.STYLE || 'jp'; // v0.17.0: the visual style to check
       await scan('setup 1');
       await page.getByRole('link', { name: 'Empezar desde cero' }).click();
       await scan('setup 2');
-      await page.getByRole('button', { name: /Sofía/ }).click();
       await scan('setup 3');
       await page.setInputFiles('#seed-file', SEED);
       await page.getByRole('button', { name: 'Importar' }).click();
+      await page.getByRole('button', { name: /Ana/ }).click();
       await page.getByText('Revisen que todo esté bien').waitFor();
       await scan('setup 4');
       await page.getByRole('button', { name: 'Todo bien' }).click();
+      await page.getByRole('button', { name: 'Luego' }).click();
       await scan('setup 5');
       await page.getByRole('button', { name: 'Ahora no' }).click();
       await page.getByRole('button', { name: 'Continuar' }).click();

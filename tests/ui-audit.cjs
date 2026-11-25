@@ -21,10 +21,11 @@ const OPENED = [['/mascotas', /^Editar a /], ['/juegos/tesoro', 'Armar una búsq
 async function setup(page) {
   await page.goto(BASE);
   await page.getByText('Empezar desde cero').first().click();
-  await page.getByRole('button', { name: /Sofía/ }).click();
   await page.setInputFiles('#seed-file', SEED);
   await page.getByRole('button', { name: 'Importar' }).click();
+  await page.getByRole('button', { name: /Ana/ }).click();
   await page.getByRole('button', { name: 'Todo bien' }).click();
+  await page.getByRole('button', { name: 'Luego' }).click();
   await page.getByRole('button', { name: 'Ahora no' }).click();
   await page.getByRole('button', { name: 'Continuar' }).click();
   await page.getByRole('button', { name: 'Terminar' }).click();

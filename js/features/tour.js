@@ -38,6 +38,7 @@ export const MAIN = () => [
   { pet: 'rabbit', route: '/mas', target: '.doors .door', tap: 'Abrir el grupo', text: 'Todo va por grupos, como cajoncitos. Toca este para abrirlo.' },
   { pet: 'crane', target: '.more-cards', text: 'Cada tarjeta es una sección. La primera vez que entres a una, uno de nosotros te la explica.' },
   { pet: 'fox', target: () => visible('.search-btn') || visible('.rail-link[data-tab="buscar"]'), text: '¿Buscas algo y no sabes dónde está? La lupa lo encuentra.' },
+  { pet: 'cat', target: () => visible('.chip-appbar') || visible('.chip-rail'), text: 'Este círculo eres tú. Tócalo cuando quieras: ahí puedes cambiar tu foto de perfil.' },
   { pet: 'panda', route: '/inicio', target: '.guide-card', text: 'Por último, «Primeros pasos»: deja la app lista para los dos. Cuando lo termines, esta tarjeta se va sola.' },
   { pet: 'panda', route: '/inicio', last: true, text: '¡Eso es todo! Si quieres ver esto otra vez, está en Ajustes, en «Legal y ayuda». ¡A disfrutar juntos!' },
 ];

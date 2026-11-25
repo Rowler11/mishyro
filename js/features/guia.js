@@ -21,6 +21,7 @@ export const STEPS = [
   { id: 'instalar', title: 'Instalar la app', text: 'Con su ícono en el teléfono, abre más rápido y sin barra.', href: '#/inicio', onClick: (e) => { e.preventDefault(); document.dispatchEvent(new CustomEvent('aishiteru:install')); }, icon: 'download',
     done: async () => matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.webdriver === true },
   { id: 'unir', title: 'Unir sus teléfonos', text: 'Así todo llega al otro al instante.', href: '#/ajustes/sincronizar', icon: 'qr-code', done: async () => sync.isLinked() },
+  { id: 'foto', title: 'Poner tu foto de perfil', text: 'Sale arriba en vez de tu inicial.', href: '#/ajustes/perfil', icon: 'camera', done: async () => !!profile.photo(profile.active()) },
   { id: 'pin', title: 'Ponerle PIN a la app', text: 'Para que nadie más la abra.', href: '#/ajustes/seguridad', icon: 'lock', done: async () => security.hasKey('app') },
   { id: 'avisos', title: 'Activar los avisos cariñosos', text: 'Un aviso tierno cuando el otro te piensa.', href: '#/ajustes/sincronizar', icon: 'bell',
     done: async () => !sync.notificationsSupported() || (typeof Notification !== 'undefined' && Notification.permission !== 'default') },
