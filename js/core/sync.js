@@ -543,8 +543,20 @@ export async function refreshDevices() {
     out.push({ id: d.id, name: info.name || 'Equipo', person: info.person || null, kind: info.kind || 'phone', seen: d.seen, created: d.created, me: d.id === cfg.deviceId });
   }
   devicesCache = out;
+  noticeNewDevices(out);
   emit();
   return out;
+}
+// v0.27.0 (idea 56): tell the person once when a device they have not seen joins the space.
+const KNOWN_KEY = 'aishiteru.devices.known';
+function noticeNewDevices(list) {
+  let known = null;
+  try { known = JSON.parse(localStorage.getItem(KNOWN_KEY) || 'null'); } catch { return; }
+  const ids = list.map((d) => d.id);
+  try { localStorage.setItem(KNOWN_KEY, JSON.stringify(ids)); } catch { return; }
+  if (!Array.isArray(known)) return; // first look on this device: everything already there is known
+  const fresh = list.filter((d) => !d.me && !known.includes(d.id));
+  if (fresh.length) dispatchEvent(new CustomEvent('aishiteru:new-device', { detail: fresh.map((d) => ({ name: d.name, kind: d.kind })) }));
 }
 export const devices = () => devicesCache;
 export async function renameDevice(name) {

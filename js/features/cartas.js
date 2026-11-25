@@ -51,7 +51,7 @@ const fromSeed = (c, state) => ({
 });
 const fromOwn = (l) => ({
   id: l.id, kind: 'own', from: l.author, to: l.to || profile.partnerOf(l.author), label: labelOf(l.condition), condition: l.condition,
-  body: l.body, signature: l.signature, mediaId: l.mediaId || null, voiceMediaId: l.voiceMediaId || null, voiceDuration: l.voiceDuration || 0, status: l.status, openedAt: l.openedAt || null, sealedAt: l.sealedAt || null, stickers: l.stickers || [], raw: l,
+  body: l.body, signature: l.signature, mediaId: l.mediaId || null, voiceMediaId: l.voiceMediaId || null, voiceDuration: l.voiceDuration || 0, status: l.status, openedAt: l.openedAt || null, sealedAt: l.sealedAt || null, stickers: l.stickers || [], vanishDays: l.vanishDays || 0, raw: l,
 });
 
 function seal(letter, { size = 56 } = {}) {
@@ -157,7 +157,8 @@ async function letterModal(letter, { onShareable = true, flown = false, onDelete
     paras.map((p) => el('p', {}, p)),
     voice,
     el('p', { class: 'washi-sign' }, letter.signature || profile.name(letter.from)),
-    letter.openedAt ? el('p', { class: 'washi-meta' }, openedText(letter.openedAt)) : null);
+    letter.openedAt ? el('p', { class: 'washi-meta' }, openedText(letter.openedAt)) : null,
+    letter.vanishDays ? el('p', { class: 'washi-meta washi-vanish' }, `Esta carta se borra sola ${letter.vanishDays === 1 ? '1 día' : `${letter.vanishDays} días`} después de abrirla.`) : null);
   const actions = [{ label: 'Cerrar', variant: 'ghost' }];
   actions.unshift({ label: 'Imprimir', onClick: () => { printLetter(letter, paras); return false; } });
   if (onShareable) actions.unshift({ label: 'Compartir el texto', onClick: () => { ui.share({ title: letter.label, text: `${letter.label}\n\n${paras.join('\n\n')}\n\n${letter.signature || profile.name(letter.from)}` }); return false; } });
@@ -225,6 +226,9 @@ function editor(existing, { onSaved }) {
   });
   paintPhoto();
   const voice = voiceAttach({ mediaId: l.voiceMediaId || null, duration: l.voiceDuration || 0 });
+  // v0.27.0 (idea 57): optional, for what is sensitive. Counted from when it is opened.
+  const vanish = el('select', { class: 'input' }, [['0', 'No, se queda'], ['1', 'Sí, 1 día después de abrirla'], ['7', 'Sí, 7 días después de abrirla'], ['30', 'Sí, 30 días después de abrirla']]
+    .map(([v, t]) => el('option', { value: v, selected: String(l.vanishDays || 0) === v }, t)));
   const formError = el('p', { class: 'field-error form-error', role: 'alert' });
 
   const save = async () => {
@@ -239,7 +243,7 @@ function editor(existing, { onSaved }) {
     // Drafts are "Solo yo": the other profile does not see them until they are sealed.
     // A sealed letter keeps its seal and stays shared, so the partner opens the new version.
     const access = sealed ? { status: 'sealed', visibility: 'shared', private: false, owner: 'both' } : { status: 'draft', visibility: 'self', private: true, owner: l.author };
-    const rec = { ...l, condition: c, body: b, signature: sign.value.trim() || profile.name(l.author), ...access };
+    const rec = { ...l, condition: c, body: b, signature: sign.value.trim() || profile.name(l.author), vanishDays: Number(vanish.value) || 0, ...access };
     const created = [];
     try {
       const scope = security.policy('letters', rec) || undefined;
@@ -263,6 +267,7 @@ function editor(existing, { onSaved }) {
     title: isNew ? `Carta para ${profile.name(l.to)}` : sealed ? 'Editar carta' : 'Editar borrador', kind: 'sheet', size: 'lg', className: 'letter-editor',
     body: el('form', { class: 'memory-form', novalidate: true, onSubmit: (e) => e.preventDefault() },
       fCond, fBody, ui.field({ label: 'Firma', control: sign }), photoBox, voice.node,
+      ui.field({ label: '¿Se borra sola?', control: vanish, hint: 'Desaparece de los dos teléfonos, sin Papelera. Útil para lo más íntimo.' }),
       el('p', { class: 'muted small' }, sealed ? `Sigue sellada y en camino: ${profile.name(l.to)} leerá esta versión cuando la abra.` : 'Se guarda como borrador: solo tú la ves. Cuando esté lista, séllala.'), formError),
     actions: [{ label: 'Cancelar', variant: 'ghost' }, { label: sealed ? 'Guardar cambios' : 'Guardar borrador', variant: 'primary', onClick: save }],
     onClose: () => { if (photoUrl) URL.revokeObjectURL(photoUrl); voice.cleanup(); },
@@ -285,6 +290,10 @@ export async function render(ctx) {
       ...content.filter((c) => !c.deleted).map((c) => fromSeed(c, states.get(c.id))),
       ...stored.filter((s) => !s.letterId).map(fromOwn),
     ];
+    // v0.27.0: letters that vanish after being read leave both phones for good.
+    const gone = letters.filter((l) => l.kind === 'own' && l.vanishDays && l.openedAt && Date.now() - Date.parse(l.openedAt) > l.vanishDays * 86400000);
+    for (const l of gone) await db.purge('letters', l.id).catch(() => {});
+    if (gone.length) letters = letters.filter((l) => !gone.includes(l));
   };
 
   const openEditor = (raw = null) => editor(raw, {

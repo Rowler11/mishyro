@@ -441,7 +441,11 @@ function copia(app) {
     const after = async (files) => {
       await db.setMeta({ lastBackupAt: util.nowISO() });
       pw1.value = ''; pw2.value = '';
-      ui.toast(files.length > 1 ? 'Copia guardada en dos archivos (datos y fotos). Guárdenlos juntos.' : 'Copia guardada. Guárdenla en un lugar seguro.', { tone: 'success' });
+      // v0.27.0: the copy is checked as it will be read back, and they are told it is complete.
+      const chk = await backup.verifyBackup(files).catch((e) => ({ ok: false, error: e?.message || 'No se pudo comprobar.' }));
+      if (!chk.ok) { ui.toast(`Ojo: la copia no quedó completa (${chk.error}). Vuelvan a intentarlo.`, { tone: 'error', timeout: 12000 }); drawStatus(); return; }
+      await db.setMeta({ lastBackupCheck: { at: util.nowISO(), records: chk.records, photos: chk.photos } });
+      ui.toast(`${files.length > 1 ? 'Copia guardada en dos archivos (datos y fotos). Guárdenlos juntos.' : 'Copia guardada.'} Comprobada: ${chk.records} registros y ${chk.photos} fotos, todo completo.`, { tone: 'success', timeout: 8000 });
       drawStatus();
     };
     const fail = (e) => {

@@ -103,4 +103,42 @@ function installDrop() {
   });
 }
 
-export function install() { installTouch(); installNet(); installDrop(); }
+// ---------- swipe a card to the left to send it to the Papelera (v0.27.0, idea 7b) ----------
+/** Touch only: drag left past a third of the width and it goes, with "Deshacer" in the toast (onDelete). */
+export function swipeToDelete(node, { label = 'Borrar', onDelete } = {}) {
+  let id = null; let sx = 0; let sy = 0; let dx = 0; let on = false;
+  node.classList.add('swipeable'); node.dataset.swipeLabel = label;
+  node.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch' || busy() || e.target.closest('input, textarea, select, button, a')) return;
+    id = e.pointerId; sx = e.clientX; sy = e.clientY; dx = 0; on = false;
+  });
+  node.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== id) return;
+    const mx = e.clientX - sx; const my = e.clientY - sy;
+    if (!on) { if (Math.abs(my) > 10) { id = null; return; } if (mx > -12) return; on = true; try { node.setPointerCapture?.(id); } catch { /* synthetic or ended pointer */ } node.classList.add('is-swiping'); }
+    dx = Math.min(0, mx); node.style.transform = `translateX(${dx}px)`;
+    node.classList.toggle('is-armed', -dx > node.offsetWidth / 3);
+  });
+  const end = (e) => {
+    if (e.pointerId !== id) return; id = null;
+    if (!on) return; on = false; node.classList.remove('is-swiping');
+    const go = -dx > node.offsetWidth / 3;
+    node.style.transition = 'transform .25s var(--ease-out, ease), opacity .25s';
+    if (go) { node.style.transform = 'translateX(-110%)'; node.style.opacity = '0'; haptic('select'); setTimeout(() => onDelete?.(), 240); }
+    else { node.style.transform = ''; setTimeout(() => { node.style.transition = ''; node.classList.remove('is-armed'); }, 260); }
+  };
+  node.addEventListener('pointerup', end); node.addEventListener('pointercancel', end);
+  return node;
+}
+
+// ---------- a new device joined (v0.27.0, idea 56) ----------
+function installDeviceNotice() {
+  addEventListener('aishiteru:new-device', (e) => {
+    const list = e.detail || [];
+    const name = list.length === 1 ? `"${list[0].name}"` : `${list.length} equipos`;
+    import('./ui.js').then((ui) => ui.toast(`Se unió ${list.length === 1 ? 'un equipo nuevo' : 'algo nuevo'}: ${name}. Si no lo reconocen, pueden quitarlo en Sincronización.`, {
+      timeout: 12000, action: { label: 'Revisar', onClick: () => { location.hash = '#/ajustes/sincronizar'; } } }));
+  });
+}
+
+export function install() { installTouch(); installNet(); installDrop(); installDeviceNotice(); }

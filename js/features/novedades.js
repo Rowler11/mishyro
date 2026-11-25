@@ -9,10 +9,11 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.25.0',
+  version: '0.27.0',
   items: [
-    'Tarjeta para compartir: una imagen con los días juntos y una frase, sin nombres ni fechas.',
-    'Está en Inicio, junto a los buenos días, el abrazo y Respirar juntos.',
+    'En su aniversario, en un cumpleaños o en el mesiversario la app se viste de fiesta y los recibe con una carta sorpresa.',
+    'Deslizar una página del Diario o un plan hacia la izquierda la manda a la Papelera, con "Deshacer".',
+    'Cartas que se borran solas después de leerlas (opcional), y la copia de seguridad ahora se comprueba sola.',
   ],
 };
 

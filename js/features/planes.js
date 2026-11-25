@@ -1,6 +1,7 @@
 // Planes juntos (docs/05 Más §2): small, quick plans shown as ema plaques (light wood with the plan
 // written on it). Seeded from CONFIG.bucketList; add, mark as done with its date, delete, and turn a
 // plan into a dream (Sueños y viajes) when it grows. "X de Y cumplidos" with a progress bar.
+import { swipeToDelete } from '../core/premium.js';
 import { ui, util, db, profile } from '../core.js';
 import { toTrash, TRASH_NOTE } from './papelera.js';
 
@@ -77,7 +78,7 @@ export async function render() {
         el('p', {}, el('strong', {}, `${done} de ${list.length}`), ' cumplidos'),
         el('div', { class: 'progress', role: 'progressbar', 'aria-label': 'Planes cumplidos', 'aria-valuemin': '0', 'aria-valuemax': String(list.length), 'aria-valuenow': String(done) },
           el('span', { class: 'progress-fill', style: { width: `${Math.round((done / list.length) * 100)}%` } }))),
-      el('ul', { class: 'ema-board' }, list.map(ema)));
+      el('ul', { class: 'ema-board' }, list.map((p) => swipeToDelete(ema(p), { onDelete: async () => { await toTrash('bucketList', p.id, { label: p.title, what: 'Plan borrado', onRestored: load }); load(); } }))));
   };
   try { await load(); } catch (e) { console.error(e); body.replaceChildren(ui.emptyState({ title: 'No pudimos abrir los planes', text: 'Cierra y vuelve a abrir la app.', art: 'wave' })); }
   const off = db.onChange((s) => { if (s === 'bucketList') load().catch(() => {}); });

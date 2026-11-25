@@ -3,6 +3,7 @@
 // both phones and "Solo yo" ones only the author's devices (encrypted with the personal PIN if
 // there is one). Two views: "Páginas" (washi pages by month) and "Fotos" (a grid by month).
 // The mood of an entry also feeds the Medidor de ánimo, without overwriting a mark made by hand.
+import { swipeToDelete } from '../core/premium.js';
 import { ui, util, db, profile, security, CONFIG } from '../core.js';
 import { compressImage, isQuotaError } from '../core/images.js';
 import { MOODS, moodPicker, saveMood } from './animo.js';
@@ -127,7 +128,7 @@ export async function render() {
     const me = profile.active();
     const m = moodOf(x.mood);
     const img = await thumb(x.mediaId, `Foto del ${fmtDay.format(util.parseDay(x.date))}`, 'diary-photo');
-    return el('article', { class: 'card paper-card diary-page', style: m ? { '--mood': m.color } : {}, dataset: { id: x.id } },
+    const card = el('article', { class: 'card paper-card diary-page', style: m ? { '--mood': m.color } : {}, dataset: { id: x.id } },
       el('header', { class: 'diary-head' },
         el('span', { class: 'diary-date' }, capital(fmtDay.format(util.parseDay(x.date)))),
         m ? el('span', { class: 'diary-mood', title: m.name }, el('span', { 'aria-hidden': 'true' }, m.emoji), el('span', { class: 'sr-only' }, `Ánimo: ${m.name}`)) : null,
@@ -139,6 +140,8 @@ export async function render() {
         x.by === me ? el('span', { class: 'diary-actions' },
           el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': 'Editar página', onClick: () => openEditor(x) }, icon('pencil', { size: 18 })),
           el('button', { class: 'icon-btn icon-btn-small', type: 'button', 'aria-label': 'Borrar página', onClick: () => remove(x) }, icon('trash-2', { size: 18 }))) : null));
+    // v0.27.0: swipe your own page to the left to send it to the Papelera (with Deshacer)
+    return x.by === me ? swipeToDelete(card, { onDelete: async () => { await toTrash('diary', x.id, { label: (x.text || '').slice(0, 60), what: 'Página borrada', extraMedia: [x.mediaId], onRestored: draw }); draw(); } }) : card;
   };
 
   draw = async () => {
