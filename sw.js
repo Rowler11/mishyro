@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.31.1';
+const CACHE_VERSION = 'aishiteru-v0.32.0';
 const SHELL = [
   './',
   './styles.css',
@@ -42,7 +42,7 @@ const SHELL = [
   './js/features/intro.js',
   './js/features/preguntas.js', './js/features/canciones.js', './js/features/diario.js', './js/features/animo.js', './js/features/jibun.js', './js/features/retos.js',
   './js/features/calendario.js', './js/features/fechas.js', './js/features/recordatorios.js', './js/core/ics.js', './js/core/dates.js',
-  './js/core/viewer.js', './js/core/cropper.js', './js/features/galeria.js', './js/features/mapa.js',
+  './js/core/viewer.js', './js/core/cropper.js', './js/core/stage.js', './js/features/galeria.js', './js/features/mapa.js',
   './js/features/album.js', './js/features/primeras-veces.js', './js/features/photobooth.js', './js/features/capsula-tiempo.js',
   './js/features/planes.js', './js/features/suenos.js', './js/features/citas.js', './js/features/regalos.js', './js/features/encuentro.js', './js/features/voz.js', './js/features/lenguajes.js', './js/features/gratitud.js', './js/features/insignias.js', './js/features/resumen.js',
   './js/features/hogar-kit.js', './js/features/listas.js', './js/features/mascotas.js', './js/features/gatitos.js', './js/features/recetas.js', './js/features/alcancia.js', './js/features/gastos.js', './js/features/habitos.js', './js/features/rasca.js', './js/features/ciclo.js',

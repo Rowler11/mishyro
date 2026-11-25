@@ -7,6 +7,7 @@
 // On the author's phone the seed letters show with their own, by status (decision 5).
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import { framePhoto } from '../core/cropper.js';
+import { particles } from '../core/stage.js';
 import { layer as stickerLayer, decorate, loadAlbum, albumView } from './stickers.js';
 import { voiceAttach, saveAttached, player as voicePlayer } from './voz.js';
 import { toTrash, TRASH_NOTE } from './papelera.js';
@@ -99,7 +100,12 @@ async function flyOpen(node, letter) {
   const paper = el('div', { class: 'fly-paper' }, el('span'), el('span'), el('span'));
   const env = el('div', { class: `futo fly-env${letter.status === 'opened' ? ' is-opened' : ''}` },
     el('div', { class: 'fly-back' }), paper, el('div', { class: 'fly-pocket' }), envelopeFace(letter, { tag: 'div' }));
-  const stage = el('div', { class: 'letter-fly', 'aria-hidden': 'true' }, el('div', { class: 'letter-fly-dim' }), env);
+  // v0.32.0: the Latido look. The room goes dark and warm, a glow breathes behind the envelope, and the
+  // first time the seal breaks it sparkles and sakura petals fall.
+  const first = letter.status !== 'opened';
+  const fxLayer = el('div', { class: 'stage-fx' });
+  const stage = el('div', { class: `letter-fly${first ? ' is-first' : ''}`, 'aria-hidden': 'true' }, el('div', { class: 'letter-fly-dim' }), fxLayer, env);
+  const p = particles(fxLayer);
   Object.assign(env.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
   document.body.append(stage);
   node.style.visibility = 'hidden';
@@ -108,9 +114,16 @@ async function flyOpen(node, letter) {
   const dy = innerHeight * 0.55 - (r.top + r.height / 2);
   const ease = 'cubic-bezier(.2,.8,.2,1)';
   await env.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${scale})` }], { duration: 420, easing: ease, fill: 'forwards' }).finished;
-  env.classList.add('is-breaking'); util.haptic(12); util.sound('stamp');
+  if (first) {
+    // A breath before the seal breaks: the glow swells once, like a heartbeat.
+    stage.classList.add('is-glow'); util.haptic(8);
+    await env.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${scale})` }, { transform: `translate(${dx}px, ${dy}px) scale(${scale * 1.04})` }, { transform: `translate(${dx}px, ${dy}px) scale(${scale})` }], { duration: 460, easing: 'cubic-bezier(.3,0,.2,1)', fill: 'forwards' }).finished;
+  }
+  env.classList.add('is-breaking'); util.haptic(first ? [12, 40, 18] : 12); util.sound('stamp');
+  if (first) p.sparks(16);
   await util.sleep(320);
   env.classList.add('is-flap-open'); util.sound('paper');
+  if (first) p.petals(16);
   await util.sleep(300);
   env.classList.add('is-paper-out');
   await util.sleep(380);

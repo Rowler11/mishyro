@@ -1,5 +1,17 @@
 # Cambios
 
+## 0.32.0 (Momentos con la calidad del Latido)
+
+Nuevo
+- Abrir una carta por primera vez: la pantalla se oscurece con una luz cálida, el sobre respira una vez, el sello se rompe con chispas y caen pétalos de sakura mientras sale la carta.
+- Cápsula del tiempo: el día que se abre, una caja lacada aparece en un escenario dorado, brilla tres veces, levanta la tapa y sale luz con polvo dorado y pétalos. Dice hace cuánto la sellaron y quién, y "Leerla" la abre.
+- Canjear un cupón: el boleto brilla, el sello baja y lo estampa con un golpe suave, salen chispas y suben corazones. "Listo" cierra.
+- Todo con vibración y sonido suave (si están activos). Con movimiento reducido solo queda el fundido.
+
+Arreglado
+- Inicio daba un salto al volver desde otra pantalla (por ejemplo, de Cápsula a Inicio): el animalito aparecía un momento después y empujaba las tarjetas. Ahora su lugar está desde el primer cuadro y solo el animalito se asoma. Lo mismo en las demás pantallas.
+- El aviso de "Novedades" de la versión anterior no aparecía por un error de escritura.
+
 ## 0.31.1 (Unidad visual en todas las secciones)
 
 Mejorado

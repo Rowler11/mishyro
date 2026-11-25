@@ -8,6 +8,7 @@
 import { ui, util, db, profile, seed, sync, CONFIG } from '../core.js';
 import { toTrash, TRASH_NOTE } from './papelera.js';
 
+import * as stage from '../core/stage.js';
 const { el, icon } = util;
 const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
 const fmtTime = new Intl.DateTimeFormat('es-CO', { hour: 'numeric', minute: '2-digit' });
@@ -86,6 +87,31 @@ function ticket(c, state, { tab, number, onRedeem, onOpen, onGive }) {
 }
 
 /** Full coupon with its description, dedication and the actions that do not fit on the ticket. */
+// v0.32.0 (Rowler: "la calidad del corazón del Latido en más cosas"): canjear is a moment. The room
+// goes dark, the ticket glows, the hanko comes down and stamps it with a thud, it sparkles and hearts rise.
+function redeemStage(c) {
+  const who = (profile.name(profile.active()) || '♥').charAt(0).toUpperCase();
+  const stamp = el('span', { class: 'kpx-stamp' }, ui.hanko({ text: who, size: 96 }));
+  const art = el('div', { class: 'kpx' },
+    el('div', { class: 'kpx-ticket' },
+      el('span', { class: 'kpx-kicker' }, 'Cupón'),
+      el('strong', { class: 'kpx-title' }, c.title || 'Cupón'),
+      el('span', { class: 'kpx-admit' }, 'Admite 1')),
+    stamp);
+  const s = stage.open({ label: 'Cupón canjeado', tone: 'rose', art, title: 'Canjeando…', sub: '' });
+  s.glow(0.35);
+  const done = () => {
+    art.classList.add('is-stamped'); s.glow(0.95);
+    util.haptic([10, 40, 20]); util.sound('stamp');
+    s.sparks(18); setTimeout(() => { s.rise(14, 'heart'); util.sound('chime'); }, 260);
+    s.set('¡Cupón canjeado!', `“${c.title}”. Que lo disfruten 💗`);
+    s.actions(el('button', { class: 'btn btn-primary', type: 'button', onClick: () => s.close() }, 'Listo'));
+  };
+  if (util.prefersReducedMotion()) { done(); return; }
+  setTimeout(() => { if (s.layer.isConnected) art.classList.add('is-down'); }, 650);
+  setTimeout(() => { if (s.layer.isConnected) done(); }, 650 + 460);
+}
+
 function detail(c, state, { tab, number, onRedeem, onEdit, onDelete, onShare, onGive, onKeep, onUnredeem, onSeen }) {
   const redeemed = !!state?.redeemedAt;
   const expired = !redeemed && isExpired(c);
@@ -215,7 +241,7 @@ export async function render() {
       await db.put('couponState', { id: c.id, couponId: c.id, redeemedAt: util.nowISO(), redeemedBy: profile.active() });
       justRedeemed = c.id;
       await load(); draw();
-      ui.confetti(); util.haptic([10, 40, 20]); util.sound('chime');
+      redeemStage(c);
       ui.announce(`Cupón canjeado: ${c.title}.`);
     } catch (e) { console.error(e); ui.toast('No se pudo canjear. Inténtalo de nuevo.', { tone: 'error' }); }
   };
