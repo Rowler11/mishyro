@@ -12,7 +12,7 @@ import { activeEvents, forStyle } from '../js/features/eventos.js';
 import { coverScale, clampOffset } from '../js/core/cropper.js';
 import * as LL from '../js/features/lenguajes.js';
 import { ageText } from '../js/features/mascotas.js';
-import { stageText } from '../js/features/latido.js';
+import { stageText, gap } from '../js/features/latido.js';
 import { validState } from '../js/features/cupones.js';
 import * as NOW from '../js/features/ahora.js';
 import * as SLEEP from '../js/features/dormir.js';
@@ -344,6 +344,10 @@ await test('latido: words grow at 5, 10 and 15', () => {
   eq(stageText(5, { to: 'Ana' }), 'Late fuerte por Ana');
   eq(stageText(10, {}), 'Tu corazón va a mil');
   eq(stageText(15, { from: 'Leo' }), '¡Explosión de amor de Leo!');
+});
+await test('latido: starts slow and speeds up', () => {
+  eq(gap(1), 1200); eq(gap(14), 420);
+  for (let n = 2; n <= 14; n++) ok(gap(n) <= gap(n - 1));
 });
 await test('coupons: a stamp older than the coupon does not count', () => {
   const c = { createdAt: '2026-11-20T10:00:00.000Z' };

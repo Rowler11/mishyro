@@ -114,13 +114,17 @@ const DRAW = {
   panda: () => plush('panda'),
   crane: (color = '#F3B7C5') => craneArt(color),
   lily: () => {
+    // v0.32.6: soft petals with a light edge, a warm glow in the heart and curved stamens.
     const id = `lily${++uid}`;
     return svg('0 0 100 100', `
-    <defs><linearGradient id="${id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#E0587E"/><stop offset=".45" stop-color="#F4A3BB"/><stop offset="1" stop-color="#FFF6F8"/></linearGradient></defs>
-    ${[30, 90, 150, 210, 270, 330].map((a) => `<path transform="rotate(${a} 50 50)" d="M50 50 C40 40 42 18 50 4 C58 18 60 40 50 50Z" fill="#FBE3EA"/>`).join('')}
-    ${[0, 60, 120, 180, 240, 300].map((a) => `<g transform="rotate(${a} 50 50)"><path d="M50 50 C38 38 41 14 50 1 C59 14 62 38 50 50Z" fill="url(#${id})"/><path d="M50 46 L50 8" stroke="#E5708F" stroke-width=".8" opacity=".7"/><circle cx="47" cy="26" r=".9" fill="#B03A5B"/><circle cx="53" cy="30" r=".9" fill="#B03A5B"/><circle cx="48" cy="34" r=".8" fill="#B03A5B"/></g>`).join('')}
-    ${[10, 70, 130, 190, 250, 310].map((a) => `<g transform="rotate(${a} 50 50)"><path d="M50 50 L50 30" stroke="#B8D08A" stroke-width="1"/><ellipse cx="50" cy="29" rx="1.6" ry="3" fill="#B5562E"/></g>`).join('')}
-    <circle cx="50" cy="50" r="3" fill="#C9E09A"/>`, 'lily');
+    <defs><linearGradient id="${id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#D9497A"/><stop offset=".4" stop-color="#F29AB5"/><stop offset="1" stop-color="#FFF7F9"/></linearGradient>
+    <linearGradient id="${id}b" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#EFA9BF"/><stop offset="1" stop-color="#FFF4F7"/></linearGradient>
+    <radialGradient id="${id}c"><stop offset="0" stop-color="#FFF3C4" stop-opacity=".95"/><stop offset=".6" stop-color="#F7C9D6" stop-opacity=".5"/><stop offset="1" stop-color="#F7C9D6" stop-opacity="0"/></radialGradient></defs>
+    ${[30, 90, 150, 210, 270, 330].map((a) => `<path transform="rotate(${a} 50 50)" d="M50 50 C40 40 42 18 50 4 C58 18 60 40 50 50Z" fill="url(#${id}b)" stroke="#E7A2B6" stroke-width=".4"/>`).join('')}
+    ${[0, 60, 120, 180, 240, 300].map((a) => `<g transform="rotate(${a} 50 50)"><path d="M50 50 C38 38 41 14 50 1 C59 14 62 38 50 50Z" fill="url(#${id})" stroke="#FFFFFF" stroke-opacity=".55" stroke-width=".5"/><path d="M50 46 C49 32 49.5 18 50 8" stroke="#D9658A" stroke-width=".7" opacity=".6" fill="none"/><path d="M48 40 C46 30 46.5 20 48.5 12 M52 40 C54 30 53.5 20 51.5 12" stroke="#FFFFFF" stroke-width=".4" opacity=".45" fill="none"/><circle cx="47.5" cy="27" r=".85" fill="#A8345A"/><circle cx="52.5" cy="31" r=".85" fill="#A8345A"/><circle cx="48.5" cy="35" r=".75" fill="#A8345A"/></g>`).join('')}
+    <circle cx="50" cy="50" r="13" fill="url(#${id}c)"/>
+    ${[10, 70, 130, 190, 250, 310].map((a) => `<g transform="rotate(${a} 50 50)"><path d="M50 50 Q48.5 40 50 28" stroke="#B8D08A" stroke-width=".9" fill="none"/><ellipse cx="50" cy="27.5" rx="1.5" ry="3.1" fill="#A64B26"/></g>`).join('')}
+    <circle cx="50" cy="50" r="3" fill="#C9E09A"/><circle cx="49.2" cy="49.2" r="1" fill="#F2F9E2"/>`, 'lily');
   },
   dice: () => svg('0 0 60 60', `<polygon points="30,4 54,16 30,28 6,16" fill="#fff"/><polygon points="6,16 30,28 30,56 6,44" fill="#F3D9DF"/><polygon points="54,16 30,28 30,56 54,44" fill="#E8C1CB"/><circle cx="30" cy="16" r="3" fill="#C2405F"/><circle cx="14" cy="30" r="2.4" fill="#C2405F"/><circle cx="22" cy="42" r="2.4" fill="#C2405F"/><circle cx="42" cy="28" r="2.4" fill="#C2405F"/><circle cx="46" cy="38" r="2.4" fill="#C2405F"/><circle cx="38" cy="46" r="2.4" fill="#C2405F"/>`, 'dice'),
   shuriken: () => svg('0 0 64 64', '<g class="sk-spin"><path class="sk-body" d="M32 3 L39.5 24.5 L61 32 L39.5 39.5 L32 61 L24.5 39.5 L3 32 L24.5 24.5Z"/><path class="sk-fold" d="M32 3 L39.5 24.5 L32 32Z M61 32 L39.5 39.5 L32 32Z M32 61 L24.5 39.5 L32 32Z M3 32 L24.5 24.5 L32 32Z"/><circle class="sk-hole" cx="32" cy="32" r="12.5"/></g>', 'shuriken'),
@@ -130,15 +134,43 @@ export const names = Object.keys(DRAW);
 
 /** A wrapped bouquet of three lilies (loading screen, chosen 2026-11-22). */
 export function bouquet() {
+  // v0.32.6 (Rowler: "más linda, más calidad, sin agregar cosas"): the same bouquet, painted with care: shaded
+  // stems and leaves with their veins, a washi wrap with its folds and a gold edge, a real bow in the style's
+  // color and a soft shadow under it.
+  const k = `bq${++uid}`;
   const box = document.createElement('div');
   box.className = 'bouquet';
   box.setAttribute('aria-hidden', 'true');
   box.append(svg('0 0 200 240', `
-    <g class="bq-stems" stroke="#6E9A57" stroke-width="3" fill="none" stroke-linecap="round"><path d="M100 230 C98 170 70 120 56 84"/><path d="M100 230 C100 160 104 110 104 62"/><path d="M100 230 C104 170 130 120 148 88"/></g>
-    <g class="bq-leaves" fill="#8DB86E"><path d="M98 190 C70 170 52 160 30 166 C52 150 80 156 98 176Z"/><path d="M102 186 C130 164 150 156 172 160 C150 146 122 154 102 172Z"/><path d="M100 170 C92 140 80 128 70 120 C88 124 100 140 104 160Z"/></g>
-    <path d="M54 166 L100 178 L146 166 L124 238 L76 238Z" fill="#F6EBDD"/><path d="M54 166 L100 178 L100 238 L76 238Z" fill="#EAD9C3"/>
-    <path d="M78 196 C90 204 110 204 122 196" stroke="#C2405F" stroke-width="5" fill="none" stroke-linecap="round"/>
-    <path d="M100 200 C92 214 86 218 80 226 M100 200 C108 214 114 218 120 226" stroke="#C2405F" stroke-width="3" fill="none" stroke-linecap="round"/>`, 'bq-base'));
-  for (const k of ['a', 'b', 'c']) { const s = document.createElement('span'); s.className = `bq-lily bq-${k}`; s.append(DRAW.lily()); box.append(s); }
+    <defs>
+      <linearGradient id="${k}s" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#3F6E30"/><stop offset="1" stop-color="#7FAE5E"/></linearGradient>
+      <linearGradient id="${k}l" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5A8C42"/><stop offset="1" stop-color="#A9D184"/></linearGradient>
+      <linearGradient id="${k}wl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F1E3CF"/><stop offset="1" stop-color="#DCC5A6"/></linearGradient>
+      <linearGradient id="${k}wr" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFAF2"/><stop offset="1" stop-color="#EFDFC8"/></linearGradient>
+      <linearGradient id="${k}wi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D9C2A2"/><stop offset="1" stop-color="#EBDCC6"/></linearGradient>
+      <linearGradient id="${k}r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="bq-r0"/><stop offset="1" class="bq-r1"/></linearGradient>
+      <filter id="${k}f" x="-50%" y="-200%" width="200%" height="500%"><feGaussianBlur stdDeviation="3"/></filter>
+    </defs>
+    <ellipse cx="100" cy="236" rx="36" ry="4.5" fill="rgba(40,20,10,.22)" filter="url(#${k}f)"/>
+    <g class="bq-stems" stroke="url(#${k}s)" stroke-width="3.2" fill="none" stroke-linecap="round"><path d="M100 230 C98 170 70 120 56 84"/><path d="M100 230 C100 160 104 110 104 62"/><path d="M100 230 C104 170 130 120 148 88"/></g>
+    <g class="bq-leaves">
+      <path d="M98 190 C70 170 52 160 30 166 C52 150 80 156 98 176Z" fill="url(#${k}l)"/><path d="M96 182 C76 168 56 162 36 164" stroke="#E8F4D8" stroke-width=".8" opacity=".55" fill="none"/>
+      <path d="M102 186 C130 164 150 156 172 160 C150 146 122 154 102 172Z" fill="url(#${k}l)"/><path d="M104 178 C126 162 146 158 166 158" stroke="#E8F4D8" stroke-width=".8" opacity=".55" fill="none"/>
+      <path d="M100 170 C92 140 80 128 70 120 C88 124 100 140 104 160Z" fill="url(#${k}l)"/><path d="M100 162 C94 144 84 132 74 123" stroke="#E8F4D8" stroke-width=".7" opacity=".5" fill="none"/>
+    </g>
+    <path d="M52 164 Q100 152 148 164 L146 168 L100 178 L54 168Z" fill="url(#${k}wi)"/>
+    <path d="M54 166 L100 178 L100 238 L77 238Z" fill="url(#${k}wl)"/>
+    <path d="M146 166 L100 178 L100 238 L123 238Z" fill="url(#${k}wr)"/>
+    <path d="M62 184 C70 200 74 216 79 232 M112 190 C118 204 120 218 121 230 M132 180 C128 196 126 210 124 222" stroke="#B8946A" stroke-width=".5" opacity=".28" fill="none"/>
+    <path d="M100 178 L100 238" stroke="#8A6A48" stroke-width=".6" opacity=".25"/>
+    <path d="M54 166 L100 178 L146 166" class="bq-gold" stroke-width="1.2" opacity=".8" fill="none" stroke-linejoin="round"/>
+    <path d="M77 195 Q100 203 123 195" class="bq-band" stroke-width="4" fill="none" stroke-linecap="round" opacity=".9"/>
+    <path d="M99 201 C95 212 89 221 84 231 L90 229 L92 235 C96 223 100 213 102 203Z" fill="url(#${k}r)"/>
+    <path d="M101 201 C105 212 111 221 116 231 L110 229 L108 235 C104 223 100 213 98 203Z" fill="url(#${k}r)"/>
+    <path d="M100 199 C86 186 71 189 75 200 C79 209 92 205 100 199Z" fill="url(#${k}r)"/>
+    <path d="M100 199 C114 186 129 189 125 200 C121 209 108 205 100 199Z" fill="url(#${k}r)"/>
+    <path d="M97 196 C88 190 80 191 79 197 M103 196 C112 190 120 191 121 197" stroke="#fff" stroke-width=".9" opacity=".45" fill="none" stroke-linecap="round"/>
+    <ellipse cx="100" cy="199.5" rx="4.6" ry="4" class="bq-knot"/><ellipse cx="99" cy="198" rx="1.6" ry="1.1" fill="#fff" opacity=".45"/>`, 'bq-base'));
+  for (const c of ['a', 'b', 'c']) { const s = document.createElement('span'); s.className = `bq-lily bq-${c}`; s.append(DRAW.lily()); box.append(s); }
   return box;
 }
