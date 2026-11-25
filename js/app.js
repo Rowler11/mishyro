@@ -223,6 +223,7 @@ async function render(route) {
   const quiet = app.quietRender; app.quietRender = false;
   updateNav(route);
   updateLetterDot();
+  if (!/^#?\/?inicio/.test(location.hash.replace(/^#\/?/, ''))) theme.setBarColor(null); // Inicio paints its own sky color
   const def = route.def;
   if (!app.setupDone && !def.layer) { router.go('/setup', { replace: true }); return; }
   document.title = def.neutral || !def.title ? 'Aishiteru' : `${def.title} · Aishiteru`;

@@ -8,7 +8,7 @@
 // Revised the same day (option B "anillo"): the counter sits inside a ring that fills up toward the
 // next anniversary; special dates and the next milestone share one "Lo que viene" list (the
 // anniversary is not repeated there) and the backup reminder is a slim note.
-import { ui, util, db, profile, seed, sync, CONFIG } from '../core.js';
+import { ui, util, db, profile, seed, sync, CONFIG, theme } from '../core.js';
 import * as time from '../core/time.js';
 import * as dates from '../core/dates.js';
 import * as fx from '../core/fx.js';
@@ -465,6 +465,7 @@ function paintSky(page) {
     if (!page.isConnected && sky.dataset.ready) { clearInterval(timer); sky.remove(); return; }
     const d = new Date(); const h = d.getHours() + d.getMinutes() / 60;
     const phase = skyPhase(h); sky.dataset.phase = phase; sky.dataset.ready = '1';
+    theme.setBarColor(document.documentElement.dataset.occasion ? null : phase); // the status bar takes the sky's top color
     // the sun crosses from 6 to 18 and the moon from 18 to 6: left to right, highest at noon and midnight
     const t = phase === 'night' ? ((h < 6 ? h + 24 : h) - 18) / 12 : (h - 6) / 12;
     const body = sky.firstChild;

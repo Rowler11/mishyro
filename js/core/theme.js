@@ -47,7 +47,7 @@ export function apply(next = {}) {
   root.dataset.animalSound = prefs.animalSound === false ? 'off' : 'on';
   root.dataset.seasonal = prefs.seasonal === false ? 'off' : 'on';
   root.style.fontSize = `${Math.min(200, Math.max(85, Number(prefs.textScale) || 100))}%`;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', prefs.highContrast ? (theme === 'day' ? '#FFFFFF' : '#000000') : THEME_COLORS[style][theme]);
+  paintBar();
   try {
     localStorage.setItem(`${storageKey}.theme`, JSON.stringify({
       theme: prefs.theme, highContrast: prefs.highContrast, textScale: prefs.textScale,
@@ -61,6 +61,27 @@ export function apply(next = {}) {
   listeners.forEach((fn) => fn(theme, prefs));
   return theme;
 }
+
+/** v0.35.0: the Android status bar of the installed app is solid (Chrome cannot make it transparent), so it takes
+ * the color at the top of the screen: the page background, or Inicio's sky. Updated on theme, style and screen. */
+let barPhase = null;
+const rgb = (h) => { const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(h.trim()); return m ? [1, 2, 3].map((i) => parseInt(m[i], 16)) : [0, 0, 0]; };
+const hex = (a) => `#${a.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
+const mix = (a, b, p) => { const A = rgb(a); const B = rgb(b); return hex(A.map((v, i) => v * p + B[i] * (1 - p))); };
+/** Top color of Inicio's sky for a phase: the same mixes as the CSS (.home-sky). */
+function skyTop(phase, bg, theme) {
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#C2405F';
+  const top = { dawn: () => mix(accent, '#FFD9B8', 0.3), day: () => mix('#A9D8F0', bg, 0.38), dusk: () => mix('#7A5BA8', bg, 0.34), night: () => mix('#1E1A44', bg, 0.7) }[phase]?.();
+  return top ? (phase === 'day' && theme === 'night' ? mix(top, bg, 0.55) : top) : null; // by night the day sky is at 55%
+}
+export function paintBar() {
+  const theme = document.documentElement.dataset.theme === 'night' ? 'night' : 'day';
+  const bg = THEME_COLORS[styleOf()][theme];
+  const color = prefs.highContrast ? (theme === 'day' ? '#FFFFFF' : '#000000') : (barPhase && skyTop(barPhase, bg, theme)) || bg;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color);
+}
+/** Inicio's sky phase while it is on screen, or null for the page background. */
+export function setBarColor(phase = null) { barPhase = phase; paintBar(); }
 
 export const current = () => ({ ...prefs, resolved: document.documentElement.dataset.theme });
 
