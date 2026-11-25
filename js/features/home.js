@@ -484,7 +484,9 @@ export async function render() {
   page.append(header, body);
   // v0.12.0: the season's leaves (fireflies and chōchin at night) fall behind the cards all the time, and a
   // branch (two hanging chōchin at night) in the corner shakes and lets a few more go when tapped.
-  let amb = fx.ambient(page);
+  // v0.32.4 (Rowler): the leaves let go of the branch in the corner, and the branch sways a little.
+  const ambOpts = { source: () => corner.getBoundingClientRect(), onRelease: () => { if (corner.classList.contains('is-shaking')) return; corner.classList.remove('is-sway'); void corner.offsetWidth; corner.classList.add('is-sway'); } };
+  let amb = fx.ambient(page, ambOpts);
   const corner = el('div', { class: 'home-corner', 'aria-hidden': 'true' });
   const drawCorner = () => { corner.dataset.kind = fx.ambientKind(); corner.dataset.style = document.documentElement.dataset.style || 'jp'; corner.replaceChildren(fx.cornerArt(corner.dataset.kind, { xmas: corner.dataset.xmas === '1' })); };
   drawCorner();
@@ -494,7 +496,7 @@ export async function render() {
     util.haptic?.(12);
     const r = corner.getBoundingClientRect(); amb.burst(r.left + r.width * 0.55, r.top + r.height * 0.55);
   });
-  corner.addEventListener('animationend', (e) => { if (e.animationName === 'corner-shake') corner.classList.remove('is-shaking'); });
+  corner.addEventListener('animationend', (e) => { if (e.animationName === 'corner-shake') corner.classList.remove('is-shaking'); if (e.animationName === 'corner-letgo') corner.classList.remove('is-sway'); });
   page.prepend(corner);
   // v0.30.0 (Rowler): the branch grows from the app's own edge (right of the screen, just under the top
   // bar), so it never looks cut off by the page's margins, whatever the screen size.
@@ -514,7 +516,7 @@ export async function render() {
   paintSky(page);
   const cornerWatch = new MutationObserver(() => {
     if (corner.dataset.kind !== fx.ambientKind() || corner.dataset.style !== (document.documentElement.dataset.style || 'jp')) drawCorner();
-    if (document.documentElement.dataset.seasonal !== 'off' && !page.querySelector('.ambient-canvas')) amb = fx.ambient(page); // switched back on
+    if (document.documentElement.dataset.seasonal !== 'off' && !page.querySelector('.ambient-canvas')) amb = fx.ambient(page, ambOpts); // switched back on
   });
   cornerWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-seasonal', 'data-style'] });
   // v0.32.2: the entrance (cards rising one by one, the pets peeking out) plays the first time Inicio shows in a
