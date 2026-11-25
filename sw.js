@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.27.0';
+const CACHE_VERSION = 'aishiteru-v0.28.0';
 const SHELL = [
   './',
   './styles.css',
@@ -33,7 +33,7 @@ const SHELL = [
   './js/features/guia.js', './js/features/tour.js', './js/core/sounds.js',
   './js/features/planta.js', './js/features/jardin.js',
   './js/features/kamishibai.js',
-  './js/features/amor.js', './js/features/latido.js', './js/core/premium.js', './js/features/novedades.js', './js/features/toques.js', './js/features/calma.js', './js/features/compartir.js', './js/features/ocasion.js',
+  './js/features/amor.js', './js/features/latido.js', './js/core/premium.js', './js/features/novedades.js', './js/features/toques.js', './js/features/calma.js', './js/features/compartir.js', './js/features/ocasion.js', './js/features/home-layout.js', './js/features/foto-dia.js',
   './js/features/avisos.js',
   './js/core/fx.js',
   './js/core/sync.js',
@@ -174,6 +174,7 @@ const NOTICES = {
   beat: ['Te llegó un latido', 'Ábrela y siéntelo 💓', '#/inicio'],
   greetAm: ['Buenos días', 'Alguien te mandó los buenos días ☀️', '#/inicio'],
   greetPm: ['Buenas noches', 'Alguien te mandó las buenas noches 🌙', '#/inicio'],
+  dayphoto: ['Foto del día', 'Compartieron su foto de hoy. Comparte la tuya para verla 📷', '#/inicio'],
   hug: ['Te llegó un abrazo', 'Ábrelo y recíbelo 🤗', '#/inicio'],
   loveRemind: ['¿Ya enviaste amor hoy?', 'Un toque al corazón y su racha sigue 💗', '#/inicio'],
 };

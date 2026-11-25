@@ -7,6 +7,7 @@ import * as time from '../core/time.js';
 import { voiceAttach, saveAttached, player as voicePlayer } from './voz.js';
 import { compressImage, isQuotaError, MAX_PHOTOS, readVideo, isVideoFile, MAX_VIDEO_SECONDS, lightenVideo, canLightenVideo } from '../core/images.js';
 import { toTrash, TRASH_NOTE } from './papelera.js';
+import { tagsInput } from './hogar-kit.js';
 
 const { el, icon } = util;
 const WIDE = '(min-width: 1100px)';
@@ -155,6 +156,9 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
   const fTitle = ui.field({ label: 'Título', control: title, hint: pending(m.title) && m.title ? 'Este recuerdo vino incompleto en los datos iniciales.' : '' });
   const fDate = ui.field({ label: 'Fecha', control: date });
   const fNote = ui.field({ label: 'Nota (opcional)', control: note, hint: 'Lo que no quieren olvidar de ese día.' });
+  // v0.28.0 (idea 51): their own tags ("playa, cumple, Milu"), to find memories later in Buscar.
+  const tagsIn = tagsInput({ value: m.tags || [], placeholder: 'playa, cumple, viaje' });
+  const fTags = ui.field({ label: 'Etiquetas (opcional)', control: tagsIn, hint: 'Separadas por comas. Sirven para buscar después.' });
   const formError = el('p', { class: 'field-error form-error', role: 'alert' });
   // An error goes away as soon as the field is fixed.
   title.addEventListener('input', () => { if (title.value.trim()) fTitle.setError(''); });
@@ -269,7 +273,7 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
     const replaced = [];
     try {
       const rec = {
-        ...m, title: title.value.trim(), date: date.value, note: note.value.trim(), draft: false,
+        ...m, title: title.value.trim(), date: date.value, note: note.value.trim(), tags: tagsIn.tags(), draft: false,
         visibility, private: visibility === 'self', owner: visibility === 'self' ? profile.active() : (m.owner || profile.active()),
       };
       // "Solo yo" photos and videos are encrypted with the same key as their memory (docs/04).
@@ -321,7 +325,7 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
   };
 
   const body = el('form', { class: 'memory-form', novalidate: true, onSubmit: (e) => { e.preventDefault(); } },
-    drop, fTitle, fDate, fNote, voice.node,
+    drop, fTitle, fDate, fNote, fTags, voice.node,
     ui.visibilityPicker({ value: visibility, onChange: (v) => {
       visibility = v;
       // First "Solo yo" of this person: offer the personal PIN (docs/04).
@@ -365,7 +369,8 @@ export function kindOf(m) {
 function tags(m) {
   return el('span', { class: 'tl-tags' },
     m.visibility === 'self' ? el('span', { class: 'badge' }, 'Solo yo') : null,
-    (pending(m.title) || pending(m.note) || isDraft(m)) ? el('span', { class: 'pending' }, 'Por completar') : null);
+    (pending(m.title) || pending(m.note) || isDraft(m)) ? el('span', { class: 'pending' }, 'Por completar') : null,
+    (m.tags || []).slice(0, 3).map((t) => el('span', { class: 'tag-chip' }, `#${t}`)));
 }
 
 /** Small red hanko with the initial of who saved the memory (Fase 7); a heart when it belongs to both. */

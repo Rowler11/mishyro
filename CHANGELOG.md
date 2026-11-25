@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.28.0 (Foto del día, Inicio a su gusto y búsqueda con filtros)
+
+Nuevo
+- Foto del día: con los teléfonos unidos, cada uno comparte una foto de hoy desde Inicio y se ven lado a lado. La del otro queda boca abajo hasta que compartes la tuya (un intercambio, nunca para revisar al otro). Llega un aviso cariñoso cuando el otro comparte la suya.
+- Personalizar Inicio: al final de Inicio eligen qué tarjetas ver y en qué orden. El círculo de los días siempre va primero. "Como venía" deja todo como antes.
+- Etiquetas propias en los recuerdos de la Cápsula (y sus fotos): se escriben separadas por comas y salen como #etiqueta en la línea de tiempo.
+- Buscar con filtros: por tipo (recuerdos, cartas, cupones), por quién lo escribió y por año, más botones con sus etiquetas para buscar con un toque.
+
 ## 0.27.0 (Ocasiones, deslizar para borrar y confianza)
 
 Nuevo
