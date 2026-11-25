@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.33.0 (Día y noche distintos)
+
+Nuevo
+- La pantalla de carga y la apertura cambian según la hora: de día, cielo y luz cálida; al atardecer, tonos violeta; de noche, cielo oscuro con luna creciente, estrellas y luz fría. El saludo dice "Buenos días", "Buenas tardes" o "Buenas noches".
+- De noche, los animalitos que se paran en las tarjetas de Inicio duermen (con sus "z"); un toque los despierta un rato.
+- De noche, el Latido tiene estrellas al fondo y las cartas se abren con luz de vela.
+- La tarjeta de buenas noches de Inicio suma el acceso "Dulces sueños" a Dormir y soñar.
+
 ## 0.32.8 (Apertura completa con más calidad)
 
 Mejorado

@@ -9,14 +9,13 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.32.8',
+  version: '0.33.0',
   items: [
+    'Día y noche se sienten distintos: la carga y la apertura cambian de cielo, luz y saludo según la hora (con luna y estrellas de noche).',
+    'De noche los animalitos duermen en Inicio, el Latido tiene estrellas y las cartas se abren a luz de vela.',
     'La apertura del día se ve más fina: flores de sakura pintadas en la rama y un paso limpio al "Para …".',
     'Volver a Inicio desde otra sección ya no parpadea.',
     'La pantalla de carga se ve más linda y el Latido empieza lento y se acelera.',
-    'Las hojas que caen de Inicio tienen la calidad del árbol y se dispersan más.',
-    'Las hojitas de Inicio ahora se sueltan del árbol, y el árbol es un poco más grande.',
-    'El cielo de Inicio (día, noche, sol y luna) ya no da un salto al entrar.',
     'Volver a Inicio ya no parpadea: carga todo a la vez y sin repetir la animación.',
     'Las tarjetas de toda la app llevan papel washi, y Ahora mismo, Dormir y soñar, Ánimo y Juegos tienen el sello y la tinta japonesa de siempre.',
   ],

@@ -165,6 +165,7 @@ function greetingCard(data, receiver) {
     kicker, text,
     el('div', { class: 'card-actions' },
       ui.button({ label: 'Enviar', iconName: 'share-2', small: true, onClick: () => ui.share({ text: text.textContent }) }),
+      night && part === 'night' ? ui.button({ label: 'Dulces sueños', iconName: 'bed', small: true, href: '#/dormir' }) : null,
       swap));
   return card;
 }

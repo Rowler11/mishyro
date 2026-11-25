@@ -71,3 +71,10 @@ function relabel(style) {
     n.textContent = t.text; n.lang = t.lang;
   });
 }
+
+/** v0.33.0: the real hour of the day as a phase (dawn, day, dusk, night): the opening, the loading screen,
+ * Inicio's sky and the pets follow it. Same cuts as Inicio's sky. */
+export function dayPhase(d = new Date()) {
+  const h = d.getHours() + d.getMinutes() / 60;
+  return h < 5.5 ? 'night' : h < 7.5 ? 'dawn' : h < 16.5 ? 'day' : h < 19 ? 'dusk' : 'night';
+}
