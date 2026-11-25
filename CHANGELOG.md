@@ -1,5 +1,17 @@
 # Cambios
 
+## 0.31.0 (Ahora mismo, Dormir y soñar, y un solo estilo)
+
+Nuevo
+- "Ahora mismo" en Inicio: una tarjeta con tu estado y el de tu pareja, lado a lado. Eliges qué estás haciendo (14 actividades o una tuya, con su ícono), cómo te sientes y una línea opcional. Se ve "hace X" y dura 24 horas. Tus últimos estados quedan a un toque, y el ánimo también se anota en el Medidor de ánimo. Se puede quitar o mover en "Personalizar Inicio".
+- "Dormir y soñar" (en Más > Nosotros): anota a qué hora te acostaste y te levantaste, las horas y qué tal dormiste. Hay una gráfica de la última semana de los dos, promedios de 30 días (horas, calidad y a qué hora suele acostarse cada uno) e historial con editar y borrar.
+- Latido: el aviso que le llega a tu pareja dice cuántos latidos mandaste y pide vibrar ese número de veces. Chrome en Android usa su vibración normal para los avisos, así que el latido completo se siente al abrirlo.
+- Diario de sueños: cuéntalos en texto o con una nota de voz, con etiquetas (gracioso, bonito, raro, salías tú, pesadilla, lúcido) y filtros. Tu pareja puede reírse de tus sueños con 😂. Un sueño puede ser "Solo yo".
+
+Mejorado
+- Inicio con un solo estilo: todas las tarjetas tienen el mismo papel, borde y sombra.
+- Juegos: todos los juegos se ven en una cuadrícula (nada escondido ni que se desliza), en el mismo papel de la app y con el color del estilo elegido, sin tonos pastel.
+
 ## 0.30.0 (Pulir: fotos, cartas, cupones, animalitos, latido y más)
 
 Nuevo

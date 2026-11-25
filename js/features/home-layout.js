@@ -5,7 +5,7 @@ import { ui, util, db } from '../core.js';
 
 const { el, icon } = util;
 export const CARDS = [
-  ['both', '"Hoy los dos pasaron por aquí"'], ['celebration', 'Celebraciones del día'], ['meeting', 'Próximo encuentro'],
+  ['now', 'Ahora mismo'], ['both', '"Hoy los dos pasaron por aquí"'], ['celebration', 'Celebraciones del día'], ['meeting', 'Próximo encuentro'],
   ['toques', 'Buenos días, abrazo y respirar'], ['dayphoto', 'Foto del día'], ['favs', 'Sus favoritos'], ['guide', 'Primeros pasos'],
   ['slides', 'Frases, Pensando en ti y omikuji'], ['coming', 'Lo que viene'], ['today', 'Para hoy'],
   ['weekend', 'Plan del fin de semana'], ['backup', 'Recordatorio de copia'],

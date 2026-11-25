@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.30.0';
+const CACHE_VERSION = 'aishiteru-v0.31.0';
 const SHELL = [
   './',
   './styles.css',
@@ -33,7 +33,7 @@ const SHELL = [
   './js/features/guia.js', './js/features/tour.js', './js/core/sounds.js',
   './js/features/planta.js', './js/features/jardin.js',
   './js/features/kamishibai.js',
-  './js/features/amor.js', './js/features/latido.js', './js/core/premium.js', './js/features/novedades.js', './js/features/toques.js', './js/features/calma.js', './js/features/compartir.js', './js/features/ocasion.js', './js/features/home-layout.js', './js/features/foto-dia.js', './js/features/juegos-extra.js', './js/features/gastos-extra.js',
+  './js/features/amor.js', './js/features/latido.js', './js/core/premium.js', './js/features/novedades.js', './js/features/toques.js', './js/features/calma.js', './js/features/compartir.js', './js/features/ocasion.js', './js/features/home-layout.js', './js/features/foto-dia.js', './js/features/ahora.js', './js/features/dormir.js', './js/features/juegos-extra.js', './js/features/gastos-extra.js',
   './js/features/avisos.js',
   './js/core/fx.js',
   './js/core/sync.js',
@@ -198,7 +198,11 @@ const REMIND = {
   custom: ['tienen un recordatorio', '🔔', '#/recordatorios'],
   event: ['tienen un plan juntos', '🗓️', '#/calendario'],
 };
+/** v0.31.0: "beat:7" -> the latido notice, beating 7 times like a heart (lub-dub, pause). */
+function beatsOf(kind) { const m = /^beat:(\d+)$/.exec(String(kind || '')); return m ? Math.max(1, Math.min(15, Number(m[1]))) : 0; }
+const heartPattern = (n) => Array.from({ length: n }, () => [60, 100, 80, 460]).flat().slice(0, -1);
 function noticeText(kind) {
+  if (beatsOf(kind)) { const n = beatsOf(kind); const t = noticeText('beat'); return [t[0], n > 1 ? `${n} latidos para ti. Ábrelo y siente cuánto late por ti 💓` : t[1], t[2], t[3]]; }
   const n = NOTICES[kind];
   if (n) { const [hash, icon, ...lines] = n; const [title, body] = pick(lines); return [title, body, hash, icon]; }
   const [tag, what, days] = String(kind || '').split(':');
@@ -240,9 +244,9 @@ self.addEventListener('push', (event) => {
     await self.registration.showNotification(title, {
       body, tag: kind || 'aishiteru', lang: 'es', timestamp: Date.now(),
       icon: `./icons/${icon}-192.png`, badge: './icons/badge-96.png', // v0.30.0: a sakura silhouette in the status bar
-      ...(BUZZ[kind] ? { vibrate: BUZZ[kind] } : {}),
-      ...(kind === 'beat' || kind === 'love' ? { renotify: true } : {}), // v0.22.0: the latido notice itself beats
-      actions: [{ action: 'open', title: kind === 'love' || kind === 'beat' || kind === 'hug' ? 'Devolver 💗' : 'Abrir' }],
+      ...(beatsOf(kind) ? { vibrate: heartPattern(beatsOf(kind)), tag: 'beat' } : BUZZ[kind] ? { vibrate: BUZZ[kind] } : {}),
+      ...(beatsOf(kind) || kind === 'beat' || kind === 'love' ? { renotify: true } : {}), // v0.22.0: the latido notice itself beats
+      actions: [{ action: 'open', title: beatsOf(kind) || kind === 'love' || kind === 'beat' || kind === 'hug' ? 'Devolver 💗' : 'Abrir' }],
       data: { url: new URL(`./${hash}`, self.registration.scope).href },
     });
   })());

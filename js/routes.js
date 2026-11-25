@@ -18,6 +18,7 @@ export const GROUPS = [
     { id: 'insignias', title: 'Racha e insignias', jp: 'バッジ', romaji: 'bajji', icon: 'award', phase: '4A', module: 'insignias', blurb: 'Lo que van logrando juntos.' },
     { id: 'rasca', title: 'Rasca y gana', jp: '当たり', romaji: 'atari', icon: 'wand-sparkles', phase: '4B', module: 'rasca', blurb: 'Premios pequeños para raspar.' },
     { id: 'animo', title: 'Medidor de ánimo', jp: '気分', romaji: 'kibun', icon: 'smile', phase: '3', module: 'animo', blurb: 'Cómo amanece cada uno.' },
+    { id: 'dormir', title: 'Dormir y soñar', jp: '眠り', romaji: 'nemuri', icon: 'bed', phase: '0.31', module: 'dormir', blurb: 'Cómo durmieron y lo que soñaron.' },
     { id: 'resumen', title: 'Resumen del año', jp: '年間', romaji: 'nenkan', icon: 'sparkles', phase: '4A', module: 'resumen', moment: true, blurb: 'Su año en historias, con modo Wrapped.' },
     { id: 'recordatorios', title: 'Recordatorios', jp: 'お知らせ', romaji: 'oshirase', icon: 'bell', phase: '3', module: 'recordatorios', blurb: 'Avisos suaves y calendario del teléfono.' },
     { id: 'jardin', title: 'Nuestro jardín', jp: '庭', romaji: 'niwa', icon: 'flower-2', phase: '0.19', module: 'jardin', blurb: 'Se llena de flores con lo que hacen juntos.' },

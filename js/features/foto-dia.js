@@ -41,7 +41,7 @@ export async function homeCard({ onChange } = {}) {
     ? (mine ? el('figure', { class: 'dayphoto-slot' }, await img(theirs, `Foto del día de ${theirName}`, bag), el('figcaption', { class: 'dayphoto-who' }, theirName))
       : el('div', { class: 'dayphoto-slot dayphoto-hidden' }, icon('lock', { size: 22 }), el('span', {}, `${theirName} ya compartió la suya. Comparte la tuya para verla.`)))
     : el('div', { class: 'dayphoto-slot dayphoto-wait' }, el('span', {}, `La de ${theirName} aparece aquí cuando la comparta.`));
-  const card = el('section', { class: 'home-card dayphoto-card', 'aria-labelledby': 'dayphoto-title' },
+  const card = el('section', { class: 'card home-card dayphoto-card', 'aria-labelledby': 'dayphoto-title' },
     el('h2', { class: 'card-kicker', id: 'dayphoto-title' }, 'Foto del día'),
     el('div', { class: 'dayphoto-row' }, mineNode, theirsNode), input);
   // free the object URLs when the card leaves the page

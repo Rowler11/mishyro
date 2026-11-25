@@ -14,6 +14,8 @@ import * as LL from '../js/features/lenguajes.js';
 import { ageText } from '../js/features/mascotas.js';
 import { stageText } from '../js/features/latido.js';
 import { validState } from '../js/features/cupones.js';
+import * as NOW from '../js/features/ahora.js';
+import * as SLEEP from '../js/features/dormir.js';
 
 const KEY = 'unittest';
 const results = [];
@@ -360,6 +362,28 @@ await test('love languages: order, shares, fit and idea of the week', () => {
   const list = ['x', 'y', 'z'];
   eq(LL.weekPick(list, new Date(2026, 10, 23)), LL.weekPick(list, new Date(2026, 10, 29)));
   eq(LL.weekPick([], new Date()), null);
+});
+
+// ---------- v0.31.0 ----------
+await test('ahora mismo: "hace X" and 24 hours', () => {
+  const t = Date.parse('2026-11-25T12:00:00Z');
+  eq(NOW.ago('2026-11-25T11:59:40Z', t), 'ahora');
+  eq(NOW.ago('2026-11-25T11:48:00Z', t), 'hace 12 min');
+  eq(NOW.ago('2026-11-25T09:00:00Z', t), 'hace 3 h');
+  eq(NOW.ago('2026-11-23T12:00:00Z', t), 'hace 2 días');
+  ok(NOW.fresh({ at: '2026-11-25T01:00:00Z' }, t));
+  ok(!NOW.fresh({ at: '2026-11-24T11:00:00Z' }, t));
+  ok(!NOW.fresh({ at: '2026-11-25T11:00:00Z', cleared: true }, t));
+});
+await test('dormir: hours across midnight and averages', () => {
+  eq(SLEEP.minutesBetween('23:30', '07:00'), 450);
+  eq(SLEEP.minutesBetween('01:00', '09:15'), 495);
+  eq(SLEEP.minutesBetween('x', '07:00'), null);
+  eq(SLEEP.fmtHours(450), '7 h 30 min');
+  eq(SLEEP.fmtHours(480), '8 h');
+  const s = SLEEP.summary([{ bed: '23:30', minutes: 450, quality: 4 }, { bed: '00:30', minutes: 390, quality: 3 }]);
+  eq(s, { minutes: 420, quality: 3.5, bed: '00:00', nights: 2 });
+  eq(SLEEP.summary([]), null);
 });
 
 window.__results = results;

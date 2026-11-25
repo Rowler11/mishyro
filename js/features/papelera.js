@@ -26,7 +26,7 @@ const SECTION = {
   memories: ['Recuerdo', 'hourglass', '#/capsula'], letters: ['Carta', 'mail', '#/cartas'], diary: ['Diario', 'notebook-pen', '#/diario'],
   firsts: ['Primera vez', 'star', '#/primeras-veces'], places: ['Lugar', 'map', '#/mapa'], timeCapsules: ['Cápsula del tiempo', 'lock', '#/capsula-tiempo'],
   voiceNotes: ['Nota de voz', 'mic', '#/voz'], songs: ['Canción', 'music', '#/canciones'], dreams: ['Sueño', 'moon-star', '#/suenos'],
-  content: ['Texto', 'file-text', '#/ajustes/perfil'], bucketList: ['Plan', 'list-checks', '#/planes'], recipes: ['Receta', 'chef-hat', '#/recetas'], events: ['Cita', 'calendar', '#/calendario'],
+  content: ['Texto', 'file-text', '#/ajustes/perfil'], personal: ['Dormir y soñar', 'bed', '#/dormir'], bucketList: ['Plan', 'list-checks', '#/planes'], recipes: ['Receta', 'chef-hat', '#/recetas'], events: ['Cita', 'calendar', '#/calendario'],
 };
 const daysLeft = (t) => Math.max(0, Math.ceil((new Date(t.expiresAt) - Date.now()) / 86400000));
 
