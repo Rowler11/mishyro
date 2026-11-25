@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.34.1 (La barra del teléfono se integra)
+
+Cambiado
+- La barra del sistema de Android (hora, batería) ya no es una franja crema sobre el cielo de Inicio: toma el color de arriba de cada pantalla. En Inicio sigue el cielo según la hora (amanecer, día, tarde, noche), en las demás pantallas es el color del fondo, y cambia con el tema y el estilo. Chrome no permite que esa barra sea transparente en una app instalada; esto es lo más cerca que se puede llegar.
+
 ## 0.34.0 (Barra superior transparente)
 
 Cambiado
