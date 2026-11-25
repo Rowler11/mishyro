@@ -490,6 +490,26 @@ function fatal(message) {
     el('p', {}, 'Si estás en modo incógnito o sin espacio, prueba en una ventana normal o libera espacio.')));
 }
 
+/**
+ * v0.26.1: photos fade in once they are decoded instead of painting line by line or popping in.
+ * An image is marked ready when it loads (or fails), or right away if it was already loaded when it
+ * reached the screen, so nothing can stay hidden.
+ */
+function installImageFade() {
+  const ready = (img) => img.classList.add('img-ready');
+  const onDone = (e) => { if (e.target instanceof HTMLImageElement) ready(e.target); };
+  document.addEventListener('load', onDone, true);
+  document.addEventListener('error', onDone, true);
+  const check = (n) => {
+    if (n.nodeType !== 1) return;
+    const imgs = n.tagName === 'IMG' ? [n] : n.querySelectorAll ? n.querySelectorAll('img:not(.img-ready)') : [];
+    for (const img of imgs) if (img.complete) ready(img);
+  };
+  new MutationObserver((ms) => { for (const m of ms) m.addedNodes.forEach(check); }).observe(document.body, { childList: true, subtree: true });
+  // Safety net: whatever is still waiting after 4 s shows anyway.
+  setInterval(() => document.querySelectorAll('#main img:not(.img-ready)').forEach((img) => { if (img.complete || !img.getAttribute('src')) ready(img); }), 4000);
+}
+
 let syncRedraw = 0;
 /** Live sync (Fase A): start it, and redraw the open view when changes arrive from the other devices. */
 async function startSync() {
@@ -535,6 +555,7 @@ async function start() {
   db.onChange((store) => { if (store === 'pets') profile.load(); if (store === 'letters' || store === 'content') updateLetterDot(); });
   await applySettings();
   ui.installRipple();
+  installImageFade();
   installShortcuts();
   installVisibility();
   import('./core/premium.js').then((m) => m.install()).catch(() => {}); // v0.23.0: pull to refresh, edge swipe, offline pill

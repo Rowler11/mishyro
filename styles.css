@@ -3742,3 +3742,11 @@ body.is-dropping::after { content: 'Suelta las fotos para crear un recuerdo'; po
 
 .sharecard-img { width: 100%; max-width: 320px; margin: 0 auto; display: block; border-radius: var(--radius-m, 12px); border: 1px solid var(--border); }
 @media (min-width: 520px) { .toques-row { grid-template-columns: repeat(4, 1fr); } }
+
+/* v0.26.1: photos fade in once decoded (app.js installImageFade). */
+@media screen {
+  #main img:not(.img-ready):not(.leaflet-tile):not(.leaflet-marker-icon) { opacity: 0; }
+  #main img:not(.leaflet-tile) { transition: opacity 320ms var(--ease-out, ease-out); }
+}
+:root[data-motion="off"] #main img { transition: none; }
+@media (prefers-reduced-motion: reduce) { #main img { transition: none; } }
