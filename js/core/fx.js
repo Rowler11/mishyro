@@ -221,7 +221,8 @@ const ambientOn = () => !prefersReducedMotion() && CONFIG.seasonalEffects && doc
  * Starts Inicio's background inside `host` (a canvas placed behind the cards). Returns { stop, burst(x, y) }:
  * burst lets a few more particles go from a point of the screen (the branch being shaken). Never throws.
  */
-export function ambient(host) {
+/** opts.source: () => DOMRect of the branch; the leaves let go of it (v0.32.4). opts.onRelease: called when one lets go. */
+export function ambient(host, opts = {}) {
   const none = { stop() {}, burst() {} };
   if (!host || !ambientOn()) return none;
   const c = document.createElement('canvas');
@@ -255,6 +256,8 @@ export function ambient(host) {
       drift: k === 'hotaru' ? R(-0.006, 0.006) : R(-0.018, 0.004),
       ph: R(0, 6.28), spin: R(-0.002, 0.002), flip: R(400, 900), pulse: R(1600, 2800),
       life: k === 'hotaru' ? R(7000, 12000) : 0, color: pal[Math.floor(Math.random() * pal.length)],
+      // v0.32.4 (Rowler): the leaves let go of the branch instead of coming from nowhere; each waits its turn on it.
+      wait: opts.source && !at && k !== 'snow' && k !== 'hotaru' ? now + (top ? R(1200, 7000) : R(300, 9000)) : 0,
     };
   };
   // v0.15.1: by day the corner maple drops its own leaves (green, then red); snow in winter.
@@ -283,7 +286,15 @@ export function ambient(host) {
     bctx.setTransform(dpr, 0, 0, dpr, 0, 0); bctx.clearRect(0, 0, W, H);
     wind *= 0.95;
     for (let i = bits.length - 1; i >= 0; i--) {
-      const b = bits[i]; const t = now - b.born;
+      const b = bits[i];
+      if (b.wait) {
+        if (now < b.wait) continue; // still on the branch
+        const r = opts.source?.();
+        if (r && r.width > 0 && r.bottom > 0 && r.top < H) { b.x = r.left + r.width * R(0.15, 0.8); b.y = r.top + r.height * R(0.35, 0.85); opts.onRelease?.(); }
+        else { b.x = R(-0.05, 1.05) * W; b.y = R(-70, -10); } // branch not on screen: from the top, as before
+        b.wait = 0; b.born = now;
+      }
+      const t = now - b.born;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (b.k === 'lantern') {
         b.y += b.v * dt;

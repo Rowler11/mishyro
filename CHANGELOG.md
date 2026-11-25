@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.32.4 (Las hojas se sueltan del árbol)
+
+Mejorado
+- Inicio: las hojitas ahora se desprenden de la rama de la esquina, que se mece un poco al soltar cada una, y caen desde ahí por la pantalla (antes entraban por arriba desde cualquier punto).
+- El árbol de Inicio es un poco más grande.
+
 ## 0.32.3 (El cielo de Inicio ya no salta)
 
 Arreglado
