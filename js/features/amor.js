@@ -33,17 +33,61 @@ export async function sends() {
     .filter((r) => !r.deleted && r.day && profile.PEOPLE.includes(r.by));
 }
 
+/** Missed days a streak can still be won back after (24 h lose it, 72 h to recover it). */
+export const RESCUE_MAX = 3;
+const gapDays = (a, b) => Math.round((util.parseDay(b) - util.parseDay(a)) / 864e5);
+
+/** Days a confirmed rescue fills in: from the last shared day to the day before both confirmed. */
+function filledDays(rescues) {
+  const out = new Set(); const by = new Map();
+  for (const r of rescues || []) { if (!by.has(r.day)) by.set(r.day, new Map()); by.get(r.day).set(r.by, r.cday || r.day); }
+  for (const [from, who] of by) {
+    if (!profile.PEOPLE.every((p) => who.has(p))) continue;
+    const upto = [...who.values()].sort().pop();
+    for (let i = 1; i <= RESCUE_MAX && shift(from, i) < upto; i++) out.add(shift(from, i));
+  }
+  return out;
+}
+
 /** Streak of days in a row when both sent love. Today still counts as "in time" until it ends. */
-export function streakOf(list, today = util.localDay()) {
+export function streakOf(list, today = util.localDay(), rescues = []) {
   const by = new Map();
   for (const s of list) { if (!by.has(s.day)) by.set(s.day, new Set()); by.get(s.day).add(s.by); }
-  const both = (d) => profile.PEOPLE.every((p) => by.get(d)?.has(p));
+  const filled = filledDays(rescues);
+  const both = (d) => filled.has(d) || profile.PEOPLE.every((p) => by.get(d)?.has(p));
   let day = both(today) ? today : shift(today, -1);
   let current = 0;
   while (both(day)) { current++; day = shift(day, -1); }
   let best = 0; let run = 0; let prev = null;
-  for (const d of [...by.keys()].filter(both).sort()) { run = prev && shift(prev, 1) === d ? run + 1 : 1; best = Math.max(best, run); prev = d; }
+  for (const d of [...new Set([...by.keys(), ...filled])].filter(both).sort()) { run = prev && shift(prev, 1) === d ? run + 1 : 1; best = Math.max(best, run); prev = d; }
   return { current, best, today: by.get(today) || new Set() };
+}
+
+/** Can a lost streak still be recovered? It takes up to 3 missed days and both must confirm. */
+export function rescueOf(list, rescues, today = util.localDay(), me = profile.active()) {
+  const days = new Set();
+  const by = new Map();
+  for (const s of list) { if (!by.has(s.day)) by.set(s.day, new Set()); by.get(s.day).add(s.by); }
+  for (const [d, w] of by) if (d < today && profile.PEOPLE.every((p) => w.has(p))) days.add(d);
+  for (const d of filledDays(rescues)) days.add(d);
+  const last = [...days].sort().pop();
+  if (!last) return { possible: false };
+  const missed = gapDays(last, today) - 1;
+  if (missed < 1 || missed > RESCUE_MAX) return { possible: false };
+  const mark = (who) => (rescues || []).some((r) => r.day === last && r.by === who);
+  return { possible: true, from: last, missed, left: RESCUE_MAX - missed + 1, mine: mark(me), theirs: mark(profile.partnerOf(me)) };
+}
+
+export async function rescues() {
+  return (await db.query('streaks', { index: 'type', range: IDBKeyRange.only('love-rescue') }).catch(() => []))
+    .filter((r) => !r.deleted && r.day && r.cday && profile.PEOPLE.includes(r.by));
+}
+
+export async function confirmRescue(from, who = profile.active()) {
+  const id = `love-rescue:${from}:${who}`;
+  if (await db.get('streaks', id).catch(() => null)) return false;
+  await db.put('streaks', { id, type: 'love-rescue', by: who, day: from, cday: util.localDay(), at: util.nowISO(), visibility: 'shared', owner: 'both' }, { userEdit: false });
+  return true;
 }
 
 /** Love points from everything they did together. */
@@ -90,7 +134,8 @@ export async function homeCard({ onChange } = {}) {
   const me = profile.active();
   const other = profile.partnerOf(me);
   const list = await sends();
-  const st = streakOf(list);
+  const rs = await rescues();
+  const st = streakOf(list, util.localDay(), rs);
   const pts = await score(list);
   const lv = levelOf(pts); const cur = LEVELS[lv]; const next = LEVELS[lv + 1];
   const mine = st.today.has(me); const theirs = st.today.has(other);
@@ -164,7 +209,9 @@ export async function homeStrip({ onChange } = {}) {
   const me = profile.active();
   const other = profile.partnerOf(me);
   const list = await sends();
-  const st = streakOf(list);
+  const rs = await rescues();
+  const st = streakOf(list, util.localDay(), rs);
+  const rc = rescueOf(list, rs);
   const mine = st.today.has(me); const theirs = st.today.has(other);
   const nick = profile.nick(other) || 'tu amor';
   const label = el('span', {}, mine ? 'Amor enviado' : 'Enviar amor');
@@ -184,18 +231,39 @@ export async function homeStrip({ onChange } = {}) {
     } catch (e) { console.error(e); ui.toast('No se pudo enviar. Intenta otra vez.', { tone: 'error' }); }
     btn.disabled = false;
   });
-  const dot = (p, on) => el('span', { class: `love-dot${on ? ' is-on' : ''}` }, el('span', { class: 'love-dot-mark', 'aria-hidden': 'true' }), p === me ? 'Tú' : profile.nick(p) || 'Tu amor',
-    el('span', { class: 'sr-only' }, on ? ': envió amor hoy' : ': aún no envía amor hoy'));
-  const streak = el('button', { class: 'love-streak-btn', type: 'button', 'aria-label': `Racha de amor: ${st.current} ${st.current === 1 ? 'día' : 'días'}. Ver más` },
-    icon('flame', { size: 15 }), ` ${st.current} ${st.current === 1 ? 'día' : 'días'}`);
+  const check = (p, on) => {
+    const name = p === me ? 'Tú' : profile.nick(p) || 'Tu amor';
+    return el('span', { class: `love-check${on ? ' is-on' : ''}`, title: name, role: 'img', 'aria-label': `${name}: ${on ? 'envió amor hoy' : 'aún no envía amor hoy'}` },
+      on ? icon('check', { size: 14 }) : el('span', { 'aria-hidden': 'true' }, name.slice(0, 1).toUpperCase()));
+  };
+  const days = `${st.current} ${st.current === 1 ? 'día' : 'días'}`;
+  const streak = rc.possible
+    ? el('button', { class: 'love-streak-btn is-rescue', type: 'button', 'aria-label': 'Recuperar la racha. Los dos tienen que confirmar' }, icon('rotate-ccw', { size: 15 }), ' Recuperar')
+    : el('button', { class: 'love-streak-btn', type: 'button', 'aria-label': `Racha de amor: ${days}. Ver más` }, icon('flame', { size: 15 }), ` ${days}`);
   streak.addEventListener('click', async () => {
+    if (rc.possible) { rescueSheet(rc, nick, onChange); return; }
     const card = await homeCard({ onChange });
     ui.openModal({ title: 'Contador de amor', kind: 'sheet', body: card, actions: [{ label: 'Cerrar', variant: 'ghost' }] });
   });
   const strip = el('div', { class: 'love-strip', role: 'group', 'aria-label': 'Contador de amor' },
-    btn, el('span', { class: 'love-dots' }, dot(me, mine), dot(other, theirs)), streak);
+    streak, btn, el('span', { class: 'love-checks' }, check(me, mine), check(other, theirs)));
   if (/[?&]amor=1/.test(location.hash)) setTimeout(() => { strip.scrollIntoView({ block: 'center' }); btn.focus({ preventScroll: true }); }, 400);
   return strip;
+}
+
+/** Both have to confirm; the second one to confirm wins the streak back. */
+function rescueSheet(rc, nick, onChange) {
+  const sentence = rc.missed === 1 ? 'Se les pasó 1 día' : `Se les pasaron ${rc.missed} días`;
+  const status = rc.mine && !rc.theirs ? `Ya confirmaste. Falta que ${nick} confirme.` : rc.theirs && !rc.mine ? `${nick} ya confirmó. Falta tu confirmación.` : 'Los dos tienen que confirmar.';
+  const body = el('div', { class: 'stack' },
+    el('p', {}, `${sentence} sin enviarse amor y la racha se pausó. Pueden recuperarla si los dos confirman, hasta 3 días después de perderla.`),
+    el('p', { class: 'muted small', 'aria-live': 'polite' }, status));
+  ui.openModal({ title: 'Recuperar la racha', kind: 'sheet', body, actions: [
+    { label: 'Ahora no', variant: 'ghost' },
+    ...(rc.mine ? [] : [{ label: 'Confirmar', variant: 'primary', onClick: async () => {
+      if (await confirmRescue(rc.from)) { util.haptic('love'); ui.toast(rc.theirs ? 'Racha recuperada 🔥' : `Listo. Falta que ${nick} confirme.`, { tone: 'success' }); onChange?.(); }
+    } }]),
+  ] });
 }
 
 // v0.29.0 (idea 35): when they reach a new level, a screen celebrates it with a rain of petals.

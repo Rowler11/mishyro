@@ -10,6 +10,7 @@ import * as T from '../js/core/temporadas.js';
 import { titleLetters } from '../js/core/letters.js';
 import { activeEvents, forStyle } from '../js/features/eventos.js';
 import { coverScale, clampOffset } from '../js/core/cropper.js';
+import { streakOf, rescueOf } from '../js/features/amor.js';
 import * as LL from '../js/features/lenguajes.js';
 import { ageText } from '../js/features/mascotas.js';
 import { stageText, gap } from '../js/features/latido.js';
@@ -348,6 +349,20 @@ await test('latido: words grow at 5, 10 and 15', () => {
 await test('latido: starts slow and speeds up', () => {
   eq(gap(1), 1200); eq(gap(14), 420);
   for (let n = 2; n <= 14; n++) ok(gap(n) <= gap(n - 1));
+});
+await test('racha: se pierde a las 24 h y se recupera hasta 3 días si los dos confirman', () => {
+  const both = (day) => [{ day, by: 'sofia' }, { day, by: 'david' }];
+  const list = [...both('2026-11-10'), ...both('2026-11-11')];
+  eq(streakOf(list, '2026-11-12').current, 2);
+  eq(streakOf(list, '2026-11-13').current, 0);
+  const rc = rescueOf(list, [], '2026-11-13', 'sofia');
+  ok(rc.possible && rc.missed === 1 && !rc.mine && !rc.theirs);
+  ok(!rescueOf(list, [], '2026-11-16', 'sofia').possible);
+  const one = [{ day: '2026-11-11', cday: '2026-11-13', by: 'sofia' }];
+  eq(streakOf(list, '2026-11-13', one).current, 0);
+  const two = [...one, { day: '2026-11-11', cday: '2026-11-13', by: 'david' }];
+  eq(streakOf(list, '2026-11-13', two).current, 3);
+  ok(rescueOf(list, one, '2026-11-13', 'sofia').mine);
 });
 await test('coupons: a stamp older than the coupon does not count', () => {
   const c = { createdAt: '2026-11-20T10:00:00.000Z' };
