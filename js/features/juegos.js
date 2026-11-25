@@ -418,6 +418,8 @@ export async function render({ params = {}, query = {}, def = {} } = {}) {
         ui.button({ label: 'Historial', iconName: 'history', small: true, variant: 'ghost', href: '#/juegos/historial' }),
         el('a', { class: 'icon-btn', href: '#/juegos/ajustes', 'aria-label': 'Ajustes de juegos' }, icon('sliders-horizontal'))] }));
       await room(page);
+      // v0.29.0: weekly tournament, a team challenge and game night
+      add(page, await import('./juegos-extra.js').then((m) => m.roomExtras()).catch((e) => { console.error(e); return null; }));
     } else if (sub === 'historial') await history(page);
     else if (sub === 'ajustes') await settingsPage(page);
     else if (sub === 'bancos') await banksPage(page);

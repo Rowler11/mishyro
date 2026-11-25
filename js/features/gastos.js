@@ -114,7 +114,9 @@ export async function render() {
   let data = { expenses: [], goals: [] };
   let month = monthOf(util.localDay());
   const add = () => editor(null, data.goals, { onSaved: () => { ui.toast('Gasto anotado.', { tone: 'success' }); load(); } });
-  page.append(ui.pageHeader({ title: 'Gastos compartidos', jp: '家計', romaji: 'kakei', back: '/mas', actions: [ui.newButton('Gasto', add)] }));
+  const extra = import('./gastos-extra.js');
+  page.append(ui.pageHeader({ title: 'Gastos compartidos', jp: '家計', romaji: 'kakei', back: '/mas', actions: [
+    ui.button({ label: 'Dividir cuenta', iconName: 'scale', small: true, variant: 'ghost', onClick: () => extra.then((m) => m.splitCalculator({ onSaved: () => load() })) }), ui.newButton('Gasto', add)] }));
   const body = el('div', { class: 'stack' }, ui.skeleton(4));
   page.append(body);
 
@@ -149,7 +151,9 @@ export async function render() {
     const [y, m] = month.split('-').map(Number);
     const shift = (d) => { const t = new Date(y, m - 1 + d, 1); month = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`; paint(); };
     const goalName = new Map(data.goals.map((g) => [g.id, g.name]));
-    body.replaceChildren(balanceCard,
+    const capSlot = el('div', { class: 'cap-slot' });
+    extra.then((m) => m.capCard(real, { onChange: paint })).then((c) => capSlot.replaceChildren(c)).catch(() => {});
+    body.replaceChildren(balanceCard, capSlot,
       el('section', { class: 'card paper-card pet-block' },
         el('header', { class: 'pet-block-head month-nav' },
           el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Mes anterior', onClick: () => shift(-1) }, icon('chevron-left', { size: 20 })),

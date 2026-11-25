@@ -38,10 +38,35 @@ function doneDialog(plan, { onSaved }) {
   });
 }
 
+/** v0.29.0 (idea 36): spin among the plans they have not done yet; the ones waiting longest weigh more. */
+export function pickPlan(list, rnd = Math.random) {
+  const open = list.filter((p) => !p.done && !p.deleted);
+  if (!open.length) return null;
+  const w = open.map((p) => 1 + Math.min(12, Math.floor((Date.now() - Date.parse(p.createdAt || p.updatedAt || Date.now())) / (30 * 86400000))));
+  let r = rnd() * w.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < open.length; i++) { r -= w[i]; if (r <= 0) return open[i]; }
+  return open[open.length - 1];
+}
+async function roulette() {
+  const list = (await db.query('bucketList')).filter((p) => !p.deleted);
+  const open = list.filter((p) => !p.done);
+  if (!open.length) { ui.toast(list.length ? '¡Ya cumplieron todos sus planes! Agreguen uno nuevo.' : 'Primero agreguen algún plan.'); return; }
+  const win = pickPlan(list);
+  const name = el('p', { class: 'roulette-name', 'aria-live': 'polite' }, '…');
+  ui.openModal({ title: 'Ruleta de planes', size: 'sm', body: el('div', { class: 'stack center roulette' }, el('p', { class: 'muted small' }, 'Entre lo que todavía no han hecho:'), name) });
+  const steps = util.prefersReducedMotion() ? 0 : 14; let k = 0;
+  const spin = () => {
+    if (k < steps) { name.textContent = open[k % open.length].title; name.classList.toggle('flip'); k++; util.haptic(6); setTimeout(spin, 60 + k * 14); return; }
+    name.textContent = win.title; name.classList.add('is-win'); util.haptic('success'); util.sound('chime');
+  };
+  spin();
+}
+
 export async function render() {
   const page = el('section', { class: 'page page-wide planes' });
   const add = () => planEditor(null, { onSaved: () => { ui.toast('Plan agregado.', { tone: 'success' }); load(); } });
-  page.append(ui.pageHeader({ title: 'Planes juntos', jp: '願い', romaji: 'negai', back: '/mas', actions: [ui.newButton('Plan', add)] }));
+  page.append(ui.pageHeader({ title: 'Planes juntos', jp: '願い', romaji: 'negai', back: '/mas', actions: [
+    ui.button({ label: 'Ruleta', iconName: 'dices', small: true, variant: 'ghost', onClick: () => roulette() }), ui.newButton('Plan', add)] }));
   const body = el('div', { class: 'stack' }, ui.skeleton(3));
   page.append(body);
 

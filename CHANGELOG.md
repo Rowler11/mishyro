@@ -1,5 +1,23 @@
 # Cambios
 
+## 0.29.0 (Juegos, planes, casa y mascotas)
+
+Nuevo
+- Juegos: "Torneo de la semana" (partidas ganadas de lunes a domingo; quien gane más se lleva un trofeo de papel que se acumula), "Reto en equipo de la semana" (ganan solo si los dos lo marcan) y "Noche de juegos" (3 juegos al azar, 20 minutos cada uno, con reloj).
+- Al terminar cada juego suena y vibra a su manera (si los sonidos y la vibración están activados).
+- Subir de nivel en el contador de amor abre una pantalla de logro con lluvia de pétalos y un animalito.
+- Planes juntos: "Ruleta" elige entre lo que todavía no han hecho; lo que lleva más tiempo esperando tiene más suerte.
+- Calendario: los fines de semana que vienen sin ningún plan se ven resaltados.
+- Mesiversario: la tarjeta del día sugiere un pequeño ritual distinto cada mes.
+- Gastos: "Dividir cuenta" (total, propina y en qué parte paga cada uno) que se puede anotar como gasto, y un tope al mes para citas y salidas con su barra.
+- Mascotas: pestaña "Álbum" con las fotos por año y lo que pesaba ese año, y "Cartilla para el veterinario (PDF)" en Salud, lista para imprimir o guardar como PDF.
+
+Arreglado
+- Los botones tipo chip de Buscar (0.28.0) ya no cambian el estilo de los demás chips de la app.
+
+Ya existían
+- Lista de deseos con sorpresa oculta (Regalos secretos), meta de ahorro que se llena (Alcancía con el Fuji y el maneki-neko) y resumen mensual de gastos con gráfico.
+
 ## 0.28.0 (Foto del día, Inicio a su gusto y búsqueda con filtros)
 
 Nuevo

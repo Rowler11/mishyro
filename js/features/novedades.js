@@ -9,11 +9,11 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.28.0',
+  version: '0.29.0',
   items: [
-    'Foto del día: cada uno comparte una foto de hoy y aparecen lado a lado en Inicio. La del otro se ve cuando compartes la tuya.',
-    'Inicio a tu gusto: abajo, "Personalizar Inicio" para elegir qué tarjetas ver y en qué orden.',
-    'Etiquetas en los recuerdos y Buscar con filtros por tipo, por quién y por año.',
+    'Juegos: torneo de la semana con trofeos de papel, un reto en equipo que solo ganan si lo cumplen los dos y "Noche de juegos" con 3 al azar y reloj.',
+    'Gastos: dividir la cuenta de una salida con propina y un tope al mes para citas y salidas.',
+    'Mascotas: álbum por año con su peso y la cartilla de salud para imprimir o guardar en PDF.',
   ],
 };
 

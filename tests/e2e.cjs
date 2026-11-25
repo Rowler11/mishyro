@@ -2607,6 +2607,14 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('28 Inicio: se ordena a su gusto y el círculo va primero', lay28.join() === 'I,U');
     const f28 = await page.evaluate(async () => (await import('./js/features/buscar.js')).applyFilters([{ group: 'memories', by: 'a', date: '2025-01-01' }, { group: 'letters', by: 'b', date: '2024-01-01' }], { group: 'all', by: 'b', year: '2024' }).length);
     ok('28 Buscar: los filtros por quién y año funcionan', f28 === 1);
+    // v0.29.0: bill split adds up, weekly trophies, plan roulette only picks what is not done
+    const s29 = await page.evaluate(async () => { const m = await import('./js/features/gastos-extra.js'); const r = m.splitBill(100001, 10, 50); return Object.values(r.each).reduce((a, b) => a + b, 0) === r.total; });
+    ok('29 Dividir cuenta: las partes suman el total con propina', s29);
+    const t29 = await page.evaluate(async () => { const m = await import('./js/features/juegos-extra.js'); const pr = await import('./js/core/profile.js'); const [a] = pr.PEOPLE;
+      return m.trophies(m.weeklyWins([{ winner: a, endedAt: '2025-01-07T10:00:00' }, { winner: a, endedAt: '2025-01-08T10:00:00' }]))[a]; });
+    ok('29 Torneo: una semana ganada da un trofeo', t29 === 1);
+    const p29 = await page.evaluate(async () => (await import('./js/features/planes.js')).pickPlan([{ id: 'a', done: true }, { id: 'b', done: false }])?.id);
+    ok('29 Ruleta de planes: solo elige lo que no han hecho', p29 === 'b');
     await page.keyboard.press('Escape');
     await go('/ajustes', '.list-row'); await page.waitForTimeout(900);
     ok('18 Ajustes: ahí no aparecen', (await page.locator('.kitty-perch, .kitty-nap').count()) === 0);

@@ -198,6 +198,8 @@ export async function render(ctx = {}) {
     const monthEvents = new Map();
     if (layers.has('citas')) for (const e of data.events) { const k = dayOf(e); if (k.startsWith(`${y}-${String(m + 1).padStart(2, '0')}`)) monthEvents.set(k, (monthEvents.get(k) || 0) + 1); }
     const fechas = layers.has('fechas') ? dates.inMonth(data.special, y, m) : [];
+    // v0.29.0 (idea 38): weekends ahead with no plan yet are highlighted, so they can claim them.
+    const busyDays = new Set(data.events.map(dayOf));
     const moods = layers.has('animo') ? new Set(data.moods.filter((x) => x.level).map((x) => x.date)) : new Set();
     const privDays = shown('privado') ? new Set(data.cycle.intimate.map((r) => r.date)) : new Set();
     const cells = [];
@@ -212,8 +214,10 @@ export async function render(ctx = {}) {
       const novios = isCoupleDay(key);
       const parts = [novios ? COUPLE.name : '', n ? `${n} ${n === 1 ? 'cita' : 'citas'}` : '', ...f.map((x) => x.name), mood ? 'ánimo registrado' : '', cyc ? ciclo.kindLabel(cyc) : '', priv ? 'registro privado' : ''].filter(Boolean);
       const date = new Date(y, m, day);
+      const freeWeekend = (date.getDay() === 0 || date.getDay() === 6) && key >= today && !busyDays.has(key);
+      if (freeWeekend) parts.push('fin de semana libre');
       cells.push(el('button', {
-        class: `cal-cell${key === today ? ' is-today' : ''}${key === selected ? ' is-selected' : ''}${f.length ? ' has-date' : ''}${novios ? ' is-novios' : ''}`, type: 'button',
+        class: `cal-cell${key === today ? ' is-today' : ''}${key === selected ? ' is-selected' : ''}${f.length ? ' has-date' : ''}${novios ? ' is-novios' : ''}${freeWeekend ? ' is-free-weekend' : ''}`, type: 'button',
         'aria-pressed': String(key === selected), 'aria-label': `${fmtDay.format(date)}${parts.length ? `: ${parts.join(', ')}` : ''}`,
         onClick: () => { selected = key; draw(); body.querySelector('.cal-day-title')?.focus({ preventScroll: false }); },
       }, el('span', { class: 'cal-num' }, String(day)),

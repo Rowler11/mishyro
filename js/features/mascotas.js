@@ -76,6 +76,26 @@ export function monthlyTotals(records, months) {
 }
 
 // ---------- record types ----------
+/** v0.29.0 (idea 45): a clean health card to print or save as PDF for the vet (the browser's "Guardar como PDF"). */
+function printCartilla(pet, recs) {
+  const rows = (type) => recs.filter((r) => r.type === type && !r.deleted).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const table = (title, head, list, cells) => (list.length ? el('section', {}, el('h2', {}, title), el('table', {}, el('thead', {}, el('tr', {}, head.map((h) => el('th', {}, h)))),
+    el('tbody', {}, list.map((r) => el('tr', {}, cells(r).map((c) => el('td', {}, c || '—'))))))) : null);
+  const sheet = el('article', { class: 'print-cartilla' },
+    el('h1', {}, `Cartilla de salud de ${pet.name}`),
+    el('p', {}, [SPECIES.find((x) => x.value === pet.species)?.label, pet.breed, pet.sex, pet.color, pet.microchip ? `Microchip ${pet.microchip}` : ''].filter(Boolean).join(' · ')),
+    table('Vacunas', ['Vacuna', 'Aplicada', 'Próxima', 'Veterinario'], rows('vaccine'), (r) => [r.data.product, util.formatDay(r.date), r.data.next ? util.formatDay(r.data.next) : '', r.data.vet]),
+    table('Desparasitación', ['Producto', 'Aplicada', 'Próxima', 'Veterinario'], rows('deworm'), (r) => [r.data.product, util.formatDay(r.date), r.data.next ? util.formatDay(r.data.next) : '', r.data.vet]),
+    table('Peso', ['Fecha', 'Kg'], rows('weight').slice(0, 12), (r) => [util.formatDay(r.date), String(r.data.kg)]),
+    table('Visitas', ['Fecha', 'Motivo', 'Diagnóstico', 'Tratamiento'], rows('vet').slice(0, 12), (r) => [util.formatDay(r.date), r.data.reason, r.data.diagnosis, r.data.treatment]),
+    table('Medicinas', ['Medicina', 'Dosis', 'Frecuencia', 'Desde'], rows('medication').slice(0, 12), (r) => [r.data.name, r.data.dose, r.data.frequency, util.formatDay(r.date)]),
+    el('p', { class: 'print-foot' }, `Generada el ${util.formatDay(util.localDay())}.`));
+  document.body.append(sheet); document.body.classList.add('printing-cartilla');
+  const clean = () => { sheet.remove(); document.body.classList.remove('printing-cartilla'); removeEventListener('afterprint', clean); };
+  addEventListener('afterprint', clean);
+  setTimeout(() => window.print(), 50);
+}
+
 const T = {
   vaccine: { label: 'Vacuna', list: 'Vacunas', icon: 'shield-check', photo: 'Foto del carnet (opcional)', fields: [
     ['product', 'Vacuna', 'text', { required: true, max: 80 }], ['date', 'Fecha aplicada', 'date', { required: true, past: true }],
@@ -344,7 +364,7 @@ export async function render() {
       el('span', { class: 'pet-neko', 'aria-hidden': 'true' }, maneki()));
 
     // ---- tabs ----
-    const TABS = [['perfil', 'Perfil'], ['salud', 'Salud'], ['peso', 'Peso'], ['vet', 'Veterinario'], ['cuidados', 'Cuidados'], ['gastos', 'Gastos'], ['momentos', 'Momentos']];
+    const TABS = [['perfil', 'Perfil'], ['salud', 'Salud'], ['peso', 'Peso'], ['vet', 'Veterinario'], ['cuidados', 'Cuidados'], ['gastos', 'Gastos'], ['momentos', 'Momentos'], ['album', 'Álbum']];
     const tabRow = el('div', { class: 'chip-row', role: 'tablist', 'aria-label': `Secciones de ${pet.name}` },
       TABS.map(([id, label]) => el('button', { class: 'chip', type: 'button', role: 'tab', 'aria-selected': String(tab === id), onClick: () => { tab = id; load(); } }, label)));
 
@@ -383,7 +403,22 @@ export async function render() {
             el('div', { class: 'grow' }, el('strong', {}, `${r.data.product}`), el('p', { class: 'muted small' }, [T[r.type].label, util.formatDay(r.date), r.data.vet].filter(Boolean).join(' · ')), r.data.note ? el('p', { class: 'small' }, r.data.note) : null),
             recActions(r)))) : empty('Lo que registren queda aquí.'),
           el('div', { class: 'btn-row' }, addBtn('vaccine'), addBtn('deworm'))]),
+          ui.button({ label: 'Cartilla para el veterinario (PDF)', iconName: 'printer', small: true, variant: 'secondary', onClick: () => printCartilla(pet, recs) }),
         ];
+      },
+      // v0.29.0 (idea 44): every photo of the pet, by year, with the weight they had that year.
+      album: () => {
+        const photos = [];
+        if (pet.mediaId) photos.push({ mediaId: pet.mediaId, date: pet.createdAt || util.localDay(), title: pet.name });
+        for (const r of recs) for (const mid of r.mediaIds || []) if (r.type === 'moment' || r.type === 'vet') photos.push({ mediaId: mid, date: r.date, title: r.data?.title || T[r.type].label });
+        if (!photos.length) return [section('Álbum', [empty(`Las fotos de los momentos de ${pet.name} aparecen aquí, por año.`)])];
+        const years = new Map();
+        for (const ph of photos.sort((a, b) => String(b.date).localeCompare(String(a.date)))) { const y = String(ph.date).slice(0, 4); years.set(y, [...(years.get(y) || []), ph]); }
+        const weightIn = (y) => byType('weight').find((r) => String(r.date).startsWith(y));
+        const items = photos.map((ph) => ({ mediaId: ph.mediaId, alt: ph.title, caption: ph.title, sub: util.formatDay(String(ph.date).slice(0, 10)) }));
+        return [...years].map(([y, list]) => section(y, [
+          weightIn(y) ? el('p', { class: 'muted small' }, icon('scale', { size: 14 }), ` Pesaba ${new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 }).format(weightIn(y).data.kg)} kg`) : null,
+          el('div', { class: 'pet-album' }, list.map((ph) => el('button', { class: 'pet-album-item', type: 'button', 'aria-label': `Ver ${ph.title}`, onClick: () => openViewer(items, photos.indexOf(ph)) }, mediaImg(ph.mediaId, { alt: '', urls }))))].filter(Boolean)));
       },
       peso: () => {
         const ws = byType('weight').slice().reverse();
