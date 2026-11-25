@@ -2601,6 +2601,12 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('27 Ocasión: la bienvenida sale una sola vez por día', w27[0] === true && w27[1] === false);
     const bk27 = await page.evaluate(async () => { const bk = await import('./js/core/backup.js'); return bk.verifyBackup((await bk.exportBackup({ appVersion: 't' })).files); });
     ok('27 Copia: se comprueba completa al guardarla', bk27.ok && bk27.records > 0);
+    // v0.28.0: layout arrange keeps the counter first and drops hidden cards; search filters
+    const lay28 = await page.evaluate(async () => { const m = await import('./js/features/home-layout.js'); const a = document.createElement('i'); const b = document.createElement('b'); const c = document.createElement('u');
+      const out = m.arrange([{ id: 'counter', keep: true, node: a }, { id: 'favs', node: b }, { id: 'today', node: c }], { order: ['today', 'favs'], hidden: ['favs'] }); return out.map((n) => n.tagName); });
+    ok('28 Inicio: se ordena a su gusto y el círculo va primero', lay28.join() === 'I,U');
+    const f28 = await page.evaluate(async () => (await import('./js/features/buscar.js')).applyFilters([{ group: 'memories', by: 'a', date: '2025-01-01' }, { group: 'letters', by: 'b', date: '2024-01-01' }], { group: 'all', by: 'b', year: '2024' }).length);
+    ok('28 Buscar: los filtros por quién y año funcionan', f28 === 1);
     await page.keyboard.press('Escape');
     await go('/ajustes', '.list-row'); await page.waitForTimeout(900);
     ok('18 Ajustes: ahí no aparecen', (await page.locator('.kitty-perch, .kitty-nap').count()) === 0);

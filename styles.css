@@ -3773,3 +3773,25 @@ body.is-dropping::after { content: 'Suelta las fotos para crear un recuerdo'; po
 :root[data-occasion] .appbar .brand-name, :root[data-occasion] .page-titles h1 { color: var(--accent); }
 :root[data-occasion] .counter-card { border-color: color-mix(in srgb, var(--gold) 60%, var(--border)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--gold) 35%, transparent), var(--shadow-2, none); }
 :root[data-motion="reduce"] .ocasion-art, :root[data-motion="reduce"] .ocasion-layer { animation: none; }
+
+/* v0.28.0: search filters and tags, Inicio layout, photo of the day */
+.search-filters, .search-tags { display: flex; flex-direction: column; gap: var(--space-2); margin: var(--space-2) 0; }
+.search-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.search-tags:empty { display: none; }
+.search-tags { flex-direction: row; flex-wrap: wrap; }
+.chip { min-height: 36px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: .85rem; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.tag-chip { display: inline-block; margin-right: 4px; padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-size: .72rem; }
+.home-customize { display: flex; margin: var(--space-2) auto var(--space-6); gap: 6px; color: var(--text-2); }
+.layout-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.layout-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: 6px 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.layout-row.is-off { opacity: .55; }
+.layout-check { display: flex; align-items: center; gap: 10px; flex: 1; min-height: 40px; }
+.layout-move { display: flex; gap: 2px; }
+.dayphoto-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.dayphoto-slot { position: relative; margin: 0; aspect-ratio: 3 / 4; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: var(--space-2); text-align: center; font-size: .82rem; color: var(--text-2); background: var(--surface-2); border: 1px solid var(--border); cursor: default; }
+label.dayphoto-slot { cursor: pointer; }
+.dayphoto-add { border-style: dashed; color: var(--accent); }
+.dayphoto-hidden { background: repeating-linear-gradient(45deg, var(--surface-2), var(--surface-2) 8px, var(--surface) 8px, var(--surface) 16px); }
+.dayphoto-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dayphoto-who { position: absolute; left: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(0,0,0,.45); color: #fff; font-size: .75rem; }

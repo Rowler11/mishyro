@@ -249,6 +249,7 @@ function notifyKind(store, r, prev) {
   if (store === 'streaks' && r.type === 'beat' && !prev && r.by === me) return 'beat'; // v0.22.0 Latido
   if (store === 'streaks' && r.type === 'greet' && !prev && r.by === me) return r.kind === 'pm' ? 'greetPm' : 'greetAm';
   if (store === 'streaks' && r.type === 'hug' && !prev && r.by === me) return 'hug';
+  if (store === 'streaks' && r.type === 'dayphoto' && !prev && r.by === me) return 'dayphoto'; // v0.28.0
   return null;
 }
 const marker = (store, r) => (store === 'letters' ? r.status : store === 'content' && r.kind === 'coupon' ? (r.sentAt ? 'sent' : '') : undefined);

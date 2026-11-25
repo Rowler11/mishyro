@@ -516,6 +516,7 @@ export async function render() {
     const slides = [greetingCard(data, recv), thinkingCard(data, recv), omikujiCard(data)].filter(Boolean);
     const today = await todayCard().catch((e) => { console.error(e); return null; });
     const toques = counter && sync.isLinked() ? await import('./toques.js').then((m) => m.homeCard()).catch(() => null) : null;
+    const dayphoto = counter && sync.isLinked() ? await import('./foto-dia.js').then((m) => m.homeCard({ onChange: build })).catch((e) => { console.error(e); return null; }) : null;
     const meeting = await import('./encuentro.js').then((m) => m.homeCard()).catch(() => null);
     const weekend = await import('./citas.js').then((m) => m.weekendCard()).catch(() => null);
     const acc = await import('./home-accesos.js');
@@ -527,20 +528,25 @@ export async function render() {
     if (love) counter.card.append(love);
     const both = bothLine(recv);
     cleanups.push(both.cleanup);
-    body.replaceChildren(...[
-      counter ? counter.card : noStartCard(),
-      both.node,
-      celebrationCard(events),
-      meeting,
-      toques,
-      favs,
-      guide,
-      slides.length ? daySwitcher(slides) : null,
-      comingCard(data, start),
-      today,
-      weekend,
-      backupCard(data.meta),
-    ].filter(Boolean));
+    // v0.28.0: the cards follow the order and choice saved in "Personalizar Inicio".
+    const lay = await import('./home-layout.js');
+    const layout = await lay.getLayout().catch(() => ({ order: [], hidden: [] }));
+    const custom = el('button', { class: 'btn btn-ghost btn-small home-customize', type: 'button', onClick: () => lay.openEditor({ onSaved: build }) }, icon('sliders-horizontal', { size: 16 }), 'Personalizar Inicio');
+    body.replaceChildren(...lay.arrange([
+      { id: 'counter', keep: true, node: counter ? counter.card : noStartCard() },
+      { id: 'both', node: both.node },
+      { id: 'celebration', node: celebrationCard(events) },
+      { id: 'meeting', node: meeting },
+      { id: 'toques', node: toques },
+      { id: 'dayphoto', node: dayphoto },
+      { id: 'favs', node: favs },
+      { id: 'guide', node: guide },
+      { id: 'slides', node: slides.length ? daySwitcher(slides) : null },
+      { id: 'coming', node: comingCard(data, start) },
+      { id: 'today', node: today },
+      { id: 'weekend', node: weekend },
+      { id: 'backup', node: backupCard(data.meta) },
+    ], layout), custom);
     // The cards rise in once, after the welcome screen leaves; later redraws (a name changed, news from
     // the other phone) are quiet: nothing replays.
     if (!built && !util.prefersReducedMotion()) {

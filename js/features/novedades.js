@@ -9,11 +9,11 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.27.0',
+  version: '0.28.0',
   items: [
-    'En su aniversario, en un cumpleaños o en el mesiversario la app se viste de fiesta y los recibe con una carta sorpresa.',
-    'Deslizar una página del Diario o un plan hacia la izquierda la manda a la Papelera, con "Deshacer".',
-    'Cartas que se borran solas después de leerlas (opcional), y la copia de seguridad ahora se comprueba sola.',
+    'Foto del día: cada uno comparte una foto de hoy y aparecen lado a lado en Inicio. La del otro se ve cuando compartes la tuya.',
+    'Inicio a tu gusto: abajo, "Personalizar Inicio" para elegir qué tarjetas ver y en qué orden.',
+    'Etiquetas en los recuerdos y Buscar con filtros por tipo, por quién y por año.',
   ],
 };
 
