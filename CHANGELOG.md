@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.25.1 (Sin zoom en fotos)
+
+Cambiado
+- Se quitó el zoom de las fotos y videos (dos dedos, doble toque y Ctrl + rueda) que llegó en la 0.23.0. El visor vuelve a ser el de antes: deslizar para pasar y para cerrar.
+
 ## 0.25.0 (Tarjeta para compartir)
 
 Nuevo
