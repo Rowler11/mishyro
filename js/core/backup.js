@@ -73,6 +73,29 @@ export async function exportBackup({ includePrivate = false, encryptPrivate = tr
   return { bytes: mediaBytes, files: [{ name: `aishiteru-copia-${stamp}.json`, data: { ...base, media } }] };
 }
 
+/**
+ * v0.27.0 (idea 58): check a copy right after making it, as it will be read back: every file
+ * round-trips through JSON, passes validation, and every record and photo of this device is inside.
+ * Returns { ok, records, photos, error }.
+ */
+export async function verifyBackup(files) {
+  let records = 0; let photos = 0; const ids = new Set();
+  for (const f of files) {
+    let obj;
+    try { obj = JSON.parse(JSON.stringify(f.data)); } catch { return { ok: false, error: 'La copia no se pudo leer de vuelta.' }; }
+    const v = validateBackup(obj);
+    if (!v.ok) return { ok: false, error: v.error };
+    for (const [name, recs] of Object.entries(obj.stores || {})) { records += recs.length; recs.forEach((r) => ids.add(`${name}:${r.id}`)); }
+    for (const m of obj.media || []) { if (m.blob === undefined && m.data === '') return { ok: false, error: 'Una foto quedó vacía en la copia.' }; photos++; }
+  }
+  for (const name of db.STORE_NAMES) {
+    if (EXCLUDED.includes(name)) continue;
+    const missing = (await db.rawAll(name)).filter((r) => portable(name, r) && !isPrivateRecord(r) && !ids.has(`${name}:${r.id}`));
+    if (missing.length) return { ok: false, error: `Faltan ${missing.length} registros de ${name} en la copia.` };
+  }
+  return { ok: true, records, photos };
+}
+
 /** Validate structure and version. Returns { ok, error, backup } (backup migrated in memory). */
 export function validateBackup(obj) {
   const fail = (error) => ({ ok: false, error });

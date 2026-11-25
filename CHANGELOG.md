@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.27.0 (Ocasiones, deslizar para borrar y confianza)
+
+Nuevo
+- Modo aniversario: en el aniversario, un cumpleaños o el mesiversario toda la app se viste para el día (cielo dorado, títulos y círculo de días resaltados) y la primera vez que abren Inicio los recibe un animalito con el mensaje del día y una carta sorpresa: una de sus razones, boca abajo hasta tocarla. Una vez por día.
+- Deslizar hacia la izquierda una página propia del Diario o un plan en Planes juntos los manda a la Papelera, con "Deshacer" en el aviso.
+- Cartas que se borran solas (opcional): al escribir una carta eligen si desaparece 1, 7 o 30 días después de abrirla. Se borra de los dos teléfonos y no pasa por la Papelera.
+- Aviso de equipo nuevo: si un equipo que este no conocía se une a su espacio, sale un aviso con su nombre y un botón para revisarlo en Sincronización.
+- Copia de seguridad comprobada: al guardarla, la app la lee de vuelta, la valida y confirma cuántos registros y fotos lleva. Si falta algo, lo dice.
+
 ## 0.26.1 (Revisión de carga y animaciones)
 
 Cambiado

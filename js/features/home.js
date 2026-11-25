@@ -567,6 +567,8 @@ export async function render() {
     // Fase 7: hanabi once on the anniversary and the birthdays, sakura petals over Inicio on the mesiversario,
     // otherwise the season's particles for a few seconds the first time Inicio opens in this session.
     const big = events.some((e) => e.kind === 'anniversary' || e.kind === 'birthday');
+    // v0.27.0: the whole app dresses up for the day, and a welcome with a surprise letter once.
+    import('./ocasion.js').then((m) => { m.mark(events); let n = 0; const go = () => (document.querySelector('.splash, .tour-layer, .intro') && n++ < 20 ? setTimeout(go, 600) : m.welcome(events, { reasons: data.reasons, receiver: recv })); go(); }).catch(() => {});
     if (events.some((e) => e.confetti) && !big && celebrateOnce('confetti')) ui.confetti();
     if (!seasonShown) {
       const monthly = events.some((e) => e.kind === 'monthly');

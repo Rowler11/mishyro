@@ -19,13 +19,13 @@ const buzz = (p) => { if (document.documentElement.dataset.haptics === 'on' && n
 const isMorning = () => new Date().getHours() < 15;
 
 /** The character of the day for a gesture: a paper animal or one of their real pets, in turns. */
-async function pickWho(kind) {
+export async function pickWho(kind) {
   const pets = await livePets().catch(() => []);
   const cast = [...Object.keys(PETS), ...pets.map((p) => `pet:${p.id}`)];
   let h = 0; for (const c of `${util.localDay()}|${kind}`) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return cast[h % cast.length];
 }
-async function art(who) {
+export async function art(who) {
   if (who?.startsWith('pet:')) {
     const pets = await livePets().catch(() => []); const i = pets.findIndex((p) => p.id === who.slice(4));
     if (i >= 0) return { node: kittyArt(pets[i], { index: i }), name: pets[i].name };

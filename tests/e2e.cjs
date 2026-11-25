@@ -2594,6 +2594,13 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.locator('.toque-layer').click().catch(() => {});
     await page.evaluate(async () => (await import('./js/features/calma.js')).openCalma());
     ok('24 Calma: Respirar juntos muestra el círculo', (await page.locator('.calma-orb').count()) === 1);
+    // v0.27.0: occasion welcome, vanishing letters and the checked backup
+    const w27 = await page.evaluate(async () => { const m = await import('./js/features/ocasion.js'); localStorage.removeItem('aishiteru.ocasion.seen');
+      const a = await m.welcome([{ kind: 'anniversary', title: '¡Feliz aniversario!', text: 'Hoy.' }], { reasons: [{ text: 'Porque sí' }] });
+      const b = await m.welcome([{ kind: 'anniversary', title: 'x' }], {}); document.querySelector('.ocasion-layer')?.remove(); return [a, b]; });
+    ok('27 Ocasión: la bienvenida sale una sola vez por día', w27[0] === true && w27[1] === false);
+    const bk27 = await page.evaluate(async () => { const bk = await import('./js/core/backup.js'); return bk.verifyBackup((await bk.exportBackup({ appVersion: 't' })).files); });
+    ok('27 Copia: se comprueba completa al guardarla', bk27.ok && bk27.records > 0);
     await page.keyboard.press('Escape');
     await go('/ajustes', '.list-row'); await page.waitForTimeout(900);
     ok('18 Ajustes: ahí no aparecen', (await page.locator('.kitty-perch, .kitty-nap').count()) === 0);
