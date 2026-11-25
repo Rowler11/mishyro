@@ -1067,7 +1067,7 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.locator('label.segmented-option', { hasText: '1 hora antes' }).click();
     await page.getByRole('button', { name: 'Guardar' }).click();
     await page.waitForTimeout(500);
-    ok('calendario: new date shows on its day with a dot', (await page.locator('.cal-day .cal-event-title').count()) === 1 && (await page.locator('.cal-cell.is-selected .dot-cita').count()) === 1);
+    ok('calendario: new date shows on its day with a dot', (await page.locator('.cal-day .cal-event-title', { hasText: 'Cena, sushi' }).count()) === 1 && (await page.locator('.cal-cell.is-selected .dot-cita').count()) === 1);
     const one = await dl(() => page.locator('.cal-day').getByRole('button', { name: 'Al teléfono' }).click());
     ok('calendario: .ics escapes text, keeps the time and adds the alarm', one.includes('SUMMARY:Cena\\, sushi\\; y cine') && /DTSTART:\d{8}T193000/.test(one) && one.includes('TRIGGER:-PT1H') && one.includes('\r\n'));
     await page.getByRole('button', { name: 'Nueva cita' }).click();
@@ -1927,7 +1927,7 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('7 ajustes: las hojas de Inicio se apagan', await page.evaluate(() => document.documentElement.dataset.seasonal) === 'off');
     for (const n of ['Campanilla', 'Papel', 'Sello']) await page.getByRole('button', { name: n, exact: true }).click();
     ok('7 ajustes: los sonidos se escuchan antes de activarlos (sin errores)', errs.length === 0, errs.join(' | '));
-    ok('7 sonido: apagado por defecto', await page.evaluate(() => document.documentElement.dataset.sound) === 'off');
+    ok('7 sonido: encendido por defecto (suaves, v0.26.0)', await page.evaluate(() => document.documentElement.dataset.sound) === 'on');
     await reopen();
     await page.waitForTimeout(1500);
     ok('12 hojas apagadas: Inicio queda sin fondo vivo', await page.$('.ambient-canvas') === null && await page.$('.fx-canvas') === null);
@@ -2263,9 +2263,11 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.goto(BASE);
     await page.getByRole('link', { name: 'Empezar desde cero' }).click();
     await page.setInputFiles('#seed-file', SEED);
+    // v0.26.0: the summary shows before importing (the flow then goes on to Sus datos)
+    await page.getByRole('button', { name: 'Importar' }).waitFor();
+    ok('14 Empezar: el resumen dice que cartas, cupones y recuerdos empiezan vacíos', /empiezan vacíos/.test(await page.locator('main').textContent()));
     await page.getByRole('button', { name: 'Importar' }).click();
     await page.getByRole('button', { name: /Leo/ }).click();
-    ok('14 Empezar: el resumen dice que cartas, cupones y recuerdos empiezan vacíos', /empiezan vacíos/.test(await page.locator('main').textContent()));
     for (const n of ['Todo bien', 'Luego', 'Ahora no', 'Continuar', 'Terminar', 'Saltar']) await page.getByRole('button', { name: n }).click();
     await page.waitForFunction(() => location.hash === '#/inicio');
     await page.waitForSelector('.guide-card');
@@ -2550,7 +2552,7 @@ async function exampleContent(page, { reload = true } = {}) {
     let seenPerch = false; let seenNap = false; let onePer = true;
     for (const r of ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']) {
       await go(r, 'main h1'); await page.waitForTimeout(900);
-      const n = await page.locator('main .kitty-perch, main .kitty-nap, main .empty-pet').count();
+      const n = await page.locator('main .kitty-perch, main .kitty-nap, main .empty-art-pet').count();
       if (n !== 1) onePer = false;
       if (await page.locator('main .kitty-perch').count()) seenPerch = true;
       if (await page.locator('main .kitty-nap').count()) seenNap = true;
@@ -2607,6 +2609,14 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('28 Inicio: se ordena a su gusto y el círculo va primero', lay28.join() === 'I,U');
     const f28 = await page.evaluate(async () => (await import('./js/features/buscar.js')).applyFilters([{ group: 'memories', by: 'a', date: '2025-01-01' }, { group: 'letters', by: 'b', date: '2024-01-01' }], { group: 'all', by: 'b', year: '2024' }).length);
     ok('28 Buscar: los filtros por quién y año funcionan', f28 === 1);
+    // v0.29.0: bill split adds up, weekly trophies, plan roulette only picks what is not done
+    const s29 = await page.evaluate(async () => { const m = await import('./js/features/gastos-extra.js'); const r = m.splitBill(100001, 10, 50); return Object.values(r.each).reduce((a, b) => a + b, 0) === r.total; });
+    ok('29 Dividir cuenta: las partes suman el total con propina', s29);
+    const t29 = await page.evaluate(async () => { const m = await import('./js/features/juegos-extra.js'); const pr = await import('./js/core/profile.js'); const [a] = pr.PEOPLE;
+      return m.trophies(m.weeklyWins([{ winner: a, endedAt: '2025-01-07T10:00:00' }, { winner: a, endedAt: '2025-01-08T10:00:00' }]))[a]; });
+    ok('29 Torneo: una semana ganada da un trofeo', t29 === 1);
+    const p29 = await page.evaluate(async () => (await import('./js/features/planes.js')).pickPlan([{ id: 'a', done: true }, { id: 'b', done: false }])?.id);
+    ok('29 Ruleta de planes: solo elige lo que no han hecho', p29 === 'b');
     await page.keyboard.press('Escape');
     await go('/ajustes', '.list-row'); await page.waitForTimeout(900);
     ok('18 Ajustes: ahí no aparecen', (await page.locator('.kitty-perch, .kitty-nap').count()) === 0);

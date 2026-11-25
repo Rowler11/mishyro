@@ -168,6 +168,17 @@ function greetingCard(data, receiver) {
 }
 
 // ---------- 3. today's celebration ----------
+// v0.29.0 (idea 39): a small ritual suggested for each mesiversario (one per month, in turns).
+const RITUALS = [
+  'brindar con lo que tengan a la mano y decir una cosa que aprendieron del otro este mes.',
+  'ver juntos las fotos de este mes y elegir la favorita para la Cápsula.',
+  'escribirse tres palabras que describan este mes y leerlas a la vez.',
+  'cocinar o pedir lo mismo que comieron en su primera cita.',
+  'darse un abrazo de un minuto entero, sin hablar.',
+  'contarse el mejor momento del mes y el que quieren repetir.',
+  'plantar algo (aunque sea una semilla en un vaso) y verlo crecer juntos.',
+  'escuchar su canción y bailarla, aunque sea en la cocina.',
+];
 function todayEvents(data, start, receiver) {
   const out = [];
   const today = new Date();
@@ -178,7 +189,7 @@ function todayEvents(data, start, receiver) {
       out.push({ kind: 'anniversary', title: `¡Feliz aniversario! ${plural(e.years, 'año', 'años')} juntos`, text: 'Hoy se celebra todo lo que han construido.' });
     } else if (e.totalDays > 0 && e.months + e.years * 12 > 0 && e.days === 0) {
       const m = e.years * 12 + e.months;
-      out.push({ kind: 'monthly', title: `¡Feliz mesiversario! ${plural(m, 'mes', 'meses')}`, text: 'Un mes más eligiéndose.' });
+      out.push({ kind: 'monthly', title: `¡Feliz mesiversario! ${plural(m, 'mes', 'meses')}`, text: `Un mes más eligiéndose. Ritual de hoy: ${RITUALS[m % RITUALS.length]}` });
     }
     const ms = time.milestoneProgress(data.milestones, e.totalDays);
     const hit = ms.today || time.roundMilestone(e.totalDays);
@@ -574,7 +585,7 @@ export async function render() {
     // otherwise the season's particles for a few seconds the first time Inicio opens in this session.
     const big = events.some((e) => e.kind === 'anniversary' || e.kind === 'birthday');
     // v0.27.0: the whole app dresses up for the day, and a welcome with a surprise letter once.
-    import('./ocasion.js').then((m) => { m.mark(events); let n = 0; const go = () => (document.querySelector('.splash, .tour-layer, .intro') && n++ < 20 ? setTimeout(go, 600) : m.welcome(events, { reasons: data.reasons, receiver: recv })); go(); }).catch(() => {});
+    import('./ocasion.js').then((m) => { m.mark(events); let n = 0; const go = () => (document.querySelector('.splash, .tour-layer, .intro') && n++ < 20 ? setTimeout(go, 600) : m.welcome(events, { reasons: data.reasons, receiver: recv }).then(() => import('./amor.js')).then((a) => a.checkLevelUp())); go(); }).catch(() => {});
     if (events.some((e) => e.confetti) && !big && celebrateOnce('confetti')) ui.confetti();
     if (!seasonShown) {
       const monthly = events.some((e) => e.kind === 'monthly');

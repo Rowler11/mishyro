@@ -197,3 +197,25 @@ export async function homeStrip({ onChange } = {}) {
   if (/[?&]amor=1/.test(location.hash)) setTimeout(() => { strip.scrollIntoView({ block: 'center' }); btn.focus({ preventScroll: true }); }, 400);
   return strip;
 }
+
+// v0.29.0 (idea 35): when they reach a new level, a screen celebrates it with a rain of petals.
+const LEVEL_KEY = 'aishiteru.amor.level';
+export async function checkLevelUp() {
+  const lv = levelOf(await score(await sends()));
+  let last = null; try { last = localStorage.getItem(LEVEL_KEY); } catch { return; }
+  try { localStorage.setItem(LEVEL_KEY, String(lv)); } catch { /* private mode */ }
+  if (last === null || lv <= Number(last) || document.querySelector('.ocasion-layer, .levelup-layer')) return;
+  const [{ pickWho, art }, fx] = await Promise.all([import('./toques.js'), import('../core/fx.js')]);
+  const a = await art(await pickWho(`nivel-${lv}`));
+  const go = el('button', { class: 'btn btn-primary ocasion-go', type: 'button' }, '¡Seguimos!');
+  const layer = el('div', { class: 'ocasion-layer levelup-layer', role: 'dialog', 'aria-modal': 'true', 'aria-label': `Nuevo nivel: ${LEVELS[lv].name}` },
+    el('div', { class: 'ocasion-card' },
+      el('div', { class: 'ocasion-art', 'aria-hidden': 'true' }, a.node),
+      el('p', { class: 'card-kicker' }, 'Subieron de nivel'),
+      el('h2', { class: 'ocasion-title' }, LEVELS[lv].name),
+      el('p', { class: 'ocasion-sub' }, `${a.name}: todo lo que se dan, juntos, los trajo hasta aquí.`), go));
+  go.addEventListener('click', () => { layer.classList.add('leaving'); setTimeout(() => layer.remove(), 320); });
+  document.body.append(layer); go.focus({ preventScroll: true });
+  util.haptic('love'); util.sound('chime');
+  fx.seasonal({ kind: 'sakura', count: 40, force: true, duration: 5000 });
+}

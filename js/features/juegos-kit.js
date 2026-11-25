@@ -473,6 +473,9 @@ export function passButton(s, onDone, { who = () => s.turn(), before } = {}) {
 
 export function resultView(s, { lines = [], onRematch, extra = null, scored = true } = {}) {
   const w = winnerOf(s.score);
+  // v0.29.0 (idea 32): each game ends with its own little sound and buzz (if sounds/vibration are on).
+  { const kinds = ['chime', 'stamp', 'pop', 'paper']; let h = 0; for (const ch of String(location.hash)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    util.sound(scored && w ? kinds[h % kinds.length] : 'paper'); util.haptic(scored && w ? 'success' : 'love'); }
   const pens = s.penalties.filter((x) => x.outcome === 'done' || x.outcome === 'alt').length;
   const node = el('div', { class: 'game-result stack' },
     scored ? el('div', { class: 'result-crown', 'aria-hidden': 'true' }, icon(w ? 'crown' : 'heart-handshake', { size: 48 })) : null,
