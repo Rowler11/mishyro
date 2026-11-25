@@ -9,8 +9,9 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.32.4',
+  version: '0.32.5',
   items: [
+    'Las hojas que caen de Inicio tienen la calidad del árbol y se dispersan más.',
     'Las hojitas de Inicio ahora se sueltan del árbol, y el árbol es un poco más grande.',
     'El cielo de Inicio (día, noche, sol y luna) ya no da un salto al entrar.',
     'Volver a Inicio ya no parpadea: carga todo a la vez y sin repetir la animación.',

@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.32.5 (Hojas más bonitas y más dispersas)
+
+Mejorado
+- Inicio: las hojas que caen ahora son el mismo arce del árbol (siete lóbulos, degradado, nervaduras y una sombra suave), no un dibujo sencillo.
+- Se dispersan más: unas se van lejos por la pantalla y otras se mecen más cerca, cada una a su ritmo.
+
 ## 0.32.4 (Las hojas se sueltan del árbol)
 
 Mejorado
