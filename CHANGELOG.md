@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.32.1 (Foto del día más cuadrada)
+
+Mejorado
+- Foto del día: ahora se encuadra y se ve cuadrada (antes era muy alta, 3:4), y las dos fotos de Inicio quedan un poco más grandes. Las que ya subieron se ven centradas en el cuadrado.
+
 ## 0.32.0 (Momentos con la calidad del Latido)
 
 Nuevo
