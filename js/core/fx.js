@@ -247,16 +247,20 @@ export function ambient(host, opts = {}) {
   const make = (k, { top = true, at = null, extra = false } = {}) => {
     const now = performance.now();
     if (k === 'lantern') return { k, x: R(0.1, 0.9) * W, y: top ? H + R(40, 320) : R(0.35, 1) * H, s: R(26, 38) * (W > 1100 ? 1.15 : 1), v: R(-0.011, -0.007), ph: R(0, 6.28), born: now };
+    const tree = !!opts.source && !at && k !== 'snow' && k !== 'hotaru';
     return {
       k, extra, born: now,
       x: at ? at.x + R(-24, 24) : R(-0.05, 1.05) * W,
       y: at ? at.y + R(-12, 12) : k === 'hotaru' ? R(0.1, 0.95) * H : top ? R(-70, -10) : R(0, H),
       s: k === 'snow' ? R(3, 6) : k === 'hotaru' ? R(2.4, 3.6) : k === 'momiji' ? R(13, 19) : R(10, 15), // v0.15.1: bigger, they fall over the cards
       v: k === 'hotaru' ? R(-0.006, 0.006) : k === 'snow' ? R(0.022, 0.04) : R(0.03, 0.055),
-      drift: k === 'hotaru' ? R(-0.006, 0.006) : R(-0.018, 0.004),
+      drift: k === 'hotaru' ? R(-0.006, 0.006) : tree ? R(-0.085, 0.012) : R(-0.018, 0.004),
       ph: R(0, 6.28), spin: R(-0.002, 0.002), flip: R(400, 900), pulse: R(1600, 2800),
       life: k === 'hotaru' ? R(7000, 12000) : 0, color: pal[Math.floor(Math.random() * pal.length)],
       // v0.32.4 (Rowler): the leaves let go of the branch instead of coming from nowhere; each waits its turn on it.
+      // v0.32.4b: they scatter wider: some drift far across the screen, others sway and fall nearer
+      amp: R(0.12, 0.6),
+      pair: k === 'momiji' ? (LEAVES[kind] || LEAVES.momiji)[Math.floor(Math.random() * (LEAVES[kind] || LEAVES.momiji).length)] : null,
       wait: opts.source && !at && k !== 'snow' && k !== 'hotaru' ? now + (top ? R(1200, 7000) : R(300, 9000)) : 0,
     };
   };
@@ -307,7 +311,7 @@ export function ambient(host, opts = {}) {
         continue;
       }
       if (b.k === 'hotaru') { b.x += (b.drift + wind * 0.02) * dt + Math.sin(t / 1200 + b.ph) * 0.15; b.y += b.v * dt + Math.cos(t / 1500 + b.ph) * 0.12; }
-      else { b.x += (b.drift + wind * 0.04) * dt + Math.sin(t / 900 + b.ph) * 0.25; b.y += b.v * dt; }
+      else { b.x += (b.drift + wind * 0.04) * dt + Math.sin(t / 900 + b.ph) * (b.amp || 0.25); b.y += b.v * dt; }
       const gone = b.k === 'hotaru' ? t > b.life : b.y > H + 24 || b.x < -48 || b.x > W + 48;
       if (gone) { if (b.extra) bits.splice(i, 1); else bits[i] = make(b.k); continue; }
       const fadeIn = Math.min(1, t / 900); const fadeOut = b.k === 'hotaru' ? Math.min(1, (b.life - t) / 1200) : 1;
@@ -321,7 +325,7 @@ export function ambient(host, opts = {}) {
       ctx.globalAlpha = fadeIn * (b.k === 'snow' ? 0.9 : 0.88);
       if (b.k === 'snow') { ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(0, 0, b.s, 0, 6.29); ctx.fill(); continue; }
       ctx.rotate(b.ph + b.spin * t); ctx.scale(Math.max(0.15, Math.abs(Math.cos(t / b.flip + b.ph))), 1);
-      if (b.k === 'momiji') leaf(ctx, b.s, b.color);
+      if (b.k === 'momiji') leafSprite(ctx, b);
       else if (b.k === 'plum') estilo.canvasPetal(ctx, b.s * 0.75, b.color);
       else if (b.k === 'leaf') { ctx.scale(0.55, 1.15); estilo.canvasPetal(ctx, b.s * 0.8, b.color); }
       else petal(ctx, b.s, b.color);
@@ -413,6 +417,26 @@ function mapleLeafPath(ctx, s) {
   }
   ctx.quadraticCurveTo(0, s * 0.42, ...P(lobe(0) - 0.3, s * 0.34)); ctx.closePath();
   return { tips: Array.from({ length: n }, (_, k) => P(lobe(k), len(k) * 0.86)) };
+}
+// v0.32.4b (Rowler: the falling leaves did not have the tree's quality): the falling maple leaves are the same
+// painting as the branch's (seven lobes, gradient, veins), drawn once into a small sprite and reused every frame.
+const leafSprites = new Map();
+function leafSprite(ctx, b) {
+  const s = Math.round(b.s * 1.5); const pair = b.pair || LEAVES.momiji[0]; const dpr = Math.min(2, devicePixelRatio || 1);
+  const key = `${pair[0]}${pair[1]}${s}${dpr}`;
+  let sp = leafSprites.get(key);
+  if (!sp) {
+    const side = Math.ceil(s * 2.6);
+    const c = document.createElement('canvas'); c.width = c.height = Math.ceil(side * dpr);
+    const x = c.getContext('2d'); x.scale(dpr, dpr);
+    x.translate(side / 2, side * 0.56);
+    x.strokeStyle = shade(pair[0], 0.8); x.lineCap = 'round'; x.lineWidth = Math.max(0.8, s * 0.07);
+    x.beginPath(); x.moveTo(0, s * 0.3); x.quadraticCurveTo(s * 0.06, s * 0.52, s * 0.02, s * 0.74); x.stroke();
+    x.shadowColor = 'rgba(40,15,10,.22)'; x.shadowBlur = Math.max(1.5, s * 0.12); x.shadowOffsetY = s * 0.05;
+    paintLeaf(x, 0, 0, s, 0, pair, 1, false);
+    sp = { c, side }; leafSprites.set(key, sp);
+  }
+  ctx.drawImage(sp.c, -sp.side / 2, -sp.side * 0.56, sp.side, sp.side);
 }
 function paintLeaf(ctx, x, y, s, rot, pair, flip, dark) {
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(flip, 1);
