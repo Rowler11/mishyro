@@ -5,7 +5,7 @@
 // "En camino" -> "Leídas"). A sealed letter can still be edited until it is opened (2026-11-21): it stays
 // sealed and the partner reads the new version. The seal is symbolic, not encryption.
 // On the author's phone the seed letters show with their own, by status (decision 5).
-import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
+import { ui, util, db, profile, seed, security, CONFIG, theme } from '../core.js';
 import { framePhoto } from '../core/cropper.js';
 import { particles } from '../core/stage.js';
 import { layer as stickerLayer, decorate, loadAlbum, albumView } from './stickers.js';
@@ -104,7 +104,7 @@ async function flyOpen(node, letter) {
   // first time the seal breaks it sparkles and sakura petals fall.
   const first = letter.status !== 'opened';
   const fxLayer = el('div', { class: 'stage-fx' });
-  const stage = el('div', { class: `letter-fly${first ? ' is-first' : ''}`, 'aria-hidden': 'true' }, el('div', { class: 'letter-fly-dim' }), fxLayer, env);
+  const stage = el('div', { class: `letter-fly${first ? ' is-first' : ''}`, 'data-phase': theme.dayPhase(), 'aria-hidden': 'true' }, el('div', { class: 'letter-fly-dim' }), fxLayer, env);
   const p = particles(fxLayer);
   Object.assign(env.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
   document.body.append(stage);

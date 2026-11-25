@@ -350,10 +350,14 @@ function splash({ ready = Promise.resolve(), intro = null, mode = 'daily' } = {}
     const reduced = util.prefersReducedMotion();
     const full = !reduced && (intro ?? introDue(mode));
     const cnStyle = ['rojo', 'azul'].includes(document.documentElement.dataset.style); // v0.22.0: 我爱你 in the Chinese styles
-    const layer = el('div', { class: `splash${full ? ' splash-intro' : ''}`, role: 'status', 'aria-label': 'Aishiteru' },
+    // v0.33.0: the loading screen and the opening follow the real hour (dawn, day, dusk, night)
+    const phase = theme.dayPhase();
+    const greet = { dawn: 'Buenos días', day: 'Buenos días', dusk: 'Buenas tardes', night: 'Buenas noches' }[phase];
+    const layer = el('div', { class: `splash${full ? ' splash-intro' : ''}`, dataset: { phase }, role: 'status', 'aria-label': 'Aishiteru' },
       // A bouquet of lilies opens as the name appears (chosen 2026-11-22).
       cnStyle ? el('div', { class: 'splash-corner', 'aria-hidden': 'true' }, cornerArt()) : null,
       el('div', { class: 'splash-heart splash-bouquet', 'aria-hidden': 'true' }, bouquet()),
+      el('p', { class: 'splash-greet' }, greet),
       el('p', { class: 'splash-for' }, `Para ${profile.paraName() || 'ti'}`),
       ...(cnStyle
         ? [el('span', { class: 'ja', lang: 'zh-Hans', 'data-jp-ok': '' }, '我爱你'), el('small', { class: 'splash-romaji', 'aria-hidden': 'true' }, 'wǒ ài nǐ')]

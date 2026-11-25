@@ -81,7 +81,11 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
     c.innerHTML = CLOUD; // a fixed SVG from this file
     clouds.append(c);
   }
+  // v0.33.0: the opening follows the real hour: by day the warm light and clouds, at dawn and dusk a golden
+  // sky, at night a moon, twinkling stars and a cool light instead of the sun
+  const phase = layer.dataset.phase || 'day';
   deco.append(div('intro-sky'), clouds, div('intro-light'));
+  if (phase === 'night') { deco.append(div('intro-stars'), div('intro-moon')); }
   const canvas = document.createElement('canvas');
   canvas.className = 'splash-canvas';
   canvas.setAttribute('aria-hidden', 'true');
@@ -104,7 +108,7 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
   const bark = mix(norm(tok('--text-2') || '#7A6268'), night ? '#6A4A44' : '#5A3A30', 0.6);
   const barkLight = mix(bark, '#ffffff', 0.45);
   const tipColor = mix(accent, '#ffffff', night ? 0.35 : 0.72);
-  const moteColor = mix(gold, '#ffffff', 0.15);
+  const moteColor = mix(gold, '#ffffff', 0.15); // at night they read as fireflies (more of them, a warmer glow)
   const haloColor = night ? mix(accent, '#ffffff', 0.3) : mix(accent, gold, 0.35);
   const serif = tok('--font-serif') || 'serif';
   // v0.22.0: the heart's word uses the same letters as the titles (brush in Palacio rojo, porcelain serif in Porcelana azul)
@@ -275,7 +279,7 @@ export function playIntro(layer, { ready = Promise.resolve(), onWelcome, onDone 
       ph: R(0, 6.28), s: [R(3, 5), R(5, 8), R(14, 22)][layerN], spin: R(-0.002, 0.002), flipSpeed: R(300, 600), k: Math.floor(Math.random() * 3),
       a: [0.35, 0.7, 0.55][layerN] * R(0.7, 1), blurry: layerN !== 1 };
   });
-  const motes = Array.from({ length: 12 }, () => ({ x: Math.random() * W, y: Math.random() * H, v: R(0.006, 0.016), ph: R(0, 6.28), tw: R(500, 1400), r: R(3, 7) }));
+  const motes = Array.from({ length: phase === 'night' ? 22 : 12 }, () => ({ x: Math.random() * W, y: Math.random() * H, v: R(0.006, 0.016), ph: R(0, 6.28), tw: R(500, 1400), r: R(3, 7) }));
   const burst = Array.from({ length: 40 }, () => { const a = R(0, 6.28); const rr = Math.random() * S * 0.8; return { x: cx + Math.cos(a) * rr, y: cy + Math.sin(a) * rr * 0.9, a, sp: R(0.6, 1.8), s: R(5, 9), ph: R(0, 6.28), k: Math.floor(Math.random() * 3) }; });
 
   const T = { cIn: 4800 + HOLD_P };

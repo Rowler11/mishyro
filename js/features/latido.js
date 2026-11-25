@@ -5,7 +5,7 @@
 // On the other phone the same heart beats the same number of times (and vibrates), with the same
 // moments at 5, 10 and 15. It says nothing about being online or where anyone is: only the heartbeat
 // travels, as a shared 'streaks' record of type 'beat' (plus a caring notice when the app is closed).
-import { ui, util, db, profile, sync } from '../core.js';
+import { ui, util, db, profile, sync, theme } from '../core.js';
 
 const { el, icon } = util;
 // v0.32.6 (Rowler: "que vaya de lento a rápido, como si el ritmo estuviera subiendo"): the heart starts slow
@@ -53,7 +53,7 @@ function stage({ title, sub }) {
   const fx = el('div', { class: 'latido-fx', 'aria-hidden': 'true' });
   const dots = el('div', { class: 'latido-dots', 'aria-hidden': 'true' }, Array.from({ length: MAX_BEATS }, (_, i) => el('i', { class: [5, 10, 15].includes(i + 1) ? 'is-mark' : '' })));
   const core = el('div', { class: 'latido-core' }, ring, heart);
-  const layer = el('div', { class: 'latido-layer', role: 'dialog', 'aria-modal': 'true', 'aria-label': title }, fx, core, count, dots, t, s);
+  const layer = el('div', { class: 'latido-layer', role: 'dialog', 'aria-modal': 'true', 'aria-label': title, 'data-phase': theme.dayPhase() }, fx, core, count, dots, t, s);
   return {
     layer, heart, count, title: t, sub: s,
     beat(n) {

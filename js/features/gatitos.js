@@ -8,7 +8,7 @@
 // - Now and then one of them strolls through Juegos, Mi espacio and the garden.
 // Names and data live only in the couple's synced data, never in the code.
 import * as sounds from '../core/sounds.js';
-import { ui, util, db, profile } from '../core.js';
+import { ui, util, db, profile, theme } from '../core.js';
 import * as time from '../core/time.js';
 import { kittyArt, COATS, coatId } from '../core/kitty.js';
 const coatOf = (pet) => COATS.find((c) => c.id === coatId(pet)) || COATS[5];
@@ -311,6 +311,13 @@ export function perch(card, pet, index, { side = 0.75, enter = false, hold = fal
   if (!card.classList.contains('card')) wrap.classList.add('is-inline');
   wrap.append(k, card, paws);
   card.classList.add('is-perched');
+  // v0.33.0: at night (by the real hour) the friends doze on the edge of their card, with a "zzz"; a tap wakes
+  // them a moment (they talk and open their menu) and they go back to sleep. By day they are awake.
+  if (theme.dayPhase() === 'night') {
+    k.classList.add('is-asleep');
+    wrap.append(el('span', { class: 'kitty-zzz', 'aria-hidden': 'true' }, 'z', el('span', {}, 'z'), el('span', {}, 'z')));
+    k.addEventListener('click', () => { k.classList.remove('is-asleep'); clearTimeout(k._sleepT); k._sleepT = setTimeout(() => k.classList.add('is-asleep'), 12000); });
+  }
   return k;
 }
 
