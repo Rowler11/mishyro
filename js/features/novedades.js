@@ -9,8 +9,9 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.33.3',
+  version: '0.34.0',
   items: [
+    'La barra de arriba ahora es transparente y sin tu foto: el fondo se ve completo y la app se siente más conectada. Tu perfil y tu foto siguen en Ajustes.',
     'Todas las pantallas comparten el mismo blanco (también las ayudas y, de noche, el mismo gris oscuro en las tarjetas).',
     'Las tarjetas de toda la app son blancas, con un papel washi casi invisible, sin tinte cálido.',
     'La racha queda en una sola fila con Enviar amor, y los dos chulitos se prenden cuando cada uno envía amor.',

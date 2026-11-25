@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.34.0 (Barra superior transparente)
+
+Cambiado
+- La barra de arriba ya no tiene fondo blanco ni desenfoque: es transparente y deja ver el fondo de cada pantalla (el cielo de Inicio de día, de tarde y de noche). El nombre y los íconos usan el color del texto del tema, negro de día y blanco de noche.
+- Se quitó la foto de perfil de la barra. El perfil y la foto se cambian en Ajustes > Perfil y datos (y desde "Poner tu foto de perfil" en Primeros pasos).
+
 ## 0.33.3 (Un solo color en toda la app)
 
 Cambiado
