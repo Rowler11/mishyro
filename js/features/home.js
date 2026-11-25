@@ -61,7 +61,7 @@ export function anniversaryRing(start, now = new Date()) {
   return { years, nextYears: years + 1, progress, daysLeft, isToday, next };
 }
 
-function counterCard(start, onNewDay) {
+function counterCard(start, onNewDay, { animate = true } = {}) {
   const big = el('span', { class: 'counter-days' });
   const bigLabel = el('span', { class: 'counter-days-label' });
   const goal = el('p', { class: 'counter-goal' });
@@ -72,14 +72,16 @@ function counterCard(start, onNewDay) {
   const NS = 'http://www.w3.org/2000/svg';
   const svg = (tag, attrs) => { const n = document.createElementNS(NS, tag); Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v)); return n; };
   const ring = svg('svg', { class: 'counter-ring-svg', viewBox: '0 0 200 200', 'aria-hidden': 'true' });
+  const inked = svg('g', { filter: 'url(#enso-ink)' }); // v0.26.0: one brush filter for the whole circle, not one per stroke (lighter on phones)
   // Rough brush edges: a little noise displaces the stroke.
   const ink = svg('filter', { id: 'enso-ink', x: '-10%', y: '-10%', width: '120%', height: '120%' });
-  ink.append(svg('feTurbulence', { type: 'fractalNoise', baseFrequency: '.06', numOctaves: '3', seed: '4' }), svg('feDisplacementMap', { in: 'SourceGraphic', scale: '7' }));
+  ink.append(svg('feTurbulence', { type: 'fractalNoise', baseFrequency: '.06', numOctaves: '2', seed: '4' }), svg('feDisplacementMap', { in: 'SourceGraphic', scale: '7' }));
   const defs = svg('defs', {}); defs.append(ink);
   const dash = { pathLength: '100', 'stroke-dasharray': '100', 'stroke-dashoffset': '100' };
   const arc = svg('path', { class: 'counter-ring-arc', d: ensoArc(82), ...dash });
   const echo = svg('path', { class: 'counter-ring-echo', d: ensoArc(74), ...dash });
-  ring.append(defs, svg('path', { class: 'counter-ring-track', d: ensoArc(82) }), arc, echo);
+  inked.append(svg('path', { class: 'counter-ring-track', d: ensoArc(82) }), arc, echo);
+  ring.append(defs, inked);
   const arcs = [arc, echo];
   let lastTotal = null;
   const paint = () => {
@@ -117,10 +119,11 @@ function counterCard(start, onNewDay) {
   document.addEventListener('visibilitychange', onVis);
   if (!document.hidden) startTimer();
   // The brush paints the circle once, from empty, when Inicio opens.
-  if (!util.prefersReducedMotion()) {
+  if (animate && !util.prefersReducedMotion()) {
     const targets = arcs.map((a) => a.getAttribute('stroke-dashoffset'));
     arcs.forEach((a) => a.setAttribute('stroke-dashoffset', '100'));
-    requestAnimationFrame(() => requestAnimationFrame(() => arcs.forEach((a, i) => { a.classList.add('is-filling'); a.setAttribute('stroke-dashoffset', targets[i]); })));
+    // v0.26.0: it waits for the welcome screen to leave, so it is painted where they can see it.
+    fx.whenClear(8000).then(() => requestAnimationFrame(() => requestAnimationFrame(() => arcs.forEach((a, i) => { a.classList.add('is-filling'); a.setAttribute('stroke-dashoffset', targets[i]); }))));
   }
   return { card, petals, cleanup: () => { stopTimer(); document.removeEventListener('visibilitychange', onVis); } };
 }
@@ -460,11 +463,13 @@ function paintSky(page) {
   const timer = setInterval(tick, 60000);
 }
 
+const paraTitle = () => `Para ${profile.paraName() || 'ti'}`;
+
 export async function render() {
   const page = el('section', { class: 'page page-wide home' });
-  // Same as the welcome splash: the screen is for whoever holds the phone.
-  const header = ui.pageHeader({ title: `Para ${profile.nick(profile.active()) || 'ti'}`, jp: '今', romaji: 'ima' });
-  const body = el('div', { class: 'home-cards' }, ui.skeleton(4));
+  // v0.26.0 (Rowler): like the loading screen, Inicio says the name of who the app is for.
+  const header = ui.pageHeader({ title: paraTitle(), jp: '今', romaji: 'ima' });
+  const body = el('div', { class: 'home-cards' }, ui.skeleton(3, { kind: 'cards' }));
   page.append(header, body);
   // v0.12.0: the season's leaves (fireflies and chōchin at night) fall behind the cards all the time, and a
   // branch (two hanging chōchin at night) in the corner shakes and lets a few more go when tapped.
@@ -486,6 +491,7 @@ export async function render() {
     if (document.documentElement.dataset.seasonal !== 'off' && !page.querySelector('.ambient-canvas')) amb = fx.ambient(page); // switched back on
   });
   cornerWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-seasonal', 'data-style'] });
+  let built = false;
   let cleanups = [];
   const cleanupAll = () => { cleanups.forEach((fn) => fn()); cleanups = []; };
 
@@ -497,14 +503,14 @@ export async function render() {
       console.error(e); return;
     }
     const recv = profile.partnerOf(profile.active());
-    header.querySelector('.page-title').textContent = `Para ${profile.nick(profile.active()) || 'ti'}`;
+    header.querySelector('.page-title').textContent = paraTitle();
     const start = time.parseStart(profile.startDate());
     const playPetals = (layer) => {
       if (util.prefersReducedMotion()) return;
       layer.replaceChildren(...Array.from({ length: 14 }, (_, i) => el('span', { class: 'petal', style: { '--x': `${Math.round(Math.random() * 100)}%`, '--d': `${(i % 7) * 90}ms`, '--r': `${Math.round(Math.random() * 360)}deg` } })));
       setTimeout(() => layer.replaceChildren(), 2600);
     };
-    const counter = start ? counterCard(start, playPetals) : null;
+    const counter = start ? counterCard(start, playPetals, { animate: !built }) : null;
     if (counter) cleanups.push(counter.cleanup);
     const events = todayEvents(data, start, recv);
     const slides = [greetingCard(data, recv), thinkingCard(data, recv), omikujiCard(data)].filter(Boolean);
@@ -535,9 +541,19 @@ export async function render() {
       weekend,
       backupCard(data.meta),
     ].filter(Boolean));
-    ui.stagger(body);
+    // The cards rise in once, after the welcome screen leaves; later redraws (a name changed, news from
+    // the other phone) are quiet: nothing replays.
+    if (!built && !util.prefersReducedMotion()) {
+      body.classList.add('is-waiting');
+      fx.whenClear(8000).then(() => { ui.stagger(body); body.classList.remove('is-waiting'); });
+    }
+    const firstBuild = !built;
+    built = true;
     // v0.18.0: the pets have no card of their own; each one peeks over a different card.
-    import('./gatitos.js').then((m) => m.decorateHome(body)).catch((e) => console.error(e));
+    // v0.26.0: they peek out once the cards are in place (first time with their entrance; redraws stay still).
+    const enterPets = firstBuild;
+    (enterPets ? fx.whenClear(8000).then(() => new Promise((r) => setTimeout(r, 650))) : Promise.resolve())
+      .then(() => import('./gatitos.js')).then((m) => body.isConnected && m.decorateHome(body, { enter: enterPets })).catch((e) => console.error(e));
     // Seasonal decoration while an event is on (San Valentín hearts, Tanabata lanterns…).
     page.querySelector('.season-deco')?.remove();
     import('./eventos.js').then((m) => m.decoration()).then((d) => {
@@ -568,6 +584,10 @@ export async function render() {
   };
 
   await build();
-  const offProfile = profile.onProfileChange(() => build());
+  // Redraw for profile news only when something Inicio shows really changed (the start date, the name
+  // after "Para", who it is): avatars and other records no longer rebuild the whole screen.
+  const sig = () => [profile.paraName(), profile.startDate(), profile.active(), profile.name(profile.active())].join('|');
+  let lastSig = sig();
+  const offProfile = profile.onProfileChange(() => { const n = sig(); if (n !== lastSig) { lastSig = n; build(); } });
   return { node: page, cleanup: () => { cleanupAll(); offProfile(); fx.stopAll(); amb.stop(); cornerWatch.disconnect(); } };
 }

@@ -261,14 +261,24 @@ code { font-size: .8em; color: var(--text-2); }
   border-radius: var(--radius-pill); border: 1px solid var(--border-strong); background: var(--surface); cursor: pointer; font-weight: 500; font-size: .875rem;
 }
 .chip-rail { justify-content: center; min-height: var(--tap); }
-.profile-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
-.profile-initial { display: none; }
-/* App bar: round avatar with the initial; the full name stays in the aria-label. */
+a.profile-chip { color: var(--text); text-decoration: none; }
+/* v0.26.0: the avatar is the profile photo, or the initial when there is none. */
+.profile-avatar { display: inline-grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: var(--accent-soft); font-family: var(--font-serif); font-weight: 700; font-size: .9rem; line-height: 1; }
+.profile-avatar img, .avatar-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* App bar: round avatar; the full name stays in the aria-label. */
 .chip-appbar { width: 40px; height: 40px; min-height: 40px; padding: 0; justify-content: center; border-radius: 50%; border: 0; background: var(--accent-soft); color: var(--text); font-family: var(--font-serif); font-size: 1rem; }
-.chip-appbar .profile-dot, .chip-appbar .profile-text { display: none; }
-.chip-appbar .profile-initial { display: inline; font-weight: 700; }
-:root[data-profile="david"] .chip-appbar { background: color-mix(in srgb, var(--accent-2) 22%, var(--surface)); }
-:root[data-profile="david"] .profile-dot { background: var(--accent-2); }
+.chip-appbar .profile-text { display: none; }
+.chip-appbar .profile-avatar { width: 40px; height: 40px; font-size: 1rem; background: transparent; }
+.chip-appbar:has(.profile-avatar.has-photo) { box-shadow: 0 0 0 2px var(--accent-soft); }
+:root[data-profile="david"] .chip-appbar, :root[data-profile="david"] .profile-avatar { background: color-mix(in srgb, var(--accent-2) 22%, var(--surface)); }
+.profile-avatar.has-photo { background: var(--surface) !important; }
+.avatar-picker { display: flex; align-items: center; gap: var(--space-4); }
+.avatar-picker-side { flex: 1; min-width: 0; }
+.avatar-preview { display: grid; place-items: center; flex: none; width: 88px; height: 88px; border-radius: 50%; overflow: hidden; background: var(--accent-soft); color: var(--text); font-family: var(--font-serif); font-weight: 700; font-size: 2rem; border: 2px solid var(--border-strong); }
+.me-card { display: flex; align-items: center; gap: var(--space-3); color: var(--text); text-decoration: none; }
+.me-avatar { width: 52px; height: 52px; font-size: 1.3rem; border-width: 1px; }
+.seed-import summary { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+.seed-import[open] summary { margin-bottom: var(--space-3); }
 
 /* ---------- cards & lists ---------- */
 .card { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-l); padding: var(--space-4); box-shadow: var(--shadow-1); }
@@ -719,6 +729,9 @@ svg.spin { animation: spin 1.2s linear infinite; }
 .counter-seal { position: absolute; right: 0; bottom: 4%; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; background: var(--accent); color: var(--accent-ink); transform: rotate(-6deg); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-ink) 25%, transparent); }
 .counter-seal .icon { fill: currentColor; stroke: none; }
 .counter-big { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0; margin: 0; }
+.counter-clock { font-variant-numeric: tabular-nums; }
+.counter-card { min-height: 148px; }
+.counter-ring { contain: layout; }
 .counter-days { font-family: var(--font-serif); font-size: clamp(1.9rem, 1.6rem + 1.2vw, 2.4rem); font-weight: 700; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
 .counter-days-label { font-family: var(--font-serif); font-size: .74rem; color: var(--text-2); }
 .counter-goal { margin: 0; font-family: var(--font-serif); font-weight: 700; font-size: 1.05rem; line-height: 1.3; }
@@ -3541,6 +3554,22 @@ html.is-touring .toasts { z-index: 360; top: calc(env(safe-area-inset-top, 0px) 
 @keyframes k-zzz { 0%, 100% { transform: translateY(0); opacity: .55; } 50% { transform: translateY(-6px); opacity: 1; } }
 .kitty-perch.is-inline { justify-self: start; justify-items: start; max-width: 100%; }
 .kitty-perch.is-inline > .segmented { position: relative; z-index: 1; }
+/* v0.26.0: entrances. The card makes room smoothly, the pet rises from behind it and puts its paws on
+   the edge; the napping one walks in from the side of the screen and curls up. */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="off"]) .kitty-perch.is-enter { animation: k-make-room 420ms var(--ease-out, ease-out) both; }
+  :root:not([data-motion="off"]) .kitty-perch.is-enter .kitty-peek { animation: k-rise 760ms cubic-bezier(.3, 1.4, .5, 1) 260ms both; }
+  :root:not([data-motion="off"]) .kitty-perch.is-enter .kitty-paws { animation: k-paws 260ms var(--ease-out, ease-out) 820ms both; }
+  :root:not([data-motion="off"]) .kitty-nap.is-enter { overflow-x: clip; }
+  :root:not([data-motion="off"]) .kitty-nap.is-enter .kitty { animation: k-walk-in 900ms var(--ease-out, ease-out) 120ms both; }
+  :root:not([data-motion="off"]) .kitty-nap.is-enter .kitty-cushion { animation: k-fade 400ms ease-out both; }
+  :root:not([data-motion="off"]) .kitty-nap.is-enter .kitty-zzz { animation: k-fade 500ms ease-out 1100ms both, k-zzz 3s ease-in-out 1600ms infinite; }
+}
+@keyframes k-make-room { from { margin-top: 0; } }
+@keyframes k-rise { from { transform: translateY(46px); } 70% { transform: translateY(-3px); } to { transform: none; } }
+@keyframes k-paws { from { opacity: 0; transform: translateY(5px); } }
+@keyframes k-walk-in { from { opacity: 0; transform: translateX(min(55vw, 260px)) rotate(4deg); } 60% { opacity: 1; transform: translateX(-6px) rotate(-2deg); } to { transform: none; } }
+@keyframes k-fade { from { opacity: 0; } }
 @media (min-width: 900px) {
   .kitty-perch .kitty-peek { width: 84px; top: -52px; left: clamp(6px, calc(var(--kx, 75%) - 42px), calc(100% - 90px)); }
   .kitty-paws { left: clamp(6px, calc(var(--kx, 75%) - 42px), calc(100% - 90px)); width: 84px; }
@@ -3634,6 +3663,9 @@ p, .muted, .small { text-wrap: pretty; }
 .skeleton-grid .skeleton-block { aspect-ratio: 1; border-radius: 12px; }
 .skeleton-cards { display: grid; gap: var(--space-3); }
 .skeleton-cards .skeleton-block { height: 104px; border-radius: var(--radius-l, 18px); }
+.home-cards > .skeleton-cards { grid-column: 1 / -1; }
+.home-cards.is-waiting > * { opacity: 0; }
+.home-cards > .skeleton-cards .skeleton-block:first-child { height: 148px; } /* the counter's place, so it does not jump in */
 .skeleton-rows { display: grid; gap: var(--space-2); }
 .skeleton-rows .skeleton-block { height: 58px; border-radius: 14px; }
 .skeleton-block { display: block; background: linear-gradient(90deg, var(--surface-2), var(--border), var(--surface-2)); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
