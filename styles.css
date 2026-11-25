@@ -4369,3 +4369,10 @@ a.game-tile:hover { border-color: var(--ink); }
 
 /* v0.33.3 · Un solo blanco: también las ayudas y los avisos de cada pantalla */
 .guide-hint { background: var(--paper) var(--grain); }
+
+/* v0.34.0 · Barra superior transparente: sin fondo ni desenfoque, sin foto de perfil; el fondo de cada pantalla se ve completo */
+.appbar { position: relative; background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.appbar .brand-name { color: var(--text); }
+.appbar .flower { fill: var(--accent); }
+.appbar .icon-btn { color: var(--text); background: transparent; }
+.appbar .icon-btn:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }

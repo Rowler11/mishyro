@@ -113,7 +113,7 @@ function buildShell() {
     'aria-label': `${t.title}${cls === 'rail-link' ? '' : ''}`,
   }, el('span', { class: 'tab-icon' }, icon(t.icon)), el('span', { class: 'tab-name' }, t.title));
 
-  // v0.26.0: no switching between the two any more. The avatar (photo, or the initial) opens Perfil,
+  // v0.34.0: the top bar no longer shows the avatar (Perfil is in Ajustes). v0.26.0: no switching between the two any more. The avatar (photo, or the initial) opens Perfil,
   // where the photo is changed. Who uses this device is chosen once, in the setup or by the join code.
   const profileChip = (cls) => el('a', { class: `profile-chip ${cls}`, href: '#/ajustes/perfil', onClick: () => util.haptic('tap') },
     el('span', { class: 'profile-avatar', 'aria-hidden': 'true' }), el('span', { class: 'profile-text' }));
@@ -123,7 +123,7 @@ function buildShell() {
   const skip = el('a', { class: 'skip-link', href: '#main', onClick: (e) => { e.preventDefault(); document.getElementById('main').focus(); } }, 'Saltar al contenido');
   const appbar = el('header', { class: 'appbar' },
     el('a', { class: 'brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.flower({ size: 30 }), el('span', { class: 'brand-name' }, 'Aishiteru')),
-    el('div', { class: 'appbar-actions' }, searchBtn, profileChip('chip-appbar'), panicBtn('panic-appbar')));
+    el('div', { class: 'appbar-actions' }, searchBtn, panicBtn('panic-appbar')));
   const rail = el('nav', { class: 'rail', 'aria-label': 'Navegación principal' },
     el('a', { class: 'brand rail-brand', href: '#/inicio', 'aria-label': 'Aishiteru, ir a Inicio' }, ui.flower({ size: 36 }),
       el('span', { class: 'brand-text' }, el('span', { class: 'brand-name' }, 'Aishiteru'))),
