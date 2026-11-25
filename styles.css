@@ -48,18 +48,18 @@
   --overlay: rgb(10 7 9 / .7);
   --focus: #E8C4D2;
   --pattern-opacity: .07;
-  --paper: #221C1F;
+  --paper: #201B1E;
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .9 0 0 0 0 .92 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23f)'/%3E%3C/svg%3E");
   color-scheme: dark;
 }
 
 :root[data-contrast="high"] {
   --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F2F2F2; --border: #1F1B1A; --border-strong: #000000;
-  --text: #000000; --text-2: #2A2522; --accent: #A3301C; --accent-2: #14213A; --focus: #0035C9; --glow: none; --pattern-opacity: 0;
+  --paper: #FFFFFF; --text: #000000; --text-2: #2A2522; --accent: #A3301C; --accent-2: #14213A; --focus: #0035C9; --glow: none; --pattern-opacity: 0;
 }
 :root[data-contrast="high"][data-theme="night"] {
   --bg: #000000; --surface: #000000; --surface-2: #121212; --border: #FFFFFF; --border-strong: #FFFFFF;
-  --text: #FFFFFF; --text-2: #E8E3F5; --accent: #FF8CC6; --accent-ink: #000000; --accent-2: #7FEFFF; --focus: #FFFF00;
+  --paper: #000000; --text: #FFFFFF; --text-2: #E8E3F5; --accent: #FF8CC6; --accent-ink: #000000; --accent-2: #7FEFFF; --focus: #FFFF00;
 }
 :root[data-font="legible"] { --font-ui: var(--font-legible); --font-serif: var(--font-legible); }
 
@@ -4366,3 +4366,6 @@ a.game-tile:hover { border-color: var(--ink); }
 .love-check.is-on { background: var(--accent); color: var(--accent-ink); animation: love-pop 600ms var(--ease-spring) both; }
 @media (prefers-reduced-motion: reduce) { .love-streak-btn.is-rescue, .love-check.is-on { animation: none; } }
 @keyframes pulse-soft { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent); } }
+
+/* v0.33.3 · Un solo blanco: también las ayudas y los avisos de cada pantalla */
+.guide-hint { background: var(--paper) var(--grain); }
