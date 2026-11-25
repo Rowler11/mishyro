@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.32.2 (Inicio fluido y estilo japonés en todo)
+
+Arreglado
+- Al volver a Inicio (por ejemplo desde Cápsula) ya no parpadea: Inicio carga todas sus tarjetas a la vez, no repite la animación de entrada si ya lo habías visto y la pantalla de carga solo aparece si de verdad tarda. Con el teléfono lento pasa de más de 2 s con saltos a cerca de 1 s sin saltos.
+
+Mejorado
+- Estilo japonés en todo: las tarjetas ahora llevan papel washi (textura fina) en los 3 estilos, de día y de noche. "Ahora mismo", Dormir y soñar, Ánimo, Sueños, Juegos, Toques y foto del día reciben el sello tipo hanko, la línea de tinta y el pincel que ya tenían las demás pantallas.
+- Regla permanente: todo lo que se agregue o se cambie conserva ese aspecto (CLAUDE.md, regla 11).
+
 ## 0.32.1 (Foto del día más cuadrada)
 
 Mejorado

@@ -22,6 +22,7 @@ Contexto permanente para Claude Code en este repositorio. Este archivo es públi
 8. **No rompas lo aprobado.** Haz pruebas de regresión, migraciones de esquema, sube CACHE_VERSION en sw.js y mantén CHANGELOG.md al día.
 9. **Prueba de verdad.** Usa un servidor local con subpath `/mishyro/`, prueba en 390, 820 y 1440 px, revisa la consola y usa solo datos ficticios. Reporta los fallos tal cual.
 10. **Calidad premium (pedido del usuario, 2026-11-25).** La app debe sentirse premium y súper profesional: completa y con cada detalle bien hecho. Cada pedido se resuelve entero y con los extras que lo completan (estados vacíos, confirmaciones, animación suave, accesibilidad, día y noche, los 3 estilos), siempre con costo cero y privacidad.
+11. **Estilo japonés siempre (pedido del usuario, 2026-11-25).** Todo apartado, y todo lo que se agregue, edite o cambie (pantallas, tarjetas, modales, selectores, íconos, juegos, animaciones), conserva el aspecto japonés característico en los 3 estilos (Japonés, Palacio rojo, Porcelana azul), de día y de noche: papel washi con textura, sello hanko, línea de tinta, pincel y patrones (seigaiha, asanoha). Nada pastel ni de estilo ajeno. Colores solo por tokens.
 
 ## Decisiones de diseño ya tomadas
 - Logo: flor de sakura con corazón (`icons/icon.svg`); nada de logos que sean solo una letra o un kanji.

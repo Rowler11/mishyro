@@ -9,10 +9,10 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.32.0',
+  version: '0.32.2',
   items: [
-    'Abrir una carta, la Cápsula del tiempo o canjear un cupón ahora es un momento: la pantalla se oscurece, brilla y caen pétalos, como el corazón del Latido.',
-    'Inicio ya no da un salto al volver: los animalitos aparecen sin mover las tarjetas.',
+    'Volver a Inicio ya no parpadea: carga todo a la vez y sin repetir la animación.',
+    'Las tarjetas de toda la app llevan papel washi, y Ahora mismo, Dormir y soñar, Ánimo y Juegos tienen el sello y la tinta japonesa de siempre.',
   ],
 };
 

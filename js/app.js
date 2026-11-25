@@ -232,7 +232,8 @@ async function render(route) {
     if (router.currentRoute() !== route) return;
   }
   // Keep the current view until the next one is ready; show the skeleton only if it takes a while.
-  const skeleton = setTimeout(() => { if (!quiet && router.currentRoute() === route) main.replaceChildren(ui.skeleton(3, { kind: 'cards' })); }, 250);
+  // v0.32.2: a longer wait before the skeleton (it blinked for a moment on phones); the current view stays until then.
+  const skeleton = setTimeout(() => { if (!quiet && router.currentRoute() === route) main.replaceChildren(ui.skeleton(3, { kind: 'cards' })); }, 1400);
   let node;
   try {
     const mod = await def.load();
