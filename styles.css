@@ -4224,3 +4224,8 @@ a.game-tile:hover { border-color: var(--ink); }
 .dayphoto-slot { border-radius: var(--radius-l); }
 .dayphoto-add { border: 1px dashed var(--accent); }
 .game-tile { border-radius: var(--radius-l); }
+
+/* v0.32.3 (Rowler: the day/night sky "no se acomoda y da un salto"): Inicio's sky and living background are
+   position: fixed, and a transform on the page (the 10px slide of the entrance) makes them relative to the page
+   for 200 ms and then snap to the screen when it ends. Inicio enters with a fade only, so they never jump. */
+:root .home.view-enter, :root[data-dir="back"] .home.view-enter { animation-name: fade-in; }

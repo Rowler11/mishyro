@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.32.3 (El cielo de Inicio ya no salta)
+
+Arreglado
+- Inicio: el fondo de día o noche (cielo, sol o luna y las hojas que caen) se movía y daba un salto al terminar de entrar la pantalla, porque la entrada deslizaba toda la página. Ahora Inicio entra solo con un fundido y el fondo queda quieto desde el primer cuadro.
+
 ## 0.32.2 (Inicio fluido y estilo japonés en todo)
 
 Arreglado
