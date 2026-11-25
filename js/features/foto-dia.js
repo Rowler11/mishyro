@@ -10,7 +10,7 @@ const idOf = (day, who) => `dayphoto:${day}:${who}`;
 async function save(file, onDone) {
   const day = util.localDay(); const me = profile.active(); const id = idOf(day, me);
   try {
-    const p = await framePhoto(file, { aspect: 3 / 4, title: 'Tu foto de hoy' }); // v0.30.0: framed in 3:4
+    const p = await framePhoto(file, { aspect: 1, title: 'Tu foto de hoy' }); // v0.32.1: framed square (was 3:4, too tall)
     const old = await db.get('streaks', id).catch(() => null);
     const mediaId = await db.putMedia(p.blob, { ownerStore: 'streaks', ownerId: id, width: p.width, height: p.height });
     await db.put('streaks', { id, type: 'dayphoto', by: me, day, mediaId, at: util.nowISO(), visibility: 'shared', owner: 'both' });

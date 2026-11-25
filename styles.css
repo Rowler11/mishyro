@@ -3866,8 +3866,8 @@ body.is-dropping::after { content: 'Suelta las fotos para crear un recuerdo'; po
 .layout-row.is-off { opacity: .55; }
 .layout-check { display: flex; align-items: center; gap: 10px; flex: 1; min-height: 40px; }
 .layout-move { display: flex; gap: 2px; }
-.dayphoto-row { display: grid; grid-template-columns: repeat(2, minmax(0, 132px)); justify-content: center; gap: var(--space-3); }
-.dayphoto-slot { position: relative; margin: 0; aspect-ratio: 3 / 4; border-radius: 18px; box-shadow: var(--shadow-1); overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: var(--space-2); text-align: center; font-size: .82rem; color: var(--text-2); background: var(--surface-2); border: 1px solid var(--border); cursor: default; }
+.dayphoto-row { display: grid; grid-template-columns: repeat(2, minmax(0, 150px)); justify-content: center; gap: var(--space-3); }
+.dayphoto-slot { position: relative; margin: 0; aspect-ratio: 1; border-radius: 18px; box-shadow: var(--shadow-1); overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: var(--space-2); text-align: center; font-size: .82rem; color: var(--text-2); background: var(--surface-2); border: 1px solid var(--border); cursor: default; }
 label.dayphoto-slot { cursor: pointer; }
 .dayphoto-add { border-style: dashed; color: var(--accent); }
 .dayphoto-hidden { background: repeating-linear-gradient(45deg, var(--surface-2), var(--surface-2) 8px, var(--surface) 8px, var(--surface) 16px); }
