@@ -240,7 +240,8 @@ function notifyKind(store, r, prev) {
   const me = profile.active();
   if (store === 'thinkingOfYou' && !prev && r.by === me) return 'thinking';
   if (store === 'letters' && r.status === 'sealed' && prev?.n !== 'sealed' && r.author === me) return 'letter';
-  if (store === 'content' && r.kind === 'coupon' && r.sentAt && prev?.n !== 'sent' && (r.from || 'david') === me) return 'coupon';
+  if (store === 'content' && r.kind === 'coupon' && r.sentAt && !String(prev?.n || '').startsWith('sent') && (r.from || 'david') === me) return 'coupon';
+  if (store === 'content' && r.kind === 'coupon' && r.seenCount && r.seenBy === me && prev?.n !== marker(store, r)) return r.seenCount > 1 ? 'couponAgain' : 'couponSeen'; // v0.30.0
   if (store === 'memories' && !prev) return 'memory';
   if (store === 'timeCapsules' && !prev) return 'capsule';
   if (store === 'songs' && !prev && r.by === me) return 'song';
@@ -252,7 +253,7 @@ function notifyKind(store, r, prev) {
   if (store === 'streaks' && r.type === 'dayphoto' && !prev && r.by === me) return 'dayphoto'; // v0.28.0
   return null;
 }
-const marker = (store, r) => (store === 'letters' ? r.status : store === 'content' && r.kind === 'coupon' ? (r.sentAt ? 'sent' : '') : undefined);
+const marker = (store, r) => (store === 'letters' ? r.status : store === 'content' && r.kind === 'coupon' ? (r.sentAt ? `sent${r.seenCount ? `:${r.seenCount}` : ''}` : '') : undefined);
 
 async function flushPush() {
   if (!isLinked() || !keys.has('space') || !navigator.onLine) return;

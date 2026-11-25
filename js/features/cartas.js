@@ -6,7 +6,7 @@
 // sealed and the partner reads the new version. The seal is symbolic, not encryption.
 // On the author's phone the seed letters show with their own, by status (decision 5).
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
-import { compressImage } from '../core/images.js';
+import { framePhoto } from '../core/cropper.js';
 import { layer as stickerLayer, decorate, loadAlbum, albumView } from './stickers.js';
 import { voiceAttach, saveAttached, player as voicePlayer } from './voz.js';
 import { toTrash, TRASH_NOTE } from './papelera.js';
@@ -213,6 +213,7 @@ function editor(existing, { onSaved }) {
     if (!src && keepMedia) { const b = await db.getMedia(keepMedia).catch(() => null); if (b) src = photoUrl = URL.createObjectURL(b); }
     photoBox.replaceChildren(src
       ? el('div', { class: 'photo-tile letter-photo-tile' }, el('img', { src, alt: 'Foto de la carta' }),
+        el('button', { class: 'btn btn-secondary btn-small photo-crop', type: 'button', 'aria-label': 'Recortar o encuadrar la foto', onClick: async () => { const b = photo?.blob || (keepMedia ? await db.getMedia(keepMedia).catch(() => null) : null); if (!b) return; try { photo = await framePhoto(b); keepMedia = null; if (photoUrl) URL.revokeObjectURL(photoUrl); photoUrl = URL.createObjectURL(photo.blob); paintPhoto(); } catch (x) { if (x?.code !== 'CANCEL') ui.toast('No pudimos recortar esa foto.', { tone: 'error' }); } } }, icon('crop', { size: 16 }), el('span', {}, 'Recortar')),
         el('button', { class: 'icon-btn photo-remove', type: 'button', 'aria-label': 'Quitar la foto', onClick: () => { photo = null; keepMedia = null; if (photoUrl) URL.revokeObjectURL(photoUrl); photoUrl = null; paintPhoto(); } }, icon('x', { size: 18 })))
       : el('label', { class: 'photo-add letter-photo-add', for: fileInput.id }, icon('image-plus', { size: 24 }), el('span', {}, 'Agregar una foto (opcional)')),
     fileInput);
@@ -221,7 +222,7 @@ function editor(existing, { onSaved }) {
     const f = fileInput.files[0]; fileInput.value = '';
     if (!f) return;
     busy = true;
-    try { photo = await compressImage(f); keepMedia = null; if (photoUrl) URL.revokeObjectURL(photoUrl); photoUrl = URL.createObjectURL(photo.blob); } catch { ui.toast('No pudimos leer esa foto.', { tone: 'error' }); }
+    try { photo = await framePhoto(f); keepMedia = null; if (photoUrl) URL.revokeObjectURL(photoUrl); photoUrl = URL.createObjectURL(photo.blob); } catch (x) { if (x?.code !== 'CANCEL') ui.toast('No pudimos leer esa foto.', { tone: 'error' }); }
     busy = false; paintPhoto();
   });
   paintPhoto();
@@ -320,7 +321,7 @@ export async function render(ctx) {
     }
     const clear = await flyOpen(node, letter).catch(() => { document.querySelector('.letter-fly')?.remove(); if (node) node.style.visibility = ''; return null; });
     letter = { ...letter, status: 'opened', openedAt: openedAt || util.nowISO() };
-    const m = await letterModal(letter, { flown: !!clear });
+    const m = await letterModal(letter, { flown: !!clear, onDelete: () => removeLetter(letter) });
     clear?.();
     m.result.then(async () => { await load(); draw(); body.querySelector(`.futo[data-id="${CSS.escape(letter.id)}"]`)?.focus({ preventScroll: true }); });
   };
@@ -364,7 +365,8 @@ export async function render(ctx) {
   const removeLetter = async (l) => {
     const yes = await ui.confirmDialog({ title: '¿Borrar esta carta?', message: `“${l.label}”. ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true });
     if (!yes) return;
-    await toTrash('letters', l.id, { label: l.label, what: 'Carta borrada', extraMedia: [l.raw?.mediaId], onRestored: () => load().then(draw) });
+    if (l.kind === 'seed') await toTrash('content', l.id, { label: l.label, what: 'Carta borrada', onRestored: () => load().then(draw) });
+    else await toTrash('letters', l.id, { label: l.label, what: 'Carta borrada', extraMedia: [l.raw?.mediaId], onRestored: () => load().then(draw) });
     await load(); draw();
   };
 
@@ -410,22 +412,30 @@ export async function render(ctx) {
         ui.button({ label: 'Decorar sobre', iconName: 'sticker', small: true, onClick: () => decorateLetter(l) }),
         ui.button({ label: 'Borrar', iconName: 'trash-2', variant: 'ghost', small: true, onClick: () => removeLetter(l) })));
     // A small envelope, two per row. Tapping it shows the letter as it was sent.
+    // v0.30.0 (Rowler): the letters "En camino" carry their own actions right under the envelope, so
+    // reading, editing, decorating and deleting are one tap away (no hidden buttons in a dialog).
     const sent = (l) => {
       const opened = l.status === 'opened';
       const status = l.incomplete ? 'Por completar' : opened ? shortOpened(l.openedAt) : 'Sin abrir';
       const cond = l.label.replace(/^ábreme cuando\s+/i, '');
       const hasPre = /^ábreme cuando\s+/i.test(l.label);
-      return el('button', {
+      const read = () => (l.incomplete || !l.body ? editSealed(l) : letterModal(l, { onDelete: () => removeLetter(l), onEdit: l.status === 'sealed' ? () => editSealed(l) : null }));
+      const env = el('button', {
         class: `futo futo-sent own-letter status-${l.status}${opened ? ' is-opened' : ''}`, type: 'button', dataset: { id: l.id },
-        'aria-label': `${l.label}. Para ${partner}. ${opened ? openedText(l.openedAt) : status}.`,
-        disabled: l.incomplete || !l.body ? true : null,
-        onClick: () => letterModal(l, { onDelete: l.kind === 'own' ? () => removeLetter(l) : null, onEdit: l.status === 'sealed' ? () => editSealed(l) : null }),
+        'aria-label': `${l.label}. Para ${partner}. ${opened ? openedText(l.openedAt) : status}. Toca para leerla.`,
+        onClick: read,
       },
       el('span', { class: 'futo-flap', 'aria-hidden': 'true' }),
       seal(l, { size: 36 }),
       el('span', { class: 'futo-label' }, hasPre ? el('span', { class: 'futo-pre' }, 'Ábreme cuando') : null, hasPre ? cond : l.label),
       el('span', { class: `futo-sent-status${opened ? ' is-read' : ''}`, 'aria-hidden': 'true' }, opened ? icon('check', { size: 14 }) : null, status),
       stickerLayer(l.stickers));
+      const chip = (label, iconName, onClick, extra = '') => el('button', { class: `sent-act${extra}`, type: 'button', 'aria-label': `${label}: ${l.label}`, onClick }, icon(iconName, { size: 16 }), el('span', {}, label));
+      return el('div', { class: 'sent-item', dataset: { id: l.id } }, env,
+        el('div', { class: 'sent-acts', role: 'group', 'aria-label': `Acciones de ${l.label}` },
+          l.status === 'sealed' ? chip('Editar', 'pencil', () => editSealed(l)) : chip('Leer', 'mail-open', read),
+          l.status === 'sealed' && l.kind === 'own' ? chip('Estampillas', 'sticker', () => decorateLetter(l)) : null,
+          chip('Borrar', 'trash-2', () => removeLetter(l), ' is-danger')));
     };
     const empty = !mine.length;
     return el('div', { class: 'cartas-section' },

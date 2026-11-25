@@ -12,7 +12,7 @@ import { ui, util, db, profile } from '../core.js';
 import * as time from '../core/time.js';
 import { kittyArt, COATS, coatId } from '../core/kitty.js';
 const coatOf = (pet) => COATS.find((c) => c.id === coatId(pet)) || COATS[5];
-import { bubble, move, wire, PETS as PAPER } from '../core/pets.js';
+import { bubble, move, wire, longPress, chat, nameOf as paperName, PETS as PAPER } from '../core/pets.js';
 import { draw as drawPaper } from '../core/art.js';
 import { latestByProduct, doseStatus, daysHome, addDays } from './mascotas.js';
 import { photoField, isQuotaError } from './hogar-kit.js';
@@ -185,12 +185,36 @@ export function kittyButton(pet, { index = 0, label = true, onTap } = {}) {
     last = pick(linesFor(pet), last); host.talk(fill(last, pet));
     onTap?.(pet, host);
   });
+  // v0.30.0: holding it opens its card (age, today's mimos, quick actions).
+  longPress(host, () => kittyCard(pet, host, index));
   // Ear twitch now and then, so they feel alive even when nobody touches them.
   if (!util.prefersReducedMotion()) {
     const twitch = () => { if (!host.isConnected) return; host.classList.add('is-twitch'); setTimeout(() => host.classList.remove('is-twitch'), 500); host._tw = setTimeout(twitch, 5000 + Math.random() * 9000); };
     host._tw = setTimeout(twitch, 2500 + Math.random() * 6000);
   }
   return host;
+}
+
+/** The pet's card on long press: its drawing, age, today's mimos from both and quick actions. */
+async function kittyCard(pet, host, index) {
+  const m0 = await mimosToday(pet).catch(() => ({ pet: 0, treat: 0, play: 0, by: new Set() }));
+  const { ageText } = await import('./mascotas.js');
+  const age = ageText(pet.birth); const home = daysHome(pet.arrival);
+  const stat = (label, value) => el('div', { class: 'pet-card-stat' }, el('dt', {}, label), el('dd', {}, value));
+  let m;
+  const act = (kind, label, iconName) => el('button', { class: 'btn btn-secondary', type: 'button', onClick: () => { m.close(); setTimeout(() => (kind === 'photo' ? mischiefEditor(pet) : giveMimo(pet, host, kind)), 220); } }, icon(iconName, { size: 18 }), label);
+  m = ui.openModal({
+    title: pet.name, size: 'sm', className: 'pet-card-modal',
+    body: el('div', { class: 'pet-card' },
+      el('span', { class: 'pet-card-art' }, kittyArt(pet, { index })),
+      el('p', { class: 'pet-card-kind' }, [pet.species ? pet.species[0].toUpperCase() + pet.species.slice(1) : '', pet.breed].filter(Boolean).join(' · ')),
+      el('dl', { class: 'pet-card-stats' },
+        stat('Edad', age || 'Sin fecha'), stat('En casa', home != null ? `${home.toLocaleString('es-CO')} días` : '—'),
+        stat('Mimos hoy', String(m0.pet + m0.play)), stat('Premios hoy', `${m0.treat} de ${TREATS_PER_DAY}`)),
+      (pet.traits || []).length ? el('p', { class: 'pet-card-trait' }, pet.traits.join(' · ')) : null,
+      el('div', { class: 'pet-card-acts' }, act('pet', 'Mimo', 'hand-heart'), act('treat', 'Premio', 'fish'), act('play', 'Jugar', 'feather'), act('photo', 'Travesura', 'camera')),
+      el('button', { class: 'btn btn-ghost btn-small', type: 'button', onClick: () => { m.close(); openPet(pet); } }, icon('paw-print', { size: 16 }), `Ver la página de ${pet.name}`)),
+  });
 }
 
 // ---------- Travesura: quick diary entry ----------
@@ -221,7 +245,7 @@ export function mischiefEditor(pet, { onSaved } = {}) {
 // No section of their own: on Inicio each pet peeks over the top edge of a different card, and on every
 // other screen one of them shows up, a different one per screen and day: peeking over a card or asleep
 // on a cushion at the end. Tap it and it talks and opens a little menu of mimos.
-const SKIP = new Set(['inicio', 'mascotas', 'juegos', 'jibun', 'yoru', 'ciclo', 'buscar', 'modo-cita']);
+const SKIP = new Set(['inicio', 'juegos', 'jibun', 'yoru', 'ciclo', 'buscar', 'modo-cita']);
 const hash = (str) => { let h = 2166136261; for (const ch of str) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
 
 /** Today's mimos of one pet from both people (fresh from the DB, so both phones count). */
@@ -351,24 +375,91 @@ export async function decorateHome(body, { enter = false } = {}) {
   });
 }
 
-/** Any other screen: one pet, different per screen and day, peeking over a card or asleep at the end. */
+// ---------- v0.30.0: friends spread through the app, alive (Rowler 2026-11-25) ----------
+// No more paper band with a background on top of each section: one or two friends (the real pets and
+// the six paper animals, in turns) sit on the cards of the screen itself, breathe, look around, hop now
+// and then and, when two meet, talk to each other. Different per screen and day.
+
+/** A paper animal sitting on the top edge of a card. */
+export function paperPerch(card, id, { side = 0.75, enter = false, partners = [] } = {}) {
+  const wrap = el('div', { class: `amb-perch${enter ? ' is-enter' : ''}`, style: { '--kx': `${Math.round(side * 100)}%` } });
+  card.replaceWith(wrap);
+  const host = wire(el('span', { class: `amb-pet amb-${id}` }, drawPaper(id)), id, { partners });
+  if (!card.classList.contains('card')) wrap.classList.add('is-inline');
+  wrap.append(card, host);
+  return host;
+}
+/** A paper animal resting at the end of a screen, on a soft shadow (no box, no background). */
+export function paperRest(id, { enter = false, partners = [] } = {}) {
+  const box = el('div', { class: `amb-rest${enter ? ' is-enter' : ''}` });
+  const host = wire(el('span', { class: `amb-pet amb-${id}` }, drawPaper(id)), id, { partners });
+  box.append(el('span', { class: 'amb-shadow', 'aria-hidden': 'true' }), host);
+  return box;
+}
+
+/** Small gestures now and then (look, hop, wiggle) so they never feel frozen. */
+export function alive(host) {
+  if (util.prefersReducedMotion() || host._alive) return;
+  host._alive = true;
+  const moves = ['look', 'look', 'hop', 'wiggle'];
+  const tick = () => {
+    if (!host.isConnected) return;
+    if (!document.hidden && !host.classList.contains('is-talking')) move(host, moves[Math.floor(Math.random() * moves.length)]);
+    host._aliveT = setTimeout(tick, 6000 + Math.random() * 9000);
+  };
+  host._aliveT = setTimeout(tick, 3000 + Math.random() * 5000);
+}
+
+const inView = (n) => { const r = n.getBoundingClientRect(); return r.bottom > 40 && r.top < innerHeight - 40; };
+/** When two friends share the screen, they chat a few times while both are visible. */
+function scheduleChat(a, b) {
+  let times = 0;
+  const go = async () => {
+    if (!a.host.isConnected || !b.host.isConnected || times >= 3) return;
+    if (!document.hidden && inView(a.host) && inView(b.host)) { times++; await chat(a, b); }
+    setTimeout(go, 26000 + Math.random() * 18000);
+  };
+  setTimeout(go, 6500 + Math.random() * 4000);
+}
+
+/** Any other screen: one or two friends, different per screen and day, on its cards or at its end. */
 export async function companion(node, id, { enter = true } = {}) {
-  if (!node || !id || SKIP.has(id) || node.querySelector('.kitty-perch, .kitty-nap')) return;
+  if (!node || !id || SKIP.has(id) || node.querySelector('.kitty-perch, .kitty-nap, .amb-perch, .amb-rest')) return;
   // v0.22.0: a pet already waiting on an empty state is this screen's pet; extra ones (built in the same tick) step aside.
   const waiting = [...node.querySelectorAll('.empty-art-pet')];
   waiting.slice(1).forEach((w) => w.replaceWith(util.el('div', { class: 'empty-art', 'aria-hidden': 'true' }, util.icon('jp-sakura', { size: 96, cls: 'empty-icon' }), util.el('span', { class: 'empty-ring' }))));
   if (waiting.length) return;
-  if (!(await showPets())) return;
-  const pets = await livePets();
-  if (!pets.length || !node.isConnected) return;
+  const showReal = await showPets();
+  const pets = showReal ? await livePets().catch(() => []) : [];
+  if (!node.isConnected) return;
   const h = hash(`${id}|${util.localDay()}`);
-  const index = h % pets.length; const pet = pets[index];
-  // Cards, and the pill switch on top of a screen (Para ti · Escribimos…), are good places to peek from.
-  const cards = [...node.querySelectorAll('.card, .segmented')].filter((c) => solidCard(c) && /flex|grid|block/.test(getComputedStyle(c.parentElement).display) && c.parentElement.children.length > 1).slice(0, 6);
-  if (cards.length && (h >>> 4) % 3 !== 0) {
-    perch(cards[(h >>> 8) % cards.length], pet, index, { side: [0.78, 0.22, 0.6][(h >>> 12) % 3], enter });
-  } else {
-    node.append(nap(pet, index, { enter }));
+  // Rowler's rule (2026-11-24): the real cats and the paper animals take turns.
+  const cast = [...pets.map((pet, index) => ({ pet, index })), ...Object.keys(PAPER).map((pid) => ({ id: pid }))];
+  const first = cast[h % cast.length];
+  const rest = cast.filter((c) => c !== first);
+  const second = rest[(h >>> 6) % rest.length];
+  const cards = [...node.querySelectorAll('.card, .segmented')].filter((c) => solidCard(c) && /flex|grid|block/.test(getComputedStyle(c.parentElement).display) && c.parentElement.children.length > 1).slice(0, 8);
+  const two = cards.length >= 2 && (h >>> 3) % 3 !== 0;
+  const placed = [];
+  const put = (who, card, side, atEnd) => {
+    const slot = { name: who.pet ? who.pet.name : paperName(who.id), paperId: who.id || null, host: null };
+    if (who.pet) {
+      slot.host = card && !atEnd ? perch(card, who.pet, who.index, { side, enter }) : (() => { const nb = nap(who.pet, who.index, { enter }); node.append(nb); return nb.querySelector('.kitty'); })();
+    } else {
+      const partners = [() => { const o = placed.find((p) => p !== slot && p.paperId); return o ? { host: o.host, id: o.paperId } : null; }];
+      if (card && !atEnd) slot.host = paperPerch(card, who.id, { side, enter, partners });
+      else { const r = paperRest(who.id, { enter, partners }); node.append(r); slot.host = r.querySelector('.amb-pet'); }
+    }
+    placed.push(slot); alive(slot.host);
+  };
+  const i1 = cards.length ? (h >>> 8) % cards.length : -1;
+  const side1 = [0.78, 0.22, 0.6][(h >>> 12) % 3];
+  put(first, i1 >= 0 ? cards[i1] : null, side1, i1 < 0 || (!two && (h >>> 4) % 4 === 0));
+  if (two) {
+    // The second one sits two cards away when it can, or rests at the end of the screen.
+    const far = cards.findIndex((c, i) => Math.abs(i - i1) >= 2 && c.isConnected && !c.closest('.kitty-perch, .amb-perch'));
+    put(second, far >= 0 ? cards[far] : null, side1 > 0.5 ? 0.24 : 0.76, far < 0);
+    scheduleChat(placed[0], placed[1]);
   }
 }
 
@@ -440,14 +531,15 @@ function emptyPet(key) {
   } else {
     const { pet, index } = who;
     const name = pet.name || '';
-    const bubbleEl = util.el('span', { class: 'empty-pet-bubble', role: 'status' });
     const btn = util.el('button', { class: 'empty-pet', type: 'button', 'aria-label': name ? `${name}, tócalo para un mimo` : 'Gatito, tócalo para un mimo',
       onClick: () => {
         const n = +(btn.dataset.n || 0) + 1; btn.dataset.n = String(n);
-        bubbleEl.textContent = `${name ? `${name}: ` : ''}${WAIT_LINES[(h + n) % WAIT_LINES.length]}`;
+        bubble(btn, name, WAIT_LINES[(h + n) % WAIT_LINES.length]);
         btn.classList.remove('is-mimo'); void btn.offsetWidth; btn.classList.add('is-mimo');
         { const v = voiceOf(pet); if (v) sounds.play(v); } util.haptic('select');
-      } }, util.el('span', { class: 'kitty-body' }, kittyArt(pet, { index })), bubbleEl);
+      } }, util.el('span', { class: 'kitty-body' }, kittyArt(pet, { index })));
+    btn.talk = (t) => bubble(btn, name, t);
+    longPress(btn, () => kittyCard(pet, btn, index));
     art = util.el('div', { class: 'empty-art empty-art-pet' }, btn);
   }
   lastEmpty = { el: art, hash: location.hash, at: performance.now() };

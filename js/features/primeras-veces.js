@@ -3,7 +3,8 @@
 // each page gets a date, a photo, a note and who remembered it. They can add their own, and hide
 // a suggestion that doesn't fit. Shared with both; pages feed the Galería and the Álbum.
 import { ui, util, db, profile, CONFIG } from '../core.js';
-import { compressImage, isQuotaError } from '../core/images.js';
+import { isQuotaError } from '../core/images.js';
+import { framePhoto } from '../core/cropper.js';
 import { openViewer } from '../core/viewer.js';
 import { toTrash, TRASH_NOTE } from './papelera.js';
 
@@ -38,13 +39,14 @@ function editor(page, { onSaved }) {
     if (!url && keep) { const b = await db.getMedia(keep).catch(() => null); if (b) url = URL.createObjectURL(b); }
     box.replaceChildren(url
       ? el('div', { class: 'photo-tile letter-photo-tile' }, el('img', { src: url, alt: 'Foto de esta primera vez' }),
+        el('button', { class: 'btn btn-secondary btn-small photo-crop', type: 'button', 'aria-label': 'Recortar o encuadrar la foto', onClick: async () => { const b = photo?.blob || (keep ? await db.getMedia(keep).catch(() => null) : null); if (!b) return; try { photo = await framePhoto(b); keep = null; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(photo.blob); paint(); } catch (x) { if (x?.code !== 'CANCEL') ui.toast('No pudimos recortar esa foto.', { tone: 'error' }); } } }, icon('crop', { size: 16 }), el('span', {}, 'Recortar')),
         el('button', { class: 'icon-btn photo-remove', type: 'button', 'aria-label': 'Quitar la foto', onClick: () => { photo = null; keep = null; if (url) URL.revokeObjectURL(url); url = null; paint(); } }, icon('x', { size: 18 })))
       : el('label', { class: 'photo-add letter-photo-add', for: file.id }, icon('image-plus', { size: 24 }), el('span', {}, 'Foto (opcional)')), file);
   };
   file.addEventListener('change', async () => {
     const f = file.files[0]; file.value = ''; if (!f) return;
     busy = true;
-    try { photo = await compressImage(f); keep = null; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(photo.blob); } catch { ui.toast('No pudimos leer esa foto.', { tone: 'error' }); }
+    try { photo = await framePhoto(f); keep = null; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(photo.blob); } catch (x) { if (x?.code !== 'CANCEL') ui.toast('No pudimos leer esa foto.', { tone: 'error' }); }
     busy = false; paint();
   });
   paint();

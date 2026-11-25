@@ -308,6 +308,15 @@ export async function putMedia(blob, { ownerStore, ownerId, width, height, durat
   await rawPut('media', withDefaults({ id, blob: data, mime: blob.type, size: blob.size, width, height, duration, ownerStore, ownerId, enc }));
   return id;
 }
+/** v0.30.0: put a new picture in an existing media record (crop/reframe). It keeps its id and its key. */
+export async function replaceMedia(id, blob, { width, height } = {}) {
+  const m = await rawGet('media', id);
+  if (!m || m.deleted) return false;
+  let data = blob; let enc = null;
+  if (m.enc) { enc = await cryptoBox.encryptBytes(m.enc.keyRef, new Uint8Array(await blob.arrayBuffer())); data = null; }
+  await rawPut('media', { ...m, blob: data, enc, mime: blob.type, size: blob.size, width: width ?? m.width, height: height ?? m.height, updatedAt: nowISO() });
+  return true;
+}
 export async function getMedia(id) {
   const m = await rawGet('media', id);
   if (!m || m.deleted) return null;

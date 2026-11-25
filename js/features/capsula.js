@@ -5,6 +5,7 @@
 import { ui, util, db, profile, seed, security, CONFIG } from '../core.js';
 import * as time from '../core/time.js';
 import { voiceAttach, saveAttached, player as voicePlayer } from './voz.js';
+import { framePhoto } from '../core/cropper.js';
 import { compressImage, isQuotaError, MAX_PHOTOS, readVideo, isVideoFile, MAX_VIDEO_SECONDS, lightenVideo, canLightenVideo } from '../core/images.js';
 import { toTrash, TRASH_NOTE } from './papelera.js';
 import { tagsInput } from './hogar-kit.js';
@@ -189,6 +190,17 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
         if (gone.mediaId) removed.push(gone.mediaId);
         paintPhotos(); photoMsg.textContent = gone.video ? `Video ${i + 1} quitado.` : `Foto ${i + 1} quitada.`;
       } }, icon('x', { size: 18 })),
+      p.video ? null : el('button', { class: 'icon-btn photo-crop-mini', type: 'button', 'aria-label': `Recortar la foto ${i + 1}`, onClick: async () => {
+        // v0.30.0: frame a photo before saving (or reframe one already saved).
+        const src = p.blob || (p.mediaId ? await db.getMedia(p.mediaId).catch(() => null) : null);
+        if (!src) return;
+        try {
+          const out = await framePhoto(src);
+          if (p.mediaId) removed.push(p.mediaId);
+          photos[i] = { ...out, url: bag.track(URL.createObjectURL(out.blob)) };
+          paintPhotos(); photoMsg.textContent = `Foto ${i + 1} recortada.`;
+        } catch (x) { if (x?.code !== 'CANCEL') photoMsg.textContent = 'No pudimos recortar esa foto.'; }
+      } }, icon('crop', { size: 16 })),
       i > 0 ? el('button', { class: 'icon-btn photo-first', type: 'button', 'aria-label': `Usar ${p.video ? 'el video' : 'la foto'} ${i + 1} como portada`, onClick: () => {
         photos.unshift(...photos.splice(i, 1)); paintPhotos(); photoMsg.textContent = 'Portada cambiada.';
       } }, icon('star', { size: 16 })) : null));
@@ -222,11 +234,12 @@ function editor(existing, { bag, onSaved, prefill = {} }) {
           }
           photos.push({ ...out, video: true, url: bag.track(URL.createObjectURL(out.blob), true) });
         } else {
-          const out = await compressImage(f);
+          const out = take.length === 1 ? await framePhoto(f) : await compressImage(f);
           photos.push({ ...out, url: bag.track(URL.createObjectURL(out.blob)) });
         }
         paintPhotos();
       } catch (e) {
+        if (e?.code === 'CANCEL') continue;
         if (VIDEO_ERR[e?.code] && isVideoFile(f)) videoErrors.push(`Ese video ${VIDEO_ERR[e.code]}.`);
         else failed++;
       }

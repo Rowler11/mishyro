@@ -362,7 +362,7 @@ export function cornerArt(kind = ambientKind(), { xmas = false } = {}) {
     return svg;
   }
   // v0.15.1 (chosen 2026-11-24, option H): by day a leafy Japanese maple branch (never the welcome
-  // splash's sakura) with a glass furin hanging from it. Its own leaves are what falls over the cards.
+  // splash's sakura); since v0.30.0 nothing hangs from it. Its own leaves are what falls over the cards.
   return mapleArt(kind, xmas);
 }
 
@@ -373,7 +373,6 @@ export const MAPLE = {
   momiji: ['#D8462F', '#EF8A2C', '#B8321F', '#F2B23C'],
   snow: null,
 };
-const TANZAKU = { sakura: ['#F7C3D1', '#FDE4EA'], hotaru: ['#A9D8EE', '#E1F2FA'], momiji: ['#F2A86C', '#FDE1C6'], snow: ['#D6CFE9', '#F0ECF8'] };
 let mseed = 1;
 const mr = (a, b) => { mseed = (mseed * 16807) % 2147483647; return a + ((mseed - 1) / 2147483646) * (b - a); };
 const shade = (hex, k) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');
@@ -383,57 +382,6 @@ function mapleLeaf(x, y, r, a, c) {
   for (const k of [0, 2, 4, 10, 12]) { const g = -Math.PI / 2 + (k * Math.PI) / 7; v += `M${x.toFixed(1)} ${y.toFixed(1)}L${(x + Math.cos(g) * r * 0.8).toFixed(1)} ${(y + Math.sin(g) * r * 0.8).toFixed(1)}`; }
   return `<g transform="rotate(${a.toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"><path d="${d}Z" fill="${c}"/><path d="${v}" stroke="#FFFFFF" stroke-width=".45" opacity=".35"/></g>`;
 }
-function furinArt(kind) {
-  const flower = (cx, cy, r, c) => [0, 1, 2, 3, 4].map((i) => `<ellipse cx="${cx}" cy="${cy - r * 0.55}" rx="${r * 0.42}" ry="${r * 0.6}" fill="${c}" transform="rotate(${i * 72} ${cx} ${cy})"/>`).join('') + `<circle cx="${cx}" cy="${cy}" r="${r * 0.22}" fill="#E7B04A"/>`;
-  const fish = (fx, fy, k, a) => `<g transform="translate(${fx} ${fy}) rotate(${a}) scale(${k})"><path d="M0 0C4-4 10-3.5 12 0C10 3.5 4 4 0 0Z" fill="#E2483A"/><path d="M11.5 0L17-4.5L15.5 0L17 4.5Z" fill="#F06B4F"/><circle cx="3" cy="-.6" r=".7" fill="#3A1A14"/></g>`;
-  const flake = (fx, fy, r, c = '#7AA6C8') => [0, 60, 120].map((a) => `<line x1="${fx - r}" y1="${fy}" x2="${fx + r}" y2="${fy}" stroke="${c}" stroke-width=".9" stroke-linecap="round" transform="rotate(${a} ${fx} ${fy})"/>`).join('');
-  const paint = kind === 'hotaru' ? fish(-9, 15, 0.75, -10) + fish(2, 22, 0.65, 15) + '<path d="M-15 27q4-3 8 0t8 0t8 0t8 0" fill="none" stroke="#4A8FC0" stroke-width="1.1"/>'
-    : kind === 'sakura' ? flower(-6, 14, 5, '#F2A0B8') + flower(6, 21, 4.2, '#F7BCCD') + flower(-3, 25, 3.4, '#EC8FAA')
-      : kind === 'momiji' ? mapleLeaf(-6, 14, 6, -15, '#D8462F') + mapleLeaf(6, 21, 5, 20, '#EF8A2C') + mapleLeaf(-4, 25, 3.8, 5, '#C23A28')
-        : flake(-6, 13, 5) + flake(6, 20, 4) + flake(-3, 25, 3);
-  const tag = kind === 'sakura' ? flower(0, 20, 4, '#FFFFFF') : kind === 'momiji' ? mapleLeaf(0, 20, 5, 10, '#C23A28') : kind === 'hotaru' ? fish(-5, 20, 0.65, 0) : flake(0, 20, 4, '#8B80B4');
-  const dome = 'M-15 30C-15 10-9 1 0 1C9 1 15 10 15 30Z';
-  return `<g class="corner-furin">
-    <line x1="0" y1="0" x2="0" y2="8" stroke="#6A4A3A" stroke-width="1"/>
-    <g transform="translate(0 8)">
-      <ellipse cx="0" cy="1.5" rx="3.4" ry="2.2" fill="#9CC3D6"/>
-      <path d="${dome}" fill="url(#ch-glass)" stroke="#5F8FA8" stroke-width=".9"/>
-      <g clip-path="url(#ch-dome)">${paint}</g>
-      ${kind === 'snow' ? '<path d="M-7 5C-4 1 4 1 7 5C4 6-4 6-7 5Z" fill="#FFFFFF" stroke="#C4D4E2" stroke-width=".5"/>' : ''}
-      <ellipse cx="0" cy="30" rx="15" ry="3" fill="#CFE8F3" stroke="#5F8FA8" stroke-width=".9"/>
-      <ellipse cx="0" cy="30" rx="12.5" ry="1.8" fill="#7FB0C8" opacity=".45"/>
-      <path d="M-10.5 26C-11.5 15-7.5 6-2 3.8" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" opacity=".9"/>
-      <path d="M9 12C10.5 16 11 20 11 24" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity=".6"/>
-      <line x1="0" y1="3" x2="0" y2="40" stroke="#7A5A4A" stroke-width=".8"/>
-      <rect x="-2.4" y="27" width="4.8" height="6" rx="1.6" fill="#E4685A"/>
-      <g transform="translate(0 40)"><g class="corner-tanzaku">
-        <rect x="-7.5" y="0" width="15" height="38" rx="1.2" fill="url(#ch-tz)"/>
-        <rect x="-7.5" y="0" width="15" height="38" rx="1.2" fill="none" stroke="rgba(90,50,40,.22)" stroke-width=".6"/>
-        <line x1="-5" y1="5" x2="5" y2="5" stroke="#C9A14A" stroke-width=".9"/><line x1="-5" y1="33" x2="5" y2="33" stroke="#C9A14A" stroke-width=".9"/>
-        ${tag}<circle cx="0" cy="2.2" r=".9" fill="#7A5A4A"/>
-      </g></g>
-    </g></g>`;
-}
-/** Novenas and Navidad: a gold bell with a red bow hangs from the maple instead of the furin. */
-function xmasBell() {
-  return `<g class="corner-furin">
-    <line x1="0" y1="0" x2="0" y2="8" stroke="#A8301F" stroke-width="1.2"/>
-    <g transform="translate(0 6)"><path d="M0 0l-6 14M0 0l6 14" stroke="#C9302C" stroke-width="2.4" stroke-linecap="round"/><path d="M0 0c-8-8-18-6-14 2 3 5 10 2 14-2zM0 0c8-8 18-6 14 2-3 5-10 2-14-2z" fill="#C9302C" stroke="#8A1E1A" stroke-width=".6"/><path d="M-12-2q6 4 12 2q6 2 12-2" stroke="#D4A943" stroke-width="1" fill="none"/><circle r="2.6" fill="#A8301F"/></g>
-    <g transform="translate(0 10)"><path d="M-11 30C-11 18-7 11 0 11C7 11 11 18 11 30Z" fill="url(#ch-goldb)"/><rect x="-12.5" y="28.5" width="25" height="3.4" rx="1.6" fill="#B8862C"/><circle cx="0" cy="34" r="2.6" fill="#8A5F1A"/><path d="M-6 26C-7 20-5 15-1.5 13" stroke="#FFF4C8" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".8"/></g>
-  </g>`;
-}
-/** What hangs from the maple (the furin, or the bell at Christmas) as its own small picture, so it can sway on its own. */
-function hangArt(kind, xmas) {
-  const tz = TANZAKU[kind] || TANZAKU.momiji;
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('class', 'corner-hang'); svg.setAttribute('viewBox', '-22 0 44 92'); svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
-  svg.innerHTML = `<defs>
-    <radialGradient id="ch-glass" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".97"/><stop offset=".55" stop-color="#DCF0F9" stop-opacity=".85"/><stop offset="1" stop-color="#8DBFD8" stop-opacity=".95"/></radialGradient>
-    <linearGradient id="ch-tz" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${tz[1]}"/><stop offset="1" stop-color="${tz[0]}"/></linearGradient>
-    <linearGradient id="ch-goldb" x1="0" x2="1"><stop offset="0" stop-color="#A87A22"/><stop offset=".4" stop-color="#F3D27A"/><stop offset="1" stop-color="#B8862C"/></linearGradient>
-    <clipPath id="ch-dome"><path d="M-15 30C-15 10-9 1 0 1C9 1 15 10 15 30Z"/></clipPath></defs>${xmas ? xmasBell() : furinArt(kind)}`;
-  return svg;
-}
 // v0.15.2 (asked 2026-11-24): the maple is painted once on a canvas, in the same hand as the welcome
 // splash's branch (tapered bark with light on its top edge, leaves with their own shading and veins), and
 // only the whole picture sways, so scrolling Inicio stays smooth. Leaves by season; bare with snow in winter.
@@ -442,7 +390,6 @@ const LEAVES = {
   hotaru: [['#2A632A', '#5DA24A'], ['#347A33', '#6CB257'], ['#235A24', '#4E9540']],
   momiji: [['#8E1E16', '#E2533A'], ['#A82A1A', '#F08A2C'], ['#B9541F', '#F4B23C'], ['#7E1A16', '#D8462F']],
 };
-export const HANG_AT = { x: 166, y: 55 }; // where the furin hangs, in the 270 x 156 picture
 function mapleLeafPath(ctx, s) {
   const n = 7; const a0 = -Math.PI / 2;
   const lobe = (k) => a0 + (k - 3) * 0.42; const len = (k) => s * (1 - 0.12 * Math.abs(k - 3));
@@ -496,7 +443,6 @@ function paintMaple(canvas, kind) {
   };
   const leafAt = (x, y, dir, size, front) => {
     const pl = mr(2.5, 4.5); const lx = x + Math.cos(dir) * (pl + size * 0.3); const ly = y + Math.sin(dir) * (pl + size * 0.3);
-    if (Math.hypot(lx - HANG_AT.x, ly - HANG_AT.y - 12) < 15) return; // keep the furin in sight
     leaves.push({ x: lx, y: ly, px: x, py: y, s: size, rot: dir + Math.PI / 2 + mr(-0.25, 0.25), pair: pal ? pal[Math.floor(mr(0, pal.length))] : null, flip: mr(0.62, 1) * (mr(0, 1) < 0.5 ? -1 : 1), front });
   };
   const grow = (P, dir, len, bend, w, depth) => {
@@ -545,11 +491,7 @@ function mapleArt(kind, xmas = false) {
   const canvas = document.createElement('canvas');
   canvas.className = 'corner-maple'; canvas.setAttribute('aria-hidden', 'true');
   paintMaple(canvas, kind);
-  const hang = hangArt(kind, xmas);
-  // placed where it hangs; it sways on its own (only its picture moves, so it stays cheap)
-  hang.style.left = `${((HANG_AT.x - 22) / 270) * 100}%`;
-  hang.style.top = `${(HANG_AT.y / 156) * 100}%`;
-  hang.style.width = `${(44 / 270) * 100}%`;
-  box.append(canvas, hang);
+  // v0.30.0 (Rowler): just the branch, no furin or bell hanging from it.
+  box.append(canvas);
   return box;
 }

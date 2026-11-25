@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.29.0';
+const CACHE_VERSION = 'aishiteru-v0.30.0';
 const SHELL = [
   './',
   './styles.css',
@@ -42,7 +42,7 @@ const SHELL = [
   './js/features/intro.js',
   './js/features/preguntas.js', './js/features/canciones.js', './js/features/diario.js', './js/features/animo.js', './js/features/jibun.js', './js/features/retos.js',
   './js/features/calendario.js', './js/features/fechas.js', './js/features/recordatorios.js', './js/core/ics.js', './js/core/dates.js',
-  './js/core/viewer.js', './js/features/galeria.js', './js/features/mapa.js',
+  './js/core/viewer.js', './js/core/cropper.js', './js/features/galeria.js', './js/features/mapa.js',
   './js/features/album.js', './js/features/primeras-veces.js', './js/features/photobooth.js', './js/features/capsula-tiempo.js',
   './js/features/planes.js', './js/features/suenos.js', './js/features/citas.js', './js/features/regalos.js', './js/features/encuentro.js', './js/features/voz.js', './js/features/lenguajes.js', './js/features/gratitud.js', './js/features/insignias.js', './js/features/resumen.js',
   './js/features/hogar-kit.js', './js/features/listas.js', './js/features/mascotas.js', './js/features/gatitos.js', './js/features/recetas.js', './js/features/alcancia.js', './js/features/gastos.js', './js/features/habitos.js', './js/features/rasca.js', './js/features/ciclo.js',
@@ -73,6 +73,7 @@ const SHELL = [
   './fonts/noto-serif-sc-700.woff2',
   './icons/icon.svg',
   './icons/icon-192.png',
+  './icons/badge-96.png', './icons/sc-amor-192.png', './icons/sc-pensando-192.png', './icons/sc-pregunta-192.png',
   './icons/icon-512.png',
   './icons/maskable-512.png',
   './icons/sprite.svg',
@@ -162,22 +163,30 @@ self.addEventListener('fetch', (event) => {
 // ---------- caring notices (Fase A) ----------
 // The push carries only the kind of notice, encrypted by the sender with a key the server does not
 // have. The notice never shows content; without the key it says something generic.
+// v0.30.0 (Rowler): each kind has a few lovely ways to say it, picked at random, so the notices never
+// feel like a system message. Still no names, no titles and nothing they wrote: only the kind.
+// [link, icon, [title, body]...]
 const NOTICES = {
-  thinking: ['Pensando en ti', 'Alguien está pensando en ti 💗', '#/inicio'],
-  letter: ['Te llegó una carta', 'Ábrela en Cartas 💌', '#/cartas'],
-  coupon: ['Te regalaron un cupón', 'Míralo en la Cuponera', '#/cupones'],
-  memory: ['Un recuerdo nuevo', 'Hay algo nuevo en la Cápsula 🌸', '#/capsula'],
-  capsule: ['Una cápsula del tiempo', 'Hay una cápsula nueva para ustedes', '#/inicio'],
-  song: ['Te dedicaron una canción', 'Escúchala en Canciones 🎵', '#/canciones'],
-  question: ['Una pregunta para ti', 'Te espera en Preguntas', '#/preguntas'],
-  love: ['Te llegó amor', 'Te mandaron amor hoy 💗 ¿Le devuelves uno?', '#/inicio'],
-  beat: ['Te llegó un latido', 'Ábrela y siéntelo 💓', '#/inicio'],
-  greetAm: ['Buenos días', 'Alguien te mandó los buenos días ☀️', '#/inicio'],
-  greetPm: ['Buenas noches', 'Alguien te mandó las buenas noches 🌙', '#/inicio'],
-  dayphoto: ['Foto del día', 'Compartieron su foto de hoy. Comparte la tuya para verla 📷', '#/inicio'],
-  hug: ['Te llegó un abrazo', 'Ábrelo y recíbelo 🤗', '#/inicio'],
-  loveRemind: ['¿Ya enviaste amor hoy?', 'Un toque al corazón y su racha sigue 💗', '#/inicio'],
+  thinking: ['#/inicio', 'sc-pensando', ['Pensando en ti', 'Alguien te tiene en la cabeza ahora mismo 💭'], ['Te pensaron', 'Justo ahora alguien se acordó de ti 💗'], ['Un pensamiento para ti', 'Viajó hasta tu teléfono para decirte que te quieren 🌸']],
+  letter: ['#/cartas', 'icon', ['Te llegó una carta 💌', 'Escrita con calma, solo para ti. Ábrela en Cartas'], ['Correo de amor', 'Hay un sobre esperando en Cartas 💌'], ['Una carta nueva', 'Prepárate un té y ábrela con calma 🍵']],
+  coupon: ['#/cupones', 'icon', ['Te regalaron un cupón 🎟️', 'Míralo en la Cuponera y úsalo cuando quieras'], ['Un regalo para canjear', 'Hay un cupón nuevo con tu nombre 🎁']],
+  couponSeen: ['#/cupones', 'icon', ['Abrieron tu cupón 🎟️', 'Ya lo vio. Ahora solo falta que lo canjee 😉'], ['Tu cupón ya fue visto', 'Le llegó tu regalo y lo abrió 💗']],
+  couponAgain: ['#/cupones', 'icon', ['Volvieron a mirar tu cupón', 'Parece que lo está pensando… 😏'], ['Tu cupón otra vez', 'Lo volvió a leer. Alguien tiene ganas de usarlo 💗']],
+  memory: ['#/capsula', 'icon', ['Un recuerdo nuevo 🌸', 'Guardaron algo bonito en la Cápsula'], ['La Cápsula creció', 'Hay un momento nuevo de los dos para ver 📷']],
+  capsule: ['#/inicio', 'icon', ['Una cápsula del tiempo ⏳', 'Alguien guardó algo para el futuro de los dos'], ['Algo para mañana', 'Hay una cápsula nueva esperando su día 🌙']],
+  song: ['#/canciones', 'icon', ['Te dedicaron una canción 🎵', 'Póntela con audífonos y piensa en quien te la mandó'], ['Una canción para ti', 'Alguien encontró una canción que le recordó a ti 🎶']],
+  question: ['#/preguntas', 'sc-pregunta', ['Una pregunta para ti', 'Te espera en Preguntas. Respóndela con el corazón 💬'], ['Quieren saber algo de ti', 'Hay una pregunta nueva esperando tu respuesta ✨']],
+  love: ['#/inicio', 'sc-amor', ['Te llegó amor 💗', 'Te mandaron amor hoy. ¿Le devuelves uno?'], ['Un poquito de amor', 'Alguien tocó su corazón pensando en ti 💗'], ['Amor recibido', 'Tu racha de amor sigue viva. Devuélvelo con un toque 💞']],
+  beat: ['#/inicio', 'sc-amor', ['Te llegó un latido 💓', 'Ábrelo y siente cuánto late por ti'], ['Latidos para ti', 'Un corazón latió por ti. Ábrelo para sentirlo 💓']],
+  greetAm: ['#/inicio', 'icon', ['Buenos días ☀️', 'Alguien te desea el día más bonito'], ['Despierta con amor', 'Te mandaron los buenos días con un beso ☀️']],
+  greetPm: ['#/inicio', 'icon', ['Buenas noches 🌙', 'Que descanses. Alguien se va a dormir pensando en ti'], ['Dulces sueños', 'Te mandaron las buenas noches con un abrazo 🌙']],
+  dayphoto: ['#/inicio', 'icon', ['Foto del día 📷', 'Compartieron su foto de hoy. Comparte la tuya para verla'], ['¿Qué tal tu día?', 'Ya llegó su foto de hoy. Manda la tuya y se ven las dos 📷']],
+  hug: ['#/inicio', 'icon', ['Te llegó un abrazo 🤗', 'Ábrelo y recíbelo fuerte'], ['Un abrazo a distancia', 'Alguien te está abrazando desde lejos 🤗']],
+  loveRemind: ['#/inicio', 'sc-amor', ['¿Ya enviaste amor hoy?', 'Un toque al corazón y su racha sigue 💗'], ['Su racha te espera', 'Un toque de amor antes de que acabe el día 💞']],
 };
+// a soft pattern for each kind (the latido beats like a heart)
+const BUZZ = { beat: [55, 110, 85, 610, 55, 110, 85, 610, 55, 110, 85], love: [40, 80, 40], hug: [120, 60, 220], thinking: [30, 60, 30] };
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
 // Scheduled notices (v0.15.0) come as "r:<kind>:<days before>". Their words are fixed here, so the
 // notice never carries a name, a title or anything else they wrote.
 const REMIND = {
@@ -190,13 +199,14 @@ const REMIND = {
   event: ['tienen un plan juntos', '🗓️', '#/calendario'],
 };
 function noticeText(kind) {
-  if (NOTICES[kind]) return NOTICES[kind];
+  const n = NOTICES[kind];
+  if (n) { const [hash, icon, ...lines] = n; const [title, body] = pick(lines); return [title, body, hash, icon]; }
   const [tag, what, days] = String(kind || '').split(':');
   const r = tag === 'r' && REMIND[what];
-  if (!r) return ['Aishiteru', 'Hay algo nuevo para ti 💗', '#/inicio'];
+  if (!r) return ['Aishiteru', 'Hay algo nuevo para ti 💗', '#/inicio', 'icon'];
   const d = Number(days) || 0;
   const when = d === 0 ? 'Hoy' : d === 1 ? 'Mañana' : `En ${d} días`;
-  return [`${when} ${r[0]}`, `Un detalle para no olvidarlo ${r[1]}`, r[2]];
+  return [`${when} ${r[0]} ${r[1]}`, d === 0 ? 'Que sea un día bonito para los dos 💗' : 'Un detalle para no olvidarlo y prepararlo con cariño', r[2], 'icon'];
 }
 function readNotifyKey() {
   return new Promise((resolve) => {
@@ -226,10 +236,13 @@ async function noticeKind(text) {
 self.addEventListener('push', (event) => {
   event.waitUntil((async () => {
     const kind = await noticeKind(event.data ? event.data.text() : '');
-    const [title, body, hash] = noticeText(kind);
+    const [title, body, hash, icon] = noticeText(kind);
     await self.registration.showNotification(title, {
-      body, tag: kind || 'aishiteru', icon: './icons/icon-192.png', badge: './icons/icon-192.png',
-      ...(kind === 'beat' ? { vibrate: [55, 110, 85, 610, 55, 110, 85, 610, 55, 110, 85], renotify: true } : {}), // v0.22.0: the notice itself beats
+      body, tag: kind || 'aishiteru', lang: 'es', timestamp: Date.now(),
+      icon: `./icons/${icon}-192.png`, badge: './icons/badge-96.png', // v0.30.0: a sakura silhouette in the status bar
+      ...(BUZZ[kind] ? { vibrate: BUZZ[kind] } : {}),
+      ...(kind === 'beat' || kind === 'love' ? { renotify: true } : {}), // v0.22.0: the latido notice itself beats
+      actions: [{ action: 'open', title: kind === 'love' || kind === 'beat' || kind === 'hug' ? 'Devolver 💗' : 'Abrir' }],
       data: { url: new URL(`./${hash}`, self.registration.scope).href },
     });
   })());

@@ -1,7 +1,8 @@
 // Shared pieces of the Fase 4B sections (Mascotas, Alcancía, Gastos, Hábitos, Recetas): one optional
 // photo field, money input in COP, small SVG charts with a hidden table, and original pet silhouettes.
 import { ui, util, db } from '../core.js';
-import { compressImage, isQuotaError } from '../core/images.js';
+import { isQuotaError } from '../core/images.js';
+import { cropImage } from '../core/cropper.js';
 
 const { el, icon } = util;
 const NS = 'http://www.w3.org/2000/svg';
@@ -47,22 +48,30 @@ export function moneyInput({ value = '', placeholder = '0', ...attrs } = {}) {
  * One optional photo. Returns { node, busy(), commit(ownerStore, ownerId) -> mediaId|null, removed(), revoke() }.
  * commit() writes the new photo (if any) and tells which old media can be deleted after saving.
  */
-export function photoField({ mediaId = null, label = 'Foto (opcional)', alt = 'Foto' } = {}) {
+export function photoField({ mediaId = null, label = 'Foto (opcional)', alt = 'Foto', aspect = null, round = false } = {}) {
   let photo = null; let keep = mediaId; let url = null; let busy = false;
   const box = el('div', { class: 'letter-photo' });
   const file = el('input', { type: 'file', accept: 'image/*', class: 'sr-only', id: `ph-${util.uuid().slice(0, 8)}` });
+  // v0.30.0: every photo is framed before saving, and the one already saved can be reframed.
+  const frame = async (src) => {
+    busy = true;
+    try {
+      const c = await cropImage(src, { aspect, round, title: 'Encuadra la foto' });
+      if (c) { photo = c; keep = null; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(c.blob); }
+    } catch { ui.toast('No pudimos leer esa foto.', { tone: 'error' }); }
+    busy = false; paint();
+  };
   const paint = async () => {
     if (!url && keep) { const b = await db.getMedia(keep).catch(() => null); if (b) url = URL.createObjectURL(b); }
     box.replaceChildren(url
       ? el('div', { class: 'photo-tile letter-photo-tile' }, el('img', { src: url, alt }),
+        el('button', { class: 'btn btn-secondary btn-small photo-crop', type: 'button', 'aria-label': 'Recortar o encuadrar la foto', onClick: async () => { const b = photo?.blob || (keep ? await db.getMedia(keep).catch(() => null) : null); if (b) frame(b); } }, icon('crop', { size: 16 }), el('span', {}, 'Recortar')),
         el('button', { class: 'icon-btn photo-remove', type: 'button', 'aria-label': 'Quitar la foto', onClick: () => { photo = null; keep = null; if (url) URL.revokeObjectURL(url); url = null; paint(); } }, icon('x', { size: 18 })))
       : el('label', { class: 'photo-add letter-photo-add', for: file.id }, icon('image-plus', { size: 24 }), el('span', {}, label)), file);
   };
   file.addEventListener('change', async () => {
     const f = file.files[0]; file.value = ''; if (!f) return;
-    busy = true;
-    try { photo = await compressImage(f); keep = null; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(photo.blob); } catch { ui.toast('No pudimos leer esa foto.', { tone: 'error' }); }
-    busy = false; paint();
+    frame(f);
   });
   paint();
   return {

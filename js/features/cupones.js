@@ -5,7 +5,8 @@
 // author sees them). A new coupon has `sentAt: null` until "Regalar"; older ones have no `sentAt`
 // and count as given.
 // Redeem state lives in `couponState` keyed by coupon id (docs/08).
-import { ui, util, db, profile, seed, CONFIG } from '../core.js';
+import { ui, util, db, profile, seed, sync, CONFIG } from '../core.js';
+import { toTrash, TRASH_NOTE } from './papelera.js';
 
 const { el, icon } = util;
 const fmtDate = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -24,6 +25,19 @@ const toOf = (c) => c.to || profile.partnerOf(fromOf(c));
 /** Created but not given yet: only its author sees it, in "Guardados". */
 export const isSaved = (c) => c.sentAt === null;
 
+/**
+ * v0.30.0: a redeem stamp only counts when it was made after the coupon itself. A state left by an old
+ * install (same id, earlier date) or one whose coupon is gone never marks a new coupon as used.
+ */
+export const validState = (c, st) => !!(c && st?.redeemedAt && (!c.createdAt || st.redeemedAt >= c.createdAt.slice(0, 19)));
+/** "Lo vio hoy a las 7:40" / "Lo vio 3 veces, la última el 2 de mayo". */
+const fmtShortDay = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long' });
+export function seenText(c) {
+  if (!c?.seenAt) return '';
+  const d = new Date(c.seenAt); if (Number.isNaN(d.getTime())) return '';
+  const when = util.localDay(d) === util.localDay() ? `hoy a las ${fmtTime.format(d)}` : `el ${fmtShortDay.format(d)}`;
+  return (c.seenCount || 1) > 1 ? `Lo abrió ${c.seenCount} veces, la última ${when}` : `Lo abrió ${when}`;
+}
 export const redeemedText = (iso) => {
   const d = iso ? new Date(iso) : null;
   return d && !Number.isNaN(d.getTime()) ? `Canjeado el ${fmtDate.format(d)} a las ${fmtTime.format(d)}` : 'Canjeado';
@@ -45,7 +59,7 @@ function ticket(c, state, { tab, number, onRedeem, onOpen, onGive }) {
   const no = `Nº ${String(number).padStart(3, '0')}`;
   const who = tab === 'mine' ? `De ${profile.name(fromOf(c))}` : `Para ${profile.name(toOf(c))}`;
   const meta = redeemed ? redeemedText(state.redeemedAt) : expired ? `Venció el ${util.formatDay(c.expiresOn)}`
-    : c.expiresOn ? `Vale hasta el ${util.formatDay(c.expiresOn)}` : 'Sin vencimiento';
+    : tab === 'given' && c.seenAt ? seenText(c) : c.expiresOn ? `Vale hasta el ${util.formatDay(c.expiresOn)}` : 'Sin vencimiento';
   const titleText = pending(c.title) ? 'Cupón sin título' : c.title;
   const soon = tab === 'mine' && !redeemed && isExpiringSoon(c);
   const titleId = `kp-${c.id.replace(/[^a-z0-9]/gi, '')}`;
@@ -72,16 +86,21 @@ function ticket(c, state, { tab, number, onRedeem, onOpen, onGive }) {
 }
 
 /** Full coupon with its description, dedication and the actions that do not fit on the ticket. */
-function detail(c, state, { tab, number, onRedeem, onEdit, onDelete, onShare, onGive }) {
+function detail(c, state, { tab, number, onRedeem, onEdit, onDelete, onShare, onGive, onKeep, onUnredeem, onSeen }) {
   const redeemed = !!state?.redeemedAt;
   const expired = !redeemed && isExpired(c);
   const actions = [];
+  // v0.30.0: every coupon can be deleted (with a confirmation and 30 days in the Papelera).
+  actions.push({ label: 'Borrar', variant: 'ghost', value: 'delete' });
   if (tab === 'mine' && !redeemed && !expired) actions.push({ label: 'Canjear', variant: 'primary', value: 'redeem' });
+  if (tab === 'mine' && redeemed && state?.redeemedBy === profile.active()) actions.push({ label: 'Quitar el sello', variant: 'ghost', value: 'unredeem' });
   if (tab === 'given' || tab === 'saved') {
-    if (c.origin === 'user') actions.push({ label: 'Borrar', variant: 'ghost', value: 'delete' });
     actions.push({ label: 'Editar', variant: 'ghost', value: 'edit' });
+    // Not opened yet and not used: it can go back to "Guardados" (it leaves the partner's "Para ti").
+    if (tab === 'given' && !redeemed && !c.seenAt) actions.push({ label: 'A guardados', variant: 'ghost', value: 'keep' });
     if (!pending(c.title)) actions.push(tab === 'saved' ? { label: 'Regalar', variant: 'primary', value: 'give' } : { label: 'Enviar', variant: 'primary', value: 'share' });
   }
+  if (tab === 'mine' && fromOf(c) !== profile.active()) onSeen?.(c);
   const m = ui.openModal({
     title: pending(c.title) ? 'Cupón sin título' : c.title, kind: 'sheet', className: 'coupon-detail', actions,
     body: el('div', { class: 'stack' },
@@ -89,9 +108,10 @@ function detail(c, state, { tab, number, onRedeem, onEdit, onDelete, onShare, on
       el('p', { class: 'kippu-kicker' }, `${tab === 'mine' ? `Vale por · de ${profile.name(fromOf(c))}` : `Vale por · para ${profile.name(toOf(c))}`} · Nº ${String(number).padStart(3, '0')}`),
       !pending(c.description) && c.description ? el('p', {}, c.description) : null,
       c.dedication ? el('p', { class: 'kippu-dedication' }, `“${c.dedication}”`) : null,
-      el('p', { class: 'muted small' }, redeemed ? redeemedText(state.redeemedAt) : expired ? `Venció el ${util.formatDay(c.expiresOn)}` : c.expiresOn ? `Vale hasta el ${util.formatDay(c.expiresOn)}` : 'No vence.')),
+      el('p', { class: 'muted small' }, redeemed ? redeemedText(state.redeemedAt) : expired ? `Venció el ${util.formatDay(c.expiresOn)}` : c.expiresOn ? `Vale hasta el ${util.formatDay(c.expiresOn)}` : 'No vence.'),
+      tab === 'given' ? el('p', { class: 'kippu-seen' }, icon(c.seenAt ? 'eye' : 'eye-off', { size: 16 }), c.seenAt ? seenText(c) : `${profile.name(toOf(c))} todavía no lo abre.`) : null),
   });
-  m.result.then((v) => ({ redeem: onRedeem, edit: onEdit, delete: onDelete, share: onShare, give: onGive })[v]?.(c));
+  m.result.then((v) => ({ redeem: onRedeem, edit: onEdit, delete: onDelete, share: onShare, give: onGive, keep: onKeep, unredeem: onUnredeem })[v]?.(c));
 }
 
 function editor(existing, { onSaved }) {
@@ -160,7 +180,10 @@ export async function render() {
   const load = async () => {
     const [content, st] = await Promise.all([db.query('content', { index: 'kind', range: IDBKeyRange.only('coupon') }), db.query('couponState')]);
     coupons = content.filter((c) => !c.deleted);
-    states = new Map(st.map((s) => [s.couponId, s]));
+    const byId = new Map(coupons.map((c) => [c.id, c]));
+    states = new Map(st.filter((x) => validState(byId.get(x.couponId), x)).map((x) => [x.couponId, x]));
+    // Old stamps (a previous install, a coupon that no longer exists) are cleaned up for good.
+    for (const x of st) if (!states.has(x.couponId) && x.redeemedBy === profile.active()) db.purge('couponState', x.id).catch(() => {});
   };
 
   const gaveToast = (rec) => ui.toast(`Le regalaste “${rec.title}” a ${profile.name(toOf(rec))}.`, { tone: 'success', action: { label: 'Avisarle', onClick: () => share(rec) } });
@@ -198,13 +221,34 @@ export async function render() {
   };
 
   const remove = async (c) => {
-    const yes = await ui.confirmDialog({ title: '¿Borrar este cupón?', message: `“${c.title}” desaparece de la cuponera.`, confirmLabel: 'Borrar', danger: true });
+    const yes = await ui.confirmDialog({ title: '¿Borrar este cupón?', message: `“${c.title || 'Cupón'}” desaparece de la cuponera. ${TRASH_NOTE}`, confirmLabel: 'Borrar', danger: true });
     if (!yes) return;
-    await db.purge('content', c.id);
+    await toTrash('content', c.id, { label: `Cupón: ${c.title || ''}`, what: 'Cupón borrado', onRestored: () => load().then(draw) });
     await db.purge('couponState', c.id).catch(() => {});
-    ui.toast('Cupón borrado.');
+    util.haptic('select');
     await load(); draw();
   };
+
+  // v0.30.0: back to "Guardados" before the partner opens it (it leaves their "Para ti").
+  const keep = async (c) => {
+    const yes = await ui.confirmDialog({ title: '¿Pasarlo a guardados?', message: `“${c.title}” sale de "Para ti" de ${profile.name(toOf(c))} y vuelve a tus guardados. Lo regalas otra vez cuando quieras.`, confirmLabel: 'Pasar a guardados' });
+    if (!yes) return;
+    try {
+      const fresh = await db.get('content', c.id).catch(() => null);
+      if (fresh?.seenAt) { ui.toast(`${profile.name(toOf(c))} ya lo abrió, así que se queda en el historial.`); await load(); draw(); return; }
+      await db.put('content', { ...(fresh || c), sentAt: null });
+      ui.toast('Volvió a tus guardados.', { tone: 'success' });
+      tab = 'saved'; saveTab(tab); await load(); draw();
+    } catch (e) { console.error(e); ui.toast('No se pudo mover. Inténtalo de nuevo.', { tone: 'error' }); }
+  };
+  const unredeem = async (c) => {
+    const yes = await ui.confirmDialog({ title: '¿Quitar el sello?', message: `“${c.title}” vuelve a "Para ti", sin canjear.`, confirmLabel: 'Quitar el sello' });
+    if (!yes) return;
+    await db.purge('couponState', c.id).catch(() => {});
+    tab = 'mine'; saveTab(tab); await load(); draw();
+  };
+  // Opening a coupon you received tells its giver (their history and a soft notice).
+  const seen = (c) => { markSeen(c).catch((e) => console.error(e)); };
 
   const share = (c) => ui.share({ text: [`Te regalé un cupón en Aishiteru: ${c.title}.`, c.description, c.dedication ? `“${c.dedication}”` : '', c.expiresOn ? `Vale hasta el ${util.formatDay(c.expiresOn)}.` : ''].filter(Boolean).join(' ') });
 
@@ -231,7 +275,7 @@ export async function render() {
     const numbering = (list) => new Map([...list].sort(byDate).map((c, i) => [c.id, i + 1]));
     const recvNo = numbering(received); const fromNo = numbering([...given, ...saved]);
     const free = mine.filter((c) => !states.has(c.id) && !isExpired(c)).length;
-    const handlers = { onRedeem: redeem, onEdit: openEditor, onDelete: remove, onShare: share, onGive: give };
+    const handlers = { onRedeem: redeem, onEdit: openEditor, onDelete: remove, onShare: share, onGive: give, onKeep: keep, onUnredeem: unredeem, onSeen: seen };
     const grid = (list, t, nos) => el('div', { class: 'kippu-grid' }, [...list].sort((a, b) => rank(a) - rank(b) || byDate(a, b)).map((c) => ticket(c, states.get(c.id), {
       tab: t, number: nos.get(c.id), onRedeem: redeem, onGive: give,
       onOpen: (x) => detail(x, states.get(x.id), { tab: t, number: nos.get(x.id), ...handlers }),
@@ -289,4 +333,33 @@ export async function render() {
   draw();
   const offProfile = profile.onProfileChange(async () => { await load(); draw(); });
   return { node: page, cleanup: offProfile };
+}
+
+/** The receiver opened (or read again) a coupon: counted on the coupon, so the giver sees it. */
+export async function markSeen(c) {
+  const fresh = await db.get('content', c.id).catch(() => null);
+  if (!fresh || fresh.deleted) return;
+  await db.put('content', { ...fresh, seenAt: util.nowISO(), seenCount: (Number(fresh.seenCount) || 0) + 1, seenBy: profile.active() }, { userEdit: false });
+}
+
+const SEEN_KEY = 'aishiteru.cupones.seen';
+/** On the giver's phone: a soft toast when the partner opens or re-reads one of their coupons. */
+export function watch() {
+  const known = () => { try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '{}'); } catch { return {}; } };
+  const check = async (quiet = false) => {
+    const me = profile.active(); const k = known(); let changed = false;
+    const list = await db.query('content', { index: 'kind', range: IDBKeyRange.only('coupon') }).catch(() => []);
+    for (const c of list) {
+      if (c.deleted || fromOf(c) !== me || !c.seenCount || c.seenBy === me) continue;
+      if ((k[c.id] || 0) >= c.seenCount) continue;
+      const again = (k[c.id] || 0) > 0;
+      k[c.id] = c.seenCount; changed = true;
+      if (!quiet) ui.toast(again ? `${profile.nick(c.seenBy)} volvió a leer tu cupón “${c.title}” 🎟️` : `${profile.nick(c.seenBy)} abrió tu cupón “${c.title}” 🎟️`, { tone: 'info', timeout: 7000, action: { label: 'Ver', onClick: () => { location.hash = '#/cupones'; } } });
+    }
+    if (changed) { try { localStorage.setItem(SEEN_KEY, JSON.stringify(k)); } catch { /* private mode */ } }
+  };
+  // The first look only learns what was already seen, so old opens do not pop up.
+  let first = true; try { first = localStorage.getItem(SEEN_KEY) == null; } catch { /* private mode */ }
+  check(first);
+  sync.onApplied((stores) => { if (stores.includes('content')) check(); });
 }

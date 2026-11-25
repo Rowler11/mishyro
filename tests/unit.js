@@ -9,6 +9,11 @@ import * as V from '../js/core/vault.js';
 import * as T from '../js/core/temporadas.js';
 import { titleLetters } from '../js/core/letters.js';
 import { activeEvents, forStyle } from '../js/features/eventos.js';
+import { coverScale, clampOffset } from '../js/core/cropper.js';
+import * as LL from '../js/features/lenguajes.js';
+import { ageText } from '../js/features/mascotas.js';
+import { stageText } from '../js/features/latido.js';
+import { validState } from '../js/features/cupones.js';
 
 const KEY = 'unittest';
 const results = [];
@@ -316,6 +321,45 @@ await test('title letters follow the style', () => {
   eq(titleLetters('今', 'azul'), { text: '今天', lang: 'zh-Hans' });
   eq(titleLetters('手紙', 'rojo').text, '情书');
   eq(titleLetters('?', 'rojo').text, '?');
+});
+
+// ---------- v0.30.0 ----------
+await test('cropper: cover zoom and offsets stay inside the frame', () => {
+  eq(coverScale(1000, 500, 300, 300), 0.6);
+  eq(clampOffset(500, -500, 1000, 500, 0.6, 300, 300), { x: 150, y: 0 });
+  eq(clampOffset(10, 0, 1000, 500, 0.6, 300, 300), { x: 10, y: 0 });
+});
+await test('pets: only the year gives an approximate age', () => {
+  const now = new Date(2026, 10, 25);
+  eq(ageText({ y: 2023 }, now), 'Unos 3 años');
+  eq(ageText({ y: 2025 }, now), 'Unos 1 año');
+  eq(ageText({ y: 2026 }, now), 'Menos de 1 año');
+  eq(ageText(null, now), null);
+});
+await test('latido: words grow at 5, 10 and 15', () => {
+  eq(stageText(1, { to: 'Ana' }), 'Tu latido para Ana');
+  eq(stageText(5, { to: 'Ana' }), 'Late fuerte por Ana');
+  eq(stageText(10, {}), 'Tu corazón va a mil');
+  eq(stageText(15, { from: 'Leo' }), '¡Explosión de amor de Leo!');
+});
+await test('coupons: a stamp older than the coupon does not count', () => {
+  const c = { createdAt: '2026-11-20T10:00:00.000Z' };
+  ok(validState(c, { redeemedAt: '2026-11-21T10:00:00' }));
+  ok(!validState(c, { redeemedAt: '2026-11-01T10:00:00' }));
+  ok(!validState(c, {}));
+});
+await test('love languages: order, shares, fit and idea of the week', () => {
+  const a = { palabras: 3, tiempo: 4, regalos: 0, actos: 1, contacto: 2 };
+  const b = { palabras: 1, tiempo: 2, regalos: 1, actos: 2, contacto: 4 };
+  eq(LL.order(a), ['tiempo', 'palabras', 'contacto', 'actos', 'regalos']);
+  eq(LL.order(b).slice(0, 3), ['contacto', 'tiempo', 'actos']);
+  eq(LL.shares(a).tiempo, 40);
+  eq(LL.fit(a, a).kind, 'same');
+  eq(LL.fit(a, b).kind, 'different');
+  eq(LL.fit({ ...a, contacto: 3.5 }, { ...b, tiempo: 3 }).kind, 'close');
+  const list = ['x', 'y', 'z'];
+  eq(LL.weekPick(list, new Date(2026, 10, 23)), LL.weekPick(list, new Date(2026, 10, 29)));
+  eq(LL.weekPick([], new Date()), null);
 });
 
 window.__results = results;

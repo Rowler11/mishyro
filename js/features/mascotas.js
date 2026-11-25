@@ -30,6 +30,11 @@ export const fullDate = (p) => (p && p.y && p.m && p.d ? new Date(p.y, p.m - 1, 
 
 /** "2 años y 3 meses", "5 meses y 12 días", "12 días"; null without a full date. */
 export function ageText(partial, now = new Date()) {
+  // Only the year (v0.30.0): an approximate age.
+  if (partial?.y && !(partial.m && partial.d)) {
+    const n = now.getFullYear() - partial.y;
+    return n <= 0 ? 'Menos de 1 año' : `Unos ${n} ${n === 1 ? 'año' : 'años'}`;
+  }
   const d = fullDate(partial);
   if (!d || d > now) return null;
   const e = time.elapsed(d, now);
@@ -188,16 +193,40 @@ function recordEditor(pet, type, existing, { onSaved }) {
 }
 
 // ---------- profile editor ----------
+// v0.30.0 (Rowler): a date can be exact, without the year, only the year (to know the age) or empty,
+// and a saved date can be removed. Stored as { y, m, d } with nulls for what is not known.
 function partialField(label, value) {
+  const has = (v) => v != null && v !== '';
+  const initial = has(value?.m) && has(value?.d) ? (value.y ? 'full' : 'noyear') : has(value?.y) ? 'year' : 'none';
+  let mode = initial;
   const date = ui.input({ type: 'date', max: util.localDay() });
-  const noYear = el('input', { type: 'checkbox' });
-  if (value?.m && value?.d) { date.value = `${value.y || 2000}-${String(value.m).padStart(2, '0')}-${String(value.d).padStart(2, '0')}`; noYear.checked = !value.y; }
-  const f = ui.field({ label, control: date });
-  f.append(el('label', { class: 'check-inline' }, noYear, el('span', {}, 'No sé el año')));
+  if (has(value?.m) && has(value?.d)) date.value = `${value.y || 2000}-${String(value.m).padStart(2, '0')}-${String(value.d).padStart(2, '0')}`;
+  const thisYear = new Date().getFullYear();
+  const year = ui.input({ type: 'number', inputmode: 'numeric', min: String(thisYear - 40), max: String(thisYear), placeholder: String(thisYear - 1), value: value?.y ? String(value.y) : '' });
+  const dateBox = el('div', { class: 'pdate-row' }, date);
+  const yearBox = el('div', { class: 'pdate-row' }, year, el('span', { class: 'muted small' }, 'La edad se calcula aproximada.'));
+  const err = el('p', { class: 'field-error', role: 'alert' });
+  const paint = () => { dateBox.hidden = !(mode === 'full' || mode === 'noyear'); yearBox.hidden = mode !== 'year'; clear.hidden = mode === 'none'; };
+  const seg = ui.segmented({ label: `${label}: qué sabes`, value: mode, options: [{ value: 'full', label: 'Fecha' }, { value: 'noyear', label: 'Sin año' }, { value: 'year', label: 'Solo año' }, { value: 'none', label: 'No sé' }],
+    onChange: (v) => { mode = v; err.textContent = ''; paint(); } });
+  seg.classList.add('pdate-modes');
+  const clear = el('button', { class: 'btn btn-ghost btn-small pdate-clear', type: 'button', onClick: () => {
+    date.value = ''; year.value = ''; mode = 'none'; seg.querySelector('input[value="none"]')?.click(); paint(); util.haptic?.(8);
+  } }, icon('x', { size: 16 }), el('span', {}, 'Quitar fecha'));
+  const f = el('fieldset', { class: 'field pdate' }, el('legend', { class: 'field-label' }, label), seg, dateBox, yearBox, el('div', { class: 'pdate-foot' }, clear), err);
+  paint();
   f.value = () => {
+    if (mode === 'none') return null;
+    if (mode === 'year') { const y = Number(year.value); return y >= thisYear - 60 && y <= thisYear ? { y, m: null, d: null } : null; }
     if (!date.value) return null;
     const [y, m, d] = date.value.split('-').map(Number);
-    return { y: noYear.checked ? null : y, m, d };
+    return { y: mode === 'noyear' ? null : y, m, d };
+  };
+  f.check = () => {
+    err.textContent = '';
+    if (mode === 'year') { const y = Number(year.value); if (!(y >= thisYear - 60 && y <= thisYear)) { err.textContent = `Escribe un año entre ${thisYear - 60} y ${thisYear}.`; year.focus(); return false; } }
+    if ((mode === 'full' || mode === 'noyear') && !date.value) { err.textContent = 'Elige la fecha o marca "No sé".'; date.focus(); return false; }
+    return true;
   };
   return f;
 }
@@ -259,6 +288,7 @@ function petEditor(existing, { onSaved, onDeleted }) {
     actions: [{ label: 'Cancelar', variant: 'ghost' }, { label: 'Guardar', variant: 'primary', onClick: async () => {
       if (photo.busy()) { err.textContent = 'Espera a que la foto esté lista.'; return false; }
       if (!name.value.trim()) { fName.setError('Escribe su nombre.'); name.focus(); return false; }
+      if (!birth.check() || !arrival.check()) return false;
       const id = p.id || util.uuid();
       try {
         const mediaId = await photo.commit('pets', id);
@@ -373,8 +403,8 @@ export async function render() {
         const row = (k, v) => (v ? el('div', {}, el('dt', {}, k), el('dd', {}, v)) : null);
         const has = pet.color || pet.microchip || pet.traits?.length || pet.favorites || pet.notes;
         return [section('Perfil', [has ? el('dl', { class: 'pet-profile' },
-          row('Nacimiento', pet.birth?.m ? (pet.birth.y ? fmtDay.format(fullDate(pet.birth)) : `${fmtDM.format(new Date(2000, pet.birth.m - 1, pet.birth.d))} (sin año)`) : ''),
-          row('Llegó a casa', pet.arrival?.m ? (pet.arrival.y ? fmtDay.format(fullDate(pet.arrival)) : `${fmtDM.format(new Date(2000, pet.arrival.m - 1, pet.arrival.d))} (sin año)`) : ''),
+          row('Nacimiento', pet.birth?.m ? (pet.birth.y ? fmtDay.format(fullDate(pet.birth)) : `${fmtDM.format(new Date(2000, pet.birth.m - 1, pet.birth.d))} (sin año)`) : pet.birth?.y ? `En ${pet.birth.y} (sin día)` : ''),
+          row('Llegó a casa', pet.arrival?.m ? (pet.arrival.y ? fmtDay.format(fullDate(pet.arrival)) : `${fmtDM.format(new Date(2000, pet.arrival.m - 1, pet.arrival.d))} (sin año)`) : pet.arrival?.y ? `En ${pet.arrival.y} (sin día)` : ''),
           row('Color y señas', pet.color), row('Microchip', pet.microchip),
           pet.traits?.length ? el('div', {}, el('dt', {}, 'Personalidad'), el('dd', { class: 'tag-row' }, pet.traits.map((t) => el('span', { class: 'tag' }, t)))) : null,
           row('Favoritos', pet.favorites), row('Notas', pet.notes)) : empty('Completen su perfil: personalidad, cosas favoritas y señas.')],
