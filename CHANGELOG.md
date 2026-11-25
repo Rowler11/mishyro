@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.31.1 (Unidad visual en todas las secciones)
+
+Mejorado
+- Revisión de las 25 secciones en día, noche y los 3 estilos: los tonos pastel fijos que quedaban (escenas de papel y fotos de recetas vacías) ahora salen del color del estilo elegido, también de noche.
+- Lenguajes del amor: los grupos plegables tienen un área táctil más cómoda.
+- La prueba automática de diseño también revisa "Dormir y soñar".
+
 ## 0.31.0 (Ahora mismo, Dormir y soñar, y un solo estilo)
 
 Nuevo

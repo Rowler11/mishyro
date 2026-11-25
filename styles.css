@@ -1953,7 +1953,7 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .ll-man-a { margin: 2px 0 0; }
 .ll-g { border-top: 1px solid var(--border); padding: var(--space-2) 0; }
 .ll-g:first-of-type { border-top: 0; }
-.ll-g summary { display: flex; align-items: center; gap: var(--space-2); min-height: 40px; }
+.ll-g summary { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; }
 .ll-g summary .icon { color: var(--accent); }
 .ll-g p { margin: var(--space-1) 0; }
 
@@ -2186,7 +2186,7 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .recipe-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); }
 .recipe-card { width: 100%; display: grid; grid-template-rows: auto 1fr; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-m); overflow: hidden; background: var(--paper) var(--grain); color: var(--text); text-align: left; cursor: pointer; box-shadow: var(--shadow-1); }
 .recipe-card:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-.recipe-card-photo { aspect-ratio: 4 / 3; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); overflow: hidden; }
+.recipe-card-photo { aspect-ratio: 4 / 3; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 8%, var(--surface-2)); color: var(--accent); overflow: hidden; }
 .recipe-card-photo img { width: 100%; height: 100%; object-fit: cover; }
 .recipe-card-text { display: grid; gap: 2px; padding: var(--space-3); }
 .recipe-hero { border-radius: var(--radius-m); overflow: hidden; max-height: 260px; }
@@ -3059,9 +3059,9 @@ svg.art { display: block; width: 100%; height: 100%; overflow: visible; }
 }
 .ps-stage { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
 .paper-scene::after { content: ''; position: absolute; inset: auto 0 0; height: 14px; border-radius: 0 0 var(--radius-l) var(--radius-l); background: color-mix(in srgb, var(--tone) 100%, var(--surface-2)); opacity: .55; }
-.paper-scene.tone-lilac { --tone: #E5DDF4; } .paper-scene.tone-green { --tone: #DDEEDF; } .paper-scene.tone-cream { --tone: #F6E7D2; }
-:root[data-theme="night"] .paper-scene { --tone: #3D2A33; } :root[data-theme="night"] .paper-scene.tone-lilac { --tone: #2F2A3D; }
-:root[data-theme="night"] .paper-scene.tone-green { --tone: #26332A; } :root[data-theme="night"] .paper-scene.tone-cream { --tone: #3A3128; }
+/* v0.31.1: the three tones come from the style's own colors (no fixed pastels), so they follow every style and the night */
+.paper-scene.tone-lilac { --tone: color-mix(in srgb, var(--accent-2) 18%, var(--surface-2)); } .paper-scene.tone-green { --tone: color-mix(in srgb, var(--gold) 16%, var(--surface-2)); } .paper-scene.tone-cream { --tone: color-mix(in srgb, var(--gold) 26%, var(--surface-2)); }
+:root[data-theme="night"] .paper-scene { --tone: #3D2A33; }
 .ps-creature { position: absolute; bottom: -2px; width: 92px; height: 92px; z-index: 1; }
 .ps-c0 { left: 14px; } .ps-c1 { left: 92px; width: 78px; height: 78px; }
 .ps-crane { position: absolute; width: 58px; height: 42px; top: 12px; animation: art-drift 7s var(--ease-in-out) infinite; }
