@@ -13,6 +13,7 @@ import * as time from '../core/time.js';
 import * as dates from '../core/dates.js';
 import * as fx from '../core/fx.js';
 
+let homeShown = false; // v0.32.2: the first-time entrance already played in this session
 let petsMod = null; // v0.32.0: gatitos.js once loaded, to place the pets in the same frame
 const { el, icon } = util;
 let seasonShown = false; // the season effect plays the first time Inicio opens in each session
@@ -394,19 +395,17 @@ function comingCard(data, start) {
 // ---------- 7 + 8. "Para hoy": the question of the day, the week's challenge and the mood (Fase 3) ----------
 // A kind hint first when the other one marked a low mood and allowed it (docs/05 Detalles: Ánimo).
 async function todayCard() {
-  const [qa, retos, animo, rem, tc] = await Promise.all([import('./preguntas.js'), import('./retos.js'), import('./animo.js'), import('./recordatorios.js'), import('./capsula-tiempo.js')]);
-  const spaceRow = await import('../core/sync.js').then(async (m) => {
-    const u = m.isLinked() ? await m.lastUsage() : null;
-    return u && u.pct >= m.USAGE_WARN ? { href: '#/ajustes/sincronizar', icon: 'hard-drive', title: u.pct >= 100 ? 'Se llenó el espacio en la nube' : 'La nube se está llenando', sub: 'Mira cuánto queda y qué hacer.' } : null;
-  }).catch(() => null);
-  const [badgeRow, summaryRow, eventRow] = await Promise.all([
-    import('./insignias.js').then((m) => m.homeRow()).catch(() => null), import('./resumen.js').then((m) => m.homeRow()).catch(() => null),
-    import('./eventos.js').then((m) => m.homeRow()).catch(() => null)]);
-  const otdRow = await import('./capsula.js').then((m) => m.homeRow()).catch(() => null);
+  // v0.32.2: everything "Para hoy" needs is asked at the same time (it used to go one step after another,
+  // and it was what made Inicio slow to appear when coming back from another section).
   const me = profile.active();
-  const [pending, week, hint, mine, soon, capsules] = await Promise.all([
-    qa.pendingToday().catch(() => null), retos.ensureWeek().catch(() => null), animo.partnerLowHint().catch(() => null), animo.getMood(util.localDay(), me).catch(() => null),
-    rem.dueSoon().catch(() => []), tc.readyToOpen(me).catch(() => [])]);
+  const ok = (p, fallback = null) => Promise.resolve(p).catch(() => fallback);
+  const [qa, retos, animo, rem, tc, sy] = await Promise.all([import('./preguntas.js'), import('./retos.js'), import('./animo.js'), import('./recordatorios.js'), import('./capsula-tiempo.js'), import('../core/sync.js')]);
+  const [spaceRow, badgeRow, summaryRow, eventRow, otdRow, pending, week, hint, mine, soon, capsules] = await Promise.all([
+    ok(sy.isLinked() ? sy.lastUsage().then((u) => (u && u.pct >= sy.USAGE_WARN ? { href: '#/ajustes/sincronizar', icon: 'hard-drive', title: u.pct >= 100 ? 'Se llenó el espacio en la nube' : 'La nube se está llenando', sub: 'Mira cuánto queda y qué hacer.' } : null)) : null),
+    ok(import('./insignias.js').then((m) => m.homeRow())), ok(import('./resumen.js').then((m) => m.homeRow())),
+    ok(import('./eventos.js').then((m) => m.homeRow())), ok(import('./capsula.js').then((m) => m.homeRow())),
+    ok(qa.pendingToday()), ok(retos.ensureWeek()), ok(animo.partnerLowHint()), ok(animo.getMood(util.localDay(), me)),
+    ok(rem.dueSoon(), []), ok(tc.readyToOpen(me), [])]);
   const rows = [];
   // Cápsula del tiempo (decided 2026-11-20): a notice only on (or after) its opening day.
   // Resumen y Wrapped (a "moment"): only at the end of a month or year and on the anniversary.
@@ -518,7 +517,9 @@ export async function render() {
     if (document.documentElement.dataset.seasonal !== 'off' && !page.querySelector('.ambient-canvas')) amb = fx.ambient(page); // switched back on
   });
   cornerWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-seasonal', 'data-style'] });
-  let built = false;
+  // v0.32.2: the entrance (cards rising one by one, the pets peeking out) plays the first time Inicio shows in a
+  // session. Coming back from another section it is simply there, so nothing blinks or replays.
+  let built = homeShown;
   let cleanups = [];
   const cleanupAll = () => { cleanups.forEach((fn) => fn()); cleanups = []; };
 
@@ -541,23 +542,28 @@ export async function render() {
     if (counter) cleanups.push(counter.cleanup);
     const events = todayEvents(data, start, recv);
     const slides = [greetingCard(data, recv), thinkingCard(data, recv), omikujiCard(data)].filter(Boolean);
-    const today = await todayCard().catch((e) => { console.error(e); return null; });
-    const toques = counter && sync.isLinked() ? await import('./toques.js').then((m) => m.homeCard()).catch(() => null) : null;
-    const dayphoto = counter && sync.isLinked() ? await import('./foto-dia.js').then((m) => m.homeCard({ onChange: build })).catch((e) => { console.error(e); return null; }) : null;
-    const now = counter ? await import('./ahora.js').then((m) => m.homeCard({ onChange: () => {} })).catch((e) => { console.error(e); return null; }) : null; // v0.31.0
-    const meeting = await import('./encuentro.js').then((m) => m.homeCard()).catch(() => null);
-    const weekend = await import('./citas.js').then((m) => m.weekendCard()).catch(() => null);
-    const acc = await import('./home-accesos.js');
-    const favs = await acc.favoritesCard().catch((e) => { console.error(e); return null; });
-    const guide = await import('./guia.js').then((m) => m.homeCard({ onChange: build })).catch(() => null);
+    // v0.32.2 (Rowler: "al volver a Inicio parpadea y no es fluido"): every card loads at the same time
+    // instead of one after the other, so Inicio is ready in about the time of its slowest card.
     // Inicio "Sereno" (chosen 2026-11-24): love is a slim strip inside the counter, no quick-action
     // stars, no season card (now in Calendario); the garden and the map have their own screens.
-    const love = counter ? await import('./amor.js').then((m) => m.homeStrip({ onChange: build })).catch((e) => { console.error(e); return null; }) : null;
+    const linked = counter && sync.isLinked();
+    const soft = (p, log) => p.catch((e) => { if (log) console.error(e); return null; });
+    const [today, toques, dayphoto, now, meeting, weekend, favs, guide, love, lay] = await Promise.all([
+      soft(todayCard(), true),
+      linked ? soft(import('./toques.js').then((m) => m.homeCard())) : null,
+      linked ? soft(import('./foto-dia.js').then((m) => m.homeCard({ onChange: build })), true) : null,
+      counter ? soft(import('./ahora.js').then((m) => m.homeCard({ onChange: () => {} })), true) : null, // v0.31.0
+      soft(import('./encuentro.js').then((m) => m.homeCard())),
+      soft(import('./citas.js').then((m) => m.weekendCard())),
+      soft(import('./home-accesos.js').then((m) => m.favoritesCard()), true),
+      soft(import('./guia.js').then((m) => m.homeCard({ onChange: build }))),
+      counter ? soft(import('./amor.js').then((m) => m.homeStrip({ onChange: build })), true) : null,
+      import('./home-layout.js'),
+    ]);
     if (love) counter.card.append(love);
     const both = bothLine(recv);
     cleanups.push(both.cleanup);
     // v0.28.0: the cards follow the order and choice saved in "Personalizar Inicio".
-    const lay = await import('./home-layout.js');
     const layout = await lay.getLayout().catch(() => ({ order: [], hidden: [] }));
     const custom = el('button', { class: 'btn btn-ghost btn-small home-customize', type: 'button', onClick: () => lay.openEditor({ onSaved: build }) }, icon('sliders-horizontal', { size: 16 }), 'Personalizar Inicio');
     body.replaceChildren(...lay.arrange([
@@ -580,7 +586,7 @@ export async function render() {
     // the other phone) are quiet: nothing replays.
     if (!built && !util.prefersReducedMotion()) {
       body.classList.add('is-waiting');
-      fx.whenClear(8000).then(() => { ui.stagger(body); body.classList.remove('is-waiting'); });
+      fx.whenClear(8000).then(() => { ui.stagger(body); body.classList.remove('is-waiting'); homeShown = true; });
     }
     const firstBuild = !built;
     built = true;

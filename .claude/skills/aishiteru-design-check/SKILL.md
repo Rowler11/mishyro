@@ -9,6 +9,7 @@ Es un regalo: calidad y pulido antes que velocidad. Esta revisión va antes de m
 
 ## 1. Reglas propias (mandan sobre cualquier guía externa)
 - Paletas: día "Sakura" (fondo `#FBF4F3`, acento `#C2405F`); noche "Sakura suave" (fondo `#161214`, acento `#E893AE`, sin brillo ni neón). Nada de tintes que se sientan como un filtro encima. Colores solo por tokens de `styles.css`, nunca hex sueltos en componentes.
+- Estilo japonés siempre (CLAUDE.md regla 11): washi con textura (`var(--grain)`), sello hanko, línea de tinta, pincel y patrones en todo lo nuevo o editado, en los 3 estilos y de día y de noche. Nada pastel.
 - Letras japonesas solo en el título de cada pantalla. Nunca en pestañas, tarjetas, listas, grupos, botones ni modales.
 - Encabezado: flor suelta sin cuadro con el color del tema, nombre en color de acento, avatar redondo con la inicial. El logo con cuadro es solo para ícono, bienvenida, bloqueo y Acerca de.
 - Sin botón flotante (FAB): las acciones van junto al título de la sección.

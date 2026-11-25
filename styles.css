@@ -282,6 +282,8 @@ a.profile-chip { color: var(--text); text-decoration: none; }
 
 /* ---------- cards & lists ---------- */
 .card { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-l); padding: var(--space-4); box-shadow: var(--shadow-1); }
+/* v0.32.2 Oficio japonés: every card is washi paper (surface + grain), so it matches the 3 styles, day and night. */
+.card { background-image: var(--grain); }
 .card-title { font-size: 1.1rem; }
 .card-kicker { font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
 /* Ripple hosts must be positioned so the dot stays inside what was tapped. */
@@ -4196,3 +4198,29 @@ a.game-tile:hover { border-color: var(--ink); }
 .kpx.is-stamped .kpx-ticket { animation: kpx-thud 360ms cubic-bezier(.3, 0, .2, 1); }
 @keyframes kpx-thud { 0% { transform: none; } 30% { transform: scale(.97) translateY(3px); } 100% { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .kpx, .kpx-ticket, .kpx-stamp { animation: none !important; transition: none !important; } }
+
+/* ---------- v0.32.2 Oficio japonés (Rowler: "todos los apartados con el estilo japonés característico") ----------
+   The newer pieces (Ahora mismo, Dormir y soñar, Ánimo, Juegos, Toques, foto del día) get the same craft as the
+   older ones: washi grain on the paper, a vermilion ink line, a hanko-style seal and a brush underline.
+   Colors come only from the style tokens, so Japonés, Palacio rojo and Porcelana azul all look right. */
+.now-half, .now-act, .now-mood, .now-icon, .mood-option, .toque-btn, .dream-tag, .game-tile, .game-hero, .dayphoto-slot:not(.dayphoto-img) { background-image: var(--grain); }
+.now-act.is-on, .now-mood.is-on, .now-icon.is-on, .dream-tag.is-on, .segmented-input:checked + .mood-option { background-image: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--grain); }
+.now-half.is-blank { background-image: none; }
+.now-half { position: relative; overflow: hidden; border-radius: var(--radius-l); box-shadow: var(--shadow-1); }
+.now-half::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--accent); opacity: .8; }
+.now-half.is-blank::before { opacity: .35; }
+.now-badge { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px color-mix(in srgb, var(--accent) 60%, transparent); transform: rotate(-4deg); }
+.now-badge.is-empty { box-shadow: none; transform: none; }
+.now-who { font-family: var(--font-serif); letter-spacing: .1em; color: var(--accent); }
+.dream-card { overflow: hidden; }
+.dream-card::after { content: ''; position: absolute; inset: auto 0 0 0; height: 8px; background: url('./icons/patterns/brush.svg') no-repeat center / 100% 100%; opacity: .35; pointer-events: none; }
+.dream-title, .sleep-big, .sleep-total { letter-spacing: .02em; }
+.dormir .card, .animo .card, .mood-stat { border-radius: var(--radius-l); }
+.sleep-row { border-top: 1px dashed var(--border-strong); }
+.sleep-list > .sleep-row:first-child { border-top: 0; }
+.mood-stat { border-left: 3px solid var(--series-sofia); }
+.mood-stat:has(.s-david) { border-left-color: var(--series-david); }
+.toque-btn { box-shadow: var(--shadow-1); }
+.dayphoto-slot { border-radius: var(--radius-l); }
+.dayphoto-add { border: 1px dashed var(--accent); }
+.game-tile { border-radius: var(--radius-l); }
