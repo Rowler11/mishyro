@@ -1067,7 +1067,7 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.locator('label.segmented-option', { hasText: '1 hora antes' }).click();
     await page.getByRole('button', { name: 'Guardar' }).click();
     await page.waitForTimeout(500);
-    ok('calendario: new date shows on its day with a dot', (await page.locator('.cal-day .cal-event-title').count()) === 1 && (await page.locator('.cal-cell.is-selected .dot-cita').count()) === 1);
+    ok('calendario: new date shows on its day with a dot', (await page.locator('.cal-day .cal-event-title', { hasText: 'Cena, sushi' }).count()) === 1 && (await page.locator('.cal-cell.is-selected .dot-cita').count()) === 1);
     const one = await dl(() => page.locator('.cal-day').getByRole('button', { name: 'Al teléfono' }).click());
     ok('calendario: .ics escapes text, keeps the time and adds the alarm', one.includes('SUMMARY:Cena\\, sushi\\; y cine') && /DTSTART:\d{8}T193000/.test(one) && one.includes('TRIGGER:-PT1H') && one.includes('\r\n'));
     await page.getByRole('button', { name: 'Nueva cita' }).click();
@@ -1927,7 +1927,7 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('7 ajustes: las hojas de Inicio se apagan', await page.evaluate(() => document.documentElement.dataset.seasonal) === 'off');
     for (const n of ['Campanilla', 'Papel', 'Sello']) await page.getByRole('button', { name: n, exact: true }).click();
     ok('7 ajustes: los sonidos se escuchan antes de activarlos (sin errores)', errs.length === 0, errs.join(' | '));
-    ok('7 sonido: apagado por defecto', await page.evaluate(() => document.documentElement.dataset.sound) === 'off');
+    ok('7 sonido: encendido por defecto (suaves, v0.26.0)', await page.evaluate(() => document.documentElement.dataset.sound) === 'on');
     await reopen();
     await page.waitForTimeout(1500);
     ok('12 hojas apagadas: Inicio queda sin fondo vivo', await page.$('.ambient-canvas') === null && await page.$('.fx-canvas') === null);
@@ -2263,9 +2263,11 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.goto(BASE);
     await page.getByRole('link', { name: 'Empezar desde cero' }).click();
     await page.setInputFiles('#seed-file', SEED);
+    // v0.26.0: the summary shows before importing (the flow then goes on to Sus datos)
+    await page.getByRole('button', { name: 'Importar' }).waitFor();
+    ok('14 Empezar: el resumen dice que cartas, cupones y recuerdos empiezan vacíos', /empiezan vacíos/.test(await page.locator('main').textContent()));
     await page.getByRole('button', { name: 'Importar' }).click();
     await page.getByRole('button', { name: /Leo/ }).click();
-    ok('14 Empezar: el resumen dice que cartas, cupones y recuerdos empiezan vacíos', /empiezan vacíos/.test(await page.locator('main').textContent()));
     for (const n of ['Todo bien', 'Luego', 'Ahora no', 'Continuar', 'Terminar', 'Saltar']) await page.getByRole('button', { name: n }).click();
     await page.waitForFunction(() => location.hash === '#/inicio');
     await page.waitForSelector('.guide-card');
@@ -2550,7 +2552,7 @@ async function exampleContent(page, { reload = true } = {}) {
     let seenPerch = false; let seenNap = false; let onePer = true;
     for (const r of ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']) {
       await go(r, 'main h1'); await page.waitForTimeout(900);
-      const n = await page.locator('main .kitty-perch, main .kitty-nap, main .empty-pet').count();
+      const n = await page.locator('main .kitty-perch, main .kitty-nap, main .empty-art-pet').count();
       if (n !== 1) onePer = false;
       if (await page.locator('main .kitty-perch').count()) seenPerch = true;
       if (await page.locator('main .kitty-nap').count()) seenNap = true;

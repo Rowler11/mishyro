@@ -14,6 +14,8 @@ Nuevo
 
 Arreglado
 - Los botones tipo chip de Buscar (0.28.0) ya no cambian el estilo de los demás chips de la app.
+- Inicio: con tres mascotas, a veces dos caían sobre la misma tarjeta y una no se veía; ahora cada una tiene la suya.
+- Pruebas al día con lo que cambió en 0.23 a 0.26 (sonidos encendidos por defecto, animalitos de papel en las pantallas vacías, el resumen antes de importar).
 
 Ya existían
 - Lista de deseos con sorpresa oculta (Regalos secretos), meta de ahorro que se llena (Alcancía con el Fuji y el maneki-neko) y resumen mensual de gastos con gráfico.

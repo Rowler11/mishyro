@@ -326,7 +326,7 @@ export async function decorateHome(body, { enter = false } = {}) {
   if (!(await showPets())) return;
   const pets = await livePets();
   if (!pets.length || !body.isConnected || body.querySelector(':scope > .kitty-perch')) return;
-  const cards = [...body.children].filter((c) => c.classList?.contains('card') && !c.classList.contains('counter-card') && solidCard(c));
+  const cards = [...body.children].filter((c) => (c.classList?.contains('card') || c.classList?.contains('home-card')) && !c.classList.contains('counter-card') && solidCard(c));
   // Inicio "Sereno" (v0.19.0) has fewer cards: when there are more pets than cards, the counter takes one too.
   const counter = body.querySelector(':scope > .counter-card');
   if (cards.length < pets.length && counter && solidCard(counter)) cards.unshift(counter);
@@ -337,8 +337,14 @@ export async function decorateHome(body, { enter = false } = {}) {
   const day = Number(util.localDay().replace(/-/g, ''));
   const step = Math.max(1, Math.floor(cards.length / pets.length));
   const order = care ? [care.pet, ...pets.filter((p) => p !== care.pet)] : pets;
+  const used = new Set();
   order.forEach((pet, n) => {
-    const card = cards[(n * step + (care && n === 0 ? 0 : day % 2)) % cards.length];
+    // Each one gets its own card: when the spread lands on a taken one, it moves to the next free card.
+    let i = (n * step + (care && n === 0 ? 0 : day % 2)) % cards.length;
+    for (let t = 0; t < cards.length && used.has(i); t++) i = (i + 1) % cards.length;
+    if (used.has(i)) return;
+    used.add(i);
+    const card = cards[i];
     if (!card || card.closest('.kitty-perch')) return;
     const k = perch(card, pet, pets.indexOf(pet), { side: [0.78, 0.2, 0.55, 0.36, 0.66][n % 5], enter });
     if (care && n === 0) { k.closest('.kitty-perch').before(care.node); setTimeout(() => { if (k.isConnected) move(k); }, 600); }
