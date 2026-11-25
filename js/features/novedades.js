@@ -9,11 +9,12 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.29.0',
+  version: '0.30.0',
   items: [
-    'Juegos: torneo de la semana con trofeos de papel, un reto en equipo que solo ganan si lo cumplen los dos y "Noche de juegos" con 3 al azar y reloj.',
-    'Gastos: dividir la cuenta de una salida con propina y un tope al mes para citas y salidas.',
-    'Mascotas: álbum por año con su peso y la cartilla de salud para imprimir o guardar en PDF.',
+    'Fotos: ahora puedes encuadrarlas (mover, acercar y girar) al subirlas, y "Recortar" cualquier foto ya guardada.',
+    'Latido rediseñado: mantén el círculo de los días; a los 5, 10 y 15 latidos pasa algo especial. Tócalo una vez para ver cómo funciona.',
+    'Los animalitos hablan arriba, se reparten con vida por las pantallas, charlan entre ellos y al mantenerlos muestran su tarjeta.',
+  ],
   ],
 };
 

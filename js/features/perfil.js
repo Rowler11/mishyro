@@ -164,11 +164,28 @@ function dateEditor(rec, done) {
   const whoBox = el('div', { class: 'field', hidden: kind !== 'birthday' },
     el('span', { class: 'field-label' }, 'De quién'),
     ui.segmented({ label: 'De quién es el cumpleaños', value: who, options: profile.PEOPLE.map((p) => ({ value: p, label: profile.name(p) })), onChange: (v) => { who = v; } }));
+  // v0.30.0 (Rowler): a pet date is tied to a pet. Its birthday or arrival day is saved on the pet itself,
+  // so Mascotas, Inicio, Fechas and the Calendario all show the same thing. A new name creates the pet.
+  const petSel = el('select', { class: 'input' });
+  const petNew = ui.input({ maxlength: 40, placeholder: 'Nombre de la mascota' });
+  let petRole = r.petRole || 'birth';
+  const petBox = el('div', { class: 'stack', hidden: kind !== 'pet' },
+    ui.field({ label: '¿De cuál mascota?', control: petSel }),
+    el('div', { class: 'field pet-new-box', hidden: true }, ui.field({ label: 'Nueva mascota', control: petNew, hint: 'Se agrega a Mascotas con esta fecha.' })),
+    el('div', { class: 'field' }, el('span', { class: 'field-label' }, 'Qué día es'),
+      ui.segmented({ label: 'Qué día es', value: petRole, options: [{ value: 'birth', label: 'Cumpleaños' }, { value: 'arrival', label: 'Llegó a casa' }, { value: 'other', label: 'Otro' }], onChange: (v) => { petRole = v; } })));
+  db.query('pets').then((list) => {
+    const pets = list.filter((p) => !p.deleted);
+    petSel.replaceChildren(...pets.map((p) => el('option', { value: p.id, selected: p.id === r.personOrPetId }, p.name)), el('option', { value: '__new' }, '+ Otra mascota'));
+    if (!pets.length) petSel.value = '__new';
+    petBox.querySelector('.pet-new-box').hidden = petSel.value !== '__new';
+  }).catch(() => {});
+  petSel.addEventListener('change', () => { petBox.querySelector('.pet-new-box').hidden = petSel.value !== '__new'; });
   const body = el('div', { class: 'stack' },
     name.f,
     el('div', { class: 'field' }, el('span', { class: 'field-label' }, 'Tipo'),
-      ui.segmented({ label: 'Tipo de fecha', value: kind, options: KINDS, onChange: (v) => { kind = v; whoBox.hidden = v !== 'birthday'; } })),
-    whoBox,
+      ui.segmented({ label: 'Tipo de fecha', value: kind, options: KINDS, onChange: (v) => { kind = v; whoBox.hidden = v !== 'birthday'; petBox.hidden = v !== 'pet'; } })),
+    whoBox, petBox,
     date.f,
     ui.toggle({ label: 'No sé el año', hint: 'Se usa solo el día y el mes.', checked: noYear, onChange: (v) => { noYear = v; } }),
     el('div', { class: 'field' }, el('span', { class: 'field-label' }, 'Se repite'),
@@ -183,11 +200,30 @@ function dateEditor(rec, done) {
         const day = util.parseDay(date.value);
         if (!day) { date.f.setError('Elige una fecha.'); bad = true; }
         if (day && noYear && recurring === 'none') { date.f.setError('Una fecha de una sola vez necesita el año.'); bad = true; }
+        if (kind === 'pet' && petSel.value === '__new' && !petNew.value.trim()) { petNew.focus(); ui.toast('Escribe el nombre de la mascota.'); bad = true; }
         if (bad) return false;
+        const md = { y: noYear ? null : day.getFullYear(), m: day.getMonth() + 1, d: day.getDate() };
+        if (kind === 'pet') {
+          let petId = petSel.value;
+          if (petId === '__new') {
+            petId = util.uuid();
+            await db.put('pets', { id: petId, name: petNew.value.trim(), species: 'gato', breed: '', sex: '', birth: null, arrival: null, color: '', microchip: '', mediaId: null, traits: [], favorites: '', notes: '', memorial: null, visibility: 'shared', owner: 'both' });
+          }
+          if (petRole !== 'other') {
+            const pet = await db.get('pets', petId);
+            if (pet) {
+              await db.put('pets', { ...pet, [petRole]: md });
+              if (!isNew) await db.purge('specialDates', r.id); // it now lives on the pet
+              ui.toast(`Guardado en el perfil de ${pet.name}: se ve en Mascotas, Inicio y el Calendario.`, { tone: 'success' });
+              done(); return true;
+            }
+          }
+          r.personOrPetId = petId;
+        }
         await db.put('specialDates', {
           ...r, name: name.value, kind, recurring,
           personOrPetId: kind === 'birthday' ? who : kind === 'pet' ? (r.personOrPetId || null) : null,
-          date: { y: noYear ? null : day.getFullYear(), m: day.getMonth() + 1, d: day.getDate() },
+          date: md,
         });
         ui.toast(isNew ? 'Fecha agregada.' : 'Fecha guardada.', { tone: 'success' });
         done();

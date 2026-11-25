@@ -3,7 +3,8 @@
 // are revoked when the viewer closes. Shared by Galería, Mapa, Primeras veces and Álbum.
 import { el, icon, fill, prefersReducedMotion } from './util.js';
 import * as db from './db.js';
-import { openModal, enso } from './ui.js';
+import { openModal, enso, toast } from './ui.js';
+import { framePhoto } from './cropper.js';
 
 /**
  * items: [{ mediaId, alt, caption, sub, href, hrefLabel }]. start: index to open on.
@@ -24,6 +25,18 @@ export function openViewer(items, start = 0) {
   });
   track.append(...slides);
   const loaded = new Set();
+  const kinds = [];
+  // v0.30.0: any saved photo can be reframed from here; it keeps its place and syncs like before.
+  const recrop = async () => {
+    const it = items[index]; if (!it?.mediaId) return;
+    const blob = await db.getMedia(it.mediaId).catch(() => null); if (!blob) return;
+    try {
+      const out = await framePhoto(blob);
+      if (!(await db.replaceMedia(it.mediaId, out.blob, out))) throw new Error('gone');
+      loaded.delete(index); await load(index);
+      toast('Foto recortada.', { tone: 'success' });
+    } catch (x) { if (x?.code !== 'CANCEL') toast('No pudimos recortar esa foto.', { tone: 'error' }); }
+  };
   const load = async (i) => {
     if (i < 0 || i >= n || loaded.has(i)) return;
     loaded.add(i);
@@ -32,6 +45,8 @@ export function openViewer(items, start = 0) {
     const fig = slides[i];
     if (!blob) { fig.replaceChildren(el('div', { class: 'photo-missing' }, icon('image-off'), 'No disponible')); return; }
     const u = URL.createObjectURL(blob); urls.push(u);
+    kinds[i] = blob.type.startsWith('video/') ? 'video' : 'image';
+    if (i === index) paint();
     fig.replaceChildren(blob.type.startsWith('video/')
       ? el('video', { class: 'viewer-media', src: u, controls: true, playsinline: true, preload: 'metadata', 'aria-label': it.alt || 'Video' })
       : el('img', { class: 'viewer-media', src: u, alt: it.alt || '', decoding: 'async', draggable: 'false' }));
@@ -42,6 +57,7 @@ export function openViewer(items, start = 0) {
     fill(caption,
       it.caption ? el('p', { class: 'viewer-title' }, it.caption) : null,
       it.sub ? el('p', { class: 'viewer-sub' }, it.sub) : null,
+      it.mediaId && kinds[index] === 'image' && it.crop !== false ? el('button', { class: 'btn btn-ghost btn-small viewer-crop', type: 'button', onClick: recrop }, icon('crop', { size: 18 }), 'Recortar') : null,
       it.href ? el('a', { class: 'btn btn-secondary btn-small viewer-link', href: it.href, onClick: () => api.close(undefined, { silent: true }) }, icon('arrow-up-right', { size: 18 }), it.hrefLabel || 'Ver dónde está') : null);
     prev.disabled = index === 0; next.disabled = index === n - 1;
     slides.forEach((s, i) => { if (i !== index) s.querySelector('video')?.pause(); });

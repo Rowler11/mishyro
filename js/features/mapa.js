@@ -71,8 +71,11 @@ export function loadLeaflet() {
   return leafletP;
 }
 
-// v0.14.0 (Mapa de papel, option A): CARTO Voyager tiles, soft colors with no filter on top, free and keyless.
-export const TILES = { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', options: { subdomains: 'abcd', maxZoom: 19, referrerPolicy: 'strict-origin-when-cross-origin', attribution: '© <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a> © <a href="https://carto.com/attributions" rel="noopener" target="_blank">CARTO</a>' } };
+// v0.14.0 (Mapa de papel, option A): soft tiles with no filter on top, free and keyless.
+// v0.30.0: CARTO stopped serving raster tiles without an API key (25 Sep 2026: "API KEY REQUIRED"), so the
+// map now uses OpenStreetMap's own tiles: free, no key, no account. Their policy asks for a Referer and
+// the attribution, so the tiles send the origin (the site itself sends no-referrer).
+export const TILES = { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', options: { maxZoom: 19, referrerPolicy: 'strict-origin-when-cross-origin', attribution: '© <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a>' } };
 export const tiles = (L) => L.tileLayer(TILES.url, TILES.options);
 export const pinIcon = (L, cls = '') => L.divIcon({ className: `map-pin ${cls}`.trim(), html: '<span class="map-pin-dot"></span>', iconSize: [30, 30], iconAnchor: [15, 28] });
 /** A sakura pin; with a photo it becomes a little round polaroid of the place (url is a local blob: URL). */

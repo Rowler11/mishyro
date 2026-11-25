@@ -2,7 +2,7 @@
 // Inicio; the other's photo stays face down until you share yours, so it is an exchange, never a
 // way to check on anyone. One shared 'streaks' record per person and day (type 'dayphoto').
 import { ui, util, db, profile } from '../core.js';
-import { compressImage } from '../core/images.js';
+import { framePhoto } from '../core/cropper.js';
 
 const { el, icon } = util;
 const idOf = (day, who) => `dayphoto:${day}:${who}`;
@@ -10,14 +10,14 @@ const idOf = (day, who) => `dayphoto:${day}:${who}`;
 async function save(file, onDone) {
   const day = util.localDay(); const me = profile.active(); const id = idOf(day, me);
   try {
-    const p = await compressImage(file);
+    const p = await framePhoto(file, { aspect: 3 / 4, title: 'Tu foto de hoy' }); // v0.30.0: framed in 3:4
     const old = await db.get('streaks', id).catch(() => null);
     const mediaId = await db.putMedia(p.blob, { ownerStore: 'streaks', ownerId: id, width: p.width, height: p.height });
     await db.put('streaks', { id, type: 'dayphoto', by: me, day, mediaId, at: util.nowISO(), visibility: 'shared', owner: 'both' });
     if (old?.mediaId && old.mediaId !== mediaId) await db.rawDelete('media', old.mediaId).catch(() => {});
     util.haptic('success'); ui.toast('Tu foto del día quedó lista.', { tone: 'success' });
     onDone?.();
-  } catch (e) { console.error(e); ui.toast('No se pudo guardar esa foto.', { tone: 'error' }); }
+  } catch (e) { if (e?.code === 'CANCEL') return; console.error(e); ui.toast('No se pudo guardar esa foto.', { tone: 'error' }); }
 }
 
 async function img(rec, alt, bag) {

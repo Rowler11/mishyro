@@ -199,6 +199,7 @@ function doPanic() {
 let prevScope = null;
 function onNavigate(route, prev) {
   ui.closeAllModals();
+  import('./core/pets.js').then((m) => m.hush()).catch(() => {});
   const scope = lockScope(route.def);
   if (prevScope && prevScope !== scope && prevScope !== 'app') {
     if (security.ALWAYS_LOCK.includes(prevScope)) cryptoBox.lock(prevScope);
@@ -272,6 +273,9 @@ function addCompanion(node, route, { quiet = false } = {}) {
 
 /** Paper scene under the title of the sections of Más (v0.13.0). */
 function addScene(node, route) {
+  // v0.30.0 (Rowler): no more band with a background; the friends now live on the screen's own cards
+  // (gatitos.companion). The scene stays only where a page asks for it explicitly.
+  if (!route?.def?.scene) return;
   const head = node?.querySelector?.(':scope > .page-head');
   if (!head || node.querySelector('.paper-scene')) return;
   const band = sceneFor?.(route.path.slice(1));
@@ -534,6 +538,7 @@ async function startSync() {
   import('./features/avisos.js').then((m) => m.start()).catch(() => {}); // scheduled caring notices (v0.15.0)
   import('./features/toques.js').then((m) => m.watch()).catch(() => {}); // v0.24.0: greetings and hugs
   import('./features/latido.js').then((m) => m.watch()).catch(() => {}); // v0.22.0: their heartbeat, felt here
+  import('./features/cupones.js').then((m) => m.watch()).catch(() => {}); // v0.30.0: "opened your coupon"
 }
 
 // ---------- start ----------

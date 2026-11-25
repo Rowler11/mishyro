@@ -1149,6 +1149,9 @@ async function exampleContent(page, { reload = true } = {}) {
       await page.locator('.page-new').click();
       const ed = page.locator('.memory-editor');
       await page.setInputFiles('.memory-editor input[type=file]', path.join(__dirname, 'fixtures', 'foto-ficticia.jpg'));
+      // v0.30.0: a single photo opens "Encuadra la foto" first
+      const crop = page.locator('.crop-modal').getByRole('button', { name: 'Listo' });
+      await crop.waitFor({ timeout: 8000 }); await crop.click();
       await page.waitForFunction(() => document.querySelectorAll('.memory-editor .photo-tile').length === 1, null, { timeout: 20000 });
       await ed.getByLabel('Título').fill(title);
       await ed.getByLabel('Fecha').fill(today);
@@ -1904,13 +1907,13 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('12 hojas: se dibujan partículas', painted > 50, String(painted));
     const kinds = await page.evaluate(async () => { const fx = await import('./js/core/fx.js'); const r = document.documentElement; const was = r.dataset.theme; r.dataset.theme = 'day'; const day = fx.ambientKind(); r.dataset.theme = 'night'; const night = fx.ambientKind(); r.dataset.theme = was; return `${day === fx.seasonOf()}|${night}`; });
     ok('12 hojas: de día la estación, de noche luciérnagas y chōchin', kinds === 'true|night', kinds);
-    const corner = await page.evaluate(async () => { const c = document.querySelector('.home-corner'); const was = document.documentElement.dataset.theme; document.documentElement.dataset.theme = 'day'; await new Promise((r) => setTimeout(r, 120)); const before = c.dataset.kind; const wis = !!c.querySelector('.corner-maple') && !!c.querySelector('.corner-furin'); document.documentElement.dataset.theme = 'night'; await new Promise((r) => setTimeout(r, 120)); const n = [c.dataset.kind, c.querySelectorAll('ellipse').length >= 2, !c.querySelector('.corner-maple')]; document.documentElement.dataset.theme = was; return [before, wis, ...n].join(','); });
-    ok('12 rama (v0.15.1): de día arce japonés con furin, de noche dos chōchin colgados', /^(sakura|momiji|snow|hotaru),true,night,true,true$/.test(corner), corner);
+    const corner = await page.evaluate(async () => { const c = document.querySelector('.home-corner'); const was = document.documentElement.dataset.theme; document.documentElement.dataset.theme = 'day'; await new Promise((r) => setTimeout(r, 120)); const before = c.dataset.kind; const wis = !!c.querySelector('.corner-maple') && !c.querySelector('.corner-furin, .corner-hang'); document.documentElement.dataset.theme = 'night'; await new Promise((r) => setTimeout(r, 120)); const n = [c.dataset.kind, c.querySelectorAll('ellipse').length >= 2, !c.querySelector('.corner-maple')]; document.documentElement.dataset.theme = was; return [before, wis, ...n].join(','); });
+    ok('12 rama (v0.30.0): de día arce japonés sin campana, de noche dos chōchin colgados', /^(sakura|momiji|snow|hotaru),true,night,true,true$/.test(corner), corner);
     await page.locator('.home-corner').click();
     ok('12 rama: al tocarla se sacude', await page.locator('.home-corner').evaluate((c) => c.classList.contains('is-shaking')));
     ok('12 rama: es decorativa para lectores de pantalla', await page.locator('.home-corner').getAttribute('aria-hidden') === 'true');
     const xmas = await page.evaluate(async () => { const ev = await import('./js/features/eventos.js'); const fx = await import('./js/core/fx.js'); const top = ev.decoLayer('lights'); const card = ev.decoLayer('lights', 8, { onCard: true }); const c = fx.cornerArt('snow', { xmas: true }); return [top.querySelectorAll('.xmas-lantern').length, !!top.querySelector('.deco-bit'), card.querySelectorAll('.xmas-lantern').length, !!card.querySelector('.xmas-bow'), !!c.querySelector('.corner-tanzaku'), top.getAttribute('aria-hidden')].join(','); });
-    ok('Navidad a la japonesa (v0.15.1): 5 chōchin en Inicio, cinta con moño en la tarjeta y campana en el arce', xmas === '5,false,3,true,false,true', xmas);
+    ok('Navidad a la japonesa (v0.15.1): 5 chōchin en Inicio, cinta con moño en la tarjeta y el arce sin campana (v0.30.0)', xmas === '5,false,3,true,false,true', xmas);
     const ja = await page.evaluate(() => getComputedStyle(document.querySelector('.page-head .ja')).animationName);
     ok('12 título a pincel: el japonés del título se pinta', /ja-paint/.test(ja), ja);
     const enso = await page.evaluate(async () => { const { ui } = await import('./js/core.js'); const n = ui.skeleton(2); return !!n.querySelector('svg.enso-loader .enso-stroke') && n.getAttribute('role') === 'status'; });
@@ -2535,8 +2538,8 @@ async function exampleContent(page, { reload = true } = {}) {
     await page.locator('.kitty-care').getByRole('button', { name: 'Ya lo vi, ocultar por hoy' }).click();
     ok('16 Cuidados: se puede ocultar por hoy', (await page.locator('.kitty-care').count()) === 0);
     await page.locator('.kitty[data-pet="t16a"]').click();
-    await page.waitForSelector('.kitty-perch .pet-bubble');
-    ok('16 Hablar: al tocarla habla con su nombre', /^Nube: /.test(await page.locator('.kitty-perch .pet-bubble').innerText()));
+    await page.waitForSelector('.pet-say-layer .pet-bubble');
+    ok('16 Hablar: al tocarla habla con su nombre', /^Nube: /.test(await page.locator('.pet-say-layer .pet-bubble').innerText()));
     ok('18 Menú: al tocarla salen sus mimos', await page.locator('.kitty-menu').isVisible());
     await page.getByRole('button', { name: 'Acariciar a Nube' }).click(); await page.waitForTimeout(300);
     for (let i = 0; i < 4; i++) { await page.getByRole('button', { name: 'Darle un premio a Nube' }).click(); await page.waitForTimeout(250); }
@@ -2552,25 +2555,28 @@ async function exampleContent(page, { reload = true } = {}) {
     let seenPerch = false; let seenNap = false; let onePer = true;
     for (const r of ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']) {
       await go(r, 'main h1'); await page.waitForTimeout(900);
-      const n = await page.locator('main .kitty-perch, main .kitty-nap, main .empty-art-pet').count();
-      if (n !== 1) onePer = false;
-      if (await page.locator('main .kitty-perch').count()) seenPerch = true;
-      if (await page.locator('main .kitty-nap').count()) seenNap = true;
+      // v0.30.0: one or two friends per screen (real pets and paper animals take turns), spread out
+      const n = await page.locator('main .kitty-perch, main .kitty-nap, main .amb-perch, main .amb-rest, main .empty-art-pet').count();
+      if (n < 1 || n > 2) onePer = false;
+      if (await page.locator('main .kitty-perch, main .amb-perch').count()) seenPerch = true;
+      if (await page.locator('main .kitty-nap, main .amb-rest').count()) seenNap = true;
     }
-    ok('18 Pantallas: en cada una aparece una sola mascota', onePer);
-    ok('18 Pantallas: unas veces asomada y otras dormida al final', seenPerch && seenNap);
+    ok('30 Pantallas: en cada una aparecen uno o dos animalitos, repartidos', onePer);
+    ok('18 Pantallas: unas veces asomados y otras descansando al final', seenPerch && seenNap);
     // v0.22.0: a pet waits on empty screens and talks with its name when tapped
     await go('/ajustes', '.list-row'); await page.waitForTimeout(300);
     await page.evaluate(async () => { const ui = await import('./js/core/ui.js'); document.querySelector('main').append(ui.emptyState({ title: 'Vacío de prueba', text: 'Texto ficticio' }), ui.emptyState({ title: 'Otro vacío', text: 'Texto ficticio' })); });
     ok('22 Vacío: un animalito espera en lugar del ícono', (await page.locator('main .empty .empty-pet, main .empty .empty-paper').count()) === 1);
     await page.locator('main .empty-pet, main .empty-paper').click(); await page.waitForTimeout(250);
-    ok('22 Vacío: al tocarlo habla con su nombre', /^\S+: /.test(await page.locator('main .empty-pet-bubble, main .pet-bubble').innerText()));
+    ok('22 Vacío: al tocarlo habla con su nombre', /^\S+: /.test(await page.locator('main .empty-pet-bubble, .pet-say-layer .pet-bubble').innerText()));
     ok('22 Vacío: uno solo por pantalla (el segundo vacío deja su ícono)', (await page.locator('main .empty-pet, main .empty-paper').count()) === 1 && (await page.locator('main .empty .empty-icon').count()) === 1);
     // v0.22.0 Latido: holding the days ring counts heartbeats; a fresh one from the partner beats on screen once
     await go('/inicio', '.latido-target');
     { const box = await page.locator('.latido-target').boundingBox(); await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down(); await page.waitForTimeout(1500); }
-    ok('22 Latido: al mantener el círculo cuenta los latidos', Number(await page.locator('.latido-count').textContent()) >= 1);
+    ok('22 Latido: al mantener el círculo cuenta los latidos', Number(await page.locator('.latido-num').textContent()) >= 1);
     await page.mouse.up(); await page.waitForTimeout(300);
+    ok('30 Latido: sin teléfonos unidos lo dice claro al soltar', /unan sus teléfonos/.test(await page.locator('.latido-layer .latido-title').innerText()));
+    await page.waitForFunction(() => !document.querySelector('.latido-layer'), null, { timeout: 5000 }); // the hold screen fades on its own
     await page.evaluate(async () => { const db = await import('./js/core/db.js'); const pr = await import('./js/core/profile.js'); const me = pr.active();
       await db.put('streaks', { id: 'beat:e2e', type: 'beat', by: pr.partnerOf(me), to: me, beats: 2, at: new Date().toISOString(), visibility: 'shared', owner: 'both' }, { userEdit: false });
       (await import('./js/features/latido.js')).check(); });
@@ -2623,7 +2629,7 @@ async function exampleContent(page, { reload = true } = {}) {
     const napRoute = await page.evaluate(async () => { const r = ['/cartas', '/cupones', '/capsula', '/calendario', '/galeria', '/diario', '/mas', '/fechas', '/retos']; return r; });
     for (const r of napRoute) { await go(r, 'main h1'); await page.waitForTimeout(900); if (await page.locator('main .kitty-nap').count()) break; }
     await page.locator('main .kitty-nap .kitty').click(); await page.waitForTimeout(300);
-    ok('18 Dormida: al tocarla se despierta, habla y abre sus mimos', (await page.locator('main .kitty-nap .kitty.is-asleep').count()) === 0 && (await page.locator('main .kitty-nap .pet-bubble').count()) === 1 && await page.locator('main .kitty-nap .kitty-menu').isVisible());
+    ok('18 Dormida: al tocarla se despierta, habla y abre sus mimos', (await page.locator('main .kitty-nap .kitty.is-asleep').count()) === 0 && (await page.locator('.pet-say-layer .pet-bubble').count()) === 1 && await page.locator('main .kitty-nap .kitty-menu').isVisible());
     // Editor: coat picker and collar
     await go('/mascotas', '.pet-hero');
     await page.locator('.pet-pick', { hasText: 'Nube' }).click(); await page.waitForTimeout(300);
@@ -2644,7 +2650,7 @@ async function exampleContent(page, { reload = true } = {}) {
     const lane = await page.evaluate(() => { const l = document.querySelector('.game-hero .kitty-lane').getBoundingClientRect(); const b = document.querySelector('.game-hero .btn').getBoundingClientRect(); return l.top >= b.bottom - 1; });
     ok('16 Paseo: en Juegos camina por su caminito, debajo del botón', lane);
     await page.locator('.game-hero .kitty-walker').click(); await page.waitForTimeout(300);
-    ok('16 Paseo: si la tocan, habla', (await page.locator('.game-hero .pet-bubble').count()) === 1);
+    ok('16 Paseo: si la tocan, habla', (await page.locator('.pet-say-layer .pet-bubble').count()) === 1);
     ok('16 Memoria: una mascota "En memoria" no sale en Inicio', await page.evaluate(async () => { const db = await import('./js/core/db.js'); const p = await db.get('pets', 't16c'); await db.put('pets', { ...p, memorial: { date: '' } }); const g = await import('./js/features/gatitos.js'); return (await g.livePets()).length === 2; }));
     ok('16 sin desplazamiento lateral', !(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
     const real = errs.filter((e) => !/ERR_TUNNEL_CONNECTION_FAILED|ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED/.test(e));

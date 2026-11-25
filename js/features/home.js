@@ -496,6 +496,21 @@ export async function render() {
   });
   corner.addEventListener('animationend', (e) => { if (e.animationName === 'corner-shake') corner.classList.remove('is-shaking'); });
   page.prepend(corner);
+  // v0.30.0 (Rowler): the branch grows from the app's own edge (right of the screen, just under the top
+  // bar), so it never looks cut off by the page's margins, whatever the screen size.
+  let fitOn = false;
+  const fitCorner = () => {
+    if (!corner.isConnected) { if (fitOn) { window.removeEventListener('resize', fitCorner); fitRo?.disconnect(); } return; }
+    fitOn = true;
+    const main = page.closest('.main') || page.parentElement; if (!main) return;
+    const pr = page.getBoundingClientRect(); const mr = main.getBoundingClientRect();
+    const edge = document.documentElement.clientWidth || window.innerWidth;
+    corner.style.setProperty('--corner-r', `${Math.round(pr.right - edge)}px`);
+    corner.style.setProperty('--corner-t', `${Math.round(mr.top - pr.top)}px`);
+  };
+  const fitRo = typeof ResizeObserver === 'function' ? new ResizeObserver(() => fitCorner()) : null;
+  window.addEventListener('resize', fitCorner, { passive: true });
+  fitRo?.observe(page); // fires once the page is on screen, and again whenever its width changes
   paintSky(page);
   const cornerWatch = new MutationObserver(() => {
     if (corner.dataset.kind !== fx.ambientKind() || corner.dataset.style !== (document.documentElement.dataset.style || 'jp')) drawCorner();

@@ -5,7 +5,8 @@
 // The mood of an entry also feeds the Medidor de ánimo, without overwriting a mark made by hand.
 import { swipeToDelete } from '../core/premium.js';
 import { ui, util, db, profile, security, CONFIG } from '../core.js';
-import { compressImage, isQuotaError } from '../core/images.js';
+import { isQuotaError } from '../core/images.js';
+import { framePhoto } from '../core/cropper.js';
 import { MOODS, moodPicker, saveMood } from './animo.js';
 import { toTrash, TRASH_NOTE } from './papelera.js';
 
@@ -41,6 +42,7 @@ function editor(existing, { onSaved }) {
     if (!src && keep) { const b = await db.getMedia(keep).catch(() => null); if (b) src = photoUrl = URL.createObjectURL(b); }
     photoBox.replaceChildren(src
       ? el('div', { class: 'photo-tile letter-photo-tile' }, el('img', { src, alt: 'Foto del día' }),
+        el('button', { class: 'btn btn-secondary btn-small photo-crop', type: 'button', 'aria-label': 'Recortar o encuadrar la foto', onClick: async () => { const b = photo?.blob || (keep ? await db.getMedia(keep).catch(() => null) : null); if (!b) return; try { photo = await framePhoto(b); keep = null; if (photoUrl) URL.revokeObjectURL(photoUrl); photoUrl = URL.createObjectURL(photo.blob); paint(); } catch (x) { if (x?.code !== 'CANCEL') ui.toast('No pudimos recortar esa foto.', { tone: 'error' }); } } }, icon('crop', { size: 16 }), el('span', {}, 'Recortar')),
         el('button', { class: 'icon-btn photo-remove', type: 'button', 'aria-label': 'Quitar la foto', onClick: () => { photo = null; keep = null; if (photoUrl) URL.revokeObjectURL(photoUrl); photoUrl = null; paint(); } }, icon('x', { size: 18 })))
       : el('label', { class: 'photo-add letter-photo-add', for: file.id }, icon('image-plus', { size: 24 }), el('span', {}, 'Foto del día (opcional)')),
     file);
@@ -49,7 +51,7 @@ function editor(existing, { onSaved }) {
     const f = file.files[0]; file.value = '';
     if (!f) return;
     busy = true;
-    try { photo = await compressImage(f); keep = null; if (photoUrl) URL.revokeObjectURL(photoUrl); photoUrl = URL.createObjectURL(photo.blob); } catch { ui.toast('No pudimos leer esa foto.', { tone: 'error' }); }
+    try { photo = await framePhoto(f); keep = null; if (photoUrl) URL.revokeObjectURL(photoUrl); photoUrl = URL.createObjectURL(photo.blob); } catch (x) { if (x?.code !== 'CANCEL') ui.toast('No pudimos leer esa foto.', { tone: 'error' }); }
     busy = false; paint();
   });
   paint();

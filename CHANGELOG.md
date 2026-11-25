@@ -1,5 +1,30 @@
 # Cambios
 
+## 0.30.0 (Pulir: fotos, cartas, cupones, animalitos, latido y más)
+
+Nuevo
+- Encuadrar fotos: al subir una foto (perfil, Cápsula, Diario, Primeras veces, cartas, foto del día y más) se puede mover con el dedo, acercar con dos dedos o la barra, girar y elegir la forma. La foto de perfil siempre queda redonda.
+- "Recortar" en cualquier foto ya guardada, desde el visor.
+- Latido rediseñado: al mantener el círculo de los días la pantalla se oscurece y aparece un corazón que late; a los 5 latidos salen chispas, a los 10 corazones que suben y a los 15 una explosión de amor que se envía sola. Un toque corto explica cómo funciona y cómo lo ve tu pareja, con una prueba.
+- Cupones: aviso cuando tu pareja abre tu cupón o lo vuelve a leer; los que regalaste y no se han abierto pueden volver a "Guardados".
+- Mascotas: fechas con solo año (o sin año), botón para quitar una fecha y edad aproximada con solo el año. Una mascota creada desde Fechas se guarda en Mascotas y se ve igual en las dos partes.
+- Animalitos: el globo sale arriba del animalito, como un diálogo; al mantenerlo aparece su tarjeta con algo útil que hacer. Se reparten por las pantallas con vida suave (miran, saltan, respiran) y, si hay dos a la vista, conversan entre ellos.
+- Lenguajes del amor más completo: el orden de los cinco con barras para cada uno, cómo se complementan, idea de la semana para tu pareja, "Manual del amor" (lo que de verdad le llega a cada uno, con sus palabras) y una guía de los cinco.
+- Avisos más bonitos: varias frases cariñosas por tipo, un ícono propio por aviso, una flor de sakura en la barra de estado y vibraciones suaves.
+
+Mejorado
+- Cartas en camino: botones visibles para leer, editar, poner estampillas y borrar; también se pueden borrar las cartas recibidas (van a la Papelera).
+- Cupones: se pueden borrar (con confirmación) y ya no aparecen cupones canjeados por un estado viejo.
+- Foto del día más pequeña, en formato 3:4 y con esquinas redondeadas.
+- Inicio: el árbol queda pegado al borde de la app, un poco más grande y sin campana.
+- Animaciones más suaves (la vuelta del zorro ya no se ve rara).
+
+Arreglado
+- Mapa: ya no sale "API key requerida". Ahora usa OpenStreetMap, gratis y sin llave.
+
+Sobre los widgets
+- Una app web (PWA) no puede poner widgets en la pantalla de inicio de Android. Lo más cercano son los atajos: mantén el ícono de Aishiteru para enviar amor, pensar en tu pareja o abrir una pregunta. Los widgets nativos quedan como una fase futura opcional.
+
 ## 0.29.0 (Juegos, planes, casa y mascotas)
 
 Nuevo

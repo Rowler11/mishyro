@@ -48,24 +48,115 @@ const fill = (t) => t.replace(/\{p\}/g, profile.nick(profile.active()) || 'tú')
 const pick = (arr, avoid) => { const list = arr.filter((x) => x !== avoid); return list[Math.floor(Math.random() * list.length)] || arr[0]; };
 const last = {};
 
-// The bubble lives on the nearest [data-bubble-root] (the scene, which clips its drawings), above the creature.
-export function bubble(host, who, text, { ms = 4200 } = {}) {
-  const root = host.closest('[data-bubble-root]') || host;
-  root.querySelectorAll('.pet-bubble').forEach((x) => x.remove()); // one voice at a time, like a dialogue
-  const b = el('span', { class: 'pet-bubble', role: 'status', 'data-for': host.dataset.petId }, el('strong', {}, `${who}: `), text);
-  if (root !== host) {
-    const r = root.getBoundingClientRect(); const h = host.getBoundingClientRect();
-    const x = Math.min(Math.max(h.left - r.left + h.width * 0.3, 8), Math.max(8, r.width - 236));
-    b.style.left = `${x}px`; b.style.bottom = `${r.bottom - h.top - 8}px`;
-  }
-  root.append(b);
-  clearTimeout(host._bubbleT);
-  host._bubbleT = setTimeout(() => { b.classList.add('is-leaving'); setTimeout(() => b.remove(), 300); }, ms);
+// v0.30.0 (Rowler): the bubble floats ABOVE the creature, like a speech balloon, with its tail
+// pointing down at it. It lives on a fixed layer (never clipped by a card), never takes touches, and
+// follows the creature while the page scrolls. Without room above, it goes below.
+let layer = null;
+const sayLayer = () => {
+  if (layer?.isConnected) return layer;
+  layer = el('div', { class: 'pet-say-layer', 'aria-live': 'polite' });
+  document.body.append(layer);
+  return layer;
+};
+const live = new Set();
+function place(b) {
+  const h = b._host;
+  if (!h.isConnected) { b.remove(); live.delete(b); return; }
+  const r = h.getBoundingClientRect();
+  const w = b.offsetWidth; const bh = b.offsetHeight;
+  const cx = r.left + r.width / 2;
+  const x = Math.min(Math.max(cx - w / 2, 8), Math.max(8, innerWidth - w - 8));
+  const below = r.top - bh - 12 < 56; // no room under the header: talk from below
+  const y = below ? r.bottom + 10 : r.top - bh - 10;
+  b.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+  b.style.setProperty('--tail-x', `${Math.round(Math.min(Math.max(cx - x, 16), w - 16))}px`);
+  b.classList.toggle('is-below', below);
+  const off = r.bottom < 0 || r.top > innerHeight;
+  b.style.visibility = off ? 'hidden' : '';
 }
-export function move(host) {
+let raf = 0;
+const follow = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => live.forEach(place)); };
+addEventListener('scroll', follow, { passive: true, capture: true });
+addEventListener('resize', follow, { passive: true });
+
+export function bubble(host, who, text, { ms = 4200, tone = '' } = {}) {
+  // one voice per creature; in a dialogue the other one may still be talking
+  live.forEach((x) => { if (x._host === host) { live.delete(x); x.remove(); } });
+  const b = el('div', { class: `pet-bubble${tone ? ` is-${tone}` : ''}`, role: 'status' }, who ? el('strong', {}, `${who}: `) : null, text);
+  b._host = host;
+  sayLayer().append(b); live.add(b);
+  place(b);
+  clearTimeout(host._bubbleT);
+  host._bubbleT = setTimeout(() => { b.classList.add('is-leaving'); setTimeout(() => { b.remove(); live.delete(b); }, 300); }, ms);
+  return b;
+}
+/** Clears every bubble (route changes). */
+export function hush() { live.forEach((b) => b.remove()); live.clear(); }
+
+// ---------- long press (v0.30.0): a ring fills while holding, then the creature's card opens ----------
+export const LONG_MS = 520;
+export function longPress(host, onLong) {
+  let t = 0; let fired = false; let start = null;
+  const cancel = () => { clearTimeout(t); host.classList.remove('is-holding'); start = null; };
+  host.addEventListener('pointerdown', (e) => {
+    if (e.button > 0) return;
+    fired = false; start = { x: e.clientX, y: e.clientY };
+    host.classList.add('is-holding');
+    t = setTimeout(() => { fired = true; host.classList.remove('is-holding'); haptic([14, 30, 22]); onLong(); }, LONG_MS);
+  });
+  host.addEventListener('pointermove', (e) => { if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 10) cancel(); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => host.addEventListener(ev, cancel));
+  host.addEventListener('contextmenu', (e) => e.preventDefault());
+  // the click that ends a long press does not also count as a tap
+  host.addEventListener('click', (e) => { if (fired) { e.stopImmediatePropagation(); e.preventDefault(); fired = false; } }, true);
+  host.addEventListener('keydown', (e) => { if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) { e.preventDefault(); onLong(); } });
+}
+
+// ---------- two friends together (v0.30.0): short dialogues ----------
+// {a} is who starts, {b} the other one, {p} the person using the app, {o} their partner.
+const DIALOGUES = [
+  ['Psst, {b}… ¿viste quién llegó?', '¡{p}! Disimula, que nos mira.', 'Hola, {p} 👋'],
+  ['{b}, ¿hoy le toca abrazo a {o}?', 'Hoy y todos los días.', 'Bien dicho.'],
+  ['Tengo hambre, {b}.', 'Tú siempre tienes hambre.', 'Es que pensar en el amor da hambre.'],
+  ['¿Jugamos a las escondidas, {b}?', 'Cuenta hasta diez…', '…ocho, nueve, ¡diez! Te vi.'],
+  ['{b}, ¿qué es lo más bonito de esta casa?', 'Fácil: {p} y {o} juntos.', 'Empate con la siesta.'],
+  ['¿Le dejamos un mensaje a {o}?', 'Uno corto: "te quiere mucho".', '¿De parte de quién?', ],
+  ['Hoy amanecí con ganas de bailar.', 'Yo con ganas de dormir.', 'Bailemos dormidos, {b}.'],
+  ['{b}, ¿me guardas un secreto?', 'Claro.', '{p} sonríe cuando piensa en {o}.'],
+  ['¿Cuántos días llevan juntos, {b}?', 'No sé contar tan alto.', 'Yo tampoco. ¡Son muchísimos!'],
+  ['Shh… {b}, ¿escuchas?', '¿Qué cosa?', 'Dos corazones latiendo.'],
+  ['Te reto a una carrera, {b}.', '¿Hasta dónde?', 'Hasta el abrazo de {o}.'],
+  ['¿Sabes qué me gusta de ti, {b}?', '¿Qué?', 'Que siempre estás cuando te busco.'],
+];
+export function dialogue(a, b) {
+  const d = DIALOGUES[Math.floor(Math.random() * DIALOGUES.length)];
+  return d.map((line, i) => ({ who: i % 2 ? b : a, text: line.replace(/\{a\}/g, a.name).replace(/\{b\}/g, (i % 2 ? a : b).name) }));
+}
+/**
+ * Two creatures on the same screen talk to each other: they lean in, their bubbles take turns and the
+ * one listening blinks. `x` and `y` are { host, name, speak?(text) }. Resolves when it ends.
+ */
+export async function chat(x, y) {
+  if (!x.host.isConnected || !y.host.isConnected) return;
+  const lines = dialogue(x, y);
+  const lean = (h, other) => { const a = h.getBoundingClientRect(); const c = other.getBoundingClientRect(); h.style.setProperty('--lean', a.left < c.left ? '6deg' : '-6deg'); h.classList.add('is-leaning'); };
+  lean(x.host, y.host); lean(y.host, x.host);
+  for (const [i, l] of lines.entries()) {
+    if (!x.host.isConnected || !y.host.isConnected || document.hidden) break;
+    const other = l.who === x ? y : x;
+    l.who.host.classList.add('is-talking'); other.host.classList.remove('is-talking'); other.host.classList.add('is-listening');
+    move(l.who.host, 'nod');
+    bubble(l.who.host, l.who.name, fill(l.text), { ms: 3000, tone: i % 2 ? 'reply' : 'chat' });
+    await new Promise((r) => setTimeout(r, 2600));
+  }
+  [x.host, y.host].forEach((h) => h.classList.remove('is-leaning', 'is-talking', 'is-listening'));
+}
+
+export function move(host, kind = 'poked') {
   if (prefersReducedMotion()) return;
-  host.classList.remove('is-poked'); void host.offsetWidth; host.classList.add('is-poked');
-  setTimeout(() => host.classList.remove('is-poked'), 1000);
+  const cls = `is-${kind}`;
+  host.classList.remove(cls); void host.offsetWidth; host.classList.add(cls);
+  clearTimeout(host[`_${kind}T`]); host[`_${kind}T`] = setTimeout(() => host.classList.remove(cls), 1100);
 }
 
 /** Make a creature wrapper interactive: a button with its name that moves and talks when tapped. */
@@ -83,11 +174,38 @@ export function wire(host, id, { partners = [] } = {}) {
     sounds.play(id);
     last[id] = pick(LINES[id], last[id]);
     bubble(host, nameOf(id), fill(last[id]));
-    // A friend on the same scene answers after a moment.
+    // A friend on the same screen answers after a moment.
     const other = partners.map((p) => p()).find(Boolean);
-    if (other && other.host !== host) setTimeout(() => { move(other.host); sounds.play(other.id); bubble(other.host, nameOf(other.id), fill(pick(REPLIES[other.id]))); }, 2600);
+    if (other && other.host !== host) setTimeout(() => { if (!other.host.isConnected) return; move(other.host, 'nod'); sounds.play(other.id); bubble(other.host, nameOf(other.id), fill(pick(REPLIES[other.id])), { tone: 'reply' }); }, 2400);
   };
   host.addEventListener('click', poke);
+  longPress(host, () => paperCard(id, host));
   host.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); poke(); } });
   return host;
+}
+
+// ---------- the creature's card (long press) ----------
+const PAPER_ACTS = {
+  panda: ['Abrazo de oso', '¡Abrazo! Ahora dale uno a {o}.'], fox: ['Choca esos cinco', '¡Choca! Eres de mi equipo.'],
+  cat: ['Rascar la barbilla', 'Prrr… vale, eres de mis favoritos.'], rabbit: ['Darle una zanahoria', '¡Ñam! Gracias, gracias.'],
+  tanuki: ['Tocar su tambor', '¡Pon-pon-pon! Qué ritmo.'], crane: ['Pedir un deseo', 'Lo llevo volando. Que se cumpla.'],
+};
+export async function paperCard(id, host) {
+  const { openModal } = await import('./ui.js');
+  const { draw } = await import('./art.js');
+  const [act, reply] = PAPER_ACTS[id] || ['Saludar', '¡Hola!'];
+  const art = el('span', { class: 'pet-card-art' }, draw(id));
+  let m;
+  const doAct = () => { m.close(); setTimeout(() => { move(host, 'happy'); sounds.play(id); bubble(host, nameOf(id), fill(reply), { tone: 'chat' }); }, 220); };
+  const talk = () => { m.close(); setTimeout(() => host.click(), 220); };
+  m = openModal({
+    title: nameOf(id), size: 'sm', className: 'pet-card-modal',
+    body: el('div', { class: 'pet-card' }, art,
+      el('p', { class: 'pet-card-kind' }, PETS[id].kind.replace(/^(el|la) /, '').replace(/^./, (c) => c.toUpperCase())),
+      el('p', { class: 'pet-card-trait' }, PETS[id].trait),
+      el('div', { class: 'pet-card-acts' },
+        el('button', { class: 'btn btn-primary', type: 'button', onClick: doAct }, act),
+        el('button', { class: 'btn btn-secondary', type: 'button', onClick: talk }, 'Que me hable')),
+      el('p', { class: 'muted small' }, 'Su nombre se cambia en Ajustes › Apariencia. Mantén presionado a cualquier animalito para ver su ficha.')),
+  });
 }
