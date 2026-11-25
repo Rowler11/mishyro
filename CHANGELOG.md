@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.33.3 (Un solo color en toda la app)
+
+Cambiado
+- Revisé las pantallas de la app: las tarjetas ya compartían el blanco de la v0.33.2, y ahora también las ayudas de cada pantalla. De noche, las tarjetas usan el mismo gris oscuro en todas partes, y en alto contraste el papel sigue al fondo.
+
 ## 0.33.2 (Tarjetas blancas y racha compacta)
 
 Cambiado

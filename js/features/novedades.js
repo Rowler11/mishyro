@@ -9,8 +9,9 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.33.2',
+  version: '0.33.3',
   items: [
+    'Todas las pantallas comparten el mismo blanco (también las ayudas y, de noche, el mismo gris oscuro en las tarjetas).',
     'Las tarjetas de toda la app son blancas, con un papel washi casi invisible, sin tinte cálido.',
     'La racha queda en una sola fila con Enviar amor, y los dos chulitos se prenden cuando cada uno envía amor.',
     'Si pierden la racha, pueden recuperarla hasta 3 días después si los dos confirman.',
