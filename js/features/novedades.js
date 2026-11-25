@@ -9,8 +9,9 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.33.0',
+  version: '0.33.1',
   items: [
+    'Todas las tarjetas de Inicio tienen el mismo papel washi; Sus favoritos y Ahora mismo recuperan el sello, la tinta y el pincel japonés.',
     'Día y noche se sienten distintos: la carga y la apertura cambian de cielo, luz y saludo según la hora (con luna y estrellas de noche).',
     'De noche los animalitos duermen en Inicio, el Latido tiene estrellas y las cartas se abren a luz de vela.',
     'La apertura del día se ve más fina: flores de sakura pintadas en la rama y un paso limpio al "Para …".',

@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.33.1 (Inicio con un solo papel)
+
+Arreglado
+- En Inicio había tarjetas amarillentas y otras blancas: ahora todas usan el mismo papel washi con textura, borde de tinta y la misma esquina.
+- Sus favoritos y Ahora mismo vuelven al estilo japonés: tablillas de papel con doble línea, íconos dentro de un sello, nombres en letra de pincel y el trazo de pincel bajo el título.
+
 ## 0.33.0 (Día y noche distintos)
 
 Nuevo
