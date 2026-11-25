@@ -9,8 +9,11 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.33.1',
+  version: '0.33.2',
   items: [
+    'Las tarjetas de toda la app son blancas, con un papel washi casi invisible, sin tinte cálido.',
+    'La racha queda en una sola fila con Enviar amor, y los dos chulitos se prenden cuando cada uno envía amor.',
+    'Si pierden la racha, pueden recuperarla hasta 3 días después si los dos confirman.',
     'Todas las tarjetas de Inicio tienen el mismo papel washi; Sus favoritos y Ahora mismo recuperan el sello, la tinta y el pincel japonés.',
     'Día y noche se sienten distintos: la carga y la apertura cambian de cielo, luz y saludo según la hora (con luna y estrellas de noche).',
     'De noche los animalitos duermen en Inicio, el Latido tiene estrellas y las cartas se abren a luz de vela.',

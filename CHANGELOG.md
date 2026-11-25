@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.33.2 (Tarjetas blancas y racha compacta)
+
+Cambiado
+- Las tarjetas de toda la app pasan al blanco de los demás apartados, con una textura washi gris casi invisible en lugar del papel cálido que parecía un filtro. El carácter japonés lo siguen poniendo la tinta, los sellos y el pincel.
+- Racha de amor más compacta: la racha, "Enviar amor" y dos chulitos quedan en una sola fila. Los chulitos (con la inicial de cada uno) se prenden cuando esa persona envía amor.
+
+Nuevo
+- Recuperar la racha: se pausa al pasar un día sin que los dos envíen amor y se puede recuperar hasta 3 días después; los dos tienen que confirmar (se sincroniza entre teléfonos).
+
 ## 0.33.1 (Inicio con un solo papel)
 
 Arreglado
