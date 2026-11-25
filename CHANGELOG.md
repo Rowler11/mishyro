@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.32.8 (Apertura completa con más calidad)
+
+Mejorado
+- La apertura del día (la rama, los pétalos que forman el corazón y el "Para …") se ve más fina sin cambiar nada de lo que elegiste: cada flor de la rama es ahora una flor de sakura pintada (cinco pétalos con su muesca y sombreado, centro más intenso, estambres dorados y una sombra suave) y la rama es de madera cálida, no gris.
+- Más fluida en el teléfono: cada flor se dibuja de una vez en lugar de pieza por pieza.
+- El paso al "Para …" es limpio: la bienvenida aparece cuando 愛してる ya se desvaneció, sin que se encimen.
+- La apertura vuelve a tener su propio fondo (sin el papel de la pantalla de carga); el papel, la luz y el seigaiha aparecen suaves solo con la bienvenida.
+
 ## 0.32.7 (Adiós al parpadeo al volver a Inicio)
 
 Arreglado

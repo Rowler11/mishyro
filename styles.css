@@ -4272,3 +4272,8 @@ a.game-tile:hover { border-color: var(--ink); }
 .bouquet .bq-gold { stroke: var(--gold); } .bouquet .bq-band { stroke: var(--accent); } .bouquet .bq-knot { fill: var(--accent); }
 /* v0.32.6: the Latido speeds up, so each beat's animation follows its own pace. */
 .latido-heart.is-beat svg, .latido-ring.is-beat { animation-duration: var(--bd, 700ms); }
+/* v0.32.8: the opening keeps its own background (decided with Rowler: no washi under the branch and the
+   heart); the welcome's paper, light and seigaiha fade in only when the welcome shows. */
+.splash-intro:not(.show) { background-image: none; }
+.splash-intro::before, .splash-intro::after { opacity: 0; transition: opacity .9s var(--ease-out); }
+.splash-intro.show::before { opacity: 1; } .splash-intro.show::after { opacity: .32; }
