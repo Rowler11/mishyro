@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.35.0 (Estaciones y tarjetas japonesas en Inicio)
+
+Nuevo
+- Inicio cambia solo con las estaciones de Japón: en primavera (marzo a mayo) la rama florece en sakura y suelta sus pétalos; en verano (junio a agosto) caen hojas verdes de arce y, al atardecer, aparecen dos luciérnagas; en otoño (septiembre a noviembre) el arce rojo de siempre; en invierno (diciembre a febrero) la rama queda desnuda con nieve y caen copos suaves.
+- De noche siguen los faroles y cae lo de la estación, más tenue (las noches de verano son de luciérnagas). Si la app queda abierta cuando cambia la estación o llega el atardecer, se actualiza sola.
+
+Cambiado
+- Las tarjetas de Inicio debajo del contador ("Marco de tinta y olas"): encabezado con olas seigaiha y un pequeño sello rojo, doble marco de tinta y filas de papel washi con un trazo de bermellón. Mismo papel blanco de siempre, en los 3 estilos, de día y de noche.
+- Ajustes > Apariencia explica qué cae en cada estación.
+
 ## 0.34.1 (La barra del teléfono se integra)
 
 Cambiado

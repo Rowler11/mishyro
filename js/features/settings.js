@@ -144,7 +144,7 @@ function motion({ app } = {}) {
         ui.button({ label: 'Papel', iconName: 'mail', variant: 'ghost', small: true, onClick: () => util.sound('paper', { force: true }) }),
         ui.button({ label: 'Sello', iconName: 'award', variant: 'ghost', small: true, onClick: () => util.sound('stamp', { force: true }) }))),
     CONFIG.seasonalEffects ? el('div', { class: 'card stack' },
-      ui.toggle({ label: 'Hojas de Inicio', hint: `Detrás de las tarjetas de Inicio se ven siempre ${fx.seasonLabel(fx.seasonOf())}, según la época del año; de noche, luciérnagas y chōchin.`, checked: s.seasonal !== false, onChange: (v) => save({ seasonal: v }) })) : null,
+      ui.toggle({ label: 'Hojas de Inicio', hint: `Cambian solas con las estaciones de Japón: sakura en primavera, arce verde y luciérnagas en verano, arce rojo en otoño y nieve en invierno. Ahora caen ${fx.seasonLabel(fx.seasonOf())}; de noche, también con faroles.`, checked: s.seasonal !== false, onChange: (v) => save({ seasonal: v }) })) : null,
     el('div', { class: 'card stack' },
       el('h2', { class: 'card-title' }, 'Entrada con corazón'),
       el('p', { class: 'muted small' }, '"Te amo" en muchos idiomas dibuja un corazón al abrir la app. Las demás veces sale la bienvenida corta.'),
