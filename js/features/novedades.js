@@ -12,7 +12,7 @@ export const NOTES = {
   version: '0.37.0',
   items: [
     'Inicio más liviano: el contador quedó igual pero un poco más pequeño, los favoritos son cuatro tablillas y "Para hoy" es una lista que se va chuleando a medida que la hacen.',
-    'Nuevo en Ahora mismo: la distancia entre los dos, en una escenita animada con el cielo de Inicio y un avioncito de papel que va de uno al otro. Cada uno la activa una vez desde su celular; es aproximada (más o menos 1 km), solo muestra los kilómetros y se puede pausar.',
+    'Nuevo en Ahora mismo: la distancia entre los dos, como una estación de tren: un letrero con los kilómetros y un trencito de papel que va de uno al otro. Cada uno la activa una vez desde su celular; es aproximada (más o menos 1 km), solo muestra los kilómetros y se puede pausar.',
     '"Pensando en ti" ahora es una tira más discreta, y ya no están las olas en los encabezados de las tarjetas.',
     'Cápsula, Cuponera, Cartas, Calendario, Galería, Mascotas y Ajustes ahora tienen el mismo marco de tinta y olas de Inicio: tarjetas con sello, cajitas de ayuda y pestañas de papel con trazo de pincel.',
     'Arreglé la palabra "null" que aparecía en Buscar.',

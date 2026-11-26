@@ -111,20 +111,6 @@ export async function pause() {
   ui.toast('Distancia en pausa. Tu ubicación ya no se comparte.', { tone: 'success' });
 }
 
-/** The paper route between the two badges: a dotted curve, a paper plane that flies in once, and the kilometres. */
-function route() {
-  const NS = 'http://www.w3.org/2000/svg';
-  const s = document.createElementNS(NS, 'svg');
-  s.setAttribute('viewBox', '0 0 200 40'); s.setAttribute('class', 'near-route'); s.setAttribute('aria-hidden', 'true'); s.setAttribute('preserveAspectRatio', 'none');
-  const path = document.createElementNS(NS, 'path');
-  path.setAttribute('d', 'M2 30 Q100 -12 198 30'); path.setAttribute('class', 'near-path');
-  const plane = document.createElementNS(NS, 'path');
-  plane.setAttribute('d', 'm-6 3 13-6-5 13-2-5.5z'); plane.setAttribute('class', 'near-plane');
-  s.append(path, plane);
-  return s;
-}
-const hearts = route; // the detail sheet uses the same drawing
-
 const agoText = (iso) => {
   if (!iso) return '';
   const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -167,7 +153,9 @@ export async function middle({ onChange } = {}) {
   if (!st) return null;
   const nick = profile.nick(other) || 'tu pareja';
   const open = () => sheet(mine, theirs, onChange);
-  const wrap = (cls, label, kids, extra = null) => el('button', { class: `now-near ${cls}`, type: 'button', onClick: cls === 'is-invite' ? async () => { if (await turnOn()) onChange?.(); } : open, 'aria-label': label }, route(), extra, kids);
+  // v0.37.0 "Estación de tren" (Rowler's pick): the middle is the station sign; the train runs along the rail in ahora.js
+  const sign = (cls, label, body) => el('button', { class: `now-near ${cls}`, type: 'button', onClick: cls === 'is-invite' ? async () => { if (await turnOn()) onChange?.(); } : open, 'aria-label': label },
+    el('span', { class: 'ns-ends', 'aria-hidden': 'true' }, el('span', {}, `← ${nick}`), el('span', {}, 'Tú →')), el('span', { class: 'ns-bar', 'aria-hidden': 'true' }), body);
   if (st.kind === 'km') {
     const k = kmLabel(st.km);
     const big = el('strong', { class: 'near-km' }, k.big);
@@ -178,8 +166,8 @@ export async function middle({ onChange } = {}) {
       const step = (t) => { const p = Math.min(1, (t - t0) / 1100); big.textContent = `${Math.round(n * (1 - (1 - p) ** 3)).toLocaleString('es-CO')} km`; if (p < 1) requestAnimationFrame(step); };
       big.textContent = '0 km'; requestAnimationFrame(step);
     }
-    return wrap('is-km', `${k.big} ${k.small}. Ver detalles`, el('span', { class: 'near-text' }, big, el('span', { class: 'near-sub' }, k.small)), el('span', { class: 'near-trail', 'aria-hidden': 'true' }, el('i'), el('i'), el('i')));
+    return sign('is-km', `${k.big} ${k.small}. Ver detalles`, el('span', { class: 'near-text' }, big, el('span', { class: 'near-sub' }, k.small)));
   }
-  if (st.kind === 'waiting') return wrap('is-wait', `Esperando a que ${nick} active la distancia. Ver detalles`, el('span', { class: 'near-text' }, el('span', { class: 'near-sub' }, `Esperando a ${nick}`)));
-  return wrap('is-invite', st.partnerOn ? `${nick} ya activó la distancia. Activarla tú también` : 'Ver la distancia entre los dos', el('span', { class: 'near-text' }, el('span', { class: 'near-sub' }, st.partnerOn ? `${nick} ya la activó. Toca para ver` : 'Toca para ver la distancia')));
+  if (st.kind === 'waiting') return sign('is-wait', `Esperando a que ${nick} active la distancia. Ver detalles`, el('span', { class: 'near-text' }, el('span', { class: 'near-sub' }, `Esperando a ${nick}`)));
+  return sign('is-invite', st.partnerOn ? `${nick} ya activó la distancia. Activarla tú también` : 'Ver la distancia entre los dos', el('span', { class: 'near-text' }, el('span', { class: 'near-sub' }, st.partnerOn ? `${nick} ya la activó. Toca para ver` : 'Toca para ver la distancia')));
 }

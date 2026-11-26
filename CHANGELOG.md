@@ -3,7 +3,7 @@
 ## 0.37.0 (Inicio "Tablillas y tiras" y la distancia entre los dos)
 
 Nuevo
-- Ahora mismo muestra la distancia entre los dos celulares en una escenita animada: el cielo de Inicio según la hora (día, atardecer, noche con luna y estrellas), nubes que pasan, dos colinas con olas seigaiha con el sello de cada uno, pétalos que caen, corazoncitos que suben y un avioncito de papel que va de uno al otro por una ruta punteada. Los kilómetros cuentan hacia arriba la primera vez ("8 km de distancia", o "Juntitos" a menos de 1 km). Debajo, lo que hace cada uno como texto suelto, sin recuadros. Sin movimiento si el teléfono pide reducirlo.
+- Ahora mismo muestra la distancia entre los dos celulares como una estación de tren japonesa: el letrero con los kilómetros ("← LEO · 8 km · TÚ →", o "Juntitos" a menos de 1 km, que cuentan hacia arriba la primera vez), la vía con sus durmientes y un trencito bala de papel que va de un sello al otro, se detiene en cada andén y vuelve. Debajo, lo que hace cada uno como texto suelto, sin recuadros. Sin movimiento si el teléfono pide reducirlo.
 - "Para hoy" es una lista que se va chuleando: la pregunta del día, el reto de la semana y el ánimo quedan en la lista y se marcan y tachan cuando están hechos, con un contador "1 de 3" y un sello cuando se completa. Los avisos (cápsulas, recordatorios, insignias) van arriba, sin casilla.
 
 Cambiado
