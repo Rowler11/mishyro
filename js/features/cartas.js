@@ -289,7 +289,7 @@ function editor(existing, { onSaved }) {
 }
 
 export async function render(ctx) {
-  const page = el('section', { class: 'page page-wide cartas' });
+  const page = el('section', { class: 'page page-wide cartas ink-page' });
   const header = ui.pageHeader({ title: 'Cartas', jp: '手紙', romaji: 'tegami', actions: [ui.newButton('Escribir carta', () => openEditor(), 'pencil')] });
   const body = el('div', { class: 'cartas-body' }, ui.skeleton(3, { kind: 'cards' }));
   page.append(header, body);

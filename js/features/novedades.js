@@ -9,8 +9,10 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.35.0',
+  version: '0.36.0',
   items: [
+    'Cápsula, Cuponera, Cartas, Calendario, Galería, Mascotas y Ajustes ahora tienen el mismo marco de tinta y olas de Inicio: tarjetas con sello, cajitas de ayuda y pestañas de papel con trazo de pincel.',
+    'Arreglé la palabra "null" que aparecía en Buscar.',
     'Inicio sigue las estaciones de Japón: en primavera la rama florece y caen pétalos de sakura, en verano hojas verdes y luciérnagas al atardecer, en otoño el arce rojo y en invierno nieve. De noche siguen, más suaves, con los faroles.',
     'Las tarjetas de Inicio tienen un encabezado con olas japonesas, doble marco de tinta y filas de papel con un trazo rojo, en los 3 estilos.',
     'La barra de arriba del teléfono (hora y batería) toma el color del fondo de cada pantalla; en Inicio sigue el cielo, de día, de tarde y de noche.',

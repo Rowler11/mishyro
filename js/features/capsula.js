@@ -466,7 +466,7 @@ function onThisDayCard(list, bag) {
 // ---------- view ----------
 export async function render(ctx) {
   const bag = urlBag();
-  const page = el('section', { class: 'page page-wide capsula' });
+  const page = el('section', { class: 'page page-wide capsula ink-page' });
   const fab = ui.newButton('Nuevo recuerdo', () => openEditor());
   const future = ui.button({ label: 'Para el futuro', iconName: 'lock', small: true, variant: 'ghost', href: '#/capsula-tiempo' });
   future.classList.add('capsula-future');

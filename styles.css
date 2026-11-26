@@ -4403,3 +4403,46 @@ a.game-tile:hover { border-color: var(--ink); }
 @media (hover: hover) { .home :is(.today-row, .mekuri, .guide-step):hover { border-color: var(--accent); background: var(--paper) var(--grain); } }
 .home :is(.today-row, .guide-step):active { background: color-mix(in srgb, var(--accent) 6%, var(--paper)); }
 :root[data-contrast="high"] .home :is(.home-card, .guide-card) { outline-color: var(--border); }
+
+/* v0.36.0 · "Marco de tinta y olas" también en las pantallas más usadas (Rowler: Cápsula, Cuponera, Cartas,
+   Calendario, Galería, Ajustes y Mascotas). Se activa con .ink-page; todo por tokens, igual que en Inicio. */
+.ink-page .card:not(.card-link):not(.note-card):not(.gallery-daily) { background: var(--paper) var(--grain); border-color: var(--border-strong); border-radius: 10px;
+  outline: 1px solid var(--border); outline-offset: -5px; box-shadow: 0 2px 0 var(--surface-2), var(--shadow-1); }
+.ink-page .card.card-link { background: var(--paper) var(--grain); border-radius: 10px; box-shadow: 0 2px 0 var(--surface-2), var(--shadow-1); }
+/* a card that opens with a title gets the band of waves and the small diamond seal */
+.ink-page .card:not(.card-link):not(.note-card) > :is(.card-title, .card-kicker):first-child { position: relative; isolation: isolate; display: flex; align-items: center; gap: 8px;
+  margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-1); padding: 13px var(--space-4) 11px; border-bottom: 1px solid var(--border-strong); font-family: var(--font-serif); }
+.ink-page .card:not(.card-link):not(.note-card) > :is(.card-title, .card-kicker):first-child::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 1.5px; background: var(--accent); transform: rotate(45deg); }
+.ink-page .card:not(.card-link):not(.note-card) > :is(.card-title, .card-kicker):first-child::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; width: auto; height: auto; margin: 0;
+  background: var(--accent); opacity: calc(var(--pattern-opacity) * 1.9);
+  -webkit-mask: url('./icons/patterns/seigaiha.svg') repeat 0 0 / 40px 20px; mask: url('./icons/patterns/seigaiha.svg') repeat 0 0 / 40px 20px; }
+/* cajitas de ayuda ("Entendido"): papel con trazo de bermellón y el bombillo dentro de un sello */
+.ink-page .guide-hint { position: relative; background: var(--paper) var(--grain); border: 1px solid var(--border-strong); border-radius: 8px; outline: 1px solid var(--border); outline-offset: -4px; box-shadow: none; }
+.ink-page .guide-hint::before { content: ''; position: absolute; left: -1px; top: 8px; bottom: 8px; width: 3.5px; border-radius: 2px; background: var(--accent); opacity: .85; }
+.ink-page .guide-hint-icon { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border-radius: 4px; background: var(--accent); color: var(--accent-ink); transform: rotate(-4deg); }
+/* pestañas: tablillas de papel con tinta; la elegida lleva un trazo de pincel debajo */
+.ink-page .segmented { background: var(--paper) var(--grain); border: 1px solid var(--border-strong); border-radius: 8px; box-shadow: 0 2px 0 var(--surface-2); }
+.ink-page .segmented-option { border-radius: 6px; }
+.ink-page .segmented-input:checked + .segmented-option { position: relative; background: color-mix(in srgb, var(--accent) 9%, var(--paper)); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.ink-page .segmented-input:checked + .segmented-option::before { content: ''; position: absolute; left: 22%; right: 22%; bottom: 3px; height: 4px; background: var(--accent); opacity: .6;
+  -webkit-mask: url('./icons/patterns/brush.svg') no-repeat 0 0 / 100% 100%; mask: url('./icons/patterns/brush.svg') no-repeat 0 0 / 100% 100%; }
+/* listas de Ajustes: tablillas separadas con el trazo bermellón a la izquierda */
+.ink-page .list-row.card-link, .ink-page :is(.me-card) { position: relative; }
+.ink-page .list-row.card-link::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3.5px; border-radius: 2px; background: var(--accent); opacity: .7; }
+/* estados vacíos: marco de tinta discontinuo con esquinas doradas */
+.ink-page .empty { position: relative; border: 1px dashed var(--border-strong); border-radius: 10px; background: var(--paper) var(--grain); margin-top: var(--space-3); }
+.ink-page .empty::before, .ink-page .empty::after { content: ''; position: absolute; width: 14px; height: 14px; border: 2px solid var(--gold); pointer-events: none; }
+.ink-page .empty::before { top: 6px; left: 6px; border-right: 0; border-bottom: 0; }
+.ink-page .empty::after { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
+:root[data-contrast="high"] .ink-page .card { outline-color: transparent; }
+.ink-page .hub-tabs { background: var(--paper) var(--grain); border-color: var(--border-strong); border-radius: 8px; box-shadow: 0 2px 0 var(--surface-2); }
+.ink-page .hub-tab { border-radius: 6px; }
+.ink-page .hub-tab.is-on { position: relative; background: color-mix(in srgb, var(--accent) 9%, var(--paper)); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.ink-page .hub-tab.is-on::before { content: ''; position: absolute; left: 22%; right: 22%; bottom: 4px; height: 4px; background: var(--accent); opacity: .6;
+  -webkit-mask: url('./icons/patterns/brush.svg') no-repeat 0 0 / 100% 100%; mask: url('./icons/patterns/brush.svg') no-repeat 0 0 / 100% 100%; }
+/* Mascotas: el título de cada bloque también lleva la banda de olas y el sello */
+.ink-page .pet-block > .pet-block-head:first-child { position: relative; isolation: isolate; margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) 0; padding: 13px var(--space-4) 11px; border-bottom: 1px solid var(--border-strong); }
+.ink-page .pet-block > .pet-block-head:first-child::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: var(--accent); opacity: calc(var(--pattern-opacity) * 1.9);
+  -webkit-mask: url('./icons/patterns/seigaiha.svg') repeat 0 0 / 40px 20px; mask: url('./icons/patterns/seigaiha.svg') repeat 0 0 / 40px 20px; }
+.ink-page .pet-block > .pet-block-head:first-child h2 { display: flex; align-items: center; gap: 8px; }
+.ink-page .pet-block > .pet-block-head:first-child h2::before { content: ''; width: 7px; height: 7px; border-radius: 1.5px; background: var(--accent); transform: rotate(45deg); }

@@ -134,7 +134,7 @@ function seasonCard() {
 
 
 export async function render(ctx = {}) {
-  const page = el('section', { class: 'page calendario' });
+  const page = el('section', { class: 'page calendario ink-page' });
   const today = util.localDay();
   let selected = util.isValidDay(ctx.query?.dia) ? ctx.query.dia : today;
   let view = util.parseDay(selected); view = new Date(view.getFullYear(), view.getMonth(), 1);

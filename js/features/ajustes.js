@@ -13,7 +13,7 @@ export function render(ctx) {
 }
 
 // ---------- shared helpers ----------
-const page = (title, ...kids) => el('section', { class: 'page settings-page' }, ui.pageHeader({ title, back: '/ajustes' }), ...kids);
+const page = (title, ...kids) => el('section', { class: 'page settings-page ink-page' }, ui.pageHeader({ title, back: '/ajustes' }), ...kids);
 const card = (title, ...kids) => el('section', { class: 'card stack' }, title ? el('h2', { class: 'card-title' }, title) : null, ...kids);
 const muted = (text, small = false) => el('p', { class: `muted${small ? ' small' : ''}` }, text);
 /** replaceChildren that skips empty slots (native replaceChildren would print "null"). */

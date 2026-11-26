@@ -118,10 +118,10 @@ export function render() {
     items = x;
     const me = profile.active(); const other = profile.partnerOf(me);
     const years = [...new Set(items.map((it) => String(it.date || '').slice(0, 4)).filter((y) => /^\d{4}$/.test(y)))].sort().reverse().slice(0, 6);
-    filterBox.replaceChildren(
+    filterBox.replaceChildren(...[ // replaceChildren turns a null into the text "null", so empty rows are filtered out
       chipRow('group', 'Tipo', [['all', 'Todo'], ['memories', 'Recuerdos'], ['letters', 'Cartas'], ['coupons', 'Cupones']]),
       chipRow('by', 'Quién', [['all', 'Los dos'], [me, 'Tú'], [other, profile.name(other) || 'Tu pareja']]),
-      years.length > 1 ? chipRow('year', 'Año', [['all', 'Todos'], ...years.map((y) => [y, y])]) : null);
+      years.length > 1 ? chipRow('year', 'Año', [['all', 'Todos'], ...years.map((y) => [y, y])]) : null].filter(Boolean));
     paintTags();
   });
 

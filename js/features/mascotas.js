@@ -335,7 +335,7 @@ export async function ensureVetFund(pet) {
 
 // ---------- page ----------
 export async function render() {
-  const page = el('section', { class: 'page page-wide mascotas' });
+  const page = el('section', { class: 'page page-wide mascotas ink-page' });
   const urls = new Set();
   let selected = null; try { selected = sessionStorage.getItem(KEY); } catch { /* private mode */ }
   let tab = 'perfil';

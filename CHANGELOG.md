@@ -1,5 +1,14 @@
 # Cambios
 
+## 0.36.0 (Marco de tinta y olas en las pantallas más usadas)
+
+Cambiado
+- Cápsula, Cuponera, Cartas, Calendario, Galería, Mascotas y Ajustes (con sus pantallas) estrenan el diseño de Inicio: las tarjetas con título llevan encabezado de olas seigaiha y un sello pequeño, doble marco de tinta y papel washi; las cajitas de ayuda ("Entendido") llevan un trazo bermellón y el bombillo dentro de un sello; las pestañas son tablillas de papel con un trazo de pincel bajo la elegida; las listas de Ajustes llevan el trazo rojo a la izquierda y los estados vacíos un marco discontinuo con esquinas doradas. Va en los 3 estilos, de día y de noche.
+- Las demás pantallas quedan como estaban por ahora.
+
+Arreglado
+- En Buscar aparecía la palabra "null" debajo de los filtros.
+
 ## 0.35.0 (Estaciones y tarjetas japonesas en Inicio)
 
 Nuevo

@@ -56,7 +56,7 @@ export const viewerItems = (list) => list.map((p) => ({
 }));
 
 export async function render() {
-  const page = el('section', { class: 'page page-wide galeria' });
+  const page = el('section', { class: 'page page-wide galeria ink-page' });
   page.append(ui.pageHeader({ title: 'Galería', jp: '写真', romaji: 'shashin', back: '/mas', actions: [
     // Subir: new photos and videos become a memory in the Cápsula (so they keep a date and a story).
     ui.button({ label: 'Subir', iconName: 'image-plus', variant: 'primary', small: true, href: `#/capsula/nuevo?fotos=1&fecha=${util.localDay()}` })] }));

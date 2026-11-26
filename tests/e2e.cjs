@@ -1933,6 +1933,13 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('35 estaciones: en primavera la rama florece en sakura (sin hojas verdes)', bloom === 'true,true', bloom);
     const frame = await page.evaluate(() => { const k = document.querySelector('.home .coming-card > .card-kicker, .home .today-card > .card-kicker, .home .now-card > .card-kicker'); const card = k?.closest('.card'); const band = getComputedStyle(k, '::after'); return [getComputedStyle(card).outlineStyle, getComputedStyle(k).borderBottomStyle, band.content !== 'none' && /seigaiha/.test(band.maskImage || band.webkitMaskImage), getComputedStyle(k, '::before').content !== 'none'].join(','); });
     ok('35 tarjetas de Inicio: marco de tinta, encabezado con olas y sello', frame === 'solid,solid,true,true', frame);
+    // v0.36.0: the ink frame reaches the most used screens, and Buscar no longer prints "null".
+    await go('/ajustes', '.page');
+    const ink = await page.evaluate(() => { const p = document.querySelector('.ink-page'); const c = p?.querySelector('.card:not(.card-link)'); return [!!p, c ? getComputedStyle(c).outlineStyle : 'none'].join(','); });
+    ok('36 Ajustes: el marco de tinta llega a las pantallas más usadas', ink === 'true,solid', ink);
+    await go('/buscar', '.page');
+    await page.waitForTimeout(600);
+    ok('36 Buscar: ya no aparece la palabra "null"', !/\bnull\b/.test(await page.locator('main').innerText()));
     await go('/mas', '.page');
     ok('12 hojas: solo en Inicio (se van al salir)', await page.$('.ambient-canvas') === null);
 
