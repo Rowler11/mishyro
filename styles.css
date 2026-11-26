@@ -4534,3 +4534,5 @@ a.game-tile:hover { border-color: var(--ink); }
 .near-sheet-km .near-hearts { width: 72px; height: 32px; }
 .near-sheet-km strong { font: 700 1.7rem var(--font-serif); }
 .home .thinking-card > .btn-ghost { justify-self: start; min-height: 32px; padding-inline: 6px; font-size: .8rem; color: var(--text-2); }
+@media (max-width: 899px) { .home .home-slide:not(.is-active) { display: none; } } /* the strip layout must not show a card that is not picked */
+@media (min-width: 900px) { .home .home-slide:not(.is-active) { display: grid; } }
