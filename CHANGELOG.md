@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.37.2 (Ahora mismo y la distancia, en pausa)
+
+Cambiado
+- "Ahora mismo" y la distancia entre los dos salieron de Inicio y de Personalizar Inicio mientras se elige un diseño que guste. El código se conserva (ahora.js y cerca.js), así que vuelven sin perder nada. Mientras estén en pausa, el teléfono ya no envía la posición redondeada.
+
 ## 0.37.1 (Inicio en orden)
 
 Cambiado
