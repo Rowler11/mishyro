@@ -194,7 +194,7 @@ function editor(existing, { onSaved }) {
 }
 
 export async function render() {
-  const page = el('section', { class: 'page page-wide cupones' });
+  const page = el('section', { class: 'page page-wide cupones ink-page' });
   const header = ui.pageHeader({ title: 'Cuponera', jp: '券', romaji: 'ken', actions: [ui.newButton('Nuevo cupón', () => openEditor())] });
   const body = el('div', { class: 'cupones-body' }, ui.skeleton(3));
   page.append(header, body);

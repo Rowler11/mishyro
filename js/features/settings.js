@@ -47,7 +47,7 @@ function main({ app }) {
     if (outcome === 'accepted') { ui.toast('¡Listo! La app quedó instalada.', { tone: 'success' }); install.remove(); }
   } }) : null;
 
-  return el('section', { class: 'page' },
+  return el('section', { class: 'page ink-page' },
     el('header', { class: 'page-head' },
       el('div', { class: 'page-titles' }, el('h1', { class: 'page-title', tabindex: '-1' }, 'Ajustes'), ja('設定', 'settei')),
       el('div', { class: 'page-actions' }, seal)),
@@ -121,7 +121,7 @@ function appearance(ctx = {}, { focusMotion = false } = {}) {
   });
   const motionPart = motion(ctx);
   if (focusMotion) motionPart.ready.then(() => requestAnimationFrame(() => motionPart.node.scrollIntoView({ block: 'start' })));
-  return el('section', { class: 'page' }, ui.pageHeader({ title: 'Apariencia', back: '/ajustes' }), wrap,
+  return el('section', { class: 'page ink-page' }, ui.pageHeader({ title: 'Apariencia', back: '/ajustes' }), wrap,
     el('h2', { class: 'card-kicker settings-subtitle', id: 'movimiento' }, 'Movimiento y sonido'), motionPart.node);
 }
 
@@ -206,7 +206,7 @@ function legal() {
         await db.setSettings('guideHidden', { hidden: false });
         ui.toast('Listo: cada sección se explica otra vez la primera vez que entres.', { tone: 'success' });
       } })));
-  return el('section', { class: 'page' }, ui.pageHeader({ title: 'Legal y ayuda', back: '/ajustes' }), guide, list,
+  return el('section', { class: 'page ink-page' }, ui.pageHeader({ title: 'Legal y ayuda', back: '/ajustes' }), guide, list,
     el('p', { class: 'muted small' }, CONFIG.legalFooter));
 }
 
@@ -266,7 +266,7 @@ function legalDoc(slug) {
   const body = el('article', { class: 'card prose legal-doc' }, ui.skeleton(4));
   const tools = el('div', { class: 'btn-row' });
   const extra = el('div', { class: 'stack' });
-  const page = el('section', { class: 'page' }, ui.pageHeader({ title: 'Legal y ayuda', back: '/ajustes/legal' }), extra, body, tools);
+  const page = el('section', { class: 'page ink-page' }, ui.pageHeader({ title: 'Legal y ayuda', back: '/ajustes/legal' }), extra, body, tools);
   const id = `cfg:legal:${slug}`;
   const draw = async () => {
     const d = await db.get('content', id);
@@ -333,7 +333,7 @@ function about() {
     ];
     facts.replaceChildren(...rows.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, v)]));
   })();
-  return el('section', { class: 'page' }, ui.pageHeader({ title: 'Acerca de', back: '/ajustes' }),
+  return el('section', { class: 'page ink-page' }, ui.pageHeader({ title: 'Acerca de', back: '/ajustes' }),
     el('div', { class: 'card stack about-card' },
       el('div', { class: 'about-brand' }, ui.logo({ size: 64 }), el('div', {}, el('p', { class: 'about-name' }, 'Aishiteru'), el('p', { class: 'muted small', 'data-jp-ok': '' }, '愛してる · te amo'))),
       el('p', {}, 'Una app hecha a mano para los dos. Todo se guarda solo en este dispositivo.'), facts),
