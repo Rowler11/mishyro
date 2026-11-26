@@ -468,13 +468,27 @@ export async function companion(node, id, { enter = true } = {}) {
   prime();
   return withCast(({ show, pets: all }) => place(node, id, enter, show ? all : []));
 }
+const visits = new Map(); let lastFirst = '';
+function visitSeed(id) {
+  const now = Date.now(); const v = visits.get(id);
+  if (v && now - v.t < 4000) return v.s;
+  const s = Math.floor(Math.random() * 2 ** 32);
+  visits.set(id, { t: now, s });
+  return s;
+}
 function place(node, id, enter, pets) {
   if (!node.isConnected || node.querySelector('.kitty-perch, .kitty-nap, .amb-perch, .amb-rest')) return;
-  const h = hash(`${id}|${util.localDay()}`);
+  // v0.37.0 (Rowler: "que no estén siempre en las mismas zonas, que salgan a veces"): each visit rolls its own
+  // dice (kept a few seconds so a quick repaint doesn't shuffle them): who comes, where they sit, and sometimes nobody.
+  const h = visitSeed(id);
+  if ((h >>> 20) % 100 < 22) return;
   // Rowler's rule (2026-11-24): the real cats and the paper animals take turns.
-  const cast = [...pets.map((pet, index) => ({ pet, index })), ...Object.keys(PAPER).map((pid) => ({ id: pid }))];
+  const castAll = [...pets.map((pet, index) => ({ pet, index })), ...Object.keys(PAPER).map((pid) => ({ id: pid }))];
+  const key = (c) => (c.pet ? `p${c.index}` : c.id);
+  const cast = castAll.length > 2 ? castAll.filter((c) => key(c) !== lastFirst) : castAll;
   const first = cast[h % cast.length];
-  const rest = cast.filter((c) => c !== first);
+  lastFirst = key(first);
+  const rest = castAll.filter((c) => c !== first && key(c) !== key(first));
   const second = rest[(h >>> 6) % rest.length];
   const cards = [...node.querySelectorAll('.card, .segmented')].filter((c) => solidCard(c) && /flex|grid|block/.test(getComputedStyle(c.parentElement).display) && c.parentElement.children.length > 1).slice(0, 8);
   const two = cards.length >= 2 && (h >>> 3) % 3 !== 0;
@@ -491,7 +505,7 @@ function place(node, id, enter, pets) {
     placed.push(slot); alive(slot.host);
   };
   const i1 = cards.length ? (h >>> 8) % cards.length : -1;
-  const side1 = [0.78, 0.22, 0.6][(h >>> 12) % 3];
+  const side1 = [0.78, 0.22, 0.6, 0.4, 0.85, 0.15][(h >>> 12) % 6];
   put(first, i1 >= 0 ? cards[i1] : null, side1, i1 < 0 || (!two && (h >>> 4) % 4 === 0));
   if (two) {
     // The second one sits two cards away when it can, or rests at the end of the screen.
