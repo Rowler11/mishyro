@@ -84,7 +84,8 @@ export async function pendingToday() {
   const asker = data.questions.find((q) => q.id === `q:asker:${util.localDay()}`);
   const open = [question, asker].filter((q) => q && !answered(data, q, me));
   const partnerDone = open.some((q) => answered(data, q, profile.partnerOf(me)));
-  return { count: open.length, partnerDone, first: open[0] ? textOf(open[0]) : '' };
+  const all = [question, asker].filter(Boolean);
+  return { count: open.length, total: all.length, partnerDone, first: open[0] ? textOf(open[0]) : (all[0] ? textOf(all[0]) : '') };
 }
 
 async function saveAnswer(q, text) {

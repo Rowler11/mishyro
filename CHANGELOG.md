@@ -1,5 +1,21 @@
 # Cambios
 
+## 0.37.0 (Inicio "Tablillas y tiras" y la distancia entre los dos)
+
+Nuevo
+- Ahora mismo muestra la distancia entre los dos celulares como una estación de tren japonesa: el letrero con los kilómetros ("← LEO · 8 km · TÚ →", o "Juntitos" a menos de 1 km, que cuentan hacia arriba la primera vez), la vía con sus durmientes y un trencito bala de papel que va de un sello al otro, se detiene en cada andén y vuelve. Debajo, lo que hace cada uno como texto suelto, sin recuadros. Sin movimiento si el teléfono pide reducirlo.
+- "Para hoy" es una lista que se va chuleando: la pregunta del día, el reto de la semana y el ánimo quedan en la lista y se marcan y tachan cuando están hechos, con un contador "1 de 3" y un sello cuando se completa. Los avisos (cápsulas, recordatorios, insignias) van arriba, sin casilla.
+
+Cambiado
+- Los animalitos de las pantallas ya no son siempre los mismos ni están siempre en el mismo sitio: en cada visita cambian quién sale (gatitos o animalitos de papel), en qué tarjeta y de qué lado se asoman, y a veces no sale ninguno.
+- Escribimos: las cartas ya no llevan Editar ni Borrar por fuera; al tocar una carta (borrador, en camino o leída) se abre y ahí están Editar y Borrar. Por fuera queda "Estampillas", que ahora sirve también para las cartas ya selladas y leídas, además de los borradores.
+- El contador, el corazón y la racha conservan su diseño pero son un poco más pequeños.
+- Sin las bandas de olas en los encabezados de las tarjetas: título con su sello rojo y nada más.
+- Sus favoritos son cuatro tablillas sueltas, sin tarjeta alrededor (se eligen hasta 4).
+- "Pensando en ti" es una tira punteada con un botón corto "Enviar".
+- "Lo que viene" muestra las dos próximas fechas.
+- Orden de Inicio: Ahora mismo, favoritos, Para hoy, Pensando en ti y Lo que viene. Celebraciones y Próximo encuentro salen solo cuando tocan. Foto del día, Toques y Plan del finde quedan para activarlos en "Personalizar Inicio". Un orden guardado antes se reemplaza una vez por este; se puede volver a personalizar.
+
 ## 0.36.0 (Marco de tinta y olas en las pantallas más usadas)
 
 Cambiado

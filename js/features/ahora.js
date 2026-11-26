@@ -113,42 +113,72 @@ function editor(onDone) {
   });
 }
 
-function half(r, { who, mine, onEdit }) {
+// The two pieces of a status, used by both layouts: the round badge and the text block.
+function pieces(r, { who, mine }) {
   const ok = fresh(r); const a = ok ? actOf(r) : null; const md = ok ? moodOf(r.mood) : null;
-  const kids = ok ? [
-    el('span', { class: 'now-badge', 'aria-hidden': 'true' }, a ? icon(a.icon, { size: 24 }) : el('span', { class: 'now-emoji' }, md?.emoji || '💭'),
-      a && md ? el('span', { class: 'now-badge-mood' }, md.emoji) : null),
-    el('span', { class: 'now-text' },
+  const badge = ok
+    ? el('span', { class: 'now-badge', 'aria-hidden': 'true' }, a ? icon(a.icon, { size: 24 }) : el('span', { class: 'now-emoji' }, md?.emoji || '💭'), a && md ? el('span', { class: 'now-badge-mood' }, md.emoji) : null)
+    : el('span', { class: 'now-badge is-empty', 'aria-hidden': 'true' }, icon(mine ? 'plus' : 'cloud-moon', { size: 22 }));
+  const text = ok
+    ? el('span', { class: 'now-text' },
       el('span', { class: 'now-who' }, who),
       el('strong', { class: 'now-what' }, a?.label || md?.name || r.text),
       r.text && (a || md) ? el('span', { class: 'now-line' }, r.text) : null,
-      el('span', { class: 'now-when', 'data-at': r.at }, `${md && a ? `${md.name} · ` : ''}${ago(r.at)}`)),
-  ] : [
-    el('span', { class: 'now-badge is-empty', 'aria-hidden': 'true' }, icon(mine ? 'plus' : 'cloud-moon', { size: 22 })),
-    el('span', { class: 'now-text' }, el('span', { class: 'now-who' }, who),
+      el('span', { class: 'now-when', 'data-at': r.at }, `${md && a ? `${md.name} · ` : ''}${ago(r.at)}`))
+    : el('span', { class: 'now-text' }, el('span', { class: 'now-who' }, who),
       el('strong', { class: 'now-what is-empty' }, mine ? '¿Qué haces ahora?' : 'Sin estado por ahora'),
-      el('span', { class: 'now-when' }, mine ? 'Toca para contarle' : 'Aparece aquí cuando lo comparta')),
-  ];
+      el('span', { class: 'now-when' }, mine ? 'Toca para contarle' : 'Aparece aquí cuando lo comparta'));
+  const label = ok ? `Tu estado: ${a?.label || md?.name || r.text}. Cambiar` : 'Contar qué haces ahora';
+  return { ok, badge, text, label };
+}
+
+function half(r, { who, mine, onEdit }) {
+  const { ok, badge, text, label } = pieces(r, { who, mine });
   return mine
-    ? el('button', { class: `now-half is-mine${ok ? '' : ' is-blank'}`, type: 'button', onClick: onEdit, 'aria-label': ok ? `Tu estado: ${a?.label || md?.name || r.text}. Cambiar` : 'Contar qué haces ahora' }, ...kids)
-    : el('div', { class: `now-half${ok ? '' : ' is-blank'}` }, ...kids);
+    ? el('button', { class: `now-half is-mine${ok ? '' : ' is-blank'}`, type: 'button', onClick: onEdit, 'aria-label': label }, badge, text)
+    : el('div', { class: `now-half${ok ? '' : ' is-blank'}` }, badge, text);
+}
+
+/** v0.37.0 "Ruta de papel": with the distance on, one compact row (badge, paper route with the km, badge) and one line each below. */
+function routeLayout(theirs, mine, mid, { whoTheirs, onEdit }) {
+  const t = pieces(theirs, { who: whoTheirs, mine: false });
+  const m = pieces(mine, { who: 'Tú', mine: true });
+  // v0.37.0 "Estación de tren" (Rowler's pick): a station sign with the kilometres, a rail, and a little paper bullet
+  // train that travels from one to the other and back, stopping at each platform where the two seals wait.
+  const live = mid.classList.contains('is-km');
+  return el('div', { class: 'now-route' },
+    el('div', { class: `nr-top nr-station${live ? ' is-live' : ''}` }, mid,
+      el('span', { class: 'ns-rail', 'aria-hidden': 'true' }),
+      live ? el('span', { class: 'ns-train', 'aria-hidden': 'true' }, el('i'), el('u')) : null,
+      el('span', { class: 'ns-pin ns-pin-a' }, t.badge, el('span', { class: 'nr-name' }, whoTheirs)),
+      el('span', { class: 'ns-pin ns-pin-b' }, m.badge, el('span', { class: 'nr-name' }, 'Tú'))),
+    el('div', { class: 'nr-slips' },
+      el('div', { class: `nr-slip${t.ok ? '' : ' is-blank'}` }, t.text),
+      el('button', { class: `nr-slip is-mine${m.ok ? '' : ' is-blank'}`, type: 'button', onClick: onEdit, 'aria-label': m.label }, m.text)));
 }
 
 /** Card for Inicio: both statuses side by side; yours changes with a tap. */
 export async function homeCard({ onChange } = {}) {
   const me = profile.active(); const other = profile.partnerOf(me);
   const card = el('section', { class: 'card home-card now-card', 'aria-labelledby': 'now-title' });
+  const near = await import('./cerca.js').catch(() => null); // v0.37.0: the distance between the two phones
   const paint = async () => {
-    const [mine, theirs] = await Promise.all([getNow(me), getNow(other)]);
+    const [mine, theirs, mid] = await Promise.all([getNow(me), getNow(other), near ? near.middle({ onChange: () => paint().catch(() => {}) }).catch(() => null) : null]);
+    const whoTheirs = profile.nick(other) || profile.name(other) || 'Tu pareja';
+    const onEdit = () => editor(() => { paint(); onChange?.(); });
     card.replaceChildren(
       el('h2', { class: 'card-kicker', id: 'now-title' }, 'Ahora mismo'),
-      el('div', { class: 'now-row' },
-        half(theirs, { who: profile.nick(other) || profile.name(other) || 'Tu pareja', mine: false }),
-        half(mine, { who: 'Tú', mine: true, onEdit: () => editor(() => { paint(); onChange?.(); }) })));
+      mid ? routeLayout(theirs, mine, mid, { whoTheirs, onEdit })
+        : el('div', { class: 'now-row' }, half(theirs, { who: whoTheirs, mine: false }), half(mine, { who: 'Tú', mine: true, onEdit })));
   };
   await paint();
+  // opening the app on a phone where the distance is on sends the rounded position again (never asks by itself)
+  const again = () => { if (!document.hidden && card.isConnected) near?.refresh().catch(() => {}); };
+  again();
+  document.addEventListener('visibilitychange', again);
   // live: a change from the other phone repaints it; "hace X" ticks every minute
-  const off = db.onChange((s) => { if (s === 'streaks' && card.isConnected) paint().catch(() => {}); });
+  const off0 = db.onChange((s) => { if (s === 'streaks' && card.isConnected) paint().catch(() => {}); });
+  const off = () => { off0(); document.removeEventListener('visibilitychange', again); };
   const tick = setInterval(() => {
     if (!card.isConnected) { clearInterval(tick); off(); return; }
     card.querySelectorAll('.now-when[data-at]').forEach((n) => { n.textContent = n.textContent.replace(/(ahora|hace .+)$/, ago(n.dataset.at)); });

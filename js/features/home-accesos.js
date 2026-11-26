@@ -7,7 +7,7 @@ import { GROUPS, listed, asListed } from '../routes.js';
 import { draw } from '../core/art.js';
 const { el, icon } = util;
 const FAV_ID = 'homeFavorites';
-const FAV_MAX = 6;
+const FAV_MAX = 4; // v0.37.0: four tablets in one row (Inicio "Tablillas y tiras")
 const DEFAULT_FAVS = ['calendario', 'galeria', 'juegos', 'planes', 'diario', 'mapa'];
 const VISITED = `${CONFIG.storageKey}.visited`;
 

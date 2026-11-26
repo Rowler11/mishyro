@@ -462,7 +462,7 @@ async function exampleContent(page, { reload = true } = {}) {
     const draftForLeo = await page.evaluate(async () => { const p = await import('./js/core/profile.js'); const db = await import('./js/core/db.js'); p.setActive('david'); const n = (await db.query('letters', { filter: (l) => !l.letterId })).length; p.setActive('sofia'); return n; });
     ok('cartas: a draft is "Solo yo" (Leo does not see it)', draftForLeo === 0);
     // Estampillas on the envelope (decided 2026-11-19, option A)
-    await page.locator('.own-letter').getByRole('button', { name: 'Decorar sobre' }).click();
+    await page.locator('.own-letter').getByRole('button', { name: 'Estampillas' }).click();
     const deco = page.locator('.sticker-editor');
     await deco.getByRole('button', { name: 'Poner: Flor de sakura' }).click();
     await deco.getByRole('button', { name: 'Poner: Gatito siamés' }).click();
@@ -483,6 +483,11 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('stickers: the draft says how many it has', /2 estampillas/.test(await page.locator('.own-letter').textContent()));
     await page.waitForSelector('.own-letter.status-draft');
     ok('cartas: a draft is a loose sheet "on the table" with a few lines of the letter', /Sobre la mesa/.test(await page.locator('.cartas-section').textContent()) && /Mira hacia arriba/.test(await page.locator('.draft-sheet .draft-lines').textContent()));
+    ok('cartas: no Editar/Borrar/Seguir outside on a draft; Estampillas stays', (await page.locator('.draft-sheet').getByRole('button', { name: /^(Editar|Borrar|Seguir)$/ }).count()) === 0 && (await page.locator('.draft-sheet').getByRole('button', { name: 'Estampillas' }).count()) === 1);
+    await page.locator('.draft-open').click();
+    const draftDlg = page.getByRole('dialog', { name: 'Ábreme cuando veas la luna llena' });
+    ok('cartas: the opened draft offers Editar and Borrar inside', (await draftDlg.getByRole('button', { name: 'Editar', exact: true }).count()) === 1 && (await draftDlg.getByRole('button', { name: 'Borrar', exact: true }).count()) === 1);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(400);
     ok('cartas: "Escribir carta" shows only once', (await page.getByRole('button', { name: /Escribir (una )?carta/ }).count()) === 1);
     await page.locator('.own-letter').getByRole('button', { name: 'Meter al sobre' }).click();
     await page.getByRole('dialog', { name: '¿Sellar esta carta?' }).getByRole('button', { name: 'Sellar' }).click();
@@ -492,6 +497,9 @@ async function exampleContent(page, { reload = true } = {}) {
     const sentDlg = page.getByRole('dialog', { name: 'Ábreme cuando veas la luna llena' });
     // Since v0.11.0 a letter "En camino" can still be edited until it is opened; it stays sealed.
     ok('cartas: tapping a sent envelope shows the letter, with "Editar" while unopened', /Yo también la estoy viendo/.test(await sentDlg.textContent()) && (await sentDlg.getByRole('button', { name: 'Editar', exact: true }).count()) === 1);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(400);
+    ok('cartas: the sent card has only Estampillas outside (no Editar/Borrar)', (await page.locator('.sent-item', { hasText: 'veas la luna llena' }).locator('.sent-act').allTextContents()).join('|').trim() === 'Estampillas');
+    await page.locator('.futo-sent', { hasText: 'veas la luna llena' }).click();
     await sentDlg.getByRole('button', { name: 'Editar', exact: true }).click();
     const sealedEd = page.getByRole('dialog', { name: 'Editar carta' });
     await sealedEd.getByLabel('La carta').fill('Yo también la estoy viendo, editada.');
@@ -528,7 +536,7 @@ async function exampleContent(page, { reload = true } = {}) {
     await ed.getByLabel('La carta').fill('Texto ficticio.');
     await ed.getByRole('button', { name: 'Guardar borrador' }).click();
     await page.waitForSelector('.own-letter.status-draft');
-    await page.locator('.own-letter').getByRole('button', { name: 'Decorar sobre' }).click();
+    await page.locator('.own-letter').getByRole('button', { name: 'Estampillas' }).click();
     const deco = page.locator('.sticker-editor');
     await deco.waitFor();
     await deco.locator('input[type=file]').setInputFiles(path.join(FIX, 'sticker-ficticio.png'));
@@ -566,7 +574,7 @@ async function exampleContent(page, { reload = true } = {}) {
     const models = await page.waitForFunction(async () => (await (await caches.open('modelos-v1')).keys()).length >= 3, null, { timeout: 8000 }).then(() => 3, async () => page.evaluate(async () => (await (await caches.open('modelos-v1')).keys()).length));
     ok('own stickers: the background remover stays cached for next time', models >= 3, String(models));
     // delete from the album
-    await page.locator('.own-letter').getByRole('button', { name: 'Decorar sobre' }).click();
+    await page.locator('.own-letter').getByRole('button', { name: 'Estampillas' }).click();
     await deco.getByRole('button', { name: 'Editar' }).click();
     await deco.getByRole('button', { name: 'Borrar del álbum: Carita' }).click({ force: true });
     await page.getByRole('dialog', { name: '¿Borrar esta estampilla?' }).getByRole('button', { name: 'Borrar' }).click();
@@ -1931,8 +1939,9 @@ async function exampleContent(page, { reload = true } = {}) {
     // v0.35.0: in spring the branch blossoms (sakura flowers painted, pink pixels); the cards below the counter wear "Marco de tinta y olas".
     const bloom = await page.evaluate(async () => { const fx = await import('./js/core/fx.js'); const c = fx.cornerArt('sakura').querySelector('canvas.corner-maple'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let pink = 0; let green = 0; for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 200) continue; if (d[i] > 220 && d[i + 1] > 140 && d[i + 2] > 160) pink++; if (d[i + 1] > d[i] + 30 && d[i + 1] > d[i + 2] + 30) green++; } return `${pink > 500},${green < pink / 10}`; });
     ok('35 estaciones: en primavera la rama florece en sakura (sin hojas verdes)', bloom === 'true,true', bloom);
-    const frame = await page.evaluate(() => { const k = document.querySelector('.home .coming-card > .card-kicker, .home .today-card > .card-kicker, .home .now-card > .card-kicker'); const card = k?.closest('.card'); const band = getComputedStyle(k, '::after'); return [getComputedStyle(card).outlineStyle, getComputedStyle(k).borderBottomStyle, band.content !== 'none' && /seigaiha/.test(band.maskImage || band.webkitMaskImage), getComputedStyle(k, '::before').content !== 'none'].join(','); });
-    ok('35 tarjetas de Inicio: marco de tinta, encabezado con olas y sello', frame === 'solid,solid,true,true', frame);
+    // v0.37.0 "Tablillas y tiras": no wave bands under the counter; favorites loose; Para hoy as ticked tanzaku.
+    const tab = await page.evaluate(() => { const k = document.querySelector('.home .coming-card > .card-kicker, .home .now-card > .card-kicker'); const band = getComputedStyle(k, '::after'); const fav = document.querySelector('.home .fav-card'); const t = document.querySelector('.home .today-card'); return [getComputedStyle(k.closest('.card')).outlineStyle, band.content === 'none', getComputedStyle(k, '::before').content !== 'none', fav ? getComputedStyle(fav).borderTopStyle : 'x', t ? t.querySelectorAll('.today-task').length >= 1 && !!t.querySelector('.today-count') : false].join(','); });
+    ok('37 Inicio: sin bandas de olas, favoritos sueltos y "Para hoy" con casillas', tab === 'none,true,true,none,true', tab);
     // v0.36.0: the ink frame reaches the most used screens, and Buscar no longer prints "null".
     await go('/ajustes', '.page');
     const ink = await page.evaluate(() => { const p = document.querySelector('.ink-page'); const c = p?.querySelector('.card:not(.card-link)'); return [!!p, c ? getComputedStyle(c).outlineStyle : 'none'].join(','); });
@@ -2204,14 +2213,14 @@ async function exampleContent(page, { reload = true } = {}) {
     const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(400); };
     await go('/inicio', '.fav-card');
     // Inicio "Sereno" (2026-11-24): no quick-action stars, no "Prueben hoy", no season card; favorites stay.
-    ok('20 Inicio: sin accesos rápidos ni "Prueben hoy", con 6 favoritos', (await page.locator('.quick-action').count()) === 0 && (await page.locator('.discover-card, .season-card, .garden-card, .love-card').count()) === 0 && (await page.locator('.fav-tile:not(.fav-add)').count()) === 6);
+    ok('20 Inicio: sin accesos rápidos ni "Prueben hoy", con 4 favoritos (v0.37.0)', (await page.locator('.quick-action').count()) === 0 && (await page.locator('.discover-card, .season-card, .garden-card, .love-card').count()) === 0 && (await page.locator('.fav-tile:not(.fav-add)').count()) === 4);
     ok('11 Inicio: sin "null"', !/\bnull\b/.test(await page.locator('main').innerText()));
     await page.locator('.fav-card').getByRole('button', { name: 'Editar' }).click();
     const favDlg = page.getByRole('dialog', { name: 'Sus favoritos' });
     await favDlg.getByLabel('Calendario').uncheck();
     await favDlg.getByRole('button', { name: 'Guardar' }).click();
     await page.waitForTimeout(400);
-    ok('11 Inicio: quitar un favorito deja "Agregar"', (await page.locator('.fav-tile:not(.fav-add)').count()) === 5 && (await page.locator('.fav-add').count()) === 1);
+    ok('11 Inicio: quitar un favorito deja "Agregar"', (await page.locator('.fav-tile:not(.fav-add)').count()) === 3 && (await page.locator('.fav-add').count()) === 1);
     // Más and hubs
     await go('/mas/nosotros', '.section-card');
     const nos = await page.locator('.section-card-name').allInnerTexts();
