@@ -139,22 +139,15 @@ function half(r, { who, mine, onEdit }) {
     : el('div', { class: `now-half${ok ? '' : ' is-blank'}` }, badge, text);
 }
 
-/** v0.37.0 "Ruta de papel": with the distance on, one compact row (badge, paper route with the km, badge) and one line each below. */
-function routeLayout(theirs, mine, mid, { whoTheirs, onEdit }) {
-  const t = pieces(theirs, { who: whoTheirs, mine: false });
-  const m = pieces(mine, { who: 'Tú', mine: true });
-  // v0.37.0 "Estación de tren" (Rowler's pick): a station sign with the kilometres, a rail, and a little paper bullet
-  // train that travels from one to the other and back, stopping at each platform where the two seals wait.
+/** v0.37.0 "Estación de tren", v0.37.1: the two statuses first, each in its own slip, and the station with the km
+ * and the little train at the end, so nothing sits on top of anything else. */
+export function routeLayout(theirs, mine, mid, { whoTheirs, onEdit }) {
   const live = mid.classList.contains('is-km');
-  return el('div', { class: 'now-route' },
+  return el('div', { class: 'now-route is-stacked' },
+    el('div', { class: 'now-row' }, half(theirs, { who: whoTheirs, mine: false }), half(mine, { who: 'Tú', mine: true, onEdit })),
     el('div', { class: `nr-top nr-station${live ? ' is-live' : ''}` }, mid,
       el('span', { class: 'ns-rail', 'aria-hidden': 'true' }),
-      live ? el('span', { class: 'ns-train', 'aria-hidden': 'true' }, el('i'), el('u')) : null,
-      el('span', { class: 'ns-pin ns-pin-a' }, t.badge, el('span', { class: 'nr-name' }, whoTheirs)),
-      el('span', { class: 'ns-pin ns-pin-b' }, m.badge, el('span', { class: 'nr-name' }, 'Tú'))),
-    el('div', { class: 'nr-slips' },
-      el('div', { class: `nr-slip${t.ok ? '' : ' is-blank'}` }, t.text),
-      el('button', { class: `nr-slip is-mine${m.ok ? '' : ' is-blank'}`, type: 'button', onClick: onEdit, 'aria-label': m.label }, m.text)));
+      live ? el('span', { class: 'ns-train', 'aria-hidden': 'true' }, el('i'), el('u')) : null));
 }
 
 /** Card for Inicio: both statuses side by side; yours changes with a tap. */

@@ -9,8 +9,12 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.37.0',
+  version: '0.37.1',
   items: [
+    'Inicio reacomodado: primero lo de hoy (celebraciones, encuentro y Ahora mismo), luego sus favoritos y Para hoy, y al final lo que viene.',
+    'En Ahora mismo cada estado tiene su tablilla y la distancia va al final, sin nada encimado.',
+    'Personalizar Inicio es más claro: tarjetas numeradas, cada una con su descripción, y las ocultas aparte.',
+    'La tarjeta de días juntos y racha vuelve a su tamaño original.',
     'Inicio más liviano: el contador quedó igual pero un poco más pequeño, los favoritos son cuatro tablillas y "Para hoy" es una lista que se va chuleando a medida que la hacen.',
     'Nuevo en Ahora mismo: la distancia entre los dos, como una estación de tren: un letrero con los kilómetros y un trencito de papel que va de uno al otro. Cada uno la activa una vez desde su celular; es aproximada (más o menos 1 km), solo muestra los kilómetros y se puede pausar.',
     '"Pensando en ti" ahora es una tira más discreta, y ya no están las olas en los encabezados de las tarjetas.',
