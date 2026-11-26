@@ -11,6 +11,7 @@ const idOf = (who) => `near:${who}`;
 const STEP = 0.01; // ≈ 1.1 km
 const MIN_GAP = 10 * 60 * 1000; // a phone sends again at most every 10 minutes
 let lastTry = 0;
+let counted = false; // the km count-up plays once per session
 
 export const isPhone = () => /Android|Mobi/i.test(navigator.userAgent);
 
@@ -166,10 +167,18 @@ export async function middle({ onChange } = {}) {
   if (!st) return null;
   const nick = profile.nick(other) || 'tu pareja';
   const open = () => sheet(mine, theirs, onChange);
-  const wrap = (cls, label, kids) => el('button', { class: `now-near ${cls}`, type: 'button', onClick: cls === 'is-invite' ? async () => { if (await turnOn()) onChange?.(); } : open, 'aria-label': label }, route(), kids);
+  const wrap = (cls, label, kids, extra = null) => el('button', { class: `now-near ${cls}`, type: 'button', onClick: cls === 'is-invite' ? async () => { if (await turnOn()) onChange?.(); } : open, 'aria-label': label }, route(), extra, kids);
   if (st.kind === 'km') {
     const k = kmLabel(st.km);
-    return wrap('is-km', `${k.big} ${k.small}. Ver detalles`, el('span', { class: 'near-text' }, el('strong', { class: 'near-km' }, k.big), el('span', { class: 'near-sub' }, k.small)));
+    const big = el('strong', { class: 'near-km' }, k.big);
+    // the kilometres count up the first time they show in this session
+    const n = Math.round(st.km);
+    if (n >= 2 && !counted && !util.prefersReducedMotion()) {
+      counted = true; const t0 = performance.now();
+      const step = (t) => { const p = Math.min(1, (t - t0) / 1100); big.textContent = `${Math.round(n * (1 - (1 - p) ** 3)).toLocaleString('es-CO')} km`; if (p < 1) requestAnimationFrame(step); };
+      big.textContent = '0 km'; requestAnimationFrame(step);
+    }
+    return wrap('is-km', `${k.big} ${k.small}. Ver detalles`, el('span', { class: 'near-text' }, big, el('span', { class: 'near-sub' }, k.small)), el('span', { class: 'near-trail', 'aria-hidden': 'true' }, el('i'), el('i'), el('i')));
   }
   if (st.kind === 'waiting') return wrap('is-wait', `Esperando a que ${nick} active la distancia. Ver detalles`, el('span', { class: 'near-text' }, el('span', { class: 'near-sub' }, `Esperando a ${nick}`)));
   return wrap('is-invite', st.partnerOn ? `${nick} ya activó la distancia. Activarla tú también` : 'Ver la distancia entre los dos', el('span', { class: 'near-text' }, el('span', { class: 'near-sub' }, st.partnerOn ? `${nick} ya la activó. Toca para ver` : 'Toca para ver la distancia')));

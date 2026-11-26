@@ -143,8 +143,18 @@ function half(r, { who, mine, onEdit }) {
 function routeLayout(theirs, mine, mid, { whoTheirs, onEdit }) {
   const t = pieces(theirs, { who: whoTheirs, mine: false });
   const m = pieces(mine, { who: 'Tú', mine: true });
+  // v0.37.0 (Rowler: "con animaciones, bonito, divertido, así como Inicio"): a little scene with Inicio's sky by
+  // the hour, clouds that drift, two hills with each one's seal, petals and the paper plane flying between them.
+  const h = new Date().getHours() + new Date().getMinutes() / 60;
+  const phase = h < 5.5 ? 'night' : h < 7.5 ? 'dawn' : h < 16.5 ? 'day' : h < 19 ? 'dusk' : 'night';
+  const deco = el('span', { class: 'nr-deco', 'aria-hidden': 'true' },
+    el('span', { class: 'nr-sun' }), el('span', { class: 'nr-cloud nr-cloud-a' }), el('span', { class: 'nr-cloud nr-cloud-b' }),
+    el('span', { class: 'nr-petal nr-petal-a' }), el('span', { class: 'nr-petal nr-petal-b' }), el('span', { class: 'nr-petal nr-petal-c' }),
+    el('span', { class: 'nr-hill nr-hill-a' }), el('span', { class: 'nr-hill nr-hill-b' }));
   return el('div', { class: 'now-route' },
-    el('div', { class: 'nr-top' }, t.badge, mid, m.badge),
+    el('div', { class: 'nr-top nr-scene', 'data-phase': phase }, deco,
+      el('span', { class: 'nr-seat nr-seat-a' }, t.badge, el('span', { class: 'nr-name' }, whoTheirs)), mid,
+      el('span', { class: 'nr-seat nr-seat-b' }, m.badge, el('span', { class: 'nr-name' }, 'Tú'))),
     el('div', { class: 'nr-slips' },
       el('div', { class: `nr-slip${t.ok ? '' : ' is-blank'}` }, t.text),
       el('button', { class: `nr-slip is-mine${m.ok ? '' : ' is-blank'}`, type: 'button', onClick: onEdit, 'aria-label': m.label }, m.text)));
