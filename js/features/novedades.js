@@ -9,8 +9,11 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.36.0',
+  version: '0.37.0',
   items: [
+    'Inicio más liviano: el contador quedó igual pero un poco más pequeño, los favoritos son cuatro tablillas y "Para hoy" es una lista que se va chuleando a medida que la hacen.',
+    'Nuevo en Ahora mismo: la distancia entre los dos, con dos corazones. Cada uno la activa una vez desde su celular; es aproximada (más o menos 1 km), solo muestra los kilómetros y se puede pausar.',
+    '"Pensando en ti" ahora es una tira más discreta, y ya no están las olas en los encabezados de las tarjetas.',
     'Cápsula, Cuponera, Cartas, Calendario, Galería, Mascotas y Ajustes ahora tienen el mismo marco de tinta y olas de Inicio: tarjetas con sello, cajitas de ayuda y pestañas de papel con trazo de pincel.',
     'Arreglé la palabra "null" que aparecía en Buscar.',
     'Inicio sigue las estaciones de Japón: en primavera la rama florece y caen pétalos de sakura, en verano hojas verdes y luciérnagas al atardecer, en otoño el arce rojo y en invierno nieve. De noche siguen, más suaves, con los faroles.',

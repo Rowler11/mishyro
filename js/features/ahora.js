@@ -138,17 +138,24 @@ function half(r, { who, mine, onEdit }) {
 export async function homeCard({ onChange } = {}) {
   const me = profile.active(); const other = profile.partnerOf(me);
   const card = el('section', { class: 'card home-card now-card', 'aria-labelledby': 'now-title' });
+  const near = await import('./cerca.js').catch(() => null); // v0.37.0: the distance between the two phones
   const paint = async () => {
-    const [mine, theirs] = await Promise.all([getNow(me), getNow(other)]);
+    const [mine, theirs, mid] = await Promise.all([getNow(me), getNow(other), near ? near.middle({ onChange: () => paint().catch(() => {}) }).catch(() => null) : null]);
     card.replaceChildren(
       el('h2', { class: 'card-kicker', id: 'now-title' }, 'Ahora mismo'),
-      el('div', { class: 'now-row' },
+      el('div', { class: `now-row${mid ? ' has-near' : ''}` },
         half(theirs, { who: profile.nick(other) || profile.name(other) || 'Tu pareja', mine: false }),
+        mid,
         half(mine, { who: 'Tú', mine: true, onEdit: () => editor(() => { paint(); onChange?.(); }) })));
   };
   await paint();
+  // opening the app on a phone where the distance is on sends the rounded position again (never asks by itself)
+  const again = () => { if (!document.hidden && card.isConnected) near?.refresh().catch(() => {}); };
+  again();
+  document.addEventListener('visibilitychange', again);
   // live: a change from the other phone repaints it; "hace X" ticks every minute
-  const off = db.onChange((s) => { if (s === 'streaks' && card.isConnected) paint().catch(() => {}); });
+  const off0 = db.onChange((s) => { if (s === 'streaks' && card.isConnected) paint().catch(() => {}); });
+  const off = () => { off0(); document.removeEventListener('visibilitychange', again); };
   const tick = setInterval(() => {
     if (!card.isConnected) { clearInterval(tick); off(); return; }
     card.querySelectorAll('.now-when[data-at]').forEach((n) => { n.textContent = n.textContent.replace(/(ahora|hace .+)$/, ago(n.dataset.at)); });

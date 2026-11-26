@@ -1,5 +1,19 @@
 # Cambios
 
+## 0.37.0 (Inicio "Tablillas y tiras" y la distancia entre los dos)
+
+Nuevo
+- Ahora mismo muestra la distancia entre los dos celulares, con dos corazones entre las dos mitades ("8 km de distancia", o "Juntitos" a menos de 1 km). Cada uno la activa una vez desde su celular; después se actualiza sola al abrir la app. Es aproximada (redondeada a más o menos 1 km), viaja cifrada, solo se ven los kilómetros (nunca el punto ni un mapa), no guarda historial y se puede pausar en cualquier momento (al pausar se borra la posición). Los PC no la mandan; si los dos la tienen activa, también la ven.
+- "Para hoy" es una lista que se va chuleando: la pregunta del día, el reto de la semana y el ánimo quedan en la lista y se marcan y tachan cuando están hechos, con un contador "1 de 3" y un sello cuando se completa. Los avisos (cápsulas, recordatorios, insignias) van arriba, sin casilla.
+
+Cambiado
+- El contador, el corazón y la racha conservan su diseño pero son un poco más pequeños.
+- Sin las bandas de olas en los encabezados de las tarjetas: título con su sello rojo y nada más.
+- Sus favoritos son cuatro tablillas sueltas, sin tarjeta alrededor (se eligen hasta 4).
+- "Pensando en ti" es una tira punteada con un botón corto "Enviar".
+- "Lo que viene" muestra las dos próximas fechas.
+- Orden de Inicio: Ahora mismo, favoritos, Para hoy, Pensando en ti y Lo que viene. Celebraciones y Próximo encuentro salen solo cuando tocan. Foto del día, Toques y Plan del finde quedan para activarlos en "Personalizar Inicio". Un orden guardado antes se reemplaza una vez por este; se puede volver a personalizar.
+
 ## 0.36.0 (Marco de tinta y olas en las pantallas más usadas)
 
 Cambiado

@@ -11,11 +11,19 @@ export const CARDS = [
   ['weekend', 'Plan del fin de semana'], ['backup', 'Recordatorio de copia'],
 ];
 const DEFAULT = CARDS.map(([id]) => id);
+// v0.37.0 (Rowler, Inicio "Tablillas y tiras"): a lighter Inicio by default. Celebraciones and Próximo
+// encuentro only appear when they apply, Primeros pasos until it is done; Foto del día, Toques and Plan del
+// finde wait in "Personalizar".
+export const LAYOUT_V = 2;
+export const DEFAULT_ORDER = ['now', 'both', 'celebration', 'meeting', 'favs', 'today', 'slides', 'coming', 'guide', 'dayphoto', 'toques', 'weekend', 'backup'];
+export const DEFAULT_HIDDEN = ['dayphoto', 'toques', 'weekend']; // the backup note stays: it only shows after 14 days without a copy
 
 export async function getLayout() {
   const s = await db.getSettings('home', {}).catch(() => ({}));
-  const l = s.layout || {};
-  const order = [...(l.order || []).filter((id) => DEFAULT.includes(id)), ...DEFAULT.filter((id) => !(l.order || []).includes(id))];
+  // a layout saved before v0.37.0 gives way once to the new Inicio (it can be customized again)
+  const l = s.layout && s.layout.v === LAYOUT_V ? s.layout : { order: DEFAULT_ORDER, hidden: DEFAULT_HIDDEN };
+  const base = DEFAULT_ORDER.filter((id) => DEFAULT.includes(id));
+  const order = [...(l.order || []).filter((id) => DEFAULT.includes(id)), ...base.filter((id) => !(l.order || []).includes(id))];
   return { order, hidden: (l.hidden || []).filter((id) => DEFAULT.includes(id)) };
 }
 
@@ -43,6 +51,6 @@ export async function openEditor({ onSaved } = {}) {
     body: el('div', { class: 'stack' }, el('p', { class: 'muted small' }, 'Elige qué tarjetas ver y en qué orden. El círculo de los días siempre va primero.'), list),
     actions: [
       { label: 'Como venía', variant: 'ghost', onClick: async () => { await db.setSettings('home', { layout: null }); onSaved?.(); return true; } },
-      { label: 'Guardar', variant: 'primary', onClick: async () => { await db.setSettings('home', { layout: { order, hidden: [...hidden] } }); ui.toast('Inicio quedó a tu gusto.', { tone: 'success' }); onSaved?.(); return true; } }],
+      { label: 'Guardar', variant: 'primary', onClick: async () => { await db.setSettings('home', { layout: { v: LAYOUT_V, order, hidden: [...hidden] } }); ui.toast('Inicio quedó a tu gusto.', { tone: 'success' }); onSaved?.(); return true; } }],
   });
 }

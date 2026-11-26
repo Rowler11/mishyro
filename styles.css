@@ -4446,3 +4446,91 @@ a.game-tile:hover { border-color: var(--ink); }
   -webkit-mask: url('./icons/patterns/seigaiha.svg') repeat 0 0 / 40px 20px; mask: url('./icons/patterns/seigaiha.svg') repeat 0 0 / 40px 20px; }
 .ink-page .pet-block > .pet-block-head:first-child h2 { display: flex; align-items: center; gap: 8px; }
 .ink-page .pet-block > .pet-block-head:first-child h2::before { content: ''; width: 7px; height: 7px; border-radius: 1.5px; background: var(--accent); transform: rotate(45deg); }
+
+/* v0.37.0 · Inicio "Tablillas y tiras" (Rowler, opción B + distancia): el contador queda igual pero un poco
+   más pequeño; debajo, sin las bandas de olas: favoritos como tablillas sueltas, "Para hoy" como tiras tanzaku
+   que se chulean, "Pensando en ti" como una tira punteada y la distancia entre los dos en "Ahora mismo". */
+.home .counter-card { grid-template-columns: 92px minmax(0, 1fr); gap: var(--space-3); min-height: 0; padding: 12px 14px calc(12px + 12px); }
+.home .counter-card::after { height: 22px; -webkit-mask-size: 44px 22px; mask-size: 44px 22px; }
+.home .counter-days { font-size: clamp(1.5rem, 1.35rem + .8vw, 1.9rem); }
+.home .counter-days-label { font-size: .68rem; }
+.home .counter-goal { font-size: .98rem; }
+.home .counter-detail { font-size: .76rem; }
+.home .counter-seal { width: 19px; height: 19px; }
+.home .love-strip { padding-top: var(--space-2); }
+@media (min-width: 768px) { .home .counter-card { grid-template-columns: 118px minmax(0, 1fr); padding: 16px 18px calc(16px + 12px); } .home .counter-goal { font-size: 1.15rem; } .home .counter-detail { font-size: .84rem; } }
+
+/* no wave bands: a plain title with its vermilion diamond */
+.home .home-card:not(.counter-card):not(.backup-card) > .card-kicker::after, .home :is(.fav-head, .guide-head)::before { content: none; }
+.home :is(.home-card:not(.counter-card):not(.backup-card) > .card-kicker, .fav-head, .guide-head) { margin: 0; padding: 0; border-bottom: 0; }
+.home :is(.home-card:not(.counter-card):not(.backup-card), .guide-card) { outline: 0; padding: 14px; }
+.home .today-head .card-kicker { display: flex; align-items: center; gap: 8px; margin: 0; }
+.home .today-head .card-kicker::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 1.5px; background: var(--accent); transform: rotate(45deg); }
+@media (min-width: 640px) { .home :is(.now-card, .fav-card, .kitty-perch:has(> .now-card, > .fav-card, > .today-card, > .coming-card, > .celebrate-card, > .home-day, > .backup-card)) { grid-column: 1 / -1; } }
+
+/* Sus favoritos: four loose tablets, no card around them */
+.home .home-cards > .home-card.fav-card { background: none; border: 0; box-shadow: none; padding: 0; gap: var(--space-2); overflow: visible; }
+.home .fav-head { padding: 0 2px; }
+.home .fav-head .btn { min-height: 32px; }
+.home .fav-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.home .fav-tile { min-height: 86px; padding: 12px 4px 8px; gap: 7px; border-radius: 8px; outline: 0; }
+.home .fav-tile .section-icon { width: 42px; height: 42px; }
+.home .fav-name { font-size: .74rem; }
+@media (min-width: 900px) { .home .fav-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* Para hoy: tanzaku strips hanging from a thread; the day's tasks get a box that is ticked */
+.home .home-cards > .home-card.today-card { background: none; border: 0; box-shadow: none; padding: 0; gap: var(--space-2); overflow: visible; }
+.today-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: 0 2px; }
+.today-count { font: 700 .74rem var(--font-serif); color: var(--text-2); padding: 2px 10px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--paper) var(--grain); font-variant-numeric: tabular-nums; }
+.today-card.is-all-done .today-count { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.home .today-list { gap: 10px; padding-top: 6px; }
+.home .today-row { min-height: 52px; padding: 8px 12px 8px 34px; border: 1px solid var(--border-strong); border-radius: 3px; background: var(--paper) var(--grain); box-shadow: 0 2px 0 var(--surface-2); }
+.home .today-row::before { left: 11px; top: 50%; bottom: auto; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: none; border: 1.5px solid var(--text-2); opacity: .8; }
+.home .today-row::after { content: ''; position: absolute; left: 14.5px; top: -9px; width: 1.4px; height: calc(50% + 5px); background: var(--accent); opacity: .7; pointer-events: none; }
+.home .today-row .section-icon { width: 34px; height: 34px; }
+.today-check { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border: 1.6px solid var(--accent); border-radius: 4px; color: var(--accent-ink); background: var(--paper); transition: background var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+.today-check .icon { stroke-width: 3; }
+.today-task.is-done .today-check { background: var(--accent); transform: rotate(-5deg); }
+.today-task.is-new .today-check { animation: love-pop 600ms var(--ease-spring) both; }
+.today-task.is-done .today-title { font-weight: 500; color: var(--text-2); text-decoration: line-through; text-decoration-color: var(--accent); text-decoration-thickness: 1.5px; }
+.today-task.is-done { box-shadow: none; background: color-mix(in srgb, var(--surface-2) 45%, var(--paper)) var(--grain); }
+.today-all { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0 4px; color: var(--accent); font: 700 .88rem var(--font-serif); }
+.home .today-more { align-self: center; }
+@media (prefers-reduced-motion: reduce) { .today-task.is-new .today-check { animation: none; } }
+
+/* Pensando en ti: one dotted tanzaku strip with a short button */
+.home .thinking-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center; border: 1.5px dashed var(--border-strong); border-radius: 4px; padding: 12px 14px; box-shadow: none; }
+.home .thinking-card > .paper-plane { position: static; grid-area: 1 / 1 / 3 / 2; color: var(--accent); opacity: 1; }
+.home .thinking-card > .card-kicker { grid-area: 1 / 2; }
+.home .thinking-card > .thinking-desc { grid-area: 2 / 2; margin: 0; font-size: .84rem; color: var(--text-2); line-height: 1.35; }
+.home .thinking-card > .thinking-btn { grid-area: 1 / 3 / 3 / 4; align-self: center !important; min-height: 40px; padding-inline: 16px; }
+.home .thinking-card > :is(.thinking-reply, .thinking-status, .thinking-count, .btn-ghost, p.muted) { grid-column: 1 / -1; margin-top: 6px; }
+.home .thinking-card > .thinking-reply { grid-row: 3; }
+
+/* Lo que viene: the next two */
+@media (min-width: 768px) { .home .mekuri-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Ahora mismo with the distance between the two in the middle */
+.now-row.has-near { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch; gap: 6px; }
+.now-row.has-near .now-half { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 10px 10px 12px; }
+.now-row.has-near .now-badge { width: 34px; height: 34px; }
+.now-row.has-near .now-badge .icon { width: 18px; height: 18px; }
+.now-near { display: grid; justify-items: center; align-content: center; gap: 1px; min-width: 66px; max-width: 84px; padding: 4px 2px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.now-near:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.near-hearts { width: 54px; height: 24px; overflow: visible; }
+.near-heart { fill: var(--accent); }
+.near-heart-a { opacity: .5; }
+.now-near.is-km .near-heart-b { transform-origin: 44px 14px; animation: near-beat 2.6s var(--ease-in-out, ease-in-out) infinite; }
+.near-km { font: 700 1.12rem/1.1 var(--font-serif); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.near-sub { font-size: .68rem; line-height: 1.2; color: var(--text-2); text-align: center; letter-spacing: .02em; }
+.now-near:is(.is-wait, .is-invite) .near-heart { opacity: .3; }
+.now-near.is-invite { border: 1px dashed var(--border-strong); background: var(--paper) var(--grain); padding: 8px 4px; align-self: center; }
+.now-near.is-invite .icon { color: var(--accent); }
+@media (hover: hover) { .now-near:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); } }
+@keyframes near-beat { 0%, 70%, 100% { transform: scale(1); } 78% { transform: scale(1.14); } 86% { transform: scale(.98); } 92% { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .now-near.is-km .near-heart-b { animation: none; } }
+@media (max-width: 360px) { .now-row.has-near { grid-template-columns: 1fr; } .now-near { max-width: none; grid-auto-flow: column; gap: 8px; } }
+.near-sheet-km { display: grid; justify-items: center; gap: 2px; margin: 0 0 var(--space-2); }
+.near-sheet-km .near-hearts { width: 72px; height: 32px; }
+.near-sheet-km strong { font: 700 1.7rem var(--font-serif); }
+.home .thinking-card > .btn-ghost { justify-self: start; min-height: 32px; padding-inline: 6px; font-size: .8rem; color: var(--text-2); }

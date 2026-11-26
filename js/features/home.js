@@ -229,7 +229,8 @@ function thinkingCard(data, receiver) {
   const paintCount = () => {
     count.textContent = todayCount
       ? `Hoy pensaste en ${profile.nick(receiver)} ${todayCount === 1 ? '1 vez' : `${todayCount} veces`} · este mes, ${monthCount}.`
-      : monthCount ? `Este mes pensaste en ${profile.nick(receiver)} ${monthCount === 1 ? '1 vez' : `${monthCount} veces`}.` : 'Manda una frase cuando te acuerdes de quien quieres.';
+      : monthCount ? `Este mes pensaste en ${profile.nick(receiver)} ${monthCount === 1 ? '1 vez' : `${monthCount} veces`}.` : '';
+    count.hidden = !count.textContent; // v0.37.0: the strip stays slim until there is something to count
   };
   paintCount();
   const plane = el('span', { class: 'paper-plane', 'aria-hidden': 'true' }, icon('plane', { size: 28 }));
@@ -244,7 +245,8 @@ function thinkingCard(data, receiver) {
     await db.put('thinkingOfYou', { at: util.nowISO(), by: profile.active(), phraseId: phrase.id, via });
     todayCount++; monthCount++; paintCount(); fly();
   };
-  const btn = el('button', { class: 'btn btn-primary thinking-btn', type: 'button' }, icon('heart'), linked ? `Mandarle a ${profile.nick(receiver)}` : 'Pensando en ti');
+  // v0.37.0: a slim tanzaku strip with a short button (the full sentence goes to screen readers)
+  const btn = el('button', { class: 'btn btn-primary thinking-btn', type: 'button', 'aria-label': linked ? `Mandarle una frase a ${profile.nick(receiver)}` : `Mandarle una frase a ${profile.nick(receiver)} por otra app` }, icon('heart'), 'Enviar');
   btn.addEventListener('click', async () => {
     const phrase = pick();
     if (linked) {
@@ -286,7 +288,7 @@ function thinkingCard(data, receiver) {
     plane,
     el('h2', { class: 'card-kicker', id: 'thinking-title' }, 'Pensando en ti'),
     reply,
-    el('p', {}, linked ? `Un toque y a ${profile.nick(receiver)} le llega una frase bonita.` : `Mándale a ${profile.nick(receiver)} una frase bonita por donde quieras.`),
+    el('p', { class: 'thinking-desc' }, linked ? `Un toque y a ${profile.nick(receiver)} le llega una frase bonita.` : `Una frase bonita para ${profile.nick(receiver)}, por donde quieras.`),
     btn, status, count, shareAlso);
 }
 
@@ -377,7 +379,7 @@ function comingCard(data, start) {
     const ms = time.milestoneProgress(data.milestones, total);
     if (ms.next && !(ring && ms.daysLeft === ring.daysLeft)) rows.push({ icon: 'flag', name: `${ms.next.days.toLocaleString('es-CO')} días juntos`, days: ms.daysLeft, progress: ms.progress });
   }
-  const list = rows.sort((a, b) => a.days - b.days).slice(0, 3);
+  const list = rows.sort((a, b) => a.days - b.days).slice(0, 2); // v0.37.0: the next two
   if (!list.length) return null;
   // A tear-off calendar page per date (Inicio A): the big number is what is left.
   const left = (n) => (n < 60 ? [String(n), n === 1 ? 'día · mañana' : 'días'] : n < 365 ? [String(Math.round(n / 30.4)), 'meses'] : [String(Math.round(n / 365)), Math.round(n / 365) === 1 ? 'año' : 'años']);
@@ -421,21 +423,39 @@ async function todayCard() {
   if (badgeRow) rows.push(badgeRow);
   if (spaceRow) rows.push(spaceRow);
   if (hint) rows.push({ href: '#/animo', icon: 'heart', title: `Hoy a ${hint.name} podría venirle bien un abrazo`, sub: 'Un detalle pequeño hace la diferencia.' });
-  if (pending?.count) rows.push({ href: '#/preguntas', icon: 'message-circle-question', title: pending.partnerDone ? 'Ya te respondieron: te toca' : 'La pregunta del día', sub: pending.first });
-  if (week?.rec && !week.rec.doneAt && week.challenge) rows.push({ href: '#/retos', icon: 'flag', title: `Reto de la semana: ${week.challenge.title}`, sub: week.challenge.text });
-  if (!mine) rows.push({ href: '#/animo', icon: 'smile', title: '¿Cómo amaneces?', sub: 'Marca tu ánimo en un toque.' });
-  if (!rows.length) return null;
-  // Three rows at most (Inicio "Sereno"); the rest wait behind "Ver N más".
-  const SHOWN = 3;
-  const list = el('ul', { class: 'today-list' }, rows.map((r, i) => el('li', { hidden: i >= SHOWN || null },
-      el('a', { class: 'today-row', href: r.href },
-        el('span', { class: 'section-icon' }, icon(r.icon, { size: 20 })),
-        el('span', { class: 'today-text' }, el('span', { class: 'today-title' }, r.title), r.sub ? el('span', { class: 'muted small clamp-2' }, r.sub) : null),
-        icon('chevron-right', { size: 18, cls: 'list-chevron' })))));
-  const more = rows.length > SHOWN ? el('button', { class: 'btn btn-ghost btn-small today-more', type: 'button' }, `Ver ${rows.length - SHOWN} más`) : null;
+  // v0.37.0 (Rowler: "una lista que se vaya chuleando"): the day's tasks stay on the list and get ticked
+  // and struck through as they are done; the notices above them have no box.
+  const tasks = [];
+  if (pending?.total) tasks.push({ href: '#/preguntas', done: !pending.count, title: pending.count ? (pending.partnerDone ? 'Responder la pregunta: ya te respondieron' : 'Responder la pregunta del día') : 'Respondiste la pregunta del día', sub: pending.count ? pending.first : '' });
+  if (week?.rec && week.challenge) tasks.push({ href: '#/retos', done: !!week.rec.doneAt, title: `Reto de la semana: ${week.challenge.title}`, sub: week.rec.doneAt ? '' : week.challenge.text });
+  tasks.push({ href: '#/animo', done: !!mine, title: mine ? 'Marcaste tu ánimo de hoy' : 'Marcar cómo amaneces', sub: mine ? '' : 'Un toque basta.' });
+  // the ones ticked since the last look get a little stamp (per device)
+  const seenKey = `todaydone:${util.localDay()}`;
+  const before = new Set((recall(seenKey) || '').split(',').filter(Boolean));
+  const doneNow = tasks.filter((t) => t.done).map((t) => t.href);
+  remember(seenKey, doneNow.join(','));
+  const SHOWN = 2; // notices shown before "Ver N más"
+  const notice = (r, i) => el('li', { hidden: i >= SHOWN || null },
+    el('a', { class: 'today-row', href: r.href },
+      el('span', { class: 'section-icon' }, icon(r.icon, { size: 20 })),
+      el('span', { class: 'today-text' }, el('span', { class: 'today-title' }, r.title), r.sub ? el('span', { class: 'muted small clamp-2' }, r.sub) : null),
+      icon('chevron-right', { size: 18, cls: 'list-chevron' })));
+  const task = (t) => el('li', {},
+    el('a', { class: `today-row today-task${t.done ? ' is-done' : ''}${t.done && !before.has(t.href) ? ' is-new' : ''}`, href: t.href },
+      el('span', { class: 'today-check', 'aria-hidden': 'true' }, t.done ? icon('check', { size: 14 }) : null),
+      el('span', { class: 'sr-only' }, t.done ? 'Hecho: ' : 'Pendiente: '),
+      el('span', { class: 'today-text' }, el('span', { class: 'today-title' }, t.title), t.sub ? el('span', { class: 'muted small clamp-2' }, t.sub) : null)));
+  const doneCount = doneNow.length;
+  const list = el('ul', { class: 'today-list' }, rows.map(notice), tasks.map(task));
+  const more = rows.length > SHOWN ? el('button', { class: 'btn btn-ghost btn-small today-more', type: 'button' }, `Ver ${rows.length - SHOWN} ${rows.length - SHOWN === 1 ? 'aviso más' : 'avisos más'}`) : null;
   more?.addEventListener('click', () => { list.querySelectorAll('li[hidden]').forEach((li) => { li.hidden = false; }); more.remove(); });
-  return el('section', { class: 'card home-card today-card', 'aria-labelledby': 'today-title' },
-    el('h2', { class: 'card-kicker', id: 'today-title' }, 'Para hoy'), list, more);
+  const all = doneCount === tasks.length;
+  return el('section', { class: `card home-card today-card${all ? ' is-all-done' : ''}`, 'aria-labelledby': 'today-title' },
+    el('div', { class: 'today-head' },
+      el('h2', { class: 'card-kicker', id: 'today-title' }, 'Para hoy'),
+      el('span', { class: 'today-count', 'aria-label': `${doneCount} de ${tasks.length} hechas` }, `${doneCount} de ${tasks.length}`)),
+    list, more,
+    all ? el('p', { class: 'today-all' }, icon('sparkles', { size: 16 }), 'Todo listo por hoy. ¡Qué bonito equipo!') : null);
 }
 
 // ---------- 10. backup reminder ----------

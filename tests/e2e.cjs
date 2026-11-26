@@ -1931,8 +1931,9 @@ async function exampleContent(page, { reload = true } = {}) {
     // v0.35.0: in spring the branch blossoms (sakura flowers painted, pink pixels); the cards below the counter wear "Marco de tinta y olas".
     const bloom = await page.evaluate(async () => { const fx = await import('./js/core/fx.js'); const c = fx.cornerArt('sakura').querySelector('canvas.corner-maple'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let pink = 0; let green = 0; for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 200) continue; if (d[i] > 220 && d[i + 1] > 140 && d[i + 2] > 160) pink++; if (d[i + 1] > d[i] + 30 && d[i + 1] > d[i + 2] + 30) green++; } return `${pink > 500},${green < pink / 10}`; });
     ok('35 estaciones: en primavera la rama florece en sakura (sin hojas verdes)', bloom === 'true,true', bloom);
-    const frame = await page.evaluate(() => { const k = document.querySelector('.home .coming-card > .card-kicker, .home .today-card > .card-kicker, .home .now-card > .card-kicker'); const card = k?.closest('.card'); const band = getComputedStyle(k, '::after'); return [getComputedStyle(card).outlineStyle, getComputedStyle(k).borderBottomStyle, band.content !== 'none' && /seigaiha/.test(band.maskImage || band.webkitMaskImage), getComputedStyle(k, '::before').content !== 'none'].join(','); });
-    ok('35 tarjetas de Inicio: marco de tinta, encabezado con olas y sello', frame === 'solid,solid,true,true', frame);
+    // v0.37.0 "Tablillas y tiras": no wave bands under the counter; favorites loose; Para hoy as ticked tanzaku.
+    const tab = await page.evaluate(() => { const k = document.querySelector('.home .coming-card > .card-kicker, .home .now-card > .card-kicker'); const band = getComputedStyle(k, '::after'); const fav = document.querySelector('.home .fav-card'); const t = document.querySelector('.home .today-card'); return [getComputedStyle(k.closest('.card')).outlineStyle, band.content === 'none', getComputedStyle(k, '::before').content !== 'none', fav ? getComputedStyle(fav).borderTopStyle : 'x', t ? t.querySelectorAll('.today-task').length >= 1 && !!t.querySelector('.today-count') : false].join(','); });
+    ok('37 Inicio: sin bandas de olas, favoritos sueltos y "Para hoy" con casillas', tab === 'none,true,true,none,true', tab);
     // v0.36.0: the ink frame reaches the most used screens, and Buscar no longer prints "null".
     await go('/ajustes', '.page');
     const ink = await page.evaluate(() => { const p = document.querySelector('.ink-page'); const c = p?.querySelector('.card:not(.card-link)'); return [!!p, c ? getComputedStyle(c).outlineStyle : 'none'].join(','); });
@@ -2204,14 +2205,14 @@ async function exampleContent(page, { reload = true } = {}) {
     const go = async (r, sel) => { await page.evaluate((h) => { location.hash = h; }, `#${r}`); await page.waitForSelector(sel, { timeout: 20000 }); await page.waitForTimeout(400); };
     await go('/inicio', '.fav-card');
     // Inicio "Sereno" (2026-11-24): no quick-action stars, no "Prueben hoy", no season card; favorites stay.
-    ok('20 Inicio: sin accesos rápidos ni "Prueben hoy", con 6 favoritos', (await page.locator('.quick-action').count()) === 0 && (await page.locator('.discover-card, .season-card, .garden-card, .love-card').count()) === 0 && (await page.locator('.fav-tile:not(.fav-add)').count()) === 6);
+    ok('20 Inicio: sin accesos rápidos ni "Prueben hoy", con 4 favoritos (v0.37.0)', (await page.locator('.quick-action').count()) === 0 && (await page.locator('.discover-card, .season-card, .garden-card, .love-card').count()) === 0 && (await page.locator('.fav-tile:not(.fav-add)').count()) === 4);
     ok('11 Inicio: sin "null"', !/\bnull\b/.test(await page.locator('main').innerText()));
     await page.locator('.fav-card').getByRole('button', { name: 'Editar' }).click();
     const favDlg = page.getByRole('dialog', { name: 'Sus favoritos' });
     await favDlg.getByLabel('Calendario').uncheck();
     await favDlg.getByRole('button', { name: 'Guardar' }).click();
     await page.waitForTimeout(400);
-    ok('11 Inicio: quitar un favorito deja "Agregar"', (await page.locator('.fav-tile:not(.fav-add)').count()) === 5 && (await page.locator('.fav-add').count()) === 1);
+    ok('11 Inicio: quitar un favorito deja "Agregar"', (await page.locator('.fav-tile:not(.fav-add)').count()) === 3 && (await page.locator('.fav-add').count()) === 1);
     // Más and hubs
     await go('/mas/nosotros', '.section-card');
     const nos = await page.locator('.section-card-name').allInnerTexts();

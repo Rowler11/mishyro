@@ -1,6 +1,7 @@
 // Unit tests that need a real browser (IndexedDB, WebCrypto). Fictitious data only.
 // Run with: BASE=http://127.0.0.1:8765/mishyro/ node tests/unit.cjs
 import * as util from '../js/core/util.js';
+import * as NEAR from '../js/features/cerca.js';
 import * as db from '../js/core/db.js';
 import * as cryptoBox from '../js/core/crypto.js';
 import * as backup from '../js/core/backup.js';
@@ -414,6 +415,21 @@ await test('cápsula: "hace" text for the opening moment', () => {
   eq(TC.sinceText('2025-05-02T08:00:00Z', '2026-11-25'), 'hace 1 año');
   eq(TC.sinceText('2023-01-02', '2026-11-25'), 'hace 3 años');
   eq(TC.sinceText(null, '2026-11-25'), '');
+});
+
+await test('distancia (v0.37.0): ~1 km grid, km between both, only when both are on', () => {
+  eq(NEAR.roundNear(4.6534, -74.0612), { lat: 4.65, lng: -74.06 });
+  eq(NEAR.roundNear(4.6551, -74.0649), { lat: 4.66, lng: -74.06 });
+  const km = NEAR.kmBetween({ lat: 4.65, lng: -74.06 }, { lat: 4.71, lng: -74.03 });
+  ok(km > 7 && km < 7.7, String(km));
+  eq(NEAR.kmLabel(7.4), { big: '7 km', small: 'de distancia' });
+  eq(NEAR.kmLabel(0.6).big, 'Juntitos');
+  const on = (lat, lng) => ({ on: true, lat, lng });
+  eq(NEAR.nearState(on(4.65, -74.06), on(4.65, -74.06), { phone: true }).kind, 'km');
+  eq(NEAR.nearState(on(4.65, -74.06), { on: false }, { phone: true }).kind, 'waiting');
+  eq(NEAR.nearState(null, on(1, 1), { phone: true }), { kind: 'invite', partnerOn: true });
+  eq(NEAR.nearState(null, on(1, 1), { phone: false }), null);
+  eq(NEAR.nearState({ on: false, lat: 1, lng: 1 }, on(1, 1), { phone: false }), null);
 });
 
 window.__results = results;
