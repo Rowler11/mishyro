@@ -4376,3 +4376,30 @@ a.game-tile:hover { border-color: var(--ink); }
 .appbar .flower { fill: var(--accent); }
 .appbar .icon-btn { color: var(--text); background: transparent; }
 .appbar .icon-btn:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+
+/* v0.35.0 · Inicio "Marco de tinta y olas" (Rowler, opción B): cada tarjeta debajo del contador lleva un
+   encabezado con olas seigaiha, un doble marco de tinta y filas de papel con un trazo de bermellón.
+   Mismo papel washi blanco; todo por tokens, así sirve en los 3 estilos, de día y de noche. */
+.home :is(.home-card:not(.counter-card):not(.backup-card), .guide-card) { --pad: var(--space-4); padding: var(--pad); overflow: hidden;
+  outline: 1px solid var(--border-strong); outline-offset: -6px; }
+.home :is(.home-card:not(.counter-card):not(.backup-card) > .card-kicker, .fav-head, .guide-head) { position: relative; isolation: isolate;
+  margin: calc(-1 * var(--pad)) calc(-1 * var(--pad)) 0; padding: 13px var(--pad) 11px; border-bottom: 1px solid var(--border-strong); }
+/* the band of waves: ::after on the titles (their brush stroke goes away), ::before on the heads with a button */
+.home .home-card:not(.counter-card):not(.backup-card) > .card-kicker::after, .home :is(.fav-head, .guide-head)::before {
+  content: ''; display: block; position: absolute; inset: 0; z-index: -1; width: auto; height: auto; margin: 0; pointer-events: none;
+  background: var(--accent); opacity: calc(var(--pattern-opacity) * 1.9);
+  -webkit-mask: url('./icons/patterns/seigaiha.svg') repeat 0 0 / 40px 20px; mask: url('./icons/patterns/seigaiha.svg') repeat 0 0 / 40px 20px; }
+/* a small vermillion seal (a diamond) before each title */
+.home :is(.home-card:not(.counter-card):not(.backup-card) > .card-kicker, .fav-head .card-kicker, .guide-head .card-kicker) { display: flex; align-items: center; gap: 8px; }
+.home :is(.fav-head .card-kicker, .guide-head .card-kicker)::after { content: none; }
+.home :is(.home-card:not(.counter-card):not(.backup-card) > .card-kicker, .fav-head .card-kicker, .guide-head .card-kicker)::before {
+  content: ''; flex: none; width: 7px; height: 7px; border-radius: 1.5px; background: var(--accent); transform: rotate(45deg); }
+/* rows: washi slips with a vermillion ink stroke at the left */
+.home :is(.today-row, .mekuri, .guide-step) { position: relative; background: var(--paper) var(--grain); border: 1px solid var(--border); border-radius: 8px; box-shadow: none; }
+.home :is(.today-row, .mekuri, .guide-step)::before { content: ''; position: absolute; left: -1px; top: 8px; bottom: 8px; width: 3.5px; border-radius: 2px; background: var(--accent); opacity: .85; pointer-events: none; }
+.home :is(.today-row, .mekuri) { padding-left: 14px; }
+.home .guide-step { padding-left: calc(var(--space-3) + 4px); }
+.home .guide-step-icon { background: color-mix(in srgb, var(--accent) 10%, var(--paper)); box-shadow: 0 0 0 1.4px var(--accent); }
+@media (hover: hover) { .home :is(.today-row, .mekuri, .guide-step):hover { border-color: var(--accent); background: var(--paper) var(--grain); } }
+.home :is(.today-row, .guide-step):active { background: color-mix(in srgb, var(--accent) 6%, var(--paper)); }
+:root[data-contrast="high"] .home :is(.home-card, .guide-card) { outline-color: var(--border); }

@@ -1928,6 +1928,11 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('12 carga: ensō a pincel en vez del círculo que gira', enso);
     const seasons = await page.evaluate(async () => { const fx = await import('./js/core/fx.js'); return [3, 6, 9, 0].map((m) => fx.seasonOf(new Date(2026, m, 10))).join(',') + '|' + fx.seasonOf(new Date(2026, 0, 10), 'sur'); });
     ok('7 temporada: calendario de Japón (y el sur corrido 6 meses)', seasons === 'sakura,hotaru,momiji,snow|hotaru', seasons);
+    // v0.35.0: in spring the branch blossoms (sakura flowers painted, pink pixels); the cards below the counter wear "Marco de tinta y olas".
+    const bloom = await page.evaluate(async () => { const fx = await import('./js/core/fx.js'); const c = fx.cornerArt('sakura').querySelector('canvas.corner-maple'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let pink = 0; let green = 0; for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 200) continue; if (d[i] > 220 && d[i + 1] > 140 && d[i + 2] > 160) pink++; if (d[i + 1] > d[i] + 30 && d[i + 1] > d[i + 2] + 30) green++; } return `${pink > 500},${green < pink / 10}`; });
+    ok('35 estaciones: en primavera la rama florece en sakura (sin hojas verdes)', bloom === 'true,true', bloom);
+    const frame = await page.evaluate(() => { const k = document.querySelector('.home .coming-card > .card-kicker, .home .today-card > .card-kicker, .home .now-card > .card-kicker'); const card = k?.closest('.card'); const band = getComputedStyle(k, '::after'); return [getComputedStyle(card).outlineStyle, getComputedStyle(k).borderBottomStyle, band.content !== 'none' && /seigaiha/.test(band.maskImage || band.webkitMaskImage), getComputedStyle(k, '::before').content !== 'none'].join(','); });
+    ok('35 tarjetas de Inicio: marco de tinta, encabezado con olas y sello', frame === 'solid,solid,true,true', frame);
     await go('/mas', '.page');
     ok('12 hojas: solo en Inicio (se van al salir)', await page.$('.ambient-canvas') === null);
 

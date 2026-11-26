@@ -8,7 +8,7 @@ import { sound, prefersReducedMotion } from './util.js';
 import * as estilo from './estilo.js';
 
 const SEASONS = ['snow', 'snow', 'sakura', 'sakura', 'sakura', 'hotaru', 'hotaru', 'hotaru', 'momiji', 'momiji', 'momiji', 'snow']; // by month, Japan's calendar
-const LABEL = { sakura: 'pétalos de sakura', hotaru: 'luciérnagas', momiji: 'hojas de momiji', snow: 'copos de nieve' };
+const LABEL = { sakura: 'pétalos de sakura', hotaru: 'hojas verdes de arce y luciérnagas', momiji: 'hojas rojas de momiji', snow: 'copos de nieve' };
 
 /** The season for a date: Japan's calendar in the north, shifted six months in the south. */
 export function seasonOf(date = new Date(), hemisphere = CONFIG.seasonalHemisphere) {
@@ -241,8 +241,18 @@ export function ambient(host, opts = {}) {
   size();
   // v0.16.0: the Chinese styles drop plum petals (or leaves in summer and autumn) from their own branch.
   let style = estilo.styleNow();
-  const palette = (k) => (k === 'night' ? COLORS('hotaru', true, tokens().gold) : estilo.isChinese(style) ? estilo.fallingColors(style, k) : MAPLE[k] || COLORS('snow', false));
+  // v0.35.0 (Rowler): each season has its own particles, day and night (Japan's calendar): spring petals from
+  // the blossoming branch, summer green maple with a few fireflies at dusk, autumn red maple, winter snow.
+  // At night the lanterns stay and the season keeps falling, softer; summer nights are fireflies.
+  let season = seasonOf();
+  const palette = (k) => {
+    if (k === 'night' && season === 'hotaru') return COLORS('hotaru', true, tokens().gold);
+    if (estilo.isChinese(style)) return estilo.fallingColors(style, season);
+    if (season === 'sakura' || season === 'snow') return COLORS(season, k === 'night');
+    return MAPLE[season];
+  };
   let kind = ambientKind(); let night = kind === 'night'; let pal = palette(kind);
+  const dusk = () => { const d = new Date(); const h = d.getHours() + d.getMinutes() / 60; return h >= 16.5 && h < 19; };
   const n = innerWidth > 1100 ? 8 : 7; // few, decided with the user
   const make = (k, { top = true, at = null, extra = false } = {}) => {
     const now = performance.now();
@@ -252,25 +262,31 @@ export function ambient(host, opts = {}) {
       k, extra, born: now,
       x: at ? at.x + R(-24, 24) : R(-0.05, 1.05) * W,
       y: at ? at.y + R(-12, 12) : k === 'hotaru' ? R(0.1, 0.95) * H : top ? R(-70, -10) : R(0, H),
-      s: k === 'snow' ? R(3, 6) : k === 'hotaru' ? R(2.4, 3.6) : k === 'momiji' ? R(13, 19) : R(10, 15), // v0.15.1: bigger, they fall over the cards
+      s: k === 'snow' ? R(3, 6) : k === 'hotaru' ? R(2.4, 3.6) : k === 'momiji' ? R(13, 19) : k === 'sakura' ? R(6.5, 9.5) : R(10, 15), // v0.15.1: bigger, they fall over the cards
       v: k === 'hotaru' ? R(-0.006, 0.006) : k === 'snow' ? R(0.022, 0.04) : R(0.03, 0.055),
       drift: k === 'hotaru' ? R(-0.006, 0.006) : tree ? R(-0.085, 0.012) : R(-0.018, 0.004),
       ph: R(0, 6.28), spin: R(-0.002, 0.002), flip: R(400, 900), pulse: R(1600, 2800),
-      life: k === 'hotaru' ? R(7000, 12000) : 0, color: pal[Math.floor(Math.random() * pal.length)],
+      life: k === 'hotaru' ? R(7000, 12000) : 0, color: (k === 'hotaru' && !night ? COLORS('hotaru', false, tokens().gold) : pal)[Math.floor(Math.random() * (k === 'hotaru' && !night ? 2 : pal.length))],
       // v0.32.4 (Rowler): the leaves let go of the branch instead of coming from nowhere; each waits its turn on it.
       // v0.32.4b: they scatter wider: some drift far across the screen, others sway and fall nearer
       amp: R(0.12, 0.6),
-      pair: k === 'momiji' ? (LEAVES[kind] || LEAVES.momiji)[Math.floor(Math.random() * (LEAVES[kind] || LEAVES.momiji).length)] : null,
+      pair: k === 'momiji' ? (LEAVES[season] || LEAVES.momiji)[Math.floor(Math.random() * (LEAVES[season] || LEAVES.momiji).length)] : null,
       wait: opts.source && !at && k !== 'snow' && k !== 'hotaru' ? now + (top ? R(1200, 7000) : R(300, 9000)) : 0,
     };
   };
   // v0.15.1: by day the corner maple drops its own leaves (green, then red); snow in winter.
-  const particle = () => (night ? 'hotaru' : estilo.isChinese(style) ? estilo.fallingKind(kind) : kind === 'snow' ? 'snow' : 'momiji');
-  let bits = [];
+  const particle = () => (night && season === 'hotaru' ? 'hotaru' : estilo.isChinese(style) ? estilo.fallingKind(season) : season === 'momiji' || season === 'hotaru' ? 'momiji' : season);
+  let bits = []; let duskOn = false;
+  const fireflies = () => { // summer evenings: two fireflies among the green leaves (by day only at dusk)
+    duskOn = !night && season === 'hotaru' && dusk();
+    bits = bits.filter((b) => !b.firefly);
+    if (duskOn) for (let i = 0; i < 2; i++) bits.push({ ...make('hotaru', { top: false }), firefly: true });
+  };
   const reset = () => {
-    kind = ambientKind(); night = kind === 'night'; style = estilo.styleNow(); pal = palette(kind);
+    kind = ambientKind(); night = kind === 'night'; style = estilo.styleNow(); season = seasonOf(); pal = palette(kind);
     bits = Array.from({ length: n }, () => make(particle(), { top: false }));
     if (night && style !== 'azul') bits.push(make('lantern', { top: false }), make('lantern'));
+    fireflies();
   };
   reset();
   let wind = 0; let lastY = null;
@@ -280,11 +296,15 @@ export function ambient(host, opts = {}) {
     if (lastY !== null) wind = Math.max(-0.6, Math.min(0.6, wind + (y - lastY) * 0.006)); // v0.15.2: a soft breeze, never a jerk
     lastY = y;
   };
-  let raf = 0; let stopped = false; let prev = 0;
+  let raf = 0; let stopped = false; let prev = 0; let checked = 0;
   const frame = (now) => {
     if (stopped) return;
     raf = requestAnimationFrame(frame);
-    if (now - prev < 15) return; // v0.15.2: smooth (it looked choppy at 30 fps); still only a few particles
+    if (now - prev < 15) return;
+    if (now - checked > 30000) { // the app can stay open across a change of season or the dusk
+      checked = now;
+      if (seasonOf() !== season) { reset(); opts.onSeason?.(); } else if (duskOn !== (!night && season === 'hotaru' && dusk())) fireflies();
+    } // v0.15.2: smooth (it looked choppy at 30 fps); still only a few particles
     const dt = Math.min(64, now - (prev || now)); prev = now;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
     bctx.setTransform(dpr, 0, 0, dpr, 0, 0); bctx.clearRect(0, 0, W, H);
@@ -313,7 +333,7 @@ export function ambient(host, opts = {}) {
       if (b.k === 'hotaru') { b.x += (b.drift + wind * 0.02) * dt + Math.sin(t / 1200 + b.ph) * 0.15; b.y += b.v * dt + Math.cos(t / 1500 + b.ph) * 0.12; }
       else { b.x += (b.drift + wind * 0.04) * dt + Math.sin(t / 900 + b.ph) * (b.amp || 0.25); b.y += b.v * dt; }
       const gone = b.k === 'hotaru' ? t > b.life : b.y > H + 24 || b.x < -48 || b.x > W + 48;
-      if (gone) { if (b.extra) bits.splice(i, 1); else bits[i] = make(b.k); continue; }
+      if (gone) { if (b.extra) bits.splice(i, 1); else bits[i] = b.firefly ? { ...make('hotaru'), firefly: true } : make(b.k); continue; }
       const fadeIn = Math.min(1, t / 900); const fadeOut = b.k === 'hotaru' ? Math.min(1, (b.life - t) / 1200) : 1;
       ctx.translate(b.x, b.y);
       if (b.k === 'hotaru') { // slow glow, about one breath every two seconds
@@ -322,7 +342,7 @@ export function ambient(host, opts = {}) {
         const g = ctx.createRadialGradient(0, 0, 0, 0, 0, b.s * 4); g.addColorStop(0, b.color); g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, b.s * 4, 0, 6.29); ctx.fill(); continue;
       }
-      ctx.globalAlpha = fadeIn * (b.k === 'snow' ? 0.9 : 0.88);
+      ctx.globalAlpha = fadeIn * (b.k === 'snow' ? 0.9 : 0.88) * (night ? 0.62 : 1); // softer at night, never a glare
       if (b.k === 'snow') { ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(0, 0, b.s, 0, 6.29); ctx.fill(); continue; }
       ctx.rotate(b.ph + b.spin * t); ctx.scale(Math.max(0.15, Math.abs(Math.cos(t / b.flip + b.ph))), 1);
       if (b.k === 'momiji') leafSprite(ctx, b);
@@ -331,6 +351,7 @@ export function ambient(host, opts = {}) {
       else petal(ctx, b.s, b.color);
     }
   };
+  checked = performance.now();
   const play = () => { if (!stopped && !raf) { prev = 0; raf = requestAnimationFrame(frame); } };
   const pause = () => { cancelAnimationFrame(raf); raf = 0; };
   const onVis = () => (document.visibilityState === 'hidden' ? pause() : play());
@@ -449,13 +470,40 @@ function paintLeaf(ctx, x, y, s, rot, pair, flip, dark) {
   for (const [tx, ty] of tips) { ctx.beginPath(); ctx.moveTo(0, s * 0.12); ctx.lineTo(tx, ty); ctx.stroke(); }
   ctx.restore();
 }
+// v0.35.0 (Rowler): in spring the branch blossoms (sakura) and lets go of its petals.
+function paintBlossom(ctx, x, y, s, rot, dark, bud) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  if (bud) { // a closed bud: a pink drop with its green calyx
+    const g = ctx.createLinearGradient(0, -s * 0.7, 0, s * 0.3); g.addColorStop(0, '#F7C3D0'); g.addColorStop(1, '#D9708E');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, -s * 0.25, s * 0.3, s * 0.46, 0, 0, 6.29); ctx.fill();
+    ctx.fillStyle = '#6E8A3E'; ctx.beginPath(); ctx.ellipse(0, s * 0.18, s * 0.2, s * 0.14, 0, 0, 6.29); ctx.fill();
+    ctx.restore(); return;
+  }
+  for (let i = 0; i < 5; i++) {
+    ctx.save(); ctx.rotate((i * Math.PI * 2) / 5);
+    const g = ctx.createRadialGradient(0, 0, s * 0.08, 0, -s * 0.5, s * 0.62);
+    g.addColorStop(0, dark ? '#E58AA3' : '#EC9AB0'); g.addColorStop(0.45, dark ? '#F2B4C5' : '#F8CFDA'); g.addColorStop(1, dark ? '#F6C9D5' : '#FFF1F4');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(s * 0.44, -s * 0.18, s * 0.36, -s * 0.84, s * 0.1, -s * 0.92); // the notch at the tip of each sakura petal
+    ctx.lineTo(0, -s * 0.8); ctx.lineTo(-s * 0.1, -s * 0.92);
+    ctx.bezierCurveTo(-s * 0.36, -s * 0.84, -s * 0.44, -s * 0.18, 0, 0); ctx.fill();
+    ctx.strokeStyle = 'rgba(194,64,95,.18)'; ctx.lineWidth = 0.35; ctx.stroke();
+    ctx.restore();
+  }
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = '#C2405F'; ctx.lineWidth = 0.4; ctx.fillStyle = '#E8B04A';
+  for (let i = 0; i < 7; i++) { const a = (i * Math.PI * 2) / 7 + 0.3; const r = s * 0.3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); ctx.stroke(); ctx.beginPath(); ctx.arc(Math.cos(a) * r, Math.sin(a) * r, 0.55, 0, 6.29); ctx.fill(); }
+  ctx.fillStyle = '#C2405F'; ctx.beginPath(); ctx.arc(0, 0, s * 0.1, 0, 6.29); ctx.fill();
+  ctx.restore();
+}
 function paintMaple(canvas, kind) {
   const W = 270; const H = 156; const k = Math.min(3, devicePixelRatio || 1) * 1.15;
   canvas.width = Math.round(W * k); canvas.height = Math.round(H * k);
   const ctx = canvas.getContext('2d'); if (!ctx) return;
   ctx.scale(k, k); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   mseed = 11;
-  const pal = LEAVES[kind] || null; // null: winter, bare
+  const bloom = kind === 'sakura';
+  const pal = bloom ? null : LEAVES[kind] || null; // null: winter, bare (or in blossom)
   const P0 = [280, 20]; const P1 = [228, 16]; const P2 = [176, 46]; const P3 = [104, 70];
   const main = (u) => { const v = 1 - u; return [0, 1].map((i) => v ** 3 * P0[i] + 3 * v * v * u * P1[i] + 3 * v * u * u * P2[i] + u ** 3 * P3[i]); };
   const bark = '#4A3024'; const barkLight = '#A88670';
@@ -512,6 +560,11 @@ function paintMaple(canvas, kind) {
     ctx.restore();
     ctx.shadowColor = 'rgba(50,25,15,.2)';
     for (const L of leaves.filter((l) => l.front)) paintLeaf(ctx, L.x, L.y, L.s, L.rot, L.pair, L.flip, false);
+  } else if (bloom) {
+    // spring: blossoms in small clusters close to the bark (sakura flowers sit on short stems), a few buds
+    ctx.shadowColor = 'rgba(120,40,60,.18)'; ctx.shadowBlur = 2; ctx.shadowOffsetY = 1;
+    leaves.forEach((L, i) => { if (!L.front && i % 2) paintBlossom(ctx, (L.x + L.px) / 2, (L.y + L.py) / 2, L.s * 0.62, L.rot, true, false); });
+    leaves.forEach((L, i) => { if (L.front && i % 3 !== 1) paintBlossom(ctx, (L.x * 2 + L.px) / 3, (L.y * 2 + L.py) / 3, L.s * (i % 5 === 0 ? 0.48 : 0.72), L.rot, false, i % 5 === 0); });
   } else {
     // winter: snow resting on top of the bark, and a couple of dry leaves that stayed
     ctx.shadowColor = 'rgba(80,100,130,.25)'; ctx.shadowBlur = 1.5; ctx.shadowOffsetY = 0.6;
