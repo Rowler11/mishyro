@@ -4452,15 +4452,7 @@ a.game-tile:hover { border-color: var(--ink); }
 /* v0.37.0 · Inicio "Tablillas y tiras" (Rowler, opción B + distancia): el contador queda igual pero un poco
    más pequeño; debajo, sin las bandas de olas: favoritos como tablillas sueltas, "Para hoy" como tiras tanzaku
    que se chulean, "Pensando en ti" como una tira punteada y la distancia entre los dos en "Ahora mismo". */
-.home .counter-card { grid-template-columns: 92px minmax(0, 1fr); gap: var(--space-3); min-height: 0; padding: 12px 14px calc(12px + 12px); }
-.home .counter-card::after { height: 22px; -webkit-mask-size: 44px 22px; mask-size: 44px 22px; }
-.home .counter-days { font-size: clamp(1.5rem, 1.35rem + .8vw, 1.9rem); }
-.home .counter-days-label { font-size: .68rem; }
-.home .counter-goal { font-size: .98rem; }
-.home .counter-detail { font-size: .76rem; }
-.home .counter-seal { width: 19px; height: 19px; }
-.home .love-strip { padding-top: var(--space-2); }
-@media (min-width: 768px) { .home .counter-card { grid-template-columns: 118px minmax(0, 1fr); padding: 16px 18px calc(16px + 12px); } .home .counter-goal { font-size: 1.15rem; } .home .counter-detail { font-size: .84rem; } }
+/* v0.37.1: Rowler pidió el contador de días y racha a su tamaño original (sin la versión reducida). */
 
 /* no wave bands: a plain title with its vermilion diamond */
 .home .home-card:not(.counter-card):not(.backup-card) > .card-kicker::after, .home :is(.fav-head, .guide-head)::before { content: none; }
@@ -4582,3 +4574,27 @@ button.nr-slip:focus-visible { outline: 3px solid var(--focus); outline-offset: 
 @media (prefers-reduced-motion: reduce) { .ns-train { animation: none; left: 40%; } .ns-train::after, .ns-train u::before, .ns-train u::after { animation: none; } }
 @media (max-width: 340px) { .nr-station .now-near { width: 70%; } }
 .now-route .nr-slip .now-who { display: none; }
+
+/* v0.37.1 · Ahora mismo: estados arriba, cada uno en su tablilla; la estación con la distancia al final */
+.now-route.is-stacked { gap: var(--space-3); }
+.now-route.is-stacked .nr-station { height: 104px; margin-top: 2px; border-top: 1px dashed var(--border); padding-top: 0; }
+.now-route.is-stacked .nr-station .now-near { top: 10px; }
+.now-route.is-stacked .ns-rail { bottom: 10px; }
+.now-route.is-stacked .ns-train { bottom: 16px; }
+
+/* v0.37.1 · Personalizar Inicio más claro: tablillas numeradas, ocultas aparte, lo que solo sale cuando toca */
+.layout-editor { gap: var(--space-2); }
+.layout-list { gap: 8px; }
+.layout-row { padding: 8px 8px 8px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--paper) var(--grain); outline: 1px solid var(--border); outline-offset: -4px; box-shadow: 0 2px 0 var(--surface-2); transition: background var(--dur-2) var(--ease-out), border-color var(--dur-2); }
+.layout-row.is-moved { border-color: var(--accent); animation: layout-moved 700ms var(--ease-out); }
+@keyframes layout-moved { 0% { background-color: color-mix(in srgb, var(--accent) 16%, var(--paper)); } 100% { background-color: var(--paper); } }
+.layout-row.is-off { opacity: 1; border-style: dashed; outline: 0; box-shadow: none; background: transparent; }
+.layout-row.is-off .layout-name strong { color: var(--text-2); }
+.layout-row.is-fixed { justify-content: flex-start; gap: var(--space-2); background: color-mix(in srgb, var(--accent) 6%, var(--paper)); }
+.layout-num { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 4px; background: var(--accent); color: var(--accent-ink); font: 700 .85rem var(--font-serif); transform: rotate(-4deg); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-ink) 25%, transparent); }
+.layout-name { flex: 1; min-width: 0; display: grid; gap: 1px; line-height: 1.25; }
+.layout-name strong { font-family: var(--font-serif); font-size: .95rem; }
+.layout-when { justify-self: start; margin-top: 2px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 3px; color: var(--accent); font-size: .66rem; font-weight: 700; letter-spacing: .04em; }
+.layout-move { flex: none; display: flex; gap: 0; }
+.layout-sub { margin: var(--space-2) 0 0; font: 700 .78rem var(--font-serif); letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+@media (prefers-reduced-motion: reduce) { .layout-row.is-moved { animation: none; } }

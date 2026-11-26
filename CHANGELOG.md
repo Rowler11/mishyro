@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.37.1 (Inicio en orden)
+
+Cambiado
+- Ahora mismo: los dos estados van arriba, cada uno en su tablilla, y la estación con la distancia queda al final, sin que nada se encime.
+- La tarjeta de días juntos y racha vuelve a su tamaño original.
+- Nuevo orden de Inicio: celebraciones y próximo encuentro (solo cuando tocan), Ahora mismo, Sus favoritos, Para hoy, frases y Pensando en ti, Lo que viene, "Hoy los dos" y Primeros pasos. Un orden guardado antes cede una vez a este; se puede volver a personalizar.
+- Personalizar Inicio más claro: tablillas numeradas con una línea que dice qué es cada tarjeta, flechas para mover, un botón para ocultar, las ocultas en su propia lista con "Mostrar", la marca "Solo cuando toca" y "Orden recomendado" para volver al orden de la app.
+
 ## 0.37.0 (Inicio "Tablillas y tiras" y la distancia entre los dos)
 
 Nuevo
