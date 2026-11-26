@@ -462,7 +462,7 @@ async function exampleContent(page, { reload = true } = {}) {
     const draftForLeo = await page.evaluate(async () => { const p = await import('./js/core/profile.js'); const db = await import('./js/core/db.js'); p.setActive('david'); const n = (await db.query('letters', { filter: (l) => !l.letterId })).length; p.setActive('sofia'); return n; });
     ok('cartas: a draft is "Solo yo" (Leo does not see it)', draftForLeo === 0);
     // Estampillas on the envelope (decided 2026-11-19, option A)
-    await page.locator('.own-letter').getByRole('button', { name: 'Decorar sobre' }).click();
+    await page.locator('.own-letter').getByRole('button', { name: 'Estampillas' }).click();
     const deco = page.locator('.sticker-editor');
     await deco.getByRole('button', { name: 'Poner: Flor de sakura' }).click();
     await deco.getByRole('button', { name: 'Poner: Gatito siamés' }).click();
@@ -483,6 +483,11 @@ async function exampleContent(page, { reload = true } = {}) {
     ok('stickers: the draft says how many it has', /2 estampillas/.test(await page.locator('.own-letter').textContent()));
     await page.waitForSelector('.own-letter.status-draft');
     ok('cartas: a draft is a loose sheet "on the table" with a few lines of the letter', /Sobre la mesa/.test(await page.locator('.cartas-section').textContent()) && /Mira hacia arriba/.test(await page.locator('.draft-sheet .draft-lines').textContent()));
+    ok('cartas: no Editar/Borrar/Seguir outside on a draft; Estampillas stays', (await page.locator('.draft-sheet').getByRole('button', { name: /^(Editar|Borrar|Seguir)$/ }).count()) === 0 && (await page.locator('.draft-sheet').getByRole('button', { name: 'Estampillas' }).count()) === 1);
+    await page.locator('.draft-open').click();
+    const draftDlg = page.getByRole('dialog', { name: 'Ábreme cuando veas la luna llena' });
+    ok('cartas: the opened draft offers Editar and Borrar inside', (await draftDlg.getByRole('button', { name: 'Editar', exact: true }).count()) === 1 && (await draftDlg.getByRole('button', { name: 'Borrar', exact: true }).count()) === 1);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(400);
     ok('cartas: "Escribir carta" shows only once', (await page.getByRole('button', { name: /Escribir (una )?carta/ }).count()) === 1);
     await page.locator('.own-letter').getByRole('button', { name: 'Meter al sobre' }).click();
     await page.getByRole('dialog', { name: '¿Sellar esta carta?' }).getByRole('button', { name: 'Sellar' }).click();
@@ -492,6 +497,9 @@ async function exampleContent(page, { reload = true } = {}) {
     const sentDlg = page.getByRole('dialog', { name: 'Ábreme cuando veas la luna llena' });
     // Since v0.11.0 a letter "En camino" can still be edited until it is opened; it stays sealed.
     ok('cartas: tapping a sent envelope shows the letter, with "Editar" while unopened', /Yo también la estoy viendo/.test(await sentDlg.textContent()) && (await sentDlg.getByRole('button', { name: 'Editar', exact: true }).count()) === 1);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(400);
+    ok('cartas: the sent card has only Estampillas outside (no Editar/Borrar)', (await page.locator('.sent-item', { hasText: 'veas la luna llena' }).locator('.sent-act').allTextContents()).join('|').trim() === 'Estampillas');
+    await page.locator('.futo-sent', { hasText: 'veas la luna llena' }).click();
     await sentDlg.getByRole('button', { name: 'Editar', exact: true }).click();
     const sealedEd = page.getByRole('dialog', { name: 'Editar carta' });
     await sealedEd.getByLabel('La carta').fill('Yo también la estoy viendo, editada.');
@@ -528,7 +536,7 @@ async function exampleContent(page, { reload = true } = {}) {
     await ed.getByLabel('La carta').fill('Texto ficticio.');
     await ed.getByRole('button', { name: 'Guardar borrador' }).click();
     await page.waitForSelector('.own-letter.status-draft');
-    await page.locator('.own-letter').getByRole('button', { name: 'Decorar sobre' }).click();
+    await page.locator('.own-letter').getByRole('button', { name: 'Estampillas' }).click();
     const deco = page.locator('.sticker-editor');
     await deco.waitFor();
     await deco.locator('input[type=file]').setInputFiles(path.join(FIX, 'sticker-ficticio.png'));
@@ -566,7 +574,7 @@ async function exampleContent(page, { reload = true } = {}) {
     const models = await page.waitForFunction(async () => (await (await caches.open('modelos-v1')).keys()).length >= 3, null, { timeout: 8000 }).then(() => 3, async () => page.evaluate(async () => (await (await caches.open('modelos-v1')).keys()).length));
     ok('own stickers: the background remover stays cached for next time', models >= 3, String(models));
     // delete from the album
-    await page.locator('.own-letter').getByRole('button', { name: 'Decorar sobre' }).click();
+    await page.locator('.own-letter').getByRole('button', { name: 'Estampillas' }).click();
     await deco.getByRole('button', { name: 'Editar' }).click();
     await deco.getByRole('button', { name: 'Borrar del álbum: Carita' }).click({ force: true });
     await page.getByRole('dialog', { name: '¿Borrar esta estampilla?' }).getByRole('button', { name: 'Borrar' }).click();

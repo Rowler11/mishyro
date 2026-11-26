@@ -7,6 +7,7 @@ Nuevo
 - "Para hoy" es una lista que se va chuleando: la pregunta del día, el reto de la semana y el ánimo quedan en la lista y se marcan y tachan cuando están hechos, con un contador "1 de 3" y un sello cuando se completa. Los avisos (cápsulas, recordatorios, insignias) van arriba, sin casilla.
 
 Cambiado
+- Escribimos: las cartas ya no llevan Editar ni Borrar por fuera; al tocar una carta (borrador, en camino o leída) se abre y ahí están Editar y Borrar. Por fuera queda "Estampillas", que ahora sirve también para las cartas ya selladas y leídas, además de los borradores.
 - El contador, el corazón y la racha conservan su diseño pero son un poco más pequeños.
 - Sin las bandas de olas en los encabezados de las tarjetas: título con su sello rojo y nada más.
 - Sus favoritos son cuatro tablillas sueltas, sin tarjeta alrededor (se eligen hasta 4).

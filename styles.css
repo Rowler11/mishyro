@@ -1165,6 +1165,8 @@ video.purikura-img { object-fit: contain; background: rgb(0 0 0); }
 .draft-lines { margin: 0; font-family: var(--font-serif); line-height: 26px; color: var(--text-2);
   background-image: repeating-linear-gradient(transparent 0 25px, var(--line) 25px 26px);
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.draft-open { display: block; width: 100%; padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; display: grid; gap: var(--space-2); }
+.draft-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 .draft-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 2px var(--space-3); font-size: .8rem; color: var(--text-2); }
 .draft-sheet .card-actions { margin-top: var(--space-1); }
 @media (prefers-reduced-motion: reduce) { .draft-sheet, .draft-sheet:nth-child(even) { transform: none; } }

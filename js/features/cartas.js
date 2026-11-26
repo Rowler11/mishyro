@@ -371,7 +371,7 @@ export async function render(ctx) {
       await db.put('letters', { ...l.raw, stickers: list });
       ui.toast(list.length ? 'Sobre decorado.' : 'Sobre sin estampillas.', { tone: 'success' });
       await load(); draw();
-      [...body.querySelectorAll(`.own-letter[data-id="${CSS.escape(l.id)}"] button`)].find((n) => n.textContent.includes('Decorar'))?.focus({ preventScroll: true });
+      [...body.querySelectorAll(`.own-letter[data-id="${CSS.escape(l.id)}"] button, .sent-item[data-id="${CSS.escape(l.id)}"] .sent-act`)].find((n) => n.textContent.includes('Estampillas'))?.focus({ preventScroll: true });
     } catch (e) { console.error(e); ui.toast('No se pudo guardar el sobre. Inténtalo de nuevo.', { tone: 'error' }); }
   };
 
@@ -416,14 +416,14 @@ export async function render(ctx) {
     const stickerNote = (l) => (l.stickers?.length ? (l.stickers.length === 1 ? '1 estampilla en el sobre' : `${l.stickers.length} estampillas en el sobre`) : '');
     const excerpt = (t) => { const x = String(t || '').replace(/\s+/g, ' ').trim(); return x.length > 150 ? `${x.slice(0, 150).trimEnd()}…` : x; };
     const sheet = (l) => el('article', { class: 'draft-sheet own-letter status-draft', dataset: { id: l.id }, 'aria-labelledby': `ol-${l.id.slice(0, 12)}` },
-      el('h3', { class: 'draft-title', id: `ol-${l.id.slice(0, 12)}` }, l.label),
-      el('p', { class: 'draft-lines' }, excerpt(l.body)),
+      // v0.37.0 (Rowler): editing and deleting live inside the opened letter, not on the card
+      el('button', { class: 'draft-open', type: 'button', 'aria-label': `Abrir el borrador ${l.label}`, onClick: () => letterModal(l, { onShareable: false, onDelete: () => removeLetter(l), onEdit: () => openEditor(l.raw) }) },
+        el('h3', { class: 'draft-title', id: `ol-${l.id.slice(0, 12)}` }, l.label),
+        el('p', { class: 'draft-lines' }, excerpt(l.body))),
       el('p', { class: 'draft-meta' }, el('span', {}, 'Borrador · solo tú la ves'), stickerNote(l) ? el('span', {}, stickerNote(l)) : null),
       el('div', { class: 'card-actions' },
         ui.button({ label: 'Meter al sobre', iconName: 'mail', variant: 'primary', small: true, onClick: () => sealLetter(l) }),
-        ui.button({ label: 'Seguir', iconName: 'pencil', small: true, onClick: () => openEditor(l.raw) }),
-        ui.button({ label: 'Decorar sobre', iconName: 'sticker', small: true, onClick: () => decorateLetter(l) }),
-        ui.button({ label: 'Borrar', iconName: 'trash-2', variant: 'ghost', small: true, onClick: () => removeLetter(l) })));
+        ui.button({ label: 'Estampillas', iconName: 'sticker', small: true, onClick: () => decorateLetter(l) })));
     // A small envelope, two per row. Tapping it shows the letter as it was sent.
     // v0.30.0 (Rowler): the letters "En camino" carry their own actions right under the envelope, so
     // reading, editing, decorating and deleting are one tap away (no hidden buttons in a dialog).
@@ -446,21 +446,19 @@ export async function render(ctx) {
       const chip = (label, iconName, onClick, extra = '') => el('button', { class: `sent-act${extra}`, type: 'button', 'aria-label': `${label}: ${l.label}`, onClick }, icon(iconName, { size: 16 }), el('span', {}, label));
       return el('div', { class: 'sent-item', dataset: { id: l.id } }, env,
         el('div', { class: 'sent-acts', role: 'group', 'aria-label': `Acciones de ${l.label}` },
-          l.status === 'sealed' ? chip('Editar', 'pencil', () => editSealed(l)) : chip('Leer', 'mail-open', read),
-          l.status === 'sealed' && l.kind === 'own' ? chip('Estampillas', 'sticker', () => decorateLetter(l)) : null,
-          chip('Borrar', 'trash-2', () => removeLetter(l), ' is-danger')));
+          l.kind === 'own' ? chip('Estampillas', 'sticker', () => decorateLetter(l)) : chip('Leer', 'mail-open', read)));
     };
     const empty = !mine.length;
     return el('div', { class: 'cartas-section' },
       el('div', { class: 'cartas-group' },
         el('h2', { class: 'card-kicker cartas-subtitle' }, 'Sobre la mesa'),
         el('p', { class: 'muted small' }, drafts.length
-          ? 'Lo que aún escribes: hojas sueltas que solo tú ves. Puedes editarlas hasta que las abran.'
+          ? 'Lo que aún escribes: hojas sueltas que solo tú ves. Tócalas para seguir escribiendo o borrarlas.'
           : empty ? `Aquí quedan las cartas "Ábreme cuando…" que le escribas a ${partner}. Empieza con "Escribir carta".` : 'No hay hojas sueltas. Para otra carta, usa "Escribir carta".'),
         drafts.length ? el('div', { class: 'draft-grid' }, drafts.map(sheet)) : null),
       onTheWay.length ? el('div', { class: 'cartas-group' },
         el('h2', { class: 'card-kicker cartas-subtitle' }, 'En camino'),
-        el('p', { class: 'muted small' }, onTheWay.length === 1 ? `Sellada, esperando a que ${partner} la abra. Tócala para leerla o editarla.` : `Selladas, esperando a que ${partner} las abra. Toca una para leerla o editarla.`),
+        el('p', { class: 'muted small' }, onTheWay.length === 1 ? `Sellada, esperando a que ${partner} la abra. Tócala para leerla, editarla o borrarla.` : `Selladas, esperando a que ${partner} las abra. Toca una para leerla, editarla o borrarla.`),
         el('div', { class: 'sent-grid' }, onTheWay.map(sent))) : null,
       read.length ? el('div', { class: 'cartas-group' },
         el('h2', { class: 'card-kicker cartas-subtitle' }, 'Leídas'),
@@ -473,7 +471,7 @@ export async function render(ctx) {
     const draft = letters.filter((l) => l.from === me && l.status === 'draft').sort((a, b) => (b.raw?.updatedAt || '').localeCompare(a.raw?.updatedAt || ''))[0];
     tab = 'write'; saveTab(tab); draw();
     if (draft) await decorateLetter(draft);
-    else { ui.toast('Primero escribe la carta; luego "Decorar sobre" en su hoja.'); openEditor(); }
+    else { ui.toast('Primero escribe la carta; luego "Estampillas" en su hoja.'); openEditor(); }
   }
 
   function draw() {
