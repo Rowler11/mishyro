@@ -576,7 +576,7 @@ export async function render() {
       soft(todayCard(), true),
       linked ? soft(import('./toques.js').then((m) => m.homeCard())) : null,
       linked ? soft(import('./foto-dia.js').then((m) => m.homeCard({ onChange: build })), true) : null,
-      counter ? soft(import('./ahora.js').then((m) => m.homeCard({ onChange: () => {} })), true) : null, // v0.31.0
+      null, // v0.37.2: "Ahora mismo" and the distance are paused (ahora.js and cerca.js stay in the code) until a design convinces Rowler
       soft(import('./encuentro.js').then((m) => m.homeCard())),
       soft(import('./citas.js').then((m) => m.weekendCard())),
       soft(import('./home-accesos.js').then((m) => m.favoritesCard()), true),

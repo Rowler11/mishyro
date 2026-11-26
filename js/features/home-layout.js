@@ -10,7 +10,9 @@ export const CARDS = [
   ['slides', 'Frases, Pensando en ti y omikuji'], ['coming', 'Lo que viene'], ['today', 'Para hoy'],
   ['weekend', 'Plan del fin de semana'], ['backup', 'Recordatorio de copia'],
 ];
-const DEFAULT = CARDS.map(([id]) => id);
+// v0.37.2: "Ahora mismo" (with the distance) is paused: it neither shows nor appears in Personalizar until it comes back.
+const PAUSED = ['now'];
+const DEFAULT = CARDS.map(([id]) => id).filter((id) => !PAUSED.includes(id));
 // v0.37.0 (Rowler, Inicio "Tablillas y tiras"): a lighter Inicio by default. Celebraciones and Próximo
 // encuentro only appear when they apply, Primeros pasos until it is done; Foto del día, Toques and Plan del
 // finde wait in "Personalizar".

@@ -9,8 +9,9 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.37.1',
+  version: '0.37.2',
   items: [
+    'Ahora mismo y la distancia están en pausa: salieron de Inicio mientras buscamos un diseño que convenza.',
     'Inicio reacomodado: primero lo de hoy (celebraciones, encuentro y Ahora mismo), luego sus favoritos y Para hoy, y al final lo que viene.',
     'En Ahora mismo cada estado tiene su tablilla y la distancia va al final, sin nada encimado.',
     'Personalizar Inicio es más claro: tarjetas numeradas, cada una con su descripción, y las ocultas aparte.',
