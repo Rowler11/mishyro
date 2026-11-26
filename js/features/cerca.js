@@ -110,14 +110,19 @@ export async function pause() {
   ui.toast('Distancia en pausa. Tu ubicación ya no se comparte.', { tone: 'success' });
 }
 
-function hearts() {
+/** The paper route between the two badges: a dotted curve, a paper plane that flies in once, and the kilometres. */
+function route() {
   const NS = 'http://www.w3.org/2000/svg';
   const s = document.createElementNS(NS, 'svg');
-  s.setAttribute('viewBox', '0 0 60 26'); s.setAttribute('class', 'near-hearts'); s.setAttribute('aria-hidden', 'true');
-  s.innerHTML = '<path class="near-heart near-heart-a" d="M16 22S3 14 3 8.5a5.5 5.5 0 0 1 13-2.4 5.5 5.5 0 0 1 13 2.4C29 14 16 22 16 22z"/>'
-    + '<path class="near-heart near-heart-b" d="M44 24S31 16 31 10.5a5.5 5.5 0 0 1 13-2.4 5.5 5.5 0 0 1 13 2.4C57 16 44 24 44 24z"/>';
+  s.setAttribute('viewBox', '0 0 200 40'); s.setAttribute('class', 'near-route'); s.setAttribute('aria-hidden', 'true'); s.setAttribute('preserveAspectRatio', 'none');
+  const path = document.createElementNS(NS, 'path');
+  path.setAttribute('d', 'M2 30 Q100 -12 198 30'); path.setAttribute('class', 'near-path');
+  const plane = document.createElementNS(NS, 'path');
+  plane.setAttribute('d', 'm-6 3 13-6-5 13-2-5.5z'); plane.setAttribute('class', 'near-plane');
+  s.append(path, plane);
   return s;
 }
+const hearts = route; // the detail sheet uses the same drawing
 
 const agoText = (iso) => {
   if (!iso) return '';
@@ -135,7 +140,7 @@ function sheet(mine, theirs, onChange) {
   const nick = profile.nick(other) || 'Tu pareja';
   const st = nearState(mine, theirs);
   const lines = [
-    st?.kind === 'km' ? el('p', { class: 'near-sheet-km' }, hearts(), el('strong', {}, kmLabel(st.km).big), el('span', { class: 'muted' }, kmLabel(st.km).small)) : null,
+    st?.kind === 'km' ? el('p', { class: 'near-sheet-km' }, el('strong', {}, kmLabel(st.km).big), el('span', { class: 'muted' }, kmLabel(st.km).small)) : null,
     el('p', { class: 'muted small' }, mine?.on ? `Tu celular la actualizó ${agoText(mine.at)}.` : 'La tienes en pausa.'),
     el('p', { class: 'muted small' }, theirs?.on ? `El de ${nick}, ${agoText(theirs.at)}.` : `${nick} todavía no la activa desde su celular.`),
     el('p', { class: 'muted small' }, 'Es aproximada (más o menos 1 km), viaja cifrada y solo se ven los kilómetros. Se actualiza cuando cada uno abre la app.'),
@@ -161,15 +166,11 @@ export async function middle({ onChange } = {}) {
   if (!st) return null;
   const nick = profile.nick(other) || 'tu pareja';
   const open = () => sheet(mine, theirs, onChange);
+  const wrap = (cls, label, kids) => el('button', { class: `now-near ${cls}`, type: 'button', onClick: cls === 'is-invite' ? async () => { if (await turnOn()) onChange?.(); } : open, 'aria-label': label }, route(), kids);
   if (st.kind === 'km') {
     const k = kmLabel(st.km);
-    return el('button', { class: 'now-near is-km', type: 'button', onClick: open, 'aria-label': `${k.big} ${k.small}. Ver detalles` },
-      hearts(), el('strong', { class: 'near-km' }, k.big), el('span', { class: 'near-sub' }, k.small));
+    return wrap('is-km', `${k.big} ${k.small}. Ver detalles`, el('span', { class: 'near-text' }, el('strong', { class: 'near-km' }, k.big), el('span', { class: 'near-sub' }, k.small)));
   }
-  if (st.kind === 'waiting') {
-    return el('button', { class: 'now-near is-wait', type: 'button', onClick: open, 'aria-label': `Esperando a que ${nick} active la distancia. Ver detalles` },
-      hearts(), el('span', { class: 'near-sub' }, `Esperando a ${nick}`));
-  }
-  return el('button', { class: 'now-near is-invite', type: 'button', onClick: async () => { if (await turnOn()) onChange?.(); }, 'aria-label': st.partnerOn ? `${nick} ya activó la distancia. Activarla tú también` : 'Ver la distancia entre los dos' },
-    icon('heart', { size: 18 }), el('span', { class: 'near-sub' }, st.partnerOn ? `${nick} ya la activó` : 'Ver distancia'));
+  if (st.kind === 'waiting') return wrap('is-wait', `Esperando a que ${nick} active la distancia. Ver detalles`, el('span', { class: 'near-text' }, el('span', { class: 'near-sub' }, `Esperando a ${nick}`)));
+  return wrap('is-invite', st.partnerOn ? `${nick} ya activó la distancia. Activarla tú también` : 'Ver la distancia entre los dos', el('span', { class: 'near-text' }, el('span', { class: 'near-sub' }, st.partnerOn ? `${nick} ya la activó. Toca para ver` : 'Toca para ver la distancia')));
 }

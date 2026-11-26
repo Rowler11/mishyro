@@ -3,7 +3,7 @@
 ## 0.37.0 (Inicio "Tablillas y tiras" y la distancia entre los dos)
 
 Nuevo
-- Ahora mismo muestra la distancia entre los dos celulares, con dos corazones entre las dos mitades ("8 km de distancia", o "Juntitos" a menos de 1 km). Cada uno la activa una vez desde su celular; después se actualiza sola al abrir la app. Es aproximada (redondeada a más o menos 1 km), viaja cifrada, solo se ven los kilómetros (nunca el punto ni un mapa), no guarda historial y se puede pausar en cualquier momento (al pausar se borra la posición). Los PC no la mandan; si los dos la tienen activa, también la ven.
+- Ahora mismo muestra la distancia entre los dos celulares en una "ruta de papel" compacta: sus dos sellos, una línea punteada con un avioncito de papel que llega volando y los kilómetros ("8 km de distancia", o "Juntitos" a menos de 1 km); debajo, el estado de cada uno en una tira de papel. Cada uno la activa una vez desde su celular; después se actualiza sola al abrir la app. Es aproximada (redondeada a más o menos 1 km), viaja cifrada, solo se ven los kilómetros (nunca el punto ni un mapa), no guarda historial y se puede pausar en cualquier momento (al pausar se borra la posición). Los PC no la mandan; si los dos la tienen activa, también la ven.
 - "Para hoy" es una lista que se va chuleando: la pregunta del día, el reto de la semana y el ánimo quedan en la lista y se marcan y tachan cuando están hechos, con un contador "1 de 3" y un sello cuando se completa. Los avisos (cápsulas, recordatorios, insignias) van arriba, sin casilla.
 
 Cambiado
