@@ -160,7 +160,13 @@ code { font-size: .8em; color: var(--text-2); }
   position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
   min-height: 66px; text-decoration: none; color: var(--text-2); font-size: .72rem; border-radius: 33px; -webkit-tap-highlight-color: transparent;
 }
-.tab.has-dot .tab-icon::after { content: ''; position: absolute; top: 2px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--surface); }
+/* v0.39.0: letters waiting = a little red hanko with the count (was a plain dot) */
+.tab.has-dot .tab-icon::after { content: attr(data-count); position: absolute; top: -5px; right: 0; min-width: 18px; height: 18px; padding: 0 3px; box-sizing: border-box;
+  display: grid; place-items: center; font: 700 .68rem/1 var(--font-serif); color: var(--accent-ink); background: var(--accent); border-radius: 3px; rotate: -8deg;
+  box-shadow: 0 0 0 2px var(--surface), inset 0 0 0 1.5px color-mix(in srgb, var(--accent-ink) 40%, transparent); pointer-events: none; }
+.tab.has-dot.is-stamped .tab-icon::after { animation: tab-stamp 520ms var(--ease-spring) both; }
+@keyframes tab-stamp { 0% { scale: 1.9; opacity: 0; rotate: -24deg; } 55% { scale: .86; opacity: 1; rotate: -6deg; } 100% { scale: 1; rotate: -8deg; } }
+@media (prefers-reduced-motion: reduce) { .tab.has-dot.is-stamped .tab-icon::after { animation: none; } }
 .tab-icon { position: relative; display: grid; place-items: center; width: 44px; height: 30px; border-radius: var(--radius-pill); transition: transform var(--dur-3) var(--ease-spring); }
 .tab[aria-current="page"] { color: var(--accent); font-weight: 700; }
 .tabbar-link .tab-icon { transition: transform var(--dur-3) var(--ease-out), opacity var(--dur-2); }
@@ -4497,7 +4503,7 @@ a.game-tile:hover { border-color: var(--ink); }
 .home .thinking-card > .paper-plane { position: static; grid-area: 1 / 1 / 3 / 2; color: var(--accent); opacity: 1; }
 .home .thinking-card > .card-kicker { grid-area: 1 / 2; }
 .home .thinking-card > .thinking-desc { grid-area: 2 / 2; margin: 0; font-size: .84rem; color: var(--text-2); line-height: 1.35; }
-.home .thinking-card > .thinking-btn { grid-area: 1 / 3 / 3 / 4; align-self: center !important; min-height: 40px; padding-inline: 16px; }
+.home .thinking-card > .thinking-btn { grid-area: 1 / 3 / 3 / 4; align-self: center !important; min-height: 44px; padding-inline: 16px; }
 .home .thinking-card > :is(.thinking-reply, .thinking-status, .thinking-count, .btn-ghost, p.muted) { grid-column: 1 / -1; margin-top: 6px; }
 .home .thinking-card > .thinking-reply { grid-row: 3; }
 
@@ -4614,3 +4620,86 @@ button.nr-slip:focus-visible { outline: 3px solid var(--focus); outline-offset: 
 @keyframes ns-hint { from { opacity: 0; } to { opacity: .9; } }
 .near-radius { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 .near-radius-box { margin-top: var(--space-2); }
+
+/* ---------- v0.39.0: touch targets (Para hoy, Sus favoritos) ---------- */
+.home .fav-head .btn { min-height: 44px; }
+
+/* ---------- v0.39.0: Un día como hoy, a tear-off calendar page (himekuri) ---------- */
+.home .home-cards > .home-card.himekuri, .himekuri { position: relative; display: grid; gap: 0; padding: 6px 4px 12px; background: none; border: 0; box-shadow: none; overflow: visible; }
+.himekuri-under { position: absolute; inset: 18px 10px 4px; background: var(--paper) var(--grain); border: 1px solid var(--border); border-radius: 4px; rotate: 1.6deg; box-shadow: var(--shadow-1); }
+.himekuri-sheet { position: relative; background: var(--paper) var(--grain); border: 1px solid var(--border-strong); border-radius: 4px 4px 0 0; border-bottom: 0; box-shadow: var(--shadow-1); overflow: hidden; transform-origin: 50% 0; }
+.himekuri-sheet.is-turning { animation: himekuri-turn 440ms var(--ease-out); }
+.himekuri-sheet.is-turning.is-back { animation-name: himekuri-back; }
+@keyframes himekuri-turn { 0% { transform: none; } 40% { transform: perspective(900px) rotateX(-58deg) translateY(-6px); opacity: .25; } 41% { transform: perspective(900px) rotateX(36deg); opacity: .25; } 100% { transform: none; opacity: 1; } }
+@keyframes himekuri-back { 0% { transform: none; } 40% { transform: perspective(900px) rotateX(40deg); opacity: .25; } 41% { transform: perspective(900px) rotateX(-50deg); opacity: .25; } 100% { transform: none; opacity: 1; } }
+.himekuri-bind { height: 22px; display: flex; justify-content: center; gap: 120px; align-items: center;
+  background: color-mix(in srgb, var(--accent) 22%, #2A1A1E); background-image: repeating-linear-gradient(90deg, transparent 0 6px, rgb(255 255 255 / .05) 6px 7px); }
+.himekuri-bind i { width: 12px; height: 12px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 1px 2px rgb(0 0 0 / .35); }
+.himekuri-head { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 14px 14px 0 16px; }
+.home .himekuri-head .card-kicker { margin: 0; }
+.himekuri-date { display: flex; align-items: baseline; gap: 10px; margin: 2px 0 8px; }
+.himekuri-num { font: 700 3.6rem/1 var(--font-serif); color: var(--accent); letter-spacing: -.02em; }
+.himekuri-mon { font: 500 1rem var(--font-serif); color: var(--text-2); }
+.himekuri-mon b { display: block; font: 700 .72rem var(--font-ui); letter-spacing: .08em; color: var(--text-2); text-transform: uppercase; }
+.himekuri-tz { writing-mode: vertical-rl; align-self: start; padding: 12px 6px; background: var(--accent); color: var(--accent-ink); font: 700 .8rem var(--font-serif); letter-spacing: .14em; border-radius: 2px;
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.himekuri-page { display: grid; gap: 4px; padding: 4px 16px 14px; color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+.himekuri-page:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; border-radius: 4px; }
+.himekuri-photo { position: relative; height: 172px; margin: 4px 2px 8px; border-radius: 3px; overflow: visible; rotate: -1deg; background: var(--surface-2);
+  box-shadow: 0 0 0 5px var(--paper), 0 0 0 6px var(--border), 0 6px 14px rgb(0 0 0 / .12); transition: rotate var(--dur-3) var(--ease-spring); }
+.himekuri-page:hover .himekuri-photo, .himekuri-page:active .himekuri-photo { rotate: 0deg; }
+.himekuri-photo img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 3px; animation: fade-in 400ms var(--ease-out) both; }
+.himekuri-tape { position: absolute; top: -8px; left: 50%; z-index: 2; width: 74px; height: 20px; translate: -50% 0; rotate: 3deg;
+  background: color-mix(in srgb, var(--accent) 30%, transparent); background-image: repeating-linear-gradient(45deg, rgb(255 255 255 / .25) 0 4px, transparent 4px 8px); }
+.himekuri-blank { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-2)) var(--grain); background-image: radial-gradient(circle at 0 100%, transparent 14px, color-mix(in srgb, var(--accent) 10%, transparent) 15px 16px, transparent 17px); background-size: 32px 16px; }
+.himekuri-seal { display: grid; place-items: center; width: 62px; height: 62px; border-radius: 50%; color: var(--accent-ink); background: var(--accent); box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--accent); }
+.himekuri-src { display: flex; align-items: center; gap: 6px; margin: 0; font: 700 .74rem var(--font-ui); color: var(--text-2); letter-spacing: .03em; }
+.himekuri-src .icon { color: var(--accent); flex: none; }
+.himekuri-t { margin: 0; font: 700 1.25rem/1.25 var(--font-serif); text-wrap: balance; }
+.himekuri-n { margin: 0; color: var(--text-2); font-size: .92rem; line-height: 1.45; }
+.himekuri-chips { position: relative; display: flex; gap: 8px; padding: 12px 12px 14px; background: var(--paper) var(--grain); border: 1px solid var(--border-strong); border-top: 1.5px dashed var(--border-strong); border-bottom: 0; overflow-x: auto; scrollbar-width: none; }
+.himekuri-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: var(--radius-pill); border: 1.5px solid var(--border-strong); background: var(--surface);
+  font: 600 .82rem var(--font-ui); color: var(--text); white-space: nowrap; cursor: pointer; transition: background var(--dur-2), color var(--dur-2), border-color var(--dur-2), transform var(--dur-2) var(--ease-spring); }
+.himekuri-chip:active { transform: scale(.95); }
+.himekuri-chip.is-on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.himekuri-chip .icon { flex: none; }
+.himekuri-tear { position: relative; display: block; height: 10px; margin: -1px 0 0; background: radial-gradient(circle at 6px -2px, transparent 6px, var(--paper) 6.5px) 0 0 / 12px 10px repeat-x;
+  filter: drop-shadow(0 1px 0 var(--border-strong)); }
+.himekuri:not(:has(.himekuri-chips)) .himekuri-sheet { border-bottom: 0; }
+@media (prefers-reduced-motion: reduce) { .himekuri-sheet.is-turning { animation: none; } .himekuri-photo { transition: none; } }
+
+/* ---------- v0.39.0: mesiversario, "Rama que florece" (on the Latido stage) ---------- */
+.mes-layer .stage-core { width: min(86vw, 340px); aspect-ratio: 330 / 310; }
+.mes-layer .stage-core > * { filter: none; }
+.mes-art, .mes-branch { width: 100%; height: 100%; overflow: visible; }
+.mes-limb { fill: none; stroke: #B07884; stroke-linecap: round; animation: mes-draw 1100ms var(--ease-out) 150ms forwards; }
+.mes-twig { animation-delay: 650ms; animation-duration: 700ms; }
+@keyframes mes-draw { to { stroke-dashoffset: 0; } }
+.mes-bud { fill: #C58F9B; opacity: 0; animation: fade-in 500ms ease-out var(--d) forwards; }
+@keyframes mes-bud-in { to { opacity: 1; } }
+.mes-bud { animation-name: mes-bud-in; }
+.mes-flower-in { transform: scale(0) rotate(-40deg); animation: mes-bloom 620ms var(--ease-spring) var(--d) forwards; }
+.mes-petal { fill: #F7A3B8; stroke: rgb(120 30 60 / .25); stroke-width: .6; }
+.mes-heart { fill: #FFE3A3; }
+.mes-flower.is-new .mes-petal { fill: #FFB8CA; }
+.mes-flower.is-new { filter: drop-shadow(0 0 calc(8px + var(--glow) * 22px) rgb(255 150 180 / .95)); }
+.mes-flower.is-new .mes-flower-in { animation: mes-bloom 820ms var(--ease-spring) var(--d) forwards, mes-breathe 2.8s ease-in-out calc(var(--d) + 900ms) infinite; }
+@keyframes mes-bloom { to { transform: scale(1) rotate(0); } }
+@keyframes mes-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+.mes-count { margin: var(--space-2) 0 0; font: 700 3rem/1 var(--font-serif); color: #FFC2D1; text-shadow: 0 0 24px rgb(255 120 160 / .55); opacity: 0; }
+.mes-tanzaku { display: grid; gap: 3px; width: min(100%, 320px); padding: 12px 16px; border-radius: 3px; text-align: left; background: rgb(255 248 240 / .07); border: 1px solid rgb(255 220 230 / .25);
+  border-left: 3px solid #E893AE; color: #FFE9EF; font-size: .92rem; line-height: 1.45; opacity: 0; }
+.mes-tanzaku-k { font: 700 .68rem var(--font-ui); letter-spacing: .12em; text-transform: uppercase; color: #FFC2D1; }
+.mes-layer.is-said .mes-count, .mes-layer.is-said .mes-tanzaku { animation: mes-rise 600ms var(--ease-out) forwards; }
+.mes-layer.is-said .mes-tanzaku { animation-delay: 220ms; }
+.mes-layer .mes-letter { animation: mes-rise 500ms var(--ease-out) forwards; }
+.mes-layer.is-said .stage-title, .mes-layer.is-said .stage-sub { animation: mes-rise 600ms var(--ease-out) both; }
+@keyframes mes-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .mes-limb { animation: none; stroke-dashoffset: 0; } .mes-bud, .mes-count, .mes-tanzaku { animation: none !important; opacity: 1; }
+  .mes-flower-in { animation: none !important; transform: none; }
+}
+:root[data-motion="off"] .mes-limb { animation: none; stroke-dashoffset: 0; }
+:root[data-motion="off"] :is(.mes-bud, .mes-count, .mes-tanzaku) { animation: none !important; opacity: 1; }
+:root[data-motion="off"] .mes-flower-in { animation: none !important; transform: none; }

@@ -9,8 +9,12 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.38.0',
+  version: '0.39.0',
   items: [
+    'Nueva tarjeta "Un día como hoy" en Inicio: una hoja de calendario con la fecha grande y lo que vivieron un día como hoy (un recuerdo, una carta que abrieron o una foto del día). Con los botones de abajo pasan de una hoja a otra.',
+    'El día del mesiversario, al abrir la app, una rama de tinta echa una flor por cada mes juntos; la de este mes brilla. Luego salen el ritual del mes y una carta sorpresa.',
+    'Cuando te espera una carta, la pestaña Cartas muestra un sellito rojo con el número y en "Para hoy" aparece "Una carta te espera".',
+    'Botones más fáciles de tocar en Inicio (Editar favoritos y Enviar frase).',
     'Nuevo aviso "Están cerca": cuando los dos están cerca, la primera vez del día se abre una escena como un pergamino: los dos sellos caminan hacia un torii, se encuentran y los kilómetros bajan hasta la distancia real. Luego se va, sin dejar tarjeta. A los dos les llega un aviso cariñoso. En Ajustes eliges a qué distancia sale.',
     'Ahora mismo y la distancia están en pausa: salieron de Inicio mientras buscamos un diseño que convenza.',
     'Inicio reacomodado: primero lo de hoy (celebraciones, encuentro y Ahora mismo), luego sus favoritos y Para hoy, y al final lo que viene.',

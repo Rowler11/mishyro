@@ -20,6 +20,8 @@ import { validState } from '../js/features/cupones.js';
 import * as NOW from '../js/features/ahora.js';
 import * as SLEEP from '../js/features/dormir.js';
 import * as TC from '../js/features/capsula-tiempo.js';
+import * as OTD from '../js/features/otd.js';
+import * as MES from '../js/features/mesiversario.js';
 
 const KEY = 'unittest';
 const results = [];
@@ -431,6 +433,28 @@ await test('distancia (v0.37.0): ~1 km grid, km between both, only when both are
   eq(NEAR.nearState(null, on(1, 1), { phone: true }), { kind: 'invite', partnerOn: true });
   eq(NEAR.nearState(null, on(1, 1), { phone: false }), null);
   eq(NEAR.nearState({ on: false, lat: 1, lng: 1 }, on(1, 1), { phone: false }), null);
+});
+
+await test('un día como hoy (v0.39.0): picks the same day, newest and yearly first, oldest shown first', () => {
+  const now = new Date(2026, 10, 27, 10);
+  const it = (kind, day, mediaId = null) => ({ kind, day, mediaId, title: day });
+  const out = OTD.pickMoments([it('memory', '2025-11-27', 'x'), it('letter', '2026-05-27'), it('memory', '2026-09-27'), it('photo', '2026-09-27', 'p'),
+    it('memory', '2026-11-27'), it('memory', '2026-10-26'), it('memory', 'nope')], now);
+  eq(out.map((i) => i.day), ['2025-11-27', '2026-05-27', '2026-09-27']);
+  eq(out[2].kind, 'photo'); // one per day: the one with a photo wins
+  eq(OTD.pickMoments([1, 2, 3, 4, 5, 6].map((m) => it('memory', `2026-0${m}-27`)), now).length, 4);
+  eq(OTD.agoShort('2025-11-27', now), '1 año');
+  eq(OTD.agoShort('2026-05-27', now), '6 meses');
+  eq(OTD.agoShort('2026-10-27', now), '1 mes');
+  eq(OTD.agoShort('2024-11-27', now), '2 años');
+});
+
+await test('mesiversario (v0.39.0): one flower per month, starting again each year', () => {
+  eq(MES.bloomOf(1), { flowers: 1, year: 1 });
+  eq(MES.bloomOf(7), { flowers: 7, year: 1 });
+  eq(MES.bloomOf(12), { flowers: 12, year: 1 });
+  eq(MES.bloomOf(13), { flowers: 1, year: 2 });
+  eq(MES.SPOTS.length, 12);
 });
 
 await test('están cerca (v0.38.0): words by distance and the moment drawing', () => {

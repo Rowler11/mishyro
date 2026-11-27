@@ -192,7 +192,7 @@ function todayEvents(data, start, receiver) {
       out.push({ kind: 'anniversary', title: `¡Feliz aniversario! ${plural(e.years, 'año', 'años')} juntos`, text: 'Hoy se celebra todo lo que han construido.' });
     } else if (e.totalDays > 0 && e.months + e.years * 12 > 0 && e.days === 0) {
       const m = e.years * 12 + e.months;
-      out.push({ kind: 'monthly', title: `¡Feliz mesiversario! ${plural(m, 'mes', 'meses')}`, text: `Un mes más eligiéndose. Ritual de hoy: ${RITUALS[m % RITUALS.length]}` });
+      out.push({ kind: 'monthly', months: m, ritual: RITUALS[m % RITUALS.length], title: `¡Feliz mesiversario! ${plural(m, 'mes', 'meses')}`, text: `Un mes más eligiéndose. Ritual de hoy: ${RITUALS[m % RITUALS.length]}` });
     }
     const ms = time.milestoneProgress(data.milestones, e.totalDays);
     const hit = ms.today || time.roundMilestone(e.totalDays);
@@ -403,23 +403,27 @@ async function todayCard() {
   const me = profile.active();
   const ok = (p, fallback = null) => Promise.resolve(p).catch(() => fallback);
   const [qa, retos, animo, rem, tc, sy] = await Promise.all([import('./preguntas.js'), import('./retos.js'), import('./animo.js'), import('./recordatorios.js'), import('./capsula-tiempo.js'), import('../core/sync.js')]);
-  const [spaceRow, badgeRow, summaryRow, eventRow, otdRow, pending, week, hint, mine, soon, capsules] = await Promise.all([
+  const [spaceRow, badgeRow, summaryRow, eventRow, otdRow, pending, week, hint, mine, soon, capsules, letters, layout] = await Promise.all([
     ok(sy.isLinked() ? sy.lastUsage().then((u) => (u && u.pct >= sy.USAGE_WARN ? { href: '#/ajustes/sincronizar', icon: 'hard-drive', title: u.pct >= 100 ? 'Se llenó el espacio en la nube' : 'La nube se está llenando', sub: 'Mira cuánto queda y qué hacer.' } : null)) : null),
     ok(import('./insignias.js').then((m) => m.homeRow())), ok(import('./resumen.js').then((m) => m.homeRow())),
     ok(import('./eventos.js').then((m) => m.homeRow())), ok(import('./capsula.js').then((m) => m.homeRow())),
     ok(qa.pendingToday()), ok(retos.ensureWeek()), ok(animo.partnerLowHint()), ok(animo.getMood(util.localDay(), me)),
-    ok(rem.dueSoon(), []), ok(tc.readyToOpen(me), [])]);
+    ok(rem.dueSoon(), []), ok(tc.readyToOpen(me), []),
+    ok(import('./cartas.js').then((m) => m.unopenedCount(me)), 0), ok(import('./home-layout.js').then((m) => m.getLayout()), null)]);
   const rows = [];
   // Cápsula del tiempo (decided 2026-11-20): a notice only on (or after) its opening day.
   // Resumen y Wrapped (a "moment"): only at the end of a month or year and on the anniversary.
   // Eventos de temporada (a "moment", Fase 5): a notice only while an event is on.
   if (eventRow) rows.push(eventRow);
   if (summaryRow) rows.push(summaryRow);
+  // v0.39.0: letters waiting for this person (the same count as the hanko on the Cartas tab)
+  if (letters) rows.push({ href: '#/cartas', icon: 'mail', title: letters === 1 ? 'Una carta te espera' : `${letters} cartas te esperan`, sub: 'Ábrela cuando tengas un momento tranquilo.' });
   if (capsules.length) rows.push({ href: '#/capsula-tiempo', icon: 'lock-open', title: capsules.length === 1 ? 'Hoy se abre una cápsula del tiempo' : `Hay ${capsules.length} cápsulas del tiempo para abrir`, sub: capsules[0].title });
   // Recordatorios suaves (§41): mesiversario, the weekly date and their own, when they are close.
   for (const r of soon.slice(0, 2)) rows.push(r);
   // Un día como hoy (Fase 7): a quiet row when a shared memory has this same day in an earlier month or year.
-  if (otdRow) rows.push(otdRow);
+  // v0.39.0: it has its own calendar-page card now; the row stays only if that card is hidden in Personalizar.
+  if (otdRow && layout?.hidden?.includes('otd')) rows.push(otdRow);
   if (badgeRow) rows.push(badgeRow);
   if (spaceRow) rows.push(spaceRow);
   if (hint) rows.push({ href: '#/animo', icon: 'heart', title: `Hoy a ${hint.name} podría venirle bien un abrazo`, sub: 'Un detalle pequeño hace la diferencia.' });
@@ -572,7 +576,7 @@ export async function render() {
     // stars, no season card (now in Calendario); the garden and the map have their own screens.
     const linked = counter && sync.isLinked();
     const soft = (p, log) => p.catch((e) => { if (log) console.error(e); return null; });
-    const [today, toques, dayphoto, now, meeting, weekend, favs, guide, love, lay] = await Promise.all([
+    const [today, toques, dayphoto, now, meeting, weekend, favs, guide, love, lay, otd] = await Promise.all([
       soft(todayCard(), true),
       linked ? soft(import('./toques.js').then((m) => m.homeCard())) : null,
       linked ? soft(import('./foto-dia.js').then((m) => m.homeCard({ onChange: build })), true) : null,
@@ -583,7 +587,9 @@ export async function render() {
       soft(import('./guia.js').then((m) => m.homeCard({ onChange: build }))),
       counter ? soft(import('./amor.js').then((m) => m.homeStrip({ onChange: build })), true) : null,
       import('./home-layout.js'),
+      soft(import('./otd.js').then((m) => m.homeCard()), true), // v0.39.0: Un día como hoy, a calendar page
     ]);
+    if (otd?.cleanup) cleanups.push(otd.cleanup);
     if (love) counter.card.append(love);
     const both = bothLine(recv);
     cleanups.push(both.cleanup);
@@ -599,6 +605,7 @@ export async function render() {
       { id: 'toques', node: toques },
       { id: 'dayphoto', node: dayphoto },
       { id: 'favs', node: favs },
+      { id: 'otd', node: otd },
       { id: 'guide', node: guide },
       { id: 'slides', node: slides.length ? daySwitcher(slides) : null },
       { id: 'coming', node: comingCard(data, start) },
@@ -645,9 +652,8 @@ export async function render() {
     import('./ocasion.js').then((m) => { m.mark(events); let n = 0; const go = () => (document.querySelector('.splash, .tour-layer, .intro') && n++ < 20 ? setTimeout(go, 600) : m.welcome(events, { reasons: data.reasons, receiver: recv }).then(() => import('./amor.js')).then((a) => a.checkLevelUp())); go(); }).catch(() => {});
     if (events.some((e) => e.confetti) && !big && celebrateOnce('confetti')) ui.confetti();
     if (!seasonShown) {
-      const monthly = events.some((e) => e.kind === 'monthly');
       const play = big && recall('hanabiDay') !== util.localDay() ? () => { remember('hanabiDay', util.localDay()); fx.hanabi(); }
-        : monthly && recall('mesDay') !== util.localDay() ? () => { remember('mesDay', util.localDay()); fx.seasonal({ kind: 'sakura', count: 22, force: true }); }
+        // v0.39.0: the mesiversario has its own scene now (the branch that blooms, from ocasion.js); no extra petals here
         : () => {}; // the everyday season effect now lives behind the cards (fx.ambient)
       // Inicio can be drawn twice while the app starts: whichever is on screen when the welcome goes plays it once.
       fx.whenClear().then((ok) => { if (ok && !seasonShown && /^#\/inicio\b/.test(location.hash)) { seasonShown = true; play(); } });

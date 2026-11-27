@@ -1,5 +1,15 @@
 # Cambios
 
+## 0.39.0 (Un día como hoy, la rama del mesiversario y el sello de las cartas)
+
+Nuevo
+- "Un día como hoy" tiene tarjeta propia en Inicio, como una hoja de calendario japonés (himekuri): arriba la encuadernación, la fecha de hoy grande con el día de la semana y una tira roja con "hace 1 año" (o los meses que sean). Debajo, la foto pegada con cinta, de dónde viene (recuerdo de la Cápsula, carta o foto del día), el título y una nota corta. Junta lo que pasó en este mismo día en meses y años anteriores: recuerdos compartidos, cartas que abrieron y fotos del día. Si hay varios, los botones de abajo ("1 año", "6 meses"...) pasan la hoja con un giro de papel. Tocar la hoja abre el recuerdo o la carta. Solo aparece cuando hay algo; lo de "Solo yo" y lo privado nunca sale. Se puede mover u ocultar en Personalizar Inicio (si se oculta, vuelve la línea discreta en "Para hoy").
+- Mesiversario "Rama que florece": la primera vez que se abre la app ese día, la pantalla se oscurece como en el Latido, se dibuja una rama de sakura en tinta y se abre una flor por cada mes juntos (vuelve a empezar cada año). La flor de este mes brilla y respira, caen pétalos y aparecen los meses, el ritual del mes y un botón "Carta sorpresa" con una de sus razones. Una vez al día por teléfono. Con "Movimiento" apagado todo aparece quieto.
+- Cartas por abrir: la pestaña Cartas muestra un sellito hanko rojo con cuántas cartas esperan (antes era un punto) y se estampa cuando llega una nueva. En "Para hoy" aparece "Una carta te espera".
+
+Arreglado
+- Botones de Inicio con área táctil de 44 px: "Editar" en Sus favoritos y "Enviar" en Pensando en ti. La revisión automática ya no confunde la línea decorativa de "Para hoy" con un botón pequeño.
+
 ## 0.38.0 (Están cerca)
 
 Nuevo

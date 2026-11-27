@@ -2638,6 +2638,14 @@ async function exampleContent(page, { reload = true } = {}) {
       const a = await m.welcome([{ kind: 'anniversary', title: '¡Feliz aniversario!', text: 'Hoy.' }], { reasons: [{ text: 'Porque sí' }] });
       const b = await m.welcome([{ kind: 'anniversary', title: 'x' }], {}); document.querySelector('.ocasion-layer')?.remove(); return [a, b]; });
     ok('27 Ocasión: la bienvenida sale una sola vez por día', w27[0] === true && w27[1] === false);
+    // v0.39.0: the mesiversario opens the blooming branch (one flower per month) and closes with Entrar
+    await page.evaluate(async () => { const m = await import('./js/features/ocasion.js'); localStorage.removeItem('aishiteru.ocasion.seen');
+      window.__mes39 = m.welcome([{ kind: 'monthly', months: 7, ritual: 'bailar', title: 'x' }], { reasons: [{ text: 'Porque sí' }] }); });
+    await page.waitForSelector('.mes-layer .stage-actions button', { timeout: 8000 }).catch(() => {});
+    const mes39 = await page.evaluate(() => [document.querySelectorAll('.mes-layer .mes-flower').length, document.querySelectorAll('.mes-layer .mes-bud').length]);
+    await page.locator('.mes-layer').getByRole('button', { name: 'Entrar' }).click().catch(() => {});
+    await page.waitForTimeout(500);
+    ok('39 Mesiversario: la rama abre 7 flores y 5 botones, y se cierra', mes39[0] === 7 && mes39[1] === 5 && (await page.locator('.mes-layer').count()) === 0, JSON.stringify(mes39));
     const bk27 = await page.evaluate(async () => { const bk = await import('./js/core/backup.js'); return bk.verifyBackup((await bk.exportBackup({ appVersion: 't' })).files); });
     ok('27 Copia: se comprueba completa al guardarla', bk27.ok && bk27.records > 0);
     // v0.28.0: layout arrange keeps the counter first and drops hidden cards; search filters

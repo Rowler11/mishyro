@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.38.0';
+const CACHE_VERSION = 'aishiteru-v0.39.0';
 const SHELL = [
   './',
   './styles.css',
@@ -33,7 +33,7 @@ const SHELL = [
   './js/features/guia.js', './js/features/tour.js', './js/core/sounds.js',
   './js/features/planta.js', './js/features/jardin.js',
   './js/features/kamishibai.js',
-  './js/features/amor.js', './js/features/latido.js', './js/core/premium.js', './js/features/novedades.js', './js/features/toques.js', './js/features/calma.js', './js/features/compartir.js', './js/features/ocasion.js', './js/features/home-layout.js', './js/features/foto-dia.js', './js/features/ahora.js', './js/features/cerca.js', './js/features/cerca-escena.js', './js/features/dormir.js', './js/features/juegos-extra.js', './js/features/gastos-extra.js',
+  './js/features/amor.js', './js/features/latido.js', './js/core/premium.js', './js/features/novedades.js', './js/features/toques.js', './js/features/calma.js', './js/features/compartir.js', './js/features/ocasion.js', './js/features/home-layout.js', './js/features/foto-dia.js', './js/features/ahora.js', './js/features/cerca.js', './js/features/cerca-escena.js', './js/features/otd.js', './js/features/mesiversario.js', './js/features/dormir.js', './js/features/juegos-extra.js', './js/features/gastos-extra.js',
   './js/features/avisos.js',
   './js/core/fx.js',
   './js/core/sync.js',

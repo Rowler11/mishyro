@@ -27,6 +27,8 @@ export async function welcome(events, { reasons = [], receiver } = {}) {
   if (!k || seen() === key || document.querySelector('.ocasion-layer')) return false;
   try { localStorage.setItem(KEY, key); } catch { /* private mode */ }
   const ev = events.find((e) => e.kind === k);
+  // v0.39.0 (Rowler: "Rama que florece"): the mesiversario opens with its own scene, ritual and surprise letter included
+  if (k === 'monthly') { await import('./mesiversario.js').then((m) => m.play(ev, { reasons, receiver })); return true; }
   const a = await art(await pickWho(`ocasion-${k}`));
   const reason = reasons.length ? profile.fill(String(reasons[Math.floor(Math.random() * reasons.length)].text || ''), receiver) : '';
   const letter = reason ? el('button', { class: 'ocasion-letter', type: 'button', 'aria-label': 'Abrir la carta sorpresa' },

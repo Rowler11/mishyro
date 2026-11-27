@@ -6,7 +6,7 @@ import { ui, util, db } from '../core.js';
 const { el, icon } = util;
 export const CARDS = [
   ['now', 'Ahora mismo'], ['both', '"Hoy los dos pasaron por aquí"'], ['celebration', 'Celebraciones del día'], ['meeting', 'Próximo encuentro'],
-  ['toques', 'Buenos días, abrazo y respirar'], ['dayphoto', 'Foto del día'], ['favs', 'Sus favoritos'], ['guide', 'Primeros pasos'],
+  ['toques', 'Buenos días, abrazo y respirar'], ['dayphoto', 'Foto del día'], ['favs', 'Sus favoritos'], ['otd', 'Un día como hoy'], ['guide', 'Primeros pasos'],
   ['slides', 'Frases, Pensando en ti y omikuji'], ['coming', 'Lo que viene'], ['today', 'Para hoy'],
   ['weekend', 'Plan del fin de semana'], ['backup', 'Recordatorio de copia'],
 ];
@@ -19,14 +19,14 @@ const DEFAULT = CARDS.map(([id]) => id).filter((id) => !PAUSED.includes(id));
 // v0.37.1 (Rowler: "reacomoda Inicio"): what happens today first (celebrations, the next meeting, Ahora mismo),
 // then the shortcuts and what to do, and what is coming at the end. A saved layout gives way once to this order.
 export const LAYOUT_V = 3;
-export const DEFAULT_ORDER = ['celebration', 'meeting', 'now', 'favs', 'today', 'slides', 'coming', 'both', 'guide', 'dayphoto', 'toques', 'weekend', 'backup'];
+export const DEFAULT_ORDER = ['celebration', 'meeting', 'now', 'favs', 'otd', 'today', 'slides', 'coming', 'both', 'guide', 'dayphoto', 'toques', 'weekend', 'backup'];
 const INFO = {
   now: 'Lo que hace cada uno y la distancia', both: 'Si los dos abrieron la app hoy', celebration: 'Aniversarios y fechas de hoy',
   meeting: 'Cuenta atrás para verse', toques: 'Saludos y respirar juntos', dayphoto: 'Una foto de cada uno al día',
-  favs: 'Sus accesos rápidos', guide: 'Lo que falta para dejar la app lista', slides: 'Tarjetas que van rotando cada día',
+  favs: 'Sus accesos rápidos', otd: 'Recuerdos, cartas y fotos de esta fecha', guide: 'Lo que falta para dejar la app lista', slides: 'Tarjetas que van rotando cada día',
   coming: 'Las próximas fechas', today: 'Pregunta, reto e insignias del día', weekend: 'El plan del fin de semana', backup: 'Aviso si llevan días sin copia',
 };
-const WHEN = new Set(['celebration', 'meeting', 'guide', 'backup']); // these only show when they apply
+const WHEN = new Set(['celebration', 'meeting', 'guide', 'backup', 'otd']); // these only show when they apply
 export const DEFAULT_HIDDEN = ['dayphoto', 'toques', 'weekend']; // the backup note stays: it only shows after 14 days without a copy
 
 export async function getLayout() {
@@ -34,7 +34,13 @@ export async function getLayout() {
   // a layout saved before v0.37.0 gives way once to the new Inicio (it can be customized again)
   const l = s.layout && s.layout.v === LAYOUT_V ? s.layout : { order: DEFAULT_ORDER, hidden: DEFAULT_HIDDEN };
   const base = DEFAULT_ORDER.filter((id) => DEFAULT.includes(id));
-  const order = [...(l.order || []).filter((id) => DEFAULT.includes(id)), ...base.filter((id) => !(l.order || []).includes(id))];
+  // a card added in a later version goes in at its default place (after the card it follows by default)
+  const order = (l.order || []).filter((id) => DEFAULT.includes(id));
+  for (const id of base) {
+    if (order.includes(id)) continue;
+    const prev = base.slice(0, base.indexOf(id)).reverse().find((k) => order.includes(k));
+    order.splice(prev ? order.indexOf(prev) + 1 : 0, 0, id);
+  }
   return { order, hidden: (l.hidden || []).filter((id) => DEFAULT.includes(id)) };
 }
 

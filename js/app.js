@@ -170,6 +170,9 @@ function updateLetterDot() {
     const n = await load.cartas().then((m) => m.unopenedCount()).catch(() => 0);
     document.querySelectorAll('[data-tab="cartas"]').forEach((a) => {
       a.classList.toggle('has-dot', n > 0);
+      // v0.39.0 (Rowler: "Sello con número"): a little red hanko with how many wait; it stamps in when the count grows
+      const ic = a.querySelector('.tab-icon');
+      if (ic) { const before = Number(ic.dataset.count || 0); ic.dataset.count = n > 9 ? '9+' : String(n); if (n > before && before >= 0 && ic.dataset.seen) { a.classList.remove('is-stamped'); void a.offsetWidth; a.classList.add('is-stamped'); } ic.dataset.seen = '1'; }
       a.setAttribute('aria-label', n > 0 ? `Cartas, ${n === 1 ? '1 por abrir' : `${n} por abrir`}` : 'Cartas');
     });
   }, 400);

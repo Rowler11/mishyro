@@ -102,8 +102,9 @@ function audit(MIN) {
     let box = shown.getBoundingClientRect();
     // An absolutely positioned ::after enlarges the hit area without changing the look.
     const after = getComputedStyle(shown, '::after');
-    if (after.content !== 'none' && after.position === 'absolute') {
-      const px = (v) => parseFloat(v) || 0;
+    const px = (v) => parseFloat(v) || 0;
+    // (only an ::after that reaches outside the box: a decorative line inside it is not a hit area)
+    if (after.content !== 'none' && after.position === 'absolute' && px(after.left) <= 0 && px(after.top) <= 0) {
       box = { width: box.width - px(after.left) - px(after.right), height: box.height - px(after.top) - px(after.bottom) };
     }
     // A checkbox/radio counts with its label; an input inside a label too.

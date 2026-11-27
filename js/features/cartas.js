@@ -44,6 +44,17 @@ export async function unopenedCount(me = profile.active()) {
   return all.filter((l) => l.to === me && l.status === 'sealed' && !l.incomplete && l.body).length;
 }
 
+/** v0.39.0: letters opened on a day like today (same day of the month, earlier), for "Un día como hoy". */
+export async function onThisDayLetters(me = profile.active(), now = new Date()) {
+  const [content, stored] = await Promise.all([db.query('content', { index: 'kind', range: IDBKeyRange.only('letter') }), db.query('letters')]);
+  const states = new Map(stored.filter((s) => s.letterId).map((s) => [s.letterId, s]));
+  const all = [...content.filter((c) => !c.deleted).map((c) => fromSeed(c, states.get(c.id))), ...stored.filter((s) => !s.letterId && !s.deleted).map(fromOwn)];
+  const today = util.localDay(now);
+  return all.filter((l) => (l.to === me || l.from === me) && l.status === 'opened' && l.openedAt && !l.incomplete)
+    .map((l) => ({ ...l, day: util.localDay(new Date(l.openedAt)) }))
+    .filter((l) => l.day < today && l.day.slice(8) === today.slice(8));
+}
+
 // One shape for both kinds of letters.
 const fromSeed = (c, state) => ({
   id: c.id, kind: 'seed', from: c.from || AUTHOR, to: c.to || profile.partnerOf(c.from || AUTHOR),
