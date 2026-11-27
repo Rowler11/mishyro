@@ -1,5 +1,17 @@
 # Cambios
 
+## 0.38.0 (Están cerca)
+
+Nuevo
+- Aviso "Están cerca": cuando los dos celulares están a menos de la distancia que eligieron, la primera vez del día que abren Inicio se despliega una escena a pantalla completa, como un pergamino que se abre: una rama de sakura, colinas con neblina, un torii rojo y los dos sellos con sus iniciales caminando por un sendero punteado hasta encontrarse en la puerta. Corre una onda, cae el sello "a N km" mientras los kilómetros bajan hasta la distancia real, se reflejan en el agua, suben las palabras ("Van en camino", "Están cerca", "Están muy cerca" o "Están juntitos") y caen pétalos. Después se desvanece: no queda ninguna tarjeta en Inicio. Dura unos 7 segundos y se cierra antes con un toque. De día, de noche y en los 3 estilos (de noche, con luna y estrellas). Con "Movimiento" apagado no hay animación.
+- Notificación cariñosa a los dos: cuando uno abre la app y está cerca del otro, al otro le llega un aviso (aunque tenga la app cerrada) y al tocarlo ve la animación. Como mucho una vez al día entre los dos, sin nombres ni datos en el aviso, y solo si la ubicación del otro es de las últimas 3 horas. Requiere tener las notificaciones activadas.
+- "Estoy por aquí": desde "Distancia entre los dos" (Ajustes), un toque manda tu posición del momento y un aviso suave al otro. No hay seguimiento.
+- En Ajustes, "Distancia entre los dos": activarla o pausarla y elegir a qué distancia sale el aviso (2, 5 o 10 km; empieza en 5 km).
+- En "Distancia entre los dos" hay un botón "Ver la animación" para repetirla cuando estén cerca.
+
+Cambiado
+- La distancia ya no es una tarjeta ni una estación en "Ahora mismo": solo avisa cuando están cerca. Sigue siendo aproximada (más o menos 1 km) y solo se muestran kilómetros, nunca un punto ni un mapa. La ubicación solo se actualiza cuando alguien abre la app (no hay seguimiento en segundo plano).
+
 ## 0.37.2 (Ahora mismo y la distancia, en pausa)
 
 Cambiado

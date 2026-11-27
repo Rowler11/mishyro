@@ -576,7 +576,7 @@ export async function render() {
       soft(todayCard(), true),
       linked ? soft(import('./toques.js').then((m) => m.homeCard())) : null,
       linked ? soft(import('./foto-dia.js').then((m) => m.homeCard({ onChange: build })), true) : null,
-      null, // v0.37.2: "Ahora mismo" and the distance are paused (ahora.js and cerca.js stay in the code) until a design convinces Rowler
+      null, // v0.37.2: "Ahora mismo" stays paused (ahora.js stays in the code) until a design convinces Rowler
       soft(import('./encuentro.js').then((m) => m.homeCard())),
       soft(import('./citas.js').then((m) => m.weekendCard())),
       soft(import('./home-accesos.js').then((m) => m.favoritesCard()), true),
@@ -606,6 +606,8 @@ export async function render() {
       { id: 'weekend', node: weekend },
       { id: 'backup', node: backupCard(data.meta) },
     ], layout), custom);
+    // v0.38.0: when they are close, the "Ondas" moment plays once a day over Inicio and leaves (no card stays)
+    if (linked) import('./cerca.js').then((m) => m.scheduleMoment()).catch((e) => console.error(e));
     // The cards rise in once, after the welcome screen leaves; later redraws (a name changed, news from
     // the other phone) are quiet: nothing replays.
     if (!built && !util.prefersReducedMotion()) {

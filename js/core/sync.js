@@ -251,9 +251,14 @@ function notifyKind(store, r, prev) {
   if (store === 'streaks' && r.type === 'greet' && !prev && r.by === me) return r.kind === 'pm' ? 'greetPm' : 'greetAm';
   if (store === 'streaks' && r.type === 'hug' && !prev && r.by === me) return 'hug';
   if (store === 'streaks' && r.type === 'dayphoto' && !prev && r.by === me) return 'dayphoto'; // v0.28.0
+  if (store === 'streaks' && r.type === 'near' && r.by === me) { // v0.38.0: "están cerca" (once a day) and "estoy por aquí" (one tap)
+    const [pd, ph] = String(prev?.n || '|').split('|');
+    if (r.hereAt && r.hereAt !== ph) return 'here';
+    if (r.noticeDay && r.noticeDay !== pd) return 'near';
+  }
   return null;
 }
-const marker = (store, r) => (store === 'letters' ? r.status : store === 'content' && r.kind === 'coupon' ? (r.sentAt ? `sent${r.seenCount ? `:${r.seenCount}` : ''}` : '') : undefined);
+const marker = (store, r) => (store === 'letters' ? r.status : store === 'content' && r.kind === 'coupon' ? (r.sentAt ? `sent${r.seenCount ? `:${r.seenCount}` : ''}` : '') : store === 'streaks' && r.type === 'near' ? `${r.noticeDay || ''}|${r.hereAt || ''}` : undefined);
 
 async function flushPush() {
   if (!isLinked() || !keys.has('space') || !navigator.onLine) return;

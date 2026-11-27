@@ -4598,3 +4598,19 @@ button.nr-slip:focus-visible { outline: 3px solid var(--focus); outline-offset: 
 .layout-move { flex: none; display: flex; gap: 0; }
 .layout-sub { margin: var(--space-2) 0 0; font: 700 .78rem var(--font-serif); letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
 @media (prefers-reduced-motion: reduce) { .layout-row.is-moved { animation: none; } }
+
+/* ---- v0.38.0 "Están cerca": una escena que se despliega sobre Inicio (pergamino, torii, los dos sellos que se encuentran) y luego se va ---- */
+.near-scene { --ns-ink: var(--text); --ns-sun: var(--accent); --ns-star: #fff; --ns-s1: color-mix(in srgb, #A9D8F0 55%, var(--paper)); --ns-s2: color-mix(in srgb, var(--accent) 16%, var(--paper)); --ns-s3: var(--paper);
+  position: relative; width: min(100vw, 460px); height: min(100dvh, 880px); overflow: hidden; background: var(--paper); }
+:root[data-theme="night"] .near-scene { --ns-sun: #FFF3D6; --ns-s1: #1d1840; --ns-s2: color-mix(in srgb, var(--accent) 26%, #3a2f6b); --ns-s3: #2a2238; }
+@media (min-width: 600px) { .near-scene { border-radius: 18px; border: 1px solid var(--border-strong); box-shadow: 0 18px 50px rgb(0 0 0 / .25); } }
+.near-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.near-art .ns-letter { font: 700 17px var(--font-serif); }
+.near-art .ns-stamp-t { font: 700 19px var(--font-serif); }
+.near-art .ns-tt { font: 700 30px var(--font-serif); }
+.near-art .ns-ts { font: 500 15px var(--font-ui); }
+.near-moment { position: fixed; inset: 0; z-index: 800; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 70%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); cursor: pointer; }
+.near-moment-hint { position: absolute; left: 0; right: 0; bottom: calc(18px + env(safe-area-inset-bottom)); text-align: center; font-size: .78rem; color: var(--text-2); animation: ns-hint 900ms ease 4.8s both; }
+@keyframes ns-hint { from { opacity: 0; } to { opacity: .9; } }
+.near-radius { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.near-radius-box { margin-top: var(--space-2); }

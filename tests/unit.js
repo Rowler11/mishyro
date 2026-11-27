@@ -2,6 +2,7 @@
 // Run with: BASE=http://127.0.0.1:8765/mishyro/ node tests/unit.cjs
 import * as util from '../js/core/util.js';
 import * as NEAR from '../js/features/cerca.js';
+import * as ONDAS from '../js/features/cerca-escena.js';
 import * as db from '../js/core/db.js';
 import * as cryptoBox from '../js/core/crypto.js';
 import * as backup from '../js/core/backup.js';
@@ -430,6 +431,23 @@ await test('distancia (v0.37.0): ~1 km grid, km between both, only when both are
   eq(NEAR.nearState(null, on(1, 1), { phone: true }), { kind: 'invite', partnerOn: true });
   eq(NEAR.nearState(null, on(1, 1), { phone: false }), null);
   eq(NEAR.nearState({ on: false, lat: 1, lng: 1 }, on(1, 1), { phone: false }), null);
+});
+
+await test('están cerca (v0.38.0): words by distance and the moment drawing', () => {
+  eq(ONDAS.words(0.4).title, 'Están juntitos');
+  eq(ONDAS.words(2).title, 'Están muy cerca');
+  eq(ONDAS.words(4.4).title, 'Están cerca');
+  eq(ONDAS.words(9).title, 'Van en camino');
+  eq(ONDAS.words(9).sub, 'A unos 9 km, cada vez más cerca.');
+  const { node, run } = ONDAS.momentScene({ km: 3, a: 'A', b: '<b>' });
+  eq(node.querySelector('.ns-stamp-t').textContent, 'a 3 km');
+  eq(node.querySelectorAll('text.ns-letter')[1].textContent, '<b>'); // initials go in as text, never as markup
+  eq(node.querySelectorAll('b').length, 0);
+  eq(node.querySelector('.ns-tt').textContent, 'Están cerca');
+  eq(node.querySelectorAll('.ns-petals use').length, 16);
+  ok(typeof run === 'function' && ONDAS.DURATION > 5000);
+  eq(ONDAS.momentScene({ km: 0.3 }).node.querySelector('.ns-stamp-t').textContent, '< 1 km');
+  eq(ONDAS.momentScene({ km: 'x' }).node.querySelector('.ns-stamp-t').textContent, '< 1 km'); // a non-number never reaches the markup
 });
 
 window.__results = results;
