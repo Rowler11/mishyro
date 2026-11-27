@@ -55,6 +55,10 @@ function main({ app }) {
     install ? el('div', { class: 'card stack' }, el('p', {}, 'Instálala para abrirla como una app, también sin conexión.'), install) : null,
     el('nav', { class: 'list card', 'aria-label': 'Secciones de ajustes' }, rows),
     el('div', { class: 'card stack' },
+      el('h2', { class: 'card-title' }, 'Distancia entre los dos'),
+      el('p', { class: 'muted' }, 'Inicio les avisa cuando están cerca. Aquí la activas o la pausas y eliges a qué distancia sale el aviso.'),
+      ui.button({ label: 'Abrir', iconName: 'map-pin', onClick: () => import('./cerca.js').then((m) => m.openSettings()) })),
+    el('div', { class: 'card stack' },
       el('h2', { class: 'card-title' }, 'Asistente inicial'),
       el('p', { class: 'muted' }, 'Vuelve a importar los datos iniciales o revisa nombres y fechas. No duplica nada.'),
       ui.button({ label: 'Abrir el asistente', iconName: 'wand-sparkles', href: '#/setup' })));

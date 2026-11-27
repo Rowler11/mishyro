@@ -12,7 +12,7 @@ import { JAPANESE_WORDS } from './config-japones.js';
 
 export const CONFIG = {
   // Versión visible de la app (Ajustes > Acerca de). Súbela junto con CACHE_VERSION en sw.js.
-  appVersion: '0.37.2',
+  appVersion: '0.38.0',
   // Prefijo de la base de datos y de las 2 preferencias en localStorage (tema y perfil activo).
   // Si lo cambias, también en theme-boot.js. Cambiarlo "empieza de cero" en cada dispositivo.
   storageKey: 'aishiteru',

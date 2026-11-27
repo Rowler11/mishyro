@@ -9,8 +9,9 @@ const KEY = `${CONFIG.storageKey}.novedades.seen`;
 
 // Short, in plain words, about what they will notice. Edit this list on every release.
 export const NOTES = {
-  version: '0.37.2',
+  version: '0.38.0',
   items: [
+    'Nuevo aviso "Están cerca": cuando los dos están cerca, la primera vez del día se abre una escena como un pergamino: los dos sellos caminan hacia un torii, se encuentran y los kilómetros bajan hasta la distancia real. Luego se va, sin dejar tarjeta. A los dos les llega un aviso cariñoso. En Ajustes eliges a qué distancia sale.',
     'Ahora mismo y la distancia están en pausa: salieron de Inicio mientras buscamos un diseño que convenza.',
     'Inicio reacomodado: primero lo de hoy (celebraciones, encuentro y Ahora mismo), luego sus favoritos y Para hoy, y al final lo que viene.',
     'En Ahora mismo cada estado tiene su tablilla y la distancia va al final, sin nada encimado.',

@@ -1,7 +1,7 @@
 // Service worker: cache-first app shell so Aishiteru works offline.
 // It only caches public files of the app, never user data (that lives in IndexedDB).
 // Bump CACHE_VERSION on every release so devices pick up the update.
-const CACHE_VERSION = 'aishiteru-v0.37.2';
+const CACHE_VERSION = 'aishiteru-v0.38.0';
 const SHELL = [
   './',
   './styles.css',
@@ -33,7 +33,7 @@ const SHELL = [
   './js/features/guia.js', './js/features/tour.js', './js/core/sounds.js',
   './js/features/planta.js', './js/features/jardin.js',
   './js/features/kamishibai.js',
-  './js/features/amor.js', './js/features/latido.js', './js/core/premium.js', './js/features/novedades.js', './js/features/toques.js', './js/features/calma.js', './js/features/compartir.js', './js/features/ocasion.js', './js/features/home-layout.js', './js/features/foto-dia.js', './js/features/ahora.js', './js/features/cerca.js', './js/features/dormir.js', './js/features/juegos-extra.js', './js/features/gastos-extra.js',
+  './js/features/amor.js', './js/features/latido.js', './js/core/premium.js', './js/features/novedades.js', './js/features/toques.js', './js/features/calma.js', './js/features/compartir.js', './js/features/ocasion.js', './js/features/home-layout.js', './js/features/foto-dia.js', './js/features/ahora.js', './js/features/cerca.js', './js/features/cerca-escena.js', './js/features/dormir.js', './js/features/juegos-extra.js', './js/features/gastos-extra.js',
   './js/features/avisos.js',
   './js/core/fx.js',
   './js/core/sync.js',
@@ -182,10 +182,12 @@ const NOTICES = {
   greetPm: ['#/inicio', 'icon', ['Buenas noches 🌙', 'Que descanses. Alguien se va a dormir pensando en ti'], ['Dulces sueños', 'Te mandaron las buenas noches con un abrazo 🌙']],
   dayphoto: ['#/inicio', 'icon', ['Foto del día 📷', 'Compartieron su foto de hoy. Comparte la tuya para verla'], ['¿Qué tal tu día?', 'Ya llegó su foto de hoy. Manda la tuya y se ven las dos 📷']],
   hug: ['#/inicio', 'icon', ['Te llegó un abrazo 🤗', 'Ábrelo y recíbelo fuerte'], ['Un abrazo a distancia', 'Alguien te está abrazando desde lejos 🤗']],
+  near: ['#/inicio', 'icon', ['Están cerca 💗', 'Abre la app y mira qué tan cerca están'], ['Los dos andan cerca', 'Hoy están más cerca de lo que piensan 🌸'], ['Casi juntitos', 'Ábrela para ver cuánto falta 💞']],
+  here: ['#/inicio', 'icon', ['Alguien está por aquí 📍', 'Te avisó que anda cerca. ¿Se ven?'], ['Una señal de cariño', 'Quiere que sepas que está cerca de ti 💗']],
   loveRemind: ['#/inicio', 'sc-amor', ['¿Ya enviaste amor hoy?', 'Un toque al corazón y su racha sigue 💗'], ['Su racha te espera', 'Un toque de amor antes de que acabe el día 💞']],
 };
 // a soft pattern for each kind (the latido beats like a heart)
-const BUZZ = { beat: [55, 110, 85, 610, 55, 110, 85, 610, 55, 110, 85], love: [40, 80, 40], hug: [120, 60, 220], thinking: [30, 60, 30] };
+const BUZZ = { beat: [55, 110, 85, 610, 55, 110, 85, 610, 55, 110, 85], love: [40, 80, 40], hug: [120, 60, 220], thinking: [30, 60, 30], near: [40, 90, 40, 90, 120], here: [40, 80, 40] };
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
 // Scheduled notices (v0.15.0) come as "r:<kind>:<days before>". Their words are fixed here, so the
 // notice never carries a name, a title or anything else they wrote.

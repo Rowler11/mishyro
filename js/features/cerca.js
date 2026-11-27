@@ -4,9 +4,11 @@
 // everything that syncs). Only the kilometres are ever shown, never the point or a map. Both must turn it on;
 // pausing deletes the position right away. PCs never send it (they can still see the kilometres).
 // Not tracking: no history (one record per person, replaced), no background updates, no hours.
-import { ui, util, db, profile, sync } from '../core.js';
+import { ui, util, db, profile, sync, CONFIG } from '../core.js';
+import * as fx from '../core/fx.js';
+import { momentScene, words, DURATION } from './cerca-escena.js';
 
-const { el, icon } = util;
+const { el } = util;
 const idOf = (who) => `near:${who}`;
 const STEP = 0.01; // ≈ 1.1 km
 const MIN_GAP = 10 * 60 * 1000; // a phone sends again at most every 10 minutes
@@ -80,7 +82,30 @@ export async function refresh({ force = false } = {}) {
   const p = roundNear(g.lat, g.lng);
   // the same square and recent: nothing to send
   if (!force && mine.lat === p.lat && mine.lng === p.lng && mine.at && Date.now() - new Date(mine.at).getTime() < 3 * 3600 * 1000) return mine;
-  return put({ on: true, ...p, at: util.nowISO() });
+  return put({ on: true, ...p, at: util.nowISO(), ...(await noticeFor(p, mine)) });
+}
+
+const FRESH = 3 * 3600 * 1000; // a position older than this is not a reason to notify
+/** v0.38.0: when this phone's new position is within the chosen radius of a recent partner position, today's first
+ * time marks the record with the day: that is what sends the soft "están cerca" notice to the other phone (once a day
+ * between the two: if the other one already sent it today, this one does not). */
+async function noticeFor(p, mine) {
+  const theirs = await getNear(profile.partnerOf(profile.active()));
+  const day = util.localDay();
+  if (!hasPos(theirs) || !theirs.at || Date.now() - new Date(theirs.at).getTime() > FRESH) return {};
+  if (theirs.noticeDay === day || mine?.noticeDay === day) return {};
+  return kmBetween(p, theirs) <= await getRadius() ? { noticeDay: day } : {};
+}
+
+/** "Estoy por aquí": one tap sends this phone's position now and a soft notice to the other one. No tracking. */
+export async function hereNow() {
+  const g = await locate();
+  if (g.error) { ui.toast('No pudimos leer tu ubicación ahora.', { tone: 'error' }); return false; }
+  lastTry = Date.now();
+  await put({ on: true, ...roundNear(g.lat, g.lng), at: util.nowISO(), hereAt: util.nowISO() });
+  util.haptic?.('success');
+  ui.toast('Listo, le avisé que estás por aquí.', { tone: 'success' });
+  return true;
 }
 
 export async function turnOn() {
@@ -122,7 +147,31 @@ const agoText = (iso) => {
   return `hace ${d} ${d === 1 ? 'día' : 'días'}`;
 };
 
-function sheet(mine, theirs, onChange) {
+// v0.38.0 (Rowler 2026-11-27): the distance is no longer a card; Inicio shows a notice only when they are close.
+// "Que elijan en Ajustes": each phone picks how close counts as close (2, 5 or 10 km; starts at 5).
+export const RADII = [2, 5, 10];
+export async function getRadius() {
+  const s = await db.getSettings('near', {}).catch(() => ({}));
+  return RADII.includes(s.radius) ? s.radius : 5;
+}
+export const setRadius = (radius) => db.setSettings('near', { radius });
+
+/** { km, radius } when both phones share their position and the distance is within the chosen radius; else null. */
+export async function nearby() {
+  if (!sync.isLinked()) return null;
+  const me = profile.active(); const other = profile.partnerOf(me);
+  const [mine, theirs] = await Promise.all([getNear(me), getNear(other)]);
+  if (!hasPos(mine) || !hasPos(theirs)) return null;
+  const km = kmBetween(mine, theirs); const radius = await getRadius();
+  return km <= radius ? { km, radius } : null;
+}
+
+async function sheet(mine, theirs, onChange) {
+  const radius = await getRadius();
+  const pick = el('div', { class: 'near-radius', role: 'group', 'aria-label': 'A qué distancia sale el aviso' });
+  const drawPick = (r) => pick.replaceChildren(...RADII.map((k) => el('button', { class: 'chip', type: 'button', 'aria-pressed': String(k === r),
+    onClick: async () => { await setRadius(k); drawPick(k); onChange?.(); } }, `${k} km`)));
+  drawPick(radius);
   const other = profile.partnerOf(profile.active());
   const nick = profile.nick(other) || 'Tu pareja';
   const st = nearState(mine, theirs);
@@ -131,14 +180,17 @@ function sheet(mine, theirs, onChange) {
     el('p', { class: 'muted small' }, mine?.on ? `Tu celular la actualizó ${agoText(mine.at)}.` : 'La tienes en pausa.'),
     el('p', { class: 'muted small' }, theirs?.on ? `El de ${nick}, ${agoText(theirs.at)}.` : `${nick} todavía no la activa desde su celular.`),
     el('p', { class: 'muted small' }, 'Es aproximada (más o menos 1 km), viaja cifrada y solo se ven los kilómetros. Se actualiza cuando cada uno abre la app.'),
+    el('div', { class: 'near-radius-box' }, el('p', { class: 'small' }, el('strong', {}, 'Avisar en Inicio cuando estén a menos de:')), pick),
   ];
   const canUpdate = isPhone() && mine?.on;
   ui.openModal({
     title: 'La distancia entre los dos', kind: 'sheet', size: 'sm', className: 'near-modal',
     body: el('div', { class: 'stack' }, ...lines),
     actions: [
+      ...(st?.kind === 'km' && st.km <= radius ? [{ label: 'Ver la animación', variant: 'ghost', onClick: () => { setTimeout(() => maybeMoment({ force: true }), 250); return true; } }] : []),
       ...(mine?.on ? [{ label: 'Pausar', variant: 'ghost', onClick: async () => { await pause(); onChange?.(); return true; } }] : []),
-      ...(canUpdate ? [{ label: 'Actualizar ahora', variant: 'primary', onClick: async () => { const r = await refresh({ force: true }); if (!r) ui.toast('No pudimos leer tu ubicación ahora.', { tone: 'error' }); onChange?.(); return true; } }]
+      ...(canUpdate ? [{ label: 'Estoy por aquí', variant: 'ghost', onClick: async () => { await hereNow(); onChange?.(); return true; } },
+        { label: 'Actualizar ahora', variant: 'primary', onClick: async () => { const r = await refresh({ force: true }); if (!r) ui.toast('No pudimos leer tu ubicación ahora.', { tone: 'error' }); onChange?.(); return true; } }]
         : !mine?.on && isPhone() ? [{ label: 'Activar', variant: 'primary', onClick: async () => { await turnOn(); onChange?.(); return true; } }] : [{ label: 'Listo', variant: 'primary' }]),
     ],
   });
@@ -170,4 +222,59 @@ export async function middle({ onChange } = {}) {
   }
   if (st.kind === 'waiting') return sign('is-wait', `Esperando a que ${nick} active la distancia. Ver detalles`, el('span', { class: 'near-text' }, el('span', { class: 'near-sub' }, `Esperando a ${nick}`)));
   return sign('is-invite', st.partnerOn ? `${nick} ya activó la distancia. Activarla tú también` : 'Ver la distancia entre los dos', el('span', { class: 'near-text' }, el('span', { class: 'near-sub' }, st.partnerOn ? `${nick} ya la activó. Toca para ver` : 'Toca para ver la distancia')));
+}
+
+/** Ajustes: opens the sheet to turn the distance on or off and to choose how close counts as close. */
+export async function openSettings({ onChange } = {}) {
+  const me = profile.active(); const other = profile.partnerOf(me);
+  const [mine, theirs] = await Promise.all([getNear(me), getNear(other)]);
+  return sheet(mine, theirs, onChange);
+}
+
+// ---------- the "Ondas" moment when the app opens and they are close ----------
+const mem = (k) => `${CONFIG.storageKey}.near.${k}`;
+const recall = (k) => { try { return localStorage.getItem(mem(k)); } catch { return null; } };
+const remember = (k, v) => { try { localStorage.setItem(mem(k), v); } catch { /* private mode */ } };
+
+/** The first letter of each one's nickname for the two seals (you on the left). */
+const initials = () => {
+  const me = profile.active(); const other = profile.partnerOf(me);
+  const first = (w) => Array.from(String(w || '').trim())[0]?.toUpperCase() || '';
+  return { a: first(profile.nick(me) || 'Tú'), b: first(profile.nick(other) || 'Tu pareja') };
+};
+
+/** The moment: when they are close and it has not played today, the scroll unrolls over Inicio and the two seals meet at
+ * the torii while the kilometres count down; then it fades away and nothing stays (Rowler 2026-11-27: "sin tarjeta, solo
+ * la animación"). Tap to close earlier. Once a day, off with reduced motion. */
+export async function maybeMoment({ force = false } = {}) {
+  const day = util.localDay();
+  if (!force && recall('moment') === day) return false;
+  refresh().catch(() => {}); // a phone with the distance on sends its rounded position when Inicio opens (at most every 10 min)
+  const n = await nearby().catch(() => null);
+  if (!n || (!force && recall('moment') === day)) return false;
+  remember('moment', day);
+  if (util.prefersReducedMotion()) return false;
+  const w = words(n.km);
+  const art = momentScene({ km: n.km, ...initials() });
+  const layer = el('div', { class: 'near-moment', role: 'dialog', 'aria-label': w.title },
+    el('div', { class: 'near-scene' }, art.node, el('span', { class: 'near-moment-hint' }, 'Toca para cerrar')));
+  document.body.append(layer);
+  util.haptic?.('success');
+  const stop = art.run();
+  const fade = layer.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: 'both' });
+  await new Promise((resolve) => {
+    let done = false;
+    const end = () => { if (done) return; done = true; clearTimeout(t); layer.removeEventListener('click', end); resolve(); };
+    const t = setTimeout(end, DURATION);
+    layer.addEventListener('click', end);
+  });
+  await fade.finished.catch(() => {});
+  await layer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 450, fill: 'forwards' }).finished.catch(() => {});
+  stop(); layer.remove();
+  return true;
+}
+
+/** Waits for the welcome screen to leave, then plays the moment if Inicio is still showing. */
+export function scheduleMoment() {
+  fx.whenClear(8000).then((ok) => { if (ok && /^#\/inicio\b/.test(location.hash)) maybeMoment(); });
 }
